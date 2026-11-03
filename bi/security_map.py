@@ -265,7 +265,7 @@ THREAT_SPOTS = {
     "T3": (400, 112),
     "T4": (364, 352),
     "T5": (622, 430),
-    "T6": (696, 32),
+    "T6": (684, 32),
 }
 # Straight links: (path, dashed, label (x, y, text) or None).
 LINKS = [
@@ -275,7 +275,9 @@ LINKS = [
     ("M120 407 V443", False, None),
     ("M400 78 V191", False, (436, 116, "HTTPS · clave")),
     ("M400 237 V277", False, None),
-    ("M400 322 V395 H618", False, (424, 388, "API: lanzar, estado y logs, cancelar")),
+    # D-483: the API's work in two lines (D-370 allows it), so the label ends before the semanal.yml icon
+    ("M400 322 V395 H618", False, (424, 388, "API: lanzar y cancelar")),
+    ("", False, (424, 410, "leer estado y logs")),
     ("M640 417 V322", False, (656, 352, "release de la base")),
     ("M640 278 V237", False, (656, 268, "en cada push")),
     ("M618 300 H594", False, None),
@@ -443,7 +445,8 @@ def build_node(key, controls):
     for extra in lines:
         parts.append(f'<text class="title" x="{lx}" y="{top + 14 * row}">{esc(extra)}</text>')
         row += 1
-    for detail in wrap(line, width)[: 2 if key != "gate" else 3]:
+    # D-483: the panel's secrets need three lines, or GITHUB_READ_TOKEN was cut off
+    for detail in wrap(line, width)[: 3 if key in ("gate", "secrets") else 2]:
         parts.append(f'<text class="detail" x="{lx}" y="{top + 14 * row}">{esc(detail)}</text>')
         row += 1
     if cases:
@@ -501,6 +504,8 @@ def build_zones():
 def build_links():
     out = []
     for path, dashed, label in LINKS:
+        if not path:  # a second line of the label above it
+            continue
         out.append(f'<path class="line{" dashed" if dashed else ""}" d="{path}" marker-end="url(#sec-head)"/>')
     for path, dashed, label in LINKS:
         if label and label[2]:
@@ -514,8 +519,9 @@ def build_loop():
     width, gap, left = 170, 22, 31
     parts = [
         f'<rect class="band" x="12" y="{top}" width="976" height="124" rx="18"/>'
-        f'<text class="band-title" x="30" y="{top + 24}">Mejora continua</text>'
-        f'<text class="band-sub" x="190" y="{top + 24}">así se llegó a cada control y así se mantiene</text>'
+        # D-483: the subtitle flows after the title, so a longer title in English never runs over it
+        f'<text x="30" y="{top + 24}"><tspan class="band-title">Mejora continua</tspan>'
+        f'<tspan class="band-sub" dx="14">así se llegó a cada control y así se mantiene</tspan></text>'
     ]
     tips = []
     for index, (title, line, detail) in enumerate(LOOP):

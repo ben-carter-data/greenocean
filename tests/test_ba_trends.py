@@ -140,7 +140,7 @@ def test_d457_each_chart_says_its_months_and_its_hover_holds_the_figures_it_expl
     first = (start[0] + 1, 1) if start[1] == 12 else (start[0], start[1] + 1)
     assert price_note == f"{label(start)} – {label(end)} · base {label(start)} = 100"
     assert month_note == f"{label(first)} – {label(end)} · frente al mes anterior"
-    assert alert_note == f"{label(first)} – {label(end)} · subidas y bajadas (K6)"
+    assert alert_note == f"{label(first)} – {label(end)} · alzas fuertes y bajas fuertes (K6)"
     assert price.startswith(
         f"De {label(start)} a {label(end)} cambió {charts.format_signed_percent(figures['change'])}"
     )
@@ -227,7 +227,9 @@ def test_d457_every_month_of_a_period_has_its_point_and_its_label():
     rows["month_start"] = pd.to_datetime(dict(year=rows["year"], month=rows["month"], day=1))
     spec = ba_trends.trend_chart(rows, "Pan", (2025, 9), (2026, 9), "Vantablack").to_dict()
     axis = spec["encoding"]["x"]["axis"]
-    assert axis["tickCount"] == {"interval": "month", "step": 1} and axis["labelOverlap"] is False
+    assert (
+        axis["tickCount"] == {"interval": "month", "step": 1} and axis["labelOverlap"] == "parity"
+    )  # D-483: every month while they fit
     assert spec["mark"]["point"]["filled"] is True
     # D-460: on the page, each month in two short lines, the year under the first month and under January
     assert axis["labelAngle"] == 0 and axis["labelExpr"] == (
@@ -239,7 +241,7 @@ def test_d457_every_month_of_a_period_has_its_point_and_its_label():
     assert whole["encoding"]["x"]["axis"]["format"] == "%Y" and "point" not in whole["mark"]  # «Histórico»: years
     bars = ba_trends.months_chart(ba_trends.monthly_changes(rows, "Pan", (2025, 9), (2026, 9)), "Vantablack").to_dict()
     axis = bars["layer"][0]["encoding"]["x"]["axis"]  # every month of the change, too, «oct 2025» split in two
-    assert axis["labelOverlap"] is False and "split(datum.value, ' ')[0] == 'ene'" in axis["labelExpr"]
+    assert axis["labelOverlap"] == "parity" and "split(datum.value, ' ')[0] == 'ene'" in axis["labelExpr"]
 
 
 def test_d456_the_season_says_which_years_each_calendar_month_gathers():

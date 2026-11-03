@@ -214,7 +214,9 @@ def test_d332_the_summary_reads_the_latest_report_and_never_claims_an_external_a
     monkeypatch.setattr(i18n, "is_english", lambda: False)
     overview = quality_method.build_overview(latest, goals, policy)
     within, nonconforming, measured = quality_metrics.report_counts(latest)
-    assert f"Hoy: {within} de {measured} medidos dentro de lo aceptable" in overview
+    # D-483: the report's own date, and a closed report says it is not today's state
+    assert f"El {str(latest['fecha'])[:10]}: {within} de {measured} medidos dentro de lo aceptable" in overview
+    assert "Hoy:" not in overview and "registro cerrado" in overview
     # D-475: C-7 measured 12 of today's 14; a weekly report measures only the data ones
     assert (
         "El informe C-7 mide 12 de los 14 indicadores del plan de calidad: 4 de los datos que publicamos y 8"

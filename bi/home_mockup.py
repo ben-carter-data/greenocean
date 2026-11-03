@@ -671,7 +671,7 @@ def family_movement(
         selected = ' selected' if group == selected_family else ''
         markup.append(
             f'<a class="mock-movement-row {state}{selected}" href="{esc(family_link(group))}" target="_self"'
-            f' title="{esc(group)}: mediana de {len(members)} precios comparables · {esc(scope)}">'
+            f' title="{esc(short_family(group))}: mediana de {len(members)} precios comparables · {esc(scope)}">'
             f'{family_art(group, "mock-movement-art")}<strong>{esc(short_family(group))}</strong>'
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(average * 100, True)}</b>'
@@ -879,13 +879,13 @@ def coverage_note(model, quality_link, methodology_link, family=None):
             f'<strong>Cobertura · {esc(short_family(family))}:</strong> {number(stats["available"])} precios '
             f'esta semana; {number(stats["comparable"])} con comparación válida, los de la tabla. '
             f'Cada variación compara las mismas regiones en ambas semanas; en {number(stats["coverage_changed"])} '
-            f'se dejaron fuera regiones con precio en una sola. {number(stats["single_quote"])} cambios apoyados '
+            f'cambios se dejaron fuera las regiones con precio en una sola semana. {number(stats["single_quote"])} cambios apoyados '
             'en una sola cotización van al final del orden con la marca «1 cotización». '
         )
     else:
         coverage = (
             'Cada variación nacional compara las mismas regiones en ambas semanas; '
-            f'en {model["coverage_changed"]} se dejaron fuera regiones con precio en una sola. '
+            f'en {model["coverage_changed"]} cambios se dejaron fuera las regiones con precio en una sola semana. '
             f'{model.get("single_quote", 0)} cambios apoyados en una sola cotización van al final del orden y llevan la marca «1 cotización».'
             if model['national']
             else 'Comparación de la misma región, producto, variedad, calidad, unidad y canal.'
@@ -969,7 +969,7 @@ def family_tables(model, count, order):
 def panels(model, scope, focus_link, data_link, history_link, order, count, quality_link, methodology_link):
     coverage = (
         'Cada variación nacional compara las mismas regiones en ambas semanas; '
-        f'en {model["coverage_changed"]} se dejaron fuera regiones con precio en una sola. '
+        f'en {model["coverage_changed"]} cambios se dejaron fuera las regiones con precio en una sola semana. '
         f'{model.get("single_quote", 0)} cambios apoyados en una sola cotización van al final del orden y llevan la marca «1 cotización».'
         if model['national']
         else 'Comparación de la misma región, producto, variedad, calidad, unidad y canal.'

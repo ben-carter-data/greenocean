@@ -4397,6 +4397,11 @@ def show_alert_table(rows, mode, with_family, query=''):
 PRODUCT_ORDERS = ('Mayor cambio', 'Subidas', 'Bajadas', 'Nombre', 'Inusuales')
 
 
+def channel_label(channel):
+    """A channel in the selector as the table names it (D-403): «Todos», or the channel in the reader's language."""
+    return i18n.translate_text(channel) if channel == 'Todos' else data_terms.term(channel)
+
+
 normalize_search = overview.normalize_search
 matches_product_search = overview.matches_search  # D-478: one search rule for every table
 
@@ -4719,7 +4724,9 @@ def show_market_overview(mode, prefix):
             channels = ['Todos'] + sorted({str(row['channel']) for row in rows})
             if st.session_state.get('home_products_channel') not in channels:
                 st.session_state['home_products_channel'] = 'Todos'
-            channel = channel_column.selectbox('Canal', channels, key='home_products_channel', disabled=not family_open)
+            channel = channel_column.selectbox(
+                'Canal', channels, key='home_products_channel', disabled=not family_open, format_func=channel_label
+            )
             # Alerts are national: «Inusuales» only applies to the whole country.
             orders = PRODUCT_ORDERS if region == ALL_VALUES else PRODUCT_ORDERS[:-1]
             if st.session_state.get('home_products_order') not in orders:
@@ -4869,7 +4876,7 @@ def show_products_dialog(
             type='search',
             live=True,
         )
-        channel = st.selectbox('Canal', channels, key='dialog_products_channel')
+        channel = st.selectbox('Canal', channels, key='dialog_products_channel', format_func=channel_label)
         order = st.selectbox('Orden', orders, key='dialog_products_order')
     rows = [row for row in family_rows if channel == 'Todos' or row['channel'] == channel]
     if query.strip():
@@ -7951,19 +7958,20 @@ def flow_fetch(read_token):
         return [], [], control.describe_github_error(error)
 
 
+# D-483: each cached answer is kept per language, because a failure is kept as a sentence in the visitor's language
 @st.cache_data(ttl=30, show_spinner=False)
-def read_flow_live(_read_token):
+def read_flow_live(_read_token, language=None):
     """While a run goes on: asked again every 30 s."""
     return flow_fetch(_read_token)
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def read_flow_with_token(_read_token):
+def read_flow_with_token(_read_token, language=None):
     return flow_fetch(_read_token)
 
 
 @st.cache_data(ttl=600, show_spinner=False)
-def read_flow_without_token(_read_token):
+def read_flow_without_token(_read_token, language=None):
     """Without a token GitHub allows 60 requests an hour, shared: the answer is kept ten minutes."""
     return flow_fetch(_read_token)
 
@@ -7987,9 +7995,10 @@ def read_flow_facts(database_version, language):
 def read_flow_model():
     """The model of the live flow: the slow answer first; while a run goes on, the 30-second one."""
     read_token = get_secret(SECRET_READ_TOKEN)
-    runs, steps, error = (read_flow_with_token if read_token else read_flow_without_token)(read_token)
+    language = i18n.get_language()
+    runs, steps, error = (read_flow_with_token if read_token else read_flow_without_token)(read_token, language)
     if runs and runs[0]["state"] == control.RUN_IN_PROGRESS:
-        runs, steps, error = read_flow_live(read_token)
+        runs, steps, error = read_flow_live(read_token, language)
     facts = read_flow_facts(get_database_version(), i18n.get_language())
     return live_flow.build_model(runs, steps, facts), error
 

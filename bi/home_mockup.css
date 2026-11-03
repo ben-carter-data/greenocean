@@ -569,7 +569,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 
 .st-key-dialog_products_filters {gap:10px!important;}
 .st-key-dialog_products_filters [data-testid="stSelectbox"] {display:flex;align-items:center;gap:6px;max-width:260px;}
-.st-key-dialog_products_filters [data-testid="stSelectbox"] label {margin:0!important;min-height:0;}
+.st-key-dialog_products_filters [data-testid="stSelectbox"] label {margin:0!important;min-height:0;flex:none;white-space:nowrap;}
 .st-key-dialog_products_filters [data-testid="stSelectbox"] .react-aria-ComboBox > div {height:30px!important;min-height:30px!important;}
 .st-key-dialog_products_filters [data-testid="stTextInput"] {max-width:280px;}
 /* D-322: the weeks table closes with air under it and rounded corners. */

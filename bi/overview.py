@@ -24,7 +24,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from bi import alerts, charts, home_mockup, i18n, inflation_view
+from bi import alerts, charts, data_terms, home_mockup, i18n, inflation_view
 from bi.weeks import week_range
 
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
@@ -479,7 +479,7 @@ def consumer_insights(
         lines.append(
             "Las mayores bajas, con al menos dos cotizaciones por semana: "
             + join(
-                f"{product} · {short(family)} · {channel.lower()} ({signed(value)})"
+                f"{product} · {data_terms.term(short(family))} · {data_terms.term(channel).lower()} ({signed(value)})"
                 for product, channel, value, family in drops
             )
             + "."

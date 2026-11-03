@@ -148,6 +148,7 @@ def build_overview(
     plural = ("no conformidad", "non-conformity") if nonconforming == 1 else ("no conformidades", "non-conformities")
     # D-475: the report says how many of the plan's indicators it measures; a closed report keeps the ones of its time.
     name, total = quality_metrics.report_code(report, i18n.is_english()), len(quality_metrics.INDICATORS)
+    day = str(report["fecha"])[:10]
     lead = [
         t(
             f"El informe {name} mide {len(rows)} de los {total} indicadores del plan de calidad: {len(data)} de los datos "
@@ -162,11 +163,21 @@ def build_overview(
             f"Report {name} measures the {len(rows)} data indicators of the quality plan, each against an acceptable "
             "set by the author; the code is checked by the CI of every push.",
         ),
+        # D-483: the report's own date, never «Hoy»: a closed report is read beside today's «Calidad y auditoría»
         t(
-            f"Hoy: {within} de {measured} medidos dentro de lo aceptable · {nonconforming} {plural[0]}.",
-            f"Today: {within} of {measured} measured within the acceptable · {nonconforming} {plural[1]}.",
+            f"El {day}: {within} de {measured} medidos dentro de lo aceptable · {nonconforming} {plural[0]}.",
+            f"On {day}: {within} of {measured} measured within the acceptable · {nonconforming} {plural[1]}.",
         ),
     ]
+    if report.get("serie") != quality_metrics.SERIES_WEEKLY:
+        lead.append(
+            t(
+                f"{name} es un registro cerrado de la serie de construcción, medido con las reglas de entonces, y no se "
+                "reevalúa; el estado de los datos de hoy está en «Calidad y auditoría».",
+                f"{name} is a closed record of the construction series, measured with the rules of its time, and is not "
+                "re-evaluated; today's state of the data is in «Quality and audit».",
+            )
+        )
     counted = [row for row in code if row["clave"] in COUNTS]
     grouped = len(counted) == len(COUNTS) and all(row["estado"] == "cumple" for row in counted)
     code_rows = "".join(

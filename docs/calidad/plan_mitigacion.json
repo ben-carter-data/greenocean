@@ -1420,6 +1420,50 @@
           "estacion": 9,
           "estado": "resuelta",
           "referencia": "D-480"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "La ventana de alertas mostraba un precio «Anterior» calculado hacia atrás, que nunca se publicó.",
+            "The alert window showed a «Previous» price worked back from the change, never published."
+          ],
+          "diagnostico": [
+            "«Anterior» era el precio nacional dividido por (1 + cambio), y el cambio usa otras regiones.",
+            "«Previous» was the national price divided by (1 + change), and the change uses other regions."
+          ],
+          "solucion": [
+            "«Anterior» y «Actual» son los dos precios de los que sale el cambio.",
+            "«Previous» and «Current» are the two prices the change comes from."
+          ],
+          "comentario": [
+            "Encontrado al escribir la guía de cifras para la demo.",
+            "Found while writing the guide of figures for the demo."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-482"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "«Método y calidad» decía «Hoy» para el informe C-7, cerrado el 31-10-2026.",
+            "«Método y calidad» said «Today» for report C-7, closed on 2026-10-31."
+          ],
+          "diagnostico": [
+            "La frase no distinguía un informe cerrado del estado de hoy.",
+            "The sentence did not tell a closed report from today's state."
+          ],
+          "solucion": [
+            "La frase dice la fecha del informe y que es un registro cerrado.",
+            "The sentence gives the report's date and says it is a closed record."
+          ],
+          "comentario": [
+            "Encontrado en la revisión antes del push.",
+            "Found in the review before the push."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-483"
         }
       ]
     },
@@ -1590,6 +1634,28 @@
           "estacion": 9,
           "estado": "resuelta",
           "referencia": "D-477"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "Opciones de «Orden», el pie «Cobertura» y etiquetas de diagramas quedaban en español con el inglés elegido.",
+            "«Order» options, the «Coverage» footer and diagram labels stayed in Spanish with English chosen."
+          ],
+          "diagnostico": [
+            "La auditoría de idioma no reconoce como español una frase corta sin acentos.",
+            "The language audit does not recognise a short phrase without accents as Spanish."
+          ],
+          "solucion": [
+            "Cada texto tiene su inglés.",
+            "Each text has its English."
+          ],
+          "comentario": [
+            "Encontrado en la revisión con el navegador antes del push.",
+            "Found in the browser review before the push."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-483"
         }
       ]
     },
@@ -1642,6 +1708,132 @@
           "estacion": 9,
           "estado": "resuelta",
           "referencia": "D-473"
+        }
+      ]
+    },
+    {
+      "id": "F-31",
+      "categoria": "código",
+      "falla": [
+        "Un aviso guardado en memoria sale en el idioma de otra visita",
+        "A notice kept in memory shows in another visit's language"
+      ],
+      "deteccion": [
+        "La revisión con el navegador en los dos idiomas",
+        "The browser review in both languages"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La memoria compartida guardaba el aviso ya escrito en un idioma",
+        "The shared memory kept the notice already written in one language"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Esperar a que la memoria venza",
+        "Wait for the memory to expire"
+      ],
+      "correctiva": [
+        "La memoria guarda cada respuesta por idioma",
+        "The memory keeps each answer per language"
+      ],
+      "estacion": 9,
+      "caso_real": "D-483",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "En español, el flujo en vivo decía «GitHub answered 403: …».",
+            "In Spanish, the live flow said «GitHub answered 403: …»."
+          ],
+          "diagnostico": [
+            "La respuesta de GitHub se guardaba diez minutos con su aviso en el idioma de la primera visita.",
+            "GitHub's answer was kept ten minutes with its notice in the first visit's language."
+          ],
+          "solucion": [
+            "La memoria de esas respuestas lleva el idioma de la visita.",
+            "The memory of those answers carries the visit's language."
+          ],
+          "comentario": [
+            "Solo se ve cuando GitHub falla.",
+            "It shows only when GitHub fails."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-483"
+        }
+      ]
+    },
+    {
+      "id": "F-32",
+      "categoria": "código",
+      "falla": [
+        "Un texto de un diagrama se monta sobre otro o sobre una línea",
+        "A diagram text runs over another text or a line"
+      ],
+      "deteccion": [
+        "La revisión con el navegador, sobre todo en inglés",
+        "The browser review, above all in English"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La posición del texto es fija y el inglés es más largo",
+        "The text's position is fixed and the English is longer"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: el diagrama se lee igual",
+        "None: the diagram can still be read"
+      ],
+      "correctiva": [
+        "El texto sigue al anterior o lleva un halo, y se revisa en los dos idiomas (D-440)",
+        "The text flows after the previous one or has a halo, and is checked in both languages (D-440)"
+      ],
+      "estacion": 9,
+      "caso_real": "D-483",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "En «Arquitectura de seguridad», «Mejora continua» se montaba sobre su subtítulo y la API cortaba un texto; faltaba GITHUB_READ_TOKEN.",
+            "In «Arquitectura de seguridad», «Mejora continua» ran over its subtitle and the API label was cut; GITHUB_READ_TOKEN was missing."
+          ],
+          "diagnostico": [
+            "Posiciones fijas pensadas para el español y un máximo de dos líneas.",
+            "Fixed positions meant for Spanish and at most two lines."
+          ],
+          "solucion": [
+            "El subtítulo sigue al título, la API va en dos líneas y los secretos en tres.",
+            "The subtitle flows after the title, the API in two lines and the secrets in three."
+          ],
+          "comentario": [
+            "Mismo criterio de D-440.",
+            "Same rule as D-440."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-483"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "En el flujo en vivo, dos flechas cruzaban el nombre de un grupo.",
+            "In the live flow, two arrows crossed the name of a group."
+          ],
+          "diagnostico": [
+            "El nombre se dibujaba antes que las flechas.",
+            "The name was drawn before the arrows."
+          ],
+          "solucion": [
+            "El nombre se dibuja después, con un halo del color de la página.",
+            "The name is drawn after them, with a halo of the page's colour."
+          ],
+          "comentario": [
+            "Mismo criterio de D-440.",
+            "Same rule as D-440."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-483"
         }
       ]
     }

@@ -483,7 +483,10 @@ def monthly_tiles(rows, figures: dict[str, Any], start, end, mode: str) -> list[
         ),
         (
             say("Alertas de precio por mes", "Price alerts by month"),
-            say(f"{span(first_week, end)} · subidas y bajadas (K6)", f"{span(first_week, end)} · rises and falls (K6)"),
+            say(
+                f"{span(first_week, end)} · alzas fuertes y bajas fuertes (K6)",
+                f"{span(first_week, end)} · sharp rises and sharp drops (K6)",
+            ),
             say(
                 f"Las semanas en que un producto de {name} cambió fuera de su rango habitual (K6): los valores "
                 f"atípicos.{first_alert}",
@@ -763,7 +766,8 @@ def month_axis(height: Any, temporal: bool = False, **extra: Any) -> Any:
     return alt.Axis(
         labelAngle=0,
         labelFontSize=9,
-        labelOverlap=False,
+        # D-483: every month while they fit; on a narrow window (a phone in landscape) every other one, never piled up
+        labelOverlap="parity",
         labelFlush=False,
         labelExpr=expression,
         labelPadding=3,

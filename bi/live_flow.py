@@ -719,9 +719,18 @@ def build_group(
     runner = ' id="piece-runner" class="lf-group"' if group == "runner" else ' class="lf-group"'
     return (
         f'<g{runner}><rect x="{x}" y="{y}" width="{width}" height="{height}" rx="14" fill="none" stroke="{color}" '
-        f'stroke-width="1.2" stroke-dasharray="5 5" opacity="0.9"/>'
-        f'<text x="{x + 14}" y="{y + 20}" font-size="12" font-weight="700" letter-spacing="1.2" fill="{color}">'
-        f"{esc(t(title))}</text></g>"
+        f'stroke-width="1.2" stroke-dasharray="5 5" opacity="0.9"/></g>'
+    )
+
+
+def build_group_title(
+    group: str, x: int, y: int, width: int, height: int, title: tuple[str, str], palette: dict[str, str]
+) -> str:
+    """D-483: the group's name, drawn over the arrows with a halo of the page's colour, so no line crosses it."""
+    return (
+        f'<text x="{x + 14}" y="{y + 20}" font-size="12" font-weight="700" letter-spacing="1.2" '
+        f'fill="{GROUP_COLORS[group]}" stroke="{palette["background"]}" stroke-width="5" paint-order="stroke" '
+        f'pointer-events="none">{esc(t(title))}</text>'
     )
 
 
@@ -759,6 +768,7 @@ def build_svg(palette: dict[str, str], focus: bool = False) -> str:
     ]
     parts += [build_group(*group, palette) for group in GROUPS if group[0] not in left_out]
     parts += [build_arrow(arrow_id, palette) for arrow_id in ARROWS if arrow_id not in left_out]
+    parts += [build_group_title(*group, palette) for group in GROUPS if group[0] not in left_out]
     parts += [build_piece(piece_id, palette) for piece_id in PIECES if PIECES[piece_id][0] not in left_out]
     parts.append("</svg>")
     return "".join(parts)

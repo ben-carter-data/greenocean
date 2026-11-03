@@ -877,11 +877,11 @@ def build_css(palette):
 .st-key-sqlx_main {{ gap:6px !important; padding:8px 12px 10px 10px; }}
 .st-key-sqlx_params {{ flex-wrap:wrap !important; gap:6px 8px !important; padding:2px 0 4px; }}
 .st-key-sqlx_params .sqlx-bar-label {{ margin-right:6px; }}
-.st-key-sqlx_params [data-testid="stSelectbox"] {{ flex:0 0 150px !important; width:150px !important; }}
+.st-key-sqlx_params [data-testid="stSelectbox"] {{ flex:0 0 168px !important; width:168px !important; }}
 /* The row wraps the Streamlit containers, not the selects inside them: they take the fixed width, so on a narrow
    window a filter goes to the next line instead of leaving the editor's frame. */
-.st-key-sqlx_params > [data-testid="stElementContainer"]:has([data-testid="stSelectbox"]) {{ flex:0 0 150px !important;
-  width:150px !important; max-width:150px; }}
+.st-key-sqlx_params > [data-testid="stElementContainer"]:has([data-testid="stSelectbox"]) {{ flex:0 0 168px !important;
+  width:168px !important; max-width:168px; }}
 .st-key-sqlx_params [data-testid="stSelectbox"] [data-baseweb="select"] div {{ font-size:.78rem; }}
 .st-key-sqlx_params [data-baseweb="select"] > div {{ min-height:28px !important; border-radius:999px !important;
   background:{field} !important; border:1px solid {border} !important; box-shadow:{raised}; font-size:.78rem; }}
