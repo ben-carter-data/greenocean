@@ -1152,19 +1152,36 @@ TOUR = [
 ]
 
 
-# D-467: what moves at rest, one line at a time, in the order the data really takes: from the sources, through each
-# stage, to the people. A line drawn from a person to the panel (their access) is travelled backwards: the week's data
-# goes out to them.
+# D-467, D-468: what lights at rest, one line at a time, in the order the weekly load really runs: GitHub Actions starts
+# semanal.yml on Tuesday (or the Autor, by hand); the job installs, takes the published database, downloads ODEPA, lands
+# it, copies it to bronze, adds the IPC, builds with dbt, tests, publishes, reports; calidad.yml follows; Streamlit
+# Community Cloud takes the new pointer and the panel serves the week to the people.
+STORY_START = "Martes 12:00 UTC: GitHub Actions corre semanal.yml; también puede lanzarla el Autor, a mano."
 STORY = [
+    ("pypi", "semanal"),
+    ("release", "semanal"),
+    ("semanal", "agent"),
     ("odepa", "agent"),
     ("odepa_consumer", "agent"),
+    ("gates", "agent"),
     ("agent", "sqlite"),
     ("sqlite", "parquet"),
     ("ine", "agent"),
     ("agent", "parquet"),
     ("parquet", "dbt"),
+    ("gates", "dbt"),
     ("dbt", "duckdb"),
+    ("semanal", "ci"),
+    ("ci", "parity"),
+    ("parity", "sqlite"),
+    ("parity", "duckdb"),
+    ("gates", "release"),
     ("duckdb", "release"),
+    ("semanal", "github"),
+    ("semanal", "calidad"),
+    ("calidad", "github"),
+    ("github", "stcloud"),
+    ("stcloud", "streamlit"),
     ("release", "streamlit"),
     ("streamlit", "web"),
     ("streamlit", "charts"),
@@ -1175,9 +1192,9 @@ PEOPLE_KEYS = {"visitor", "professional", "author"}
 
 
 def story_steps():
-    """The story as [line index, travelled backwards]."""
+    """The story as [line index, towards a person, node]: first the node that starts it (no line), then each line."""
     index = {link[:2]: number for number, link in enumerate(LINKS)}
-    return [[index[pair], pair[0] in PEOPLE_KEYS] for pair in STORY]
+    return [[-1, False, "semanal"]] + [[index[pair], pair[0] in PEOPLE_KEYS, ""] for pair in STORY]
 
 
 def evidence_label(source, target):
@@ -1602,8 +1619,12 @@ def build_css(palette):
 .am-line.base {{ opacity:.6; }}
 .am-hit {{ fill:none; stroke:transparent; stroke-width:12; pointer-events:none; cursor:pointer; }}
 .am-hit.live {{ pointer-events:stroke; }}
-.am-msg {{ opacity:0; pointer-events:none; }}
-.am-msg.go {{ opacity:1; }}
+/* D-468: no moving dot: the line of each step blinks on its turn, and its two ends stand out. */
+.am-msg {{ display:none !important; }}
+@keyframes am-blink {{ 0%, 100% {{ opacity:1; }} 50% {{ opacity:.15; }} }}
+.am .am-main .am-line.blink {{ opacity:1 !important; stroke-width:2.6px; animation:am-blink .85s ease-in-out infinite; }}
+.am .am-main .am-label.story {{ opacity:1 !important; }}
+.am .am-main .am-node.lit {{ background:color-mix(in srgb, #f0b347 14%, transparent); box-shadow:0 0 0 1.5px #f0b347 inset; }}
 .am-tip code.am-src {{ font-size:10.5px; padding:0 4px; border-radius:4px; color:{muted};
   background:color-mix(in srgb, {border} 45%, transparent); }}
 .am-label {{ font-size:10.5px; font-weight:500; fill:{text}; stroke:var(--am-surface, transparent); stroke-width:4px;
@@ -2065,7 +2086,7 @@ SCRIPT = r"""<script>
         if (state.tour) { show = state.tour.links.includes(String(index)); }
         else if (state.pick) { show = state.pick.has(index); }
         else if (state.hover || theme || rhythm) { show = false; }
-        else { show = !!base; }
+        else { show = !!base || (!!state.story && state.story[0] === index); }
         if (show) { pick.add(index); }
       });
       return pick;
@@ -2158,22 +2179,6 @@ SCRIPT = r"""<script>
         placed.push(best.area);
       });
     };
-    // A dot starts when it is its turn: once along its line (the story) or again and again (a piece, a theme, the walk);
-    // backwards for the people, who receive the data along the line of their access.
-    const run = (dot, once, back) => {
-      const move = dot.querySelector("animateMotion");
-      if (!move) { return; }
-      move.setAttribute("repeatCount", once ? "1" : "indefinite");
-      move.setAttribute("fill", once ? "freeze" : "remove");
-      if (back) {
-        move.setAttribute("keyPoints", "1;0");
-        move.setAttribute("keyTimes", "0;1");
-        move.setAttribute("calcMode", "linear");
-      } else {
-        ["keyPoints", "keyTimes", "calcMode"].forEach((name) => move.removeAttribute(name));
-      }
-      try { move.beginElement(); } catch (error) { /* the line is not drawn yet */ }
-    };
     // Which lines show, which nodes dim and which dots travel, from the filter, the rhythm, the cursor or the walk.
     const refresh = () => {
       const theme = map.dataset.filter, rhythm = map.dataset.rhythm, step = state.tour;
@@ -2197,18 +2202,24 @@ SCRIPT = r"""<script>
         line.classList.toggle("show", show);
       });
       const atRest = !step && !state.pick && !state.hover && !theme && !rhythm;
-      dots().forEach((dot) => {
-        let go;
-        if (step) { go = step.links.includes(dot.dataset.index); }
-        else if (state.pick) { go = state.pick.has(Number(dot.dataset.index)); }
-        else if (state.hover || theme || rhythm) { go = false; }
-        // D-467: at rest, only the line the story has reached, one at a time, from the sources to the people
-        else { go = !!state.story && state.story[0] === Number(dot.dataset.index); }
-        const was = dot.classList.contains("go");
-        dot.classList.toggle("go", go);
-        if (go && !was && !atRest) { run(dot, false, false); }
+      const told = atRest && state.story ? state.story : null;
+      main.querySelectorAll(".am-node").forEach((item) => {
+        const key = item.dataset.key;
+        item.classList.toggle("lit", !!told && (told[2] === key
+          || (told[0] >= 0 && (links[told[0]][0] === key || links[told[0]][1] === key))));
       });
-      place(main.querySelectorAll(state.hover ? ".am-label.on" : step || theme || rhythm ? ".am-label.show" : ".am-label.base"));
+      // D-468: the line in its turn blinks: a step of the walk, the line a sequence is on, or the story's line
+      main.querySelectorAll(".am-line, .am-label").forEach((line) => {  // a head blinks with its line
+        const index = Number(line.dataset.index);
+        let on;
+        if (step) { on = step.links.includes(line.dataset.index); }
+        else if (state.pick) { on = state.pick.has(index); }
+        else { on = !!told && told[0] === index; }
+        if (line.classList.contains("am-line")) { line.classList.toggle("blink", on); }
+        else { line.classList.toggle("story", !!told && told[0] === index); }
+      });
+      place(main.querySelectorAll(state.hover ? ".am-label.on" : step || theme || rhythm ? ".am-label.show"
+        : ".am-label.base, .am-label.story"));
     };
     // The description of a node never covers the drawing when the side menu is open: it shows over the menu, where no
     // line runs. With the menu closed, it goes where it covers the fewest of the node's own lines and neighbours.
@@ -2511,22 +2522,27 @@ SCRIPT = r"""<script>
     // D-467: at rest, the week's data travels its real way, one line at a time: from ODEPA and the INE through each stage
     // to the panel and the people; the story waits while a piece, a theme, the walk or a description is in view.
     const story = JSON.parse(main.dataset.story || "[]");
+    const start = map.querySelector(".am-story-start");
     const tale = { at: 0, timer: null };
     const tell = () => {
       clearTimeout(tale.timer);
       if (!story.length) { return; }
       const resting = !state.tour && !state.pick && !state.hover && !state.tip && !map.dataset.filter
         && !map.dataset.rhythm && !main.hidden;
-      if (!resting) { state.story = null; tale.timer = setTimeout(tell, 700); return; }
-      const [index, back] = story[tale.at];
-      state.story = [index, back];
+      if (!resting) {
+        if (state.story) { state.story = null; }
+        tale.timer = setTimeout(tell, 700);
+        return;
+      }
+      const [index, , key] = story[tale.at];
+      state.story = story[tale.at];
       refresh();
-      const dot = main.querySelector('.am-msg[data-index="' + index + '"]');
-      const part = parts[index];
-      let wait = 1800;
-      if (dot && part) { run(dot, true, back); wait = parseFloat(part.move.getAttribute("dur") || "1.6") * 1000 + 250; }
+      caption.hidden = false;
+      caption.querySelector("b").textContent = (tale.at + 1) + " / " + story.length;
+      caption.querySelector("span").textContent = index === -1 ? start.textContent
+        : nameOf(links[index][0]) + " → " + nameOf(links[index][1]) + ": " + whats[index];
       tale.at = (tale.at + 1) % story.length;
-      tale.timer = setTimeout(tell, tale.at === 0 ? wait + 900 : wait);
+      tale.timer = setTimeout(tell, tale.at === 0 ? 3200 : 1900);
     };
     new ResizeObserver(settle(drawMain)).observe(map);
     map.querySelectorAll(".am-istage").forEach((stage) => new ResizeObserver(settle(() => drawInside(stage))).observe(stage));
@@ -2637,6 +2653,7 @@ def build_map_html(palette, addresses, facts=None):
         f"{layers}{bands}{nodes}</div>"
         f"{insides}{cards}"
         f'<p class="am-caption" hidden><b></b><span></span></p>'
+        f'<span class="am-story-start" hidden>{esc(STORY_START)}</span>'
         f'<div class="am-whats" hidden>{whats}</div><div class="am-tour" hidden>{tour}</div>'
         f'<div class="am-bar am-foot"><span class="am-legend">{legend}</span></div>'
         "</div>" + SCRIPT

@@ -420,21 +420,27 @@ def test_d441_the_tuesday_walk_follows_the_real_sequence(facts):
 
 
 def test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description_opens_on_its_i():
-    """At rest a single dot travels the lines in the order the data takes, from the sources to the people (their access
-    lines backwards); the description of a piece opens with a click on its «i», never under the cursor, and while it is
-    open nothing moves. The «i» and the magnifier sit on the logo's corners."""
+    """D-467, D-468: at rest the map tells the weekly load in the order semanal.yml really runs, one line at a time, each
+    line blinking on its turn with what it does under the map (no moving dot); the description of a piece opens with a
+    click on its «i», never under the cursor, and while it is open nothing moves. The «i» and the magnifier sit on the
+    logo's corners."""
     steps = app_map.story_steps()
-    pairs = [app_map.LINKS[index][:2] for index, _ in steps]
-    assert pairs[0] == ("odepa", "agent") and pairs[-2:] == [("visitor", "streamlit"), ("professional", "streamlit")]
-    assert [back for _, back in steps] == [pair[0] in app_map.PEOPLE_KEYS for pair in pairs]
-    order = [pair[1] for pair in pairs]
-    assert order.index("sqlite") < order.index("parquet") < order.index("dbt") < order.index("duckdb")
-    assert order.index("duckdb") < order.index("release") < order.index("streamlit")
+    assert steps[0] == [-1, False, "semanal"]  # Tuesday: GitHub Actions starts semanal.yml
+    pairs = [app_map.LINKS[index][:2] for index, _, _ in steps[1:]]
+    assert pairs[:3] == [("pypi", "semanal"), ("release", "semanal"), ("semanal", "agent")]
+    assert pairs[-2:] == [("visitor", "streamlit"), ("professional", "streamlit")]
+    order = [pair for pair in pairs]
+    position = order.index
+    assert position(("odepa", "agent")) < position(("agent", "sqlite")) < position(("sqlite", "parquet"))
+    assert position(("sqlite", "parquet")) < position(("ine", "agent")) < position(("parquet", "dbt"))
+    assert position(("dbt", "duckdb")) < position(("semanal", "ci")) < position(("duckdb", "release"))
+    assert position(("duckdb", "release")) < position(("semanal", "calidad")) < position(("github", "stcloud"))
+    assert position(("github", "stcloud")) < position(("release", "streamlit")) < position(("visitor", "streamlit"))
     script, css = app_map.SCRIPT, app_map.build_css(charts.get_palette(charts.THEMES[0]))
-    assert "go = !!state.story && state.story[0] === Number(dot.dataset.index);" in script  # one line at a time
-    assert 'move.setAttribute("keyPoints", "1;0");' in script  # to the people, backwards along their access
+    assert "else { on = !!told && told[0] === index; }" in script  # one line at a time
+    assert ".am-msg { display:none !important; }" in css and "animation:am-blink" in css  # it blinks, nothing travels
     assert ".am-node.tipped .am-tip { display:grid; }" in css and ":hover .am-tip" not in css
     assert "svg.pauseAnimations()" in script and "!state.tip" in script
     assert ".am-info { position:absolute; top:3px; right:calc(50% + 7px);" in css
     markup = app_map.build_map_html(charts.get_palette(charts.THEMES[0]), {})
-    assert "data-story=" in markup
+    assert "data-story=" in markup and app_map.esc(app_map.STORY_START) in markup

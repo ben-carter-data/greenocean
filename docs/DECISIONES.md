@@ -3802,3 +3802,15 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Sin marcos:** se quitan los marcos de dueño (proyecto, plataformas, fuentes y personas) y el fondo de las dos últimas filas. Cada fila conserva su nombre, y cada columna, el suyo.
 - **Medición (Playwright):** en reposo se mueve un punto por vez, en el orden del recorrido (raw.db → Parquet, INE → Agente, Agente → Parquet, Parquet → dbt…); con la «i» de dbt abierta, las animaciones quedan en pausa.
 - **Pruebas:** `tests/test_app_map.py::test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description_opens_on_its_i` y la de las líneas, sin marcos.
+
+## D-468 · «Mapa de la app»: el recorrido sigue el orden real de la carga semanal, y cada paso parpadea en vez de mover una bolita
+
+- **Pedido del autor:** el recorrido debe partir de donde parte la acción y seguir el orden real del pipeline. Prefiere flechas que parpadean, una por una, a una bolita en movimiento continuo; una bolita sola no se entiende y se quita.
+- **El orden real** (leído de `.github/workflows/` y `etl/pipeline.py`): GitHub Actions corre `semanal.yml` el martes a las 12:00 UTC, o lo lanza el Autor a mano. Luego: dependencias de PyPI → la base publicada → `agent/agent.py` baja ODEPA (mayorista y consumidor) y la puerta revisa su encabezado → `etl/etl.py` a raw.db → `etl/pipeline.py` copia raw.db al bronce, agrega el IPC (`etl/ine.py`, parte de la ingesta) y corre dbt, con sus pruebas → Base DuckDB → `pytest -m datos` y la paridad → la puerta publica solo si todo pasó → release → puntero e «Informe semanal» → `calidad.yml` y su pull request → Streamlit Community Cloud toma el commit → el panel baja la base → HTML y gráficos → Usuario y Profesional.
+- **Decisión:**
+  - **30 pasos en ese orden** (`STORY` en `bi/app_map.py`). El primero ilumina `semanal.yml`, que dispara la carga; cada uno de los demás es una flecha que ya estaba en el mapa.
+  - **Parpadeo:** la flecha del paso parpadea, con su punta, y sus dos piezas se iluminan. Bajo el mapa se lee el paso: «8 / 30 · Agente de ingesta → SQLite: CSV → raw.db». Ya no hay bolitas, tampoco al mirar una pieza o el «Recorrido del martes»: la flecha en curso parpadea.
+  - **Una por una:** donde una herramienta hace varias cosas, sus flechas parpadean de a una, en el orden en que ocurren.
+- **Revisión:** la pieza «Agente de ingesta» reúne `agent/agent.py` y `etl/ine.py`, como dice su ficha; por eso el IPC del INE pasa por ella. No era un error.
+- **Medición (Playwright):** los pasos 4 a 11 se suceden uno por vez, cada uno con una sola flecha y su punta parpadeando y sus dos piezas iluminadas.
+- **Pruebas:** `tests/test_app_map.py::test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description_opens_on_its_i`, con el orden real y sin bolitas.

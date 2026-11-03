@@ -2493,6 +2493,7 @@ PAGES = {
     "Durante el desarrollo; nunca en la carga ni en el panel.": "During development; never in the load or in the panel.",
     "copia por año": "copy per year",
     "IPC, directo": "CPI, straight",
+    "Martes 12:00 UTC: GitHub Actions corre semanal.yml; también puede lanzarla el Autor, a mano.": "Tuesday 12:00 UTC: GitHub Actions runs semanal.yml; the Author can also launch it by hand.",  # D-468
     "fuentes": "sources",
     "descarga y huella": "download and fingerprint",
     "HTML de cada vista": "HTML of each view",
