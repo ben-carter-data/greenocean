@@ -17,6 +17,8 @@ from typing import Any
 import base64
 import html
 import json
+import re
+import unicodedata
 from functools import lru_cache
 from pathlib import Path
 
@@ -106,6 +108,48 @@ def family_heat(variations: pd.DataFrame, weeks: int = HEAT_WEEKS) -> pd.DataFra
     frame["family"] = frame["product_group"].map(home_mockup.short_family)
     frame["week"] = [week_range(w) for w in frame["week_start"]]  # D-374: the range, never the Monday alone
     return frame
+
+
+def product_heat(
+    variations: pd.DataFrame, weeks: int = HEAT_WEEKS, family: str | None = None, query: str = ""
+) -> pd.DataFrame:
+    """D-478: the same table one level down: one row per product of a family (or per searched product of the whole
+    basket, named with its family), its median change of each week, computed as the family's is."""
+    last = sorted(variations["week_start"].unique())[-weeks:]
+    valid = comparable(variations[variations["week_start"].isin(last)])
+    if family:
+        valid = valid[valid["product_group"] == family]
+    if query:
+        valid = valid[[matches_search(row, query) for row in valid.to_dict("records")]]
+    frame = (
+        valid.groupby(["product_group", "product", "week_start"])["variation"]
+        .median()
+        .mul(100)
+        .rename("change")
+        .reset_index()
+    )
+    frame["family"] = (
+        frame["product"]
+        if family
+        else [
+            f"{product} · {home_mockup.short_family(group)}"
+            for product, group in zip(frame["product"], frame["product_group"])
+        ]
+    )
+    frame["week"] = [week_range(w) for w in frame["week_start"]]
+    return frame
+
+
+def normalize_search(text: str) -> str:
+    """Lower case without accents: «Ají», «aji» and «AJI» read the same."""
+    decomposed = unicodedata.normalize("NFD", str(text).lower())
+    return "".join(char for char in decomposed if unicodedata.category(char) != "Mn").strip()
+
+
+def matches_search(row: dict[str, Any], query: str) -> bool:
+    """True when every searched word starts a word of the product or its variety (the products table's rule)."""
+    words = re.split(r"[^0-9a-zñ]+", normalize_search(f"{row['product']} {row['variety']}"))
+    return all(any(word.startswith(term) for word in words) for term in normalize_search(query).split())
 
 
 def ipc_twelve_months(rows: pd.DataFrame) -> pd.DataFrame:
@@ -207,6 +251,7 @@ def build_heat_table_html(
     logos: dict[str, str] | None = None,
     totals: dict[str, float] | None = None,
     total_title: str = "",
+    lit: str | None = None,
 ) -> str:
     """D-301: the heat table as an HTML table that fills its card: one row per family with its picture, one column per
     period, each cell tinted by its change (red rises, blue falls, the stronger the darker) and its value written in it.
@@ -242,7 +287,10 @@ def build_heat_table_html(
             total = totals.get(name)
             text = "" if total is None else ("0,0 %" if round(total, 1) == 0 else f"{total:+.1f} %".replace(".", ","))
             tds.append(f'<td class="ov-ht-total">{text}</td>')
-        body.append(f'<tr><th scope="row" title="{html.escape(full, quote=True)}">{label}</th>{"".join(tds)}</tr>')
+        row_class = ' class="ov-ht-lit"' if name == lit else ""  # D-478: the family over its products
+        body.append(
+            f'<tr{row_class}><th scope="row" title="{html.escape(full, quote=True)}">{label}</th>{"".join(tds)}</tr>'
+        )
     if totals is not None:
         head += f'<th class="ov-ht-total-head">{html.escape(total_title)}</th>'
     return f'<div class="ov-ht" style="--cols:{len(columns) + (totals is not None)}"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
@@ -267,6 +315,8 @@ def heat_table_css(palette: dict[str, str]) -> str:
 .ov-ht td.ov-ht-strong {{ color:#ffffff; font-weight:600; }}
 .ov-ht td.ov-ht-empty {{ color:{muted}; }}
 .ov-ht td.ov-ht-quiet {{ color:{muted}; opacity:.55; background:transparent !important; }}
+.ov-ht tr.ov-ht-lit th, .ov-ht tr.ov-ht-lit td.ov-ht-total {{ color:{palette['accent']}; }}
+.ov-ht tr.ov-ht-lit {{ border-bottom:2px solid {border} !important; }}
 .ov-ht td.ov-ht-total {{ font-weight:700; color:{ink}; border-left:2px solid {border} !important; }}
 .ov-ht thead th.ov-ht-total-head {{ color:{ink}; border-left:2px solid {border} !important; }}
 </style>"""
@@ -347,7 +397,7 @@ def period_totals(heat: pd.DataFrame) -> pd.Series:
     )
 
 
-def weeks_insight(heat: pd.DataFrame) -> list[str]:
+def weeks_insight(heat: pd.DataFrame, products: bool = False) -> list[str]:
     """The reading of the whole period of the weeks table (D-311, D-314): the family that got dearest and the one that
     got cheapest (the first and last of the table's Total column), how many weeks each rose or fell by at least what
     the table paints, and how many weeks more families rose than fell. Every figure comes from the table's cells."""
@@ -359,6 +409,18 @@ def weeks_insight(heat: pd.DataFrame) -> list[str]:
         heat["week_start"]
     ).sum()
     top, low = chained.idxmax(), chained.idxmin()
+    if products:  # D-478: the same reading, one level down
+        return [
+            i18n.tr(
+                "En estas {} semanas, {} es el producto que más se encareció: {} acumulado, con alzas en {} de ellas."
+            ).format(weeks, top, signed(chained[top]), int(rose[top])),
+            i18n.tr("{} es el que más bajó: {} acumulado, con bajas en {} semanas.").format(
+                low, signed(chained[low]), int(fell[low])
+            ),
+            i18n.tr("En {} de las {} semanas subieron más productos de los que bajaron.").format(
+                int((by_week > 0).sum()), weeks
+            ),
+        ]
     return [
         i18n.tr("En estas {} semanas, {} es la que más se encareció: {} acumulado, con alzas en {} de ellas.").format(
             weeks, i18n.tr(top), signed(chained[top]), int(rose[top])
@@ -372,20 +434,27 @@ def weeks_insight(heat: pd.DataFrame) -> list[str]:
     ]
 
 
-def best_drops(variations: pd.DataFrame, week: Any, count: int = 3) -> list[tuple[str, str, float]]:
-    """The largest weekly drops of the week, resting on two quotes in each week (as the Resumen ranks them)."""
+def best_drops(variations: pd.DataFrame, week: Any, count: int = 3) -> list[tuple[str, str, float, str]]:
+    """The largest weekly drops of the week, resting on two quotes in each week (as the Resumen ranks them); D-478: each
+    with its family, so a product is always found under its family."""
     rows = comparable(variations[variations["week_start"] == week])
     if "same_region_quotes" in rows:
         rows = rows[(rows["same_region_quotes"] >= 2) & (rows["same_region_previous_quotes"] >= 2)]
     rows = rows[rows["variation"] < 0].nsmallest(count, "variation")
     return [
-        (product, channel, value * 100)
-        for product, channel, value in zip(rows["product"], rows["channel"], rows["variation"])
+        (product, channel, value * 100, family)
+        for product, channel, value, family in zip(
+            rows["product"], rows["channel"], rows["variation"], rows["product_group"]
+        )
     ]
 
 
 def consumer_insights(
-    moves: pd.DataFrame, drops: list[tuple[str, str, float]], summary: pd.DataFrame, ipc_total: float, ipc_year: float
+    moves: pd.DataFrame,
+    drops: list[tuple[str, str, float, str]],
+    summary: pd.DataFrame,
+    ipc_total: float,
+    ipc_year: float,
 ) -> list[str]:
     """For whoever buys food: what got cheaper this week and which families weigh more than inflation."""
     fell = moves[moves["state"] == "Bajó"]
@@ -402,7 +471,10 @@ def consumer_insights(
     if drops:
         lines.append(
             "Las mayores bajas, con al menos dos cotizaciones por semana: "
-            + join(f"{product} · {channel.lower()} ({signed(value)})" for product, channel, value in drops)
+            + join(
+                f"{product} · {short(family)} · {channel.lower()} ({signed(value)})"
+                for product, channel, value, family in drops
+            )
             + "."
         )
     if len(above):
@@ -481,14 +553,14 @@ def wholesale_insights(variations: pd.DataFrame, week: Any, margins: pd.DataFram
         )
         drops = list(
             {
-                product: (product, channel, value)
-                for product, channel, value in reversed(best_drops(rows.assign(week_start=week), week, count=8))
+                product: (product, channel, value, family)
+                for product, channel, value, family in reversed(best_drops(rows.assign(week_start=week), week, count=8))
             }.values()
         )[::-1][:3]
         if drops:
             lines.append(
                 "Las mayores bajas mayoristas: "
-                + join(f"{product} ({signed(value)})" for product, _, value in drops)
+                + join(f"{product} · {short(family)} ({signed(value)})" for product, _, value, family in drops)
                 + "."
             )
     week_margins = margins[margins["week_start"] == f"{week:%Y-%m-%d}"]

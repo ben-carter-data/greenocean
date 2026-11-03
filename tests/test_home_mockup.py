@@ -79,9 +79,9 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
     assert len(table) == len(rows)
     assert table['N.º'].tolist() == list(range(1, len(rows) + 1))
     assert {'Nivel', 'Familia', 'Producto', 'Canal', 'Unidad', 'Anterior', 'Actual', 'Cambio'} <= set(table)
-    # D-477: a rise takes the rise words, a drop the drop words
-    rises = {'Muy alta', 'Alta', 'Moderada'}
-    drops = {'Baja importante', 'Baja moderada', 'Baja leve'}
+    # D-477: a rise takes the rise words, a drop the drop words; D-478: every level is at least «fuerte», as its alert
+    rises = {'Alza extrema', 'Alza muy fuerte', 'Alza fuerte'}
+    drops = {'Baja extrema', 'Baja muy fuerte', 'Baja fuerte'}
     for level, variation in zip(table['Nivel'], rows['variation']):
         assert level in (rises if variation > 0 else drops), (level, variation)
     assert (
@@ -90,7 +90,14 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
     styled = dashboard.style_home_alert_table(
         pd.DataFrame(
             {
-                'Nivel': ['Muy alta', 'Alta', 'Moderada', 'Baja importante', 'Baja moderada', 'Baja leve'],
+                'Nivel': [
+                    'Alza extrema',
+                    'Alza muy fuerte',
+                    'Alza fuerte',
+                    'Baja extrema',
+                    'Baja muy fuerte',
+                    'Baja fuerte',
+                ],
                 'Cambio': ['+1,0 %', '+1,0 %', '+1,0 %', '−1,0 %', '−1,0 %', '−1,0 %'],
             }
         ),
@@ -469,3 +476,27 @@ def test_d329_the_families_and_the_map_say_what_they_are_calculated_from():
     assert '97 productos sin precio publicado en una de las dos semanas: fuera del cálculo' in page
     page = home_mockup.regional_map([dict(row, total=34, missing=0, dropped=0)], lambda region: '#', '12-10', '05-10')
     assert 'fuera del cálculo' not in page
+
+
+def test_d478_the_whole_basket_names_each_products_family():
+    page = home_mockup.products_table([dict(ZAPALLO)], '12–18 oct', '5–11 oct', show_family=True)
+    assert '<th>Familia</th>' in page and '<td class="mock-family-cell">Hortalizas</td>' in page
+    assert page.index('<th>Producto</th>') < page.index('<th>Familia</th>') < page.index('<th>Canal</th>')
+    one_family = home_mockup.products_table([dict(ZAPALLO)], '12–18 oct', '5–11 oct')
+    assert '<th>Familia</th>' not in one_family and 'mock-family-cell' not in one_family
+    empty = home_mockup.products_table([], '12–18 oct', '5–11 oct', query='kiw', show_family=True)
+    assert 'Ningún producto empieza por «kiw» en la canasta.' in empty
+
+
+@pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
+def test_d478_the_last_weeks_go_down_to_a_family_and_its_products():
+    app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=90)
+    app.query_params.update({'vista': dashboard.PAGE_HOME, 'perfil': 'profesional'})
+    app.session_state[dashboard.HOME_VIEW_KEY] = dashboard.HOME_VIEWS[1]
+    app.session_state['weeks_family'] = 'Frutas'
+    app.run()
+    assert not app.exception
+    page = ' '.join(block.value for block in app.markdown)
+    assert '¿Qué productos vienen subiendo, semana a semana?' in page
+    assert 'class="ov-ht-lit"' in page and 'Frutas · toda la familia' in page
+    assert page.index('Frutas · toda la familia') < page.index('Plátano')  # the family first, over its products

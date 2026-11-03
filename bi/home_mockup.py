@@ -772,9 +772,10 @@ def calculation_detail(row, week_label, previous_label, published):
     )
 
 
-def products_table(rows, week_label, previous_label, query='', selected=None, published=None):
+def products_table(rows, week_label, previous_label, query='', selected=None, published=None, show_family=False):
     """The comparable prices of one family; the last column counts regions up and down. The prices are the average of
-    the regions with a price in both weeks, the same ones the variation uses (D-327)."""
+    the regions with a price in both weeks, the same ones the variation uses (D-327). D-478: a list of the whole basket
+    names each product's family, so any figure is found under its family."""
     body = []
     for row in rows:
         change = row['variation'] * 100
@@ -809,21 +810,26 @@ def products_table(rows, week_label, previous_label, query='', selected=None, pu
                 if row.get('quality')
                 else ''
             )
-            + f'</td><td>{esc(data_terms.term(row["channel"]))}</td>'
+            + '</td>'
+            + (f'<td class="mock-family-cell">{esc(short_family(row["product_group"]))}</td>' if show_family else '')
+            + f'<td>{esc(data_terms.term(row["channel"]))}</td>'
             f'<td class="num">{money(price_before)}</td><td class="num">{money(price_now)}</td>'
             f'<td class="num {state}"><b>{"0,0 %" if state == "neutral" else percent(change, True)}</b></td>'
             f'<td class="num">{regions_text}</td></tr>'
         )
     if not body:
         empty = (
-            f'Ningún producto empieza por «{esc(query)}» en esta familia.'
+            f'Ningún producto empieza por «{esc(query)}» en la canasta.'
+            if query and show_family
+            else f'Ningún producto empieza por «{esc(query)}» en esta familia.'
             if query
             else 'No hay productos con precio en ambas semanas para esta selección.'
         )
         body = [f'<tr><td colspan="7" class="mock-empty">{empty}</td></tr>']
     return (
-        '<div class="mock-products-table" role="region" tabindex="0" aria-label="Productos de la familia"><table><thead><tr>'
-        f'<th>Producto</th><th>Canal</th>'
+        f'<div class="mock-products-table{" mock-with-family" if show_family else ""}" role="region" tabindex="0" '
+        'aria-label="Productos de la familia"><table><thead><tr>'
+        '<th>Producto</th>' + ('<th>Familia</th>' if show_family else '') + '<th>Canal</th>'
         f'<th class="num" title="Precio medio: promedio de las regiones con precio publicado en las dos semanas"><span class="mock-th-word">Precio</span> {esc(previous_label)}</th>'
         f'<th class="num" title="Precio medio: promedio de las regiones con precio publicado en las dos semanas"><span class="mock-th-word">Precio</span> {esc(week_label)}</th><th class="num">Variación</th>'
         '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; haz clic en el conteo para ver cuáles">Regiones ↑ / ↓</th></tr></thead>'

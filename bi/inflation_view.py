@@ -49,11 +49,12 @@ WITH national AS (
     WHERE wp.flag IS NULL AND ch.source = 'consumer'
     GROUP BY wp.week_start, p.product_group, wp.product_id, wp.channel_id, wp.normalized_unit
 )
-SELECT product_group, product_id, channel_id, normalized_unit,
-       year(CAST(week_start AS DATE)) AS year, month(CAST(week_start AS DATE)) AS month,
-       AVG(price) AS price
-FROM national
-GROUP BY product_group, product_id, channel_id, normalized_unit, year, month
+SELECT n.product_group, p.product, n.product_id, n.channel_id, n.normalized_unit,
+       year(CAST(n.week_start AS DATE)) AS year, month(CAST(n.week_start AS DATE)) AS month,
+       AVG(n.price) AS price
+FROM national n
+JOIN dim_product p USING (product_id)
+GROUP BY n.product_group, p.product, n.product_id, n.channel_id, n.normalized_unit, year, month
 """
 
 
@@ -162,14 +163,20 @@ def draw_family_card(
 
 
 def family_lines(
-    rows: pd.DataFrame, family: str, mode: str, real: bool = False, domain: list[float] | None = None
+    rows: pd.DataFrame,
+    family: str,
+    mode: str,
+    real: bool = False,
+    domain: list[float] | None = None,
+    tint: str | None = None,
 ) -> Any:
-    """The two lines of a family card, without style or size, so the enlarged chart can add its layers."""
+    """The two lines of a family card, without style or size, so the enlarged chart can add its layers. D-478: a
+    product takes its family's color."""
     palette = charts.get_palette(mode)
     value = "real" if real else "index"
     panel = rows[rows["product_group"].isin([family, IPC_NAME])]
     names = [family, IPC_NAME] if family != IPC_NAME else [IPC_NAME]
-    colors = [FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names) :]
+    colors = [tint or FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names) :]
     dashes = [[1, 0], [5, 4]][-len(names) :]
     scale = alt.Scale(zero=False, domain=domain) if domain else alt.Scale(zero=False)
     chart = (
@@ -192,7 +199,13 @@ def family_lines(
 
 
 def draw_family_focus(
-    rows: pd.DataFrame, family: str, mode: str, real: bool = False, domain: list[float] | None = None, height: int = 420
+    rows: pd.DataFrame,
+    family: str,
+    mode: str,
+    real: bool = False,
+    domain: list[float] | None = None,
+    height: int = 420,
+    tint: str | None = None,
 ) -> Any:
     """The enlarged family (D-294): the card's lines plus what a large chart owes its reader. The last value of each
     line at its end, the family's peak marked with its value (the «Máximo» of the reading beside it) and, under the
@@ -200,7 +213,7 @@ def draw_family_focus(
     series."""
     palette = charts.get_palette(mode)
     value = "real" if real else "index"
-    lines = family_lines(rows, family, mode, real, domain).encode(
+    lines = family_lines(rows, family, mode, real, domain, tint).encode(
         x=alt.X(
             "month_start:T",
             title=None,
@@ -216,7 +229,7 @@ def draw_family_focus(
     )
     panel = rows[rows["product_group"].isin([family, IPC_NAME])].sort_values("month_start")
     names = [family, IPC_NAME] if family != IPC_NAME else [IPC_NAME]
-    colors = [FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names) :]
+    colors = [tint or FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names) :]
     color = alt.Color("product_group:N", scale=alt.Scale(domain=names, range=colors), legend=None)
     x = alt.X("month_start:T", title=None)
     y = alt.Y(f"{value}:Q", title=None)
@@ -369,7 +382,9 @@ def family_insights(
     insights.append(
         (
             "Base del cálculo",
-            f"{count} series de consumidor con precio en {month_name(*base)} y en "
+            f"1 serie de consumidor con precio en {month_name(*base)} y en {month_name(*last)}; cada mes, su índice."
+            if count == 1  # D-478: a product often rests on one series
+            else f"{count} series de consumidor con precio en {month_name(*base)} y en "
             f"{month_name(*last)}; cada mes, la mediana de sus índices.",
         )
     )

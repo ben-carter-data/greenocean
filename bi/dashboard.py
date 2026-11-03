@@ -20,7 +20,6 @@ import os
 import re
 import secrets
 import sys
-import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode
@@ -559,9 +558,13 @@ REJECTED_ROW_LABELS = {
 }
 NO_DATA_TEXT = "No hay datos para esta selección."
 # Alertas: (lowest distance in standard deviations, label, icon, status color).
-ALERT_LEVELS = [(4, "Muy alta", "◆", "critical"), (3, "Alta", "▲", "serious"), (0, "Moderada", "●", "warning")]
+ALERT_LEVELS = [
+    (4, "Alza extrema", "◆", "critical"),
+    (3, "Alza muy fuerte", "▲", "serious"),
+    (0, "Alza fuerte", "●", "warning"),
+]
 # D-477: a sharp drop is good news for the buyer, not a danger: its own words and its own colour, green.
-DROP_LEVELS = [(4, "Baja importante", "◆", "good"), (3, "Baja moderada", "▼", "good"), (0, "Baja leve", "●", "good")]
+DROP_LEVELS = [(4, "Baja extrema", "◆", "good"), (3, "Baja muy fuerte", "▼", "good"), (0, "Baja fuerte", "●", "good")]
 RISE, DROP = "alza", "baja"
 # (one, many) of each kind, the official names approved by the author (D-477).
 ALERT_KINDS = {RISE: ("alza fuerte", "alzas fuertes"), DROP: ("baja fuerte", "bajas fuertes")}
@@ -4214,21 +4217,21 @@ def style_home_alert_table(table, mode):
     dark = charts.get_palette(mode)['base'] == 'dark'
     colors = (
         {
-            'Muy alta': ('#991b1b', '#fff4f4'),
-            'Alta': ('#7a2424', '#ffe4e4'),
-            'Moderada': ('#4f2424', '#ffcfcf'),
-            'Baja importante': ('#166534', '#f0fff4'),
-            'Baja moderada': ('#1d5233', '#dcfce7'),
-            'Baja leve': ('#1c3b2a', '#bbf7d0'),
+            'Alza extrema': ('#991b1b', '#fff4f4'),
+            'Alza muy fuerte': ('#7a2424', '#ffe4e4'),
+            'Alza fuerte': ('#4f2424', '#ffcfcf'),
+            'Baja extrema': ('#166534', '#f0fff4'),
+            'Baja muy fuerte': ('#1d5233', '#dcfce7'),
+            'Baja fuerte': ('#1c3b2a', '#bbf7d0'),
         }
         if dark
         else {
-            'Muy alta': ('#fecaca', '#7f1d1d'),
-            'Alta': ('#fee2e2', '#991b1b'),
-            'Moderada': ('#fef2f2', '#b91c1c'),
-            'Baja importante': ('#bbf7d0', '#14532d'),
-            'Baja moderada': ('#dcfce7', '#166534'),
-            'Baja leve': ('#f0fdf4', '#15803d'),
+            'Alza extrema': ('#fecaca', '#7f1d1d'),
+            'Alza muy fuerte': ('#fee2e2', '#991b1b'),
+            'Alza fuerte': ('#fef2f2', '#b91c1c'),
+            'Baja extrema': ('#bbf7d0', '#14532d'),
+            'Baja muy fuerte': ('#dcfce7', '#166534'),
+            'Baja fuerte': ('#f0fdf4', '#15803d'),
         }
     )
 
@@ -4252,8 +4255,9 @@ def translate_alert_table(table):
     if not i18n.is_english():
         return table
     table = table.copy()
-    if 'Canal' in table:
-        table['Canal'] = table['Canal'].map(data_terms.term)
+    for column in ('Canal', 'Familia'):
+        if column in table:
+            table[column] = table[column].map(data_terms.term)
     for column in table.columns:  # every text cell, whatever the column's dtype (pandas 3 has a string dtype)
         table[column] = table[column].map(lambda value: i18n.translate_text(value) if isinstance(value, str) else value)
     return table.rename(columns=i18n.translate_text)
@@ -4281,6 +4285,12 @@ def show_home_alerts_dialog(week, group, product_filter, mode, direction=RISE):
         st.session_state['home_alert_selected_family'] = None
     if selected is None:
         st.html('<div class="home-alert-overview-marker"></div>')
+        query = alert_search_input('home_alert_search')
+        if query:
+            # D-478: the same search as the products table, over every family, each row naming its family
+            found = rows[[matches_product_search(row, query) for row in rows.to_dict('records')]]
+            show_alert_table(found, mode, with_family=True, query=query)
+            return
         st.caption(
             f'{alert_count_text(len(rows), direction)} · {len(families)} '
             f'{"familia" if len(families) == 1 else "familias"} · datos nacionales de ODEPA'
@@ -4331,17 +4341,18 @@ def show_home_alerts_dialog(week, group, product_filter, mode, direction=RISE):
     with st.container(key='home_alert_detail_tools', horizontal=True, vertical_alignment='bottom', gap='small'):
         st.html(
             '<div class="home-alert-level-guide">'
-            '<span><i class="critical"></i>Muy alta</span>'
-            '<span><i class="high"></i>Alta</span>'
-            '<span><i class="moderate"></i>Moderada</span>'
+            '<span><i class="critical"></i>Alza extrema</span>'
+            '<span><i class="high"></i>Alza muy fuerte</span>'
+            '<span><i class="moderate"></i>Alza fuerte</span>'
             '<small>El color indica cuán inusual fue el alza.</small></div>'
             if rise
             else '<div class="home-alert-level-guide">'
-            '<span><i class="drop-strong"></i>Baja importante</span>'
-            '<span><i class="drop-medium"></i>Baja moderada</span>'
-            '<span><i class="drop-light"></i>Baja leve</span>'
+            '<span><i class="drop-strong"></i>Baja extrema</span>'
+            '<span><i class="drop-medium"></i>Baja muy fuerte</span>'
+            '<span><i class="drop-light"></i>Baja fuerte</span>'
             '<small>El color indica cuán inusual fue la baja.</small></div>'
         )
+        query = alert_search_input(f'home_alert_search_{selected}')
         selected_unit = st.selectbox(
             'Unidad',
             units,
@@ -4350,29 +4361,51 @@ def show_home_alerts_dialog(week, group, product_filter, mode, direction=RISE):
         )
     if selected_unit != 'Todas las unidades':
         family_rows = family_rows[family_rows['normalized_unit'] == selected_unit]
+    if query:
+        family_rows = family_rows[[matches_product_search(row, query) for row in family_rows.to_dict('records')]]
+    if len(family_rows) != family_total:
         st.caption(f'Mostrando {len(family_rows)} de {alert_count_text(family_total, direction)} de esta familia.')
-    table = translate_alert_table(home_alert_table(family_rows).drop(columns='Familia'))
+    show_alert_table(family_rows, mode, with_family=False, query=query)
+
+
+def alert_search_input(key):
+    """D-478: the products table's search (the magnifier), the same in every view."""
+    return st.text_input(
+        'Buscar',
+        key=key,
+        icon=':material/search:',
+        placeholder='Producto, ej.: lechuga',
+        label_visibility='collapsed',
+        type='search',
+        live=True,
+    ).strip()
+
+
+def show_alert_table(rows, mode, with_family, query=''):
+    """The alert rows as the styled table; D-478: a search over every family keeps the «Familia» column."""
+    if rows.empty:
+        st.caption(
+            f'Ningún producto empieza por «{query}» en estas alertas.'
+            if query
+            else 'No hay alertas para esta selección.'
+        )
+        return
+    table = home_alert_table(rows)
+    if not with_family:
+        table = table.drop(columns='Familia')
     st.dataframe(
-        style_home_alert_table(table, mode),
+        style_home_alert_table(translate_alert_table(table), mode),
         hide_index=True,
         use_container_width=True,
-        height=min(520, max(150, 35 * (len(family_rows) + 1))),
+        height=min(520, max(150, 35 * (len(rows) + 1))),
     )
 
 
 PRODUCT_ORDERS = ('Mayor cambio', 'Subidas', 'Bajadas', 'Nombre', 'Inusuales')
 
 
-def normalize_search(text):
-    """Lower case without accents: «Ají», «aji» and «AJI» read the same."""
-    decomposed = unicodedata.normalize('NFD', str(text).lower())
-    return ''.join(char for char in decomposed if unicodedata.category(char) != 'Mn').strip()
-
-
-def matches_product_search(row, query):
-    """True when every searched word starts a word of the product or its variety."""
-    words = re.split(r'[^0-9a-zñ]+', normalize_search(f"{row['product']} {row['variety']}"))
-    return all(any(word.startswith(term) for word in words) for term in normalize_search(query).split())
+normalize_search = overview.normalize_search
+matches_product_search = overview.matches_search  # D-478: one search rule for every table
 
 
 def read_cached_region_directions(database_version, week):
@@ -4739,6 +4772,7 @@ def show_market_overview(mode, prefix):
                     query.strip(),
                     None if region == ALL_VALUES else region,
                     published,
+                    show_family=products_family == ALL_VALUES,
                 )
                 + '</div>'
             )
@@ -4853,7 +4887,9 @@ def show_products_dialog(
         + home_mockup.products_heading(family, average, scope, len(rows), len(family_rows), note)
         + '</div>'
         + '<div class="greenocean-mockup">'
-        + home_mockup.products_table(rows, week_label, previous_label, query.strip(), region, published)
+        + home_mockup.products_table(
+            rows, week_label, previous_label, query.strip(), region, published, show_family=family == ALL_VALUES
+        )
         + '</div>',
         unsafe_allow_html=True,
     )
@@ -5058,6 +5094,23 @@ def read_family_inflation(database_version):
     return rows, last, summary, ipc_total, ipc_year
 
 
+@st.cache_data(show_spinner=False)
+def read_product_inflation(database_version):
+    """D-478: the same monthly index one level down: one line per product of the consumer series (its own series
+    against January 2022, the families' rule), its summary against the IPC, and each product's family."""
+    series = queries.run_sql(inflation_view.SERIES_SQL)
+    rows, last = inflation_view.build_family_index(
+        series.assign(product_group=series["product"]),
+        queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"),
+    )
+    summary, _, _ = inflation_view.summarize_families(rows, last)
+    indexed = set(rows["product_group"])
+    family_of = {
+        product: group for product, group in zip(series["product"], series["product_group"]) if product in indexed
+    }
+    return rows, summary, family_of
+
+
 def build_family_panel_titles(summary, ipc_total=None):
     """{family: "Hortalizas|+60,2 % · más que la inflación"}, biggest gap first; with
     ipc_total, the food IPC closes the list as the basket every family is measured against."""
@@ -5093,11 +5146,11 @@ INFLATION_TERMS = [
 ]
 
 
-def build_family_card_title_html(family, title):
+def build_family_card_title_html(family, title, color=None):
     """The head of a family card: the name, and under it the rise and the verdict in
-    the family's color."""
+    the family's color (a product's, D-478, in its family's)."""
     name, verdict = title.split("|", 1)
-    color = inflation_view.FAMILY_COLORS.get(family, "var(--text-color)")
+    color = color or inflation_view.FAMILY_COLORS.get(family, "var(--text-color)")
     return (
         f'<div class="inf-panel-head"><b>{html.escape(name)}</b>'
         f'<span style="color:{color}">{html.escape(verdict)}</span></div>'
@@ -5111,9 +5164,9 @@ def focus_family(family):
     st.session_state[FAMILY_FOCUS_KEY] = family
 
 
-def build_family_insights_html(insights, family):
+def build_family_insights_html(insights, family, color=None):
     """The reading of an enlarged family (D-267): what its own numbers say, one short line per fact."""
-    color = inflation_view.FAMILY_COLORS.get(family, "#94a3b8")
+    color = color or inflation_view.FAMILY_COLORS.get(family, "#94a3b8")
     return (
         f'<div class="inf-insights" style="--c:{color}"><h4>Lectura de los datos</h4>'
         + "".join(f'<p><em>{html.escape(label)}</em>{html.escape(text)}</p>' for label, text in insights)
@@ -5128,19 +5181,53 @@ def show_family_cards(rows, titles, mode, real, summary=None, last=None):
     domain = inflation_view.family_domain(rows, real)
     focus = st.session_state.get(FAMILY_FOCUS_KEY)
     if focus in titles:
+        # D-478: the enlarged family goes down to any of its products, each read against the IPC as a family is
+        product_rows, product_summary, family_of = read_product_inflation(get_database_version())
+        products = [ba_trends.ALL_PRODUCTS] + sorted(name for name, group in family_of.items() if group == focus)
+        if st.session_state.get("inf_product") not in products:
+            st.session_state["inf_product"] = ba_trends.ALL_PRODUCTS
+        product = st.session_state["inf_product"]
+        color = inflation_view.FAMILY_COLORS.get(focus)
+        subject, subject_rows, subject_summary, subject_domain, title = (
+            (focus, rows, summary, domain, titles[focus])
+            if product == ba_trends.ALL_PRODUCTS
+            else (
+                product,
+                product_rows,
+                product_summary,
+                None,  # a product keeps its own scale: the families' would cut it
+                build_family_panel_titles(product_summary[product_summary["family"] == product])[product],
+            )
+        )
         with st.container(key="inf_card_focus"):
             with st.container(horizontal=True, vertical_alignment="center"):
-                st.markdown(build_family_card_title_html(focus, titles[focus]), unsafe_allow_html=True)
+                st.markdown(build_family_card_title_html(subject, title, color), unsafe_allow_html=True)
+                if len(products) > 1:
+                    st.selectbox(
+                        tr("Producto"),
+                        products,
+                        key="inf_product",
+                        format_func=tr,
+                        label_visibility="collapsed",
+                        width=240,
+                        help=tr("Escribe para buscar un producto; sus cifras se calculan como las de una familia."),
+                    )
                 st.button("Ver todas", key="inf_unfocus", icon=":material/close:", on_click=focus_family, args=(None,))
             chart_column, reading_column = st.columns([2.5, 1], gap="medium")
             chart_column.altair_chart(
-                inflation_view.draw_family_focus(rows, focus, mode, real=real, domain=domain, height=420),
+                inflation_view.draw_family_focus(
+                    subject_rows, subject, mode, real=real, domain=subject_domain, height=420, tint=color
+                ),
                 width="stretch",
                 theme=None,
             )
-            if summary is not None and last is not None:
+            if subject_summary is not None and last is not None:
                 reading_column.markdown(
-                    build_family_insights_html(inflation_view.family_insights(rows, summary, focus, last, real), focus),
+                    build_family_insights_html(
+                        inflation_view.family_insights(subject_rows, subject_summary, subject, last, real),
+                        subject,
+                        color,
+                    ),
                     unsafe_allow_html=True,
                 )
         return
@@ -5388,8 +5475,28 @@ def show_weeks_table(mode, version):
     weeks = sorted(variations["week_start"].unique())
     week = pd.Timestamp(weeks[-1])
     upto = variations[variations["week_start"] <= week]
+    families = [group for group in OVERVIEW_FAMILIES if group in set(variations["product_group"])]
     with st.container(horizontal=True, vertical_alignment="center", key="weeks_head"):
         st.caption(tr("Variación semanal, %. Rojo: subió · Azul: bajó."))
+        # D-478: the families first; a family or a search goes down to its products
+        family = st.selectbox(
+            tr("Familia"),
+            [ALL_VALUES] + families,
+            key="weeks_family",
+            format_func=lambda value: tr("Toda la canasta") if value == ALL_VALUES else home_mockup.short_family(value),
+            label_visibility="collapsed",
+            width=200,
+        )
+        query = st.text_input(
+            tr("Buscar"),
+            key="weeks_search",
+            icon=":material/search:",
+            placeholder=tr("Producto, ej.: lechuga"),
+            label_visibility="collapsed",
+            type="search",
+            live=True,
+            width=230,
+        ).strip()
         count = st.slider(
             tr("Últimas {} semanas").format(st.session_state.get(OVERVIEW_WEEKS_KEY, 8)),
             4,
@@ -5400,16 +5507,37 @@ def show_weeks_table(mode, version):
             help=tr("Cuántas semanas mostrar"),
         )
     palette = charts.get_palette(mode)
-    heat = overview.family_heat(upto, weeks=count)
-    lines = "".join(f"<li>{html.escape(line)}</li>" for line in overview.weeks_insight(heat))
+    products = family != ALL_VALUES or bool(query)
+    heat = (
+        overview.product_heat(upto, count, None if family == ALL_VALUES else family, query)
+        if products
+        else overview.family_heat(upto, weeks=count)
+    )
+    if heat.empty:
+        st.caption(tr("Ningún producto empieza por «{}» en esta selección.").format(query))
+        return
+    lines = "".join(f"<li>{html.escape(line)}</li>" for line in overview.weeks_insight(heat, products))
     st.markdown(
         f'<div class="weeks-insight"><b>{html.escape(tr("Lectura del período"))}</b><ul>{lines}</ul></div>',
         unsafe_allow_html=True,
     )
+    lit = None
+    if family != ALL_VALUES:
+        # D-478: the family's own row over its products, as in «La semana», so the two can be checked side by side
+        own = overview.family_heat(upto, weeks=count)
+        own = own[own["product_group"] == family]
+        lit = tr("{} · toda la familia").format(home_mockup.short_family(family))
+        heat = pd.concat([own.assign(family=lit), heat], ignore_index=True)
     columns = list(dict.fromkeys(heat.sort_values("week_start")["week"]))
-    logos = {home_mockup.short_family(f): home_mockup.family_art_data_uri(f) for f in OVERVIEW_FAMILIES}
+    logos = (
+        None
+        if products
+        else {home_mockup.short_family(f): home_mockup.family_art_data_uri(f) for f in OVERVIEW_FAMILIES}
+    )
     totals = overview.period_totals(heat)
     order = list(totals.sort_values(ascending=False).index)  # the family that rose most first
+    if lit:
+        order = [lit] + [name for name in order if name != lit]
     st.markdown(overview.heat_table_css(palette), unsafe_allow_html=True)
     st.markdown(
         overview.build_heat_table_html(
@@ -5423,6 +5551,7 @@ def show_weeks_table(mode, version):
             logos,
             totals=totals.to_dict(),
             total_title=tr("Total {} sem").format(count),
+            lit=lit,
         ),
         unsafe_allow_html=True,
     )
@@ -5513,13 +5642,28 @@ def read_ba_history(database_version):
         queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"),
         basket=True,
     )
-    margins = ba_trends.add_month_key(queries.run_query("k1_margin")[["week_start", "product_group", "margin"]])
+    margins = ba_trends.add_month_key(
+        queries.run_query("k1_margin")[["week_start", "product_group", "product", "margin"]]
+    )
     seasonal = ba_trends.add_month_key(
-        queries.run_query("k4_seasonal_index")[["week_start", "product_group", "seasonal_index"]]
+        queries.run_query("k4_seasonal_index")[["week_start", "product_group", "product", "seasonal_index"]]
     )
     found = read_cached_price_alerts_all(database_version)
-    alerts_found = ba_trends.add_month_key(found[["week_start", "product_group", "variation"]])
+    alerts_found = ba_trends.add_month_key(found[["week_start", "product_group", "product", "variation"]])
     return rows, last, margins, seasonal, alerts_found
+
+
+@st.cache_data(show_spinner=False)
+def read_ba_products(database_version):
+    """D-478: the same history one level down, each product of the consumer series as a family is computed."""
+    _, _, margins, seasonal, alerts_found = read_ba_history(database_version)
+    return ba_trends.product_frames(
+        queries.run_sql(inflation_view.SERIES_SQL),
+        queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"),
+        margins,
+        seasonal,
+        alerts_found,
+    )
 
 
 def show_ba_context(tab, mode):
@@ -5575,7 +5719,7 @@ def show_ba_filters(tab):
                     "mide de diciembre a diciembre, como el IPC."
                 ).format(ba_trends.month_label(last)),
             )
-        st.selectbox(
+        family = st.selectbox(
             tr("Familia"),
             [ba_trends.BASKET] + ba_trends.families(rows),
             key="ba_family",
@@ -5583,12 +5727,53 @@ def show_ba_filters(tab):
             width=210,
             help=tr("Toda la canasta reúne todas las series de consumidor; una familia, solo las suyas."),
         )
+        # D-478: under the family, any of its products (of the whole basket, each with its family); typing searches
+        family_of = read_ba_products(get_database_version())[-1]
+        products = [ba_trends.ALL_PRODUCTS] + ba_trends.products_of(family_of, family)
+        if st.session_state.get("ba_product") not in products:
+            st.session_state["ba_product"] = ba_trends.ALL_PRODUCTS
+        st.selectbox(
+            tr("Producto"),
+            products,
+            key="ba_product",
+            format_func=lambda key: (
+                tr(key)
+                if key == ba_trends.ALL_PRODUCTS
+                else ba_trends.product_name(key)
+                if family != ba_trends.BASKET
+                else f"{ba_trends.product_name(key)} · {home_mockup.short_family(family_of[key])}"
+            ),
+            width=230,
+            help=tr("Escribe para buscar un producto; sus cifras se calculan como las de una familia."),
+        )
 
 
 def chosen_ba_family(rows):
     """The family chosen in «Mensual» or «Histórico»: the two tabs share it."""
     choices = [ba_trends.BASKET] + ba_trends.families(rows)
     return choices, st.session_state.get("ba_family") if st.session_state.get("ba_family") in choices else choices[0]
+
+
+def chosen_ba_level(rows, margins, seasonal, found):
+    """D-478: what «Mensual» and «Histórico» show: the frames and name of the subject (the basket, a family or a
+    product) and the table's rows, one level under the family (the families under the basket, a family's products
+    under it, with the family first), each as (frames, name)."""
+    choices, family = chosen_ba_family(rows)
+    family_frames = (rows, margins, seasonal, found)
+    product = st.session_state.get("ba_product")
+    product_rows, product_margins, product_seasonal, product_found, family_of = read_ba_products(get_database_version())
+    product_frames = (product_rows, product_margins, product_seasonal, product_found)
+    if product not in family_of:
+        product = None
+    if product:
+        family = family_of[product]
+    if family == ba_trends.BASKET:
+        return (family_frames, family), [(family_frames, name) for name in choices]
+    siblings = ba_trends.products_of(family_of, family)
+    if product:  # the chosen product right under its family, so the two are read together
+        siblings = [product] + [key for key in siblings if key != product]
+    table = [(family_frames, family)] + [(product_frames, key) for key in siblings]
+    return (product_frames, product) if product else (family_frames, family), table
 
 
 def show_ba_monthly(mode):
@@ -5600,18 +5785,18 @@ def show_ba_monthly(mode):
         st.info(NO_DATA_TEXT)
         return
     st.markdown(ba_trends.build_css(palette, ba_green(mode)), unsafe_allow_html=True)
-    choices, family = chosen_ba_family(rows)
+    (frames, subject), table = chosen_ba_level(rows, margins, seasonal, found)
     period = st.session_state.get("ba_period")
     if period not in ba_trends.periods(last):
         period = ba_trends.periods(last)[0]
     start, end = ba_trends.bounds(period, last)
-    figures = ba_trends.monthly(rows, margins, seasonal, found, family, start, end)
+    figures = ba_trends.monthly(*frames, subject, start, end)
     st.markdown(
         ba_trends.monthly_cards(figures, start, end, ba_trends.wholesale_families(margins)), unsafe_allow_html=True
     )
-    show_ba_tiles(ba_trends.monthly_tiles(rows, figures, start, end, mode))
-    summaries = [ba_trends.monthly(rows, margins, seasonal, found, name, start, end) for name in choices]
-    st.markdown(ba_trends.monthly_table(summaries, family), unsafe_allow_html=True)
+    show_ba_tiles(ba_trends.monthly_tiles(frames[0], figures, start, end, mode))
+    summaries = [ba_trends.monthly(*item_frames, name, start, end) for item_frames, name in table]
+    st.markdown(ba_trends.monthly_table(summaries, subject), unsafe_allow_html=True)
 
 
 def show_ba_history(mode):
@@ -5623,12 +5808,12 @@ def show_ba_history(mode):
         st.info(NO_DATA_TEXT)
         return
     st.markdown(ba_trends.build_css(palette, ba_green(mode)), unsafe_allow_html=True)
-    choices, family = chosen_ba_family(rows)
-    figures = ba_trends.history(rows, margins, seasonal, found, family, last)
+    (frames, subject), table = chosen_ba_level(rows, margins, seasonal, found)
+    figures = ba_trends.history(*frames, subject, last)
     st.markdown(ba_trends.history_cards(figures, last), unsafe_allow_html=True)
-    show_ba_tiles(ba_trends.history_tiles(rows, figures, last, mode))
-    summaries = [ba_trends.history(rows, margins, seasonal, found, name, last) for name in choices]
-    st.markdown(ba_trends.history_table(summaries, family), unsafe_allow_html=True)
+    show_ba_tiles(ba_trends.history_tiles(frames[0], figures, last, mode))
+    summaries = [ba_trends.history(*item_frames, name, last) for item_frames, name in table]
+    st.markdown(ba_trends.history_table(summaries, subject), unsafe_allow_html=True)
 
 
 def show_ba_tiles(tiles):
@@ -9120,6 +9305,8 @@ def build_sidebar_css(mode):
     .st-key-home_alert_trigger button:hover {{background:color-mix(in srgb,{alert_text} 24%,transparent) !important;}}
     .st-key-home_alert_trigger button p {{color:{alert_text} !important; -webkit-text-fill-color:{alert_text} !important;
         font-weight:600; font-size:13.5px; letter-spacing:0; font-variant-numeric:tabular-nums;}}
+    /* D-478: a chip's help never stays over the window it opened. */
+    body:has([data-testid="stDialog"]) [data-baseweb="tooltip"] {{display:none !important;}}
     /* D-477: the sharp drops, a green chip beside it: good news for whoever buys. */
     .st-key-home_drop_trigger button {{border:0 !important; background:color-mix(in srgb,{drop_text} 14%,transparent) !important;
         color:{drop_text} !important; border-radius:8px; padding:3px 10px !important; min-height:28px; box-shadow:none !important;}}
@@ -9411,7 +9598,13 @@ def show_weeks_panel(mode):
     </style>""",
         unsafe_allow_html=True,
     )
-    st.markdown(f"#### {html.escape(tr('¿Qué familias vienen subiendo, semana a semana?'))}")
+    products = st.session_state.get("weeks_family", ALL_VALUES) != ALL_VALUES or st.session_state.get("weeks_search")
+    question = (
+        "¿Qué productos vienen subiendo, semana a semana?"
+        if products
+        else "¿Qué familias vienen subiendo, semana a semana?"
+    )
+    st.markdown(f"#### {html.escape(tr(question))}")
     show_weeks_table(mode, get_database_version())
 
 

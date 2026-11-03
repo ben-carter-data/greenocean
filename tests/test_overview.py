@@ -130,3 +130,41 @@ def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
             ["Semanal", "Último dato por canal", "Análisis BA y BI"],  # D-456, D-459: the section's three dashboards
             ["Weekly", "Latest data by channel", "BA and BI analysis"],
         )
+
+
+@needs_database
+def test_d478_the_weeks_table_goes_down_to_the_products_of_a_family(market):
+    _, variations, _ = market
+    heat = overview.product_heat(variations, 8, "Frutas")
+    last = sorted(variations["week_start"].unique())[-8:]
+    valid = variations[
+        variations["week_start"].isin(last) & (variations["product_group"] == "Frutas") & variations["variation"].notna()
+    ]
+    assert set(heat["family"]) == set(valid["product"])  # every product of the family, nothing else
+    for (product, week), rows in valid.groupby(["product", "week_start"]):
+        cell = heat[(heat["family"] == product) & (heat["week_start"] == week)]["change"]
+        assert cell.iloc[0] == pytest.approx(rows["variation"].median() * 100)  # the family's rule, one level down
+    lines = overview.weeks_insight(heat, products=True)
+    assert "es el producto que más se encareció" in lines[0] and "productos de los que bajaron" in lines[2]
+    # the search finds a product in every family, each named with its family
+    found = overview.product_heat(variations, 8, None, "platano")
+    assert set(found["family"]) == {f"Plátano · {home_mockup.short_family('Frutas')}"}
+    assert overview.matches_search({"product": "Plátano", "variety": "Barraganete"}, "pla barra")
+    assert not overview.matches_search({"product": "Plátano", "variety": "Barraganete"}, "lechuga")
+
+
+@needs_database
+def test_d478_the_insights_name_the_family_of_each_product(market):
+    _, variations, week = market
+    drops = overview.best_drops(variations, week)
+    assert drops and all(len(drop) == 4 for drop in drops)
+    for product, _, _, family in drops:
+        assert family in set(variations.loc[variations["product"] == product, "product_group"])
+    line = next(
+        text
+        for text in overview.consumer_insights(
+            overview.family_moves(*market), drops, overview.pd.DataFrame(columns=["verdict", "family"]), 0.0, 0.0
+        )
+        if text.startswith("Las mayores bajas")
+    )
+    assert all(f"{product} · {home_mockup.short_family(family)}" in line for product, _, _, family in drops)

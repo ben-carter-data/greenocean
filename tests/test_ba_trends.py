@@ -381,3 +381,50 @@ def test_d466_each_year_has_its_own_colour():
     color = spec["layer"][0]["encoding"]["color"]
     assert color["field"] == "year" and color["scale"]["range"] == ba_trends.YEAR_COLORS
     assert len(set(ba_trends.YEAR_COLORS)) == len(ba_trends.YEAR_COLORS) >= 5  # 2022 to 2026, each apart
+
+
+@needs_database
+def test_d478_a_family_is_the_sum_of_its_products(history):
+    rows, last, margins, seasonal, found = history
+    series = queries.run_sql(inflation_view.SERIES_SQL)
+    ipc = queries.run_sql("SELECT year, month, food_index FROM ipc_monthly")
+    product_rows, product_margins, product_seasonal, product_found, family_of = ba_trends.product_frames(
+        series, ipc, margins, seasonal, found
+    )
+    for family in ba_trends.families(rows):
+        whole = ba_trends.history(rows, margins, seasonal, found, family, last)
+        parts = [
+            ba_trends.history(product_rows, product_margins, product_seasonal, product_found, key, last)
+            for key in ba_trends.products_of(family_of, family)
+        ]
+        # what is counted adds up exactly: the family's alerts and K1 pairs are its products'
+        assert whole["alerts"] == sum(part["alerts"] for part in parts), family
+        assert whole["rises"] == sum(part["rises"] for part in parts), family
+        assert whole["pairs"] == sum(part["pairs"] for part in parts), family
+    # a product's index is the median of its own consumer series against January 2022, recomputed by hand
+    key = ba_trends.PRODUCT + "Plátano"
+    own = series[series["product"] == "Plátano"].assign(
+        key=lambda frame: frame["product_id"].astype(str) + "|" + frame["channel_id"].astype(str) + "|" + frame["normalized_unit"]
+    )
+    base = own[(own["year"] == 2022) & (own["month"] == 1)].set_index("key")["price"]
+    end = own[(own["year"] == last[0]) & (own["month"] == last[1])].set_index("key")["price"]
+    kept = sorted(set(base.index) & set(end.index))
+    expected = (end[kept] / base[kept] * 100).median()
+    drawn = product_rows[(product_rows["product_group"] == key) & (product_rows["month_start"] == pd.Timestamp(*last, 1))]
+    assert drawn["index"].iloc[0] == pytest.approx(expected)
+    assert ba_trends.family_label(key) == "Plátano" and ba_trends.family_name(key) == "el producto Plátano"
+    assert family_of[key] == "Frutas"
+
+
+@needs_database
+def test_d478_mensual_shows_a_family_over_its_products():
+    app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=90)
+    app.query_params.update({"vista": dashboard.PAGE_BA, "perfil": "profesional"})
+    app.session_state["ba_family"] = "Frutas"
+    app.session_state["ba_product"] = ba_trends.PRODUCT + "Plátano"
+    app.run()
+    assert not app.exception
+    page = " ".join(block.value for block in app.markdown)
+    assert "Familia y sus productos" in page
+    table = page[page.index("Familia y sus productos") :]
+    assert table.index(">Frutas<") < table.index(">Plátano<") < table.index(">Aceituna")  # the chosen one under its family

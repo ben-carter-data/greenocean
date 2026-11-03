@@ -22,6 +22,10 @@ IPC = inflation_view.IPC_NAME
 BASE = (inflation_view.BASE_YEAR, inflation_view.BASE_MONTH)
 LAST_YEAR = "Últimos 12 meses"
 PACE = inflation_view.SAME_PACE_POINTS
+# D-478: «Mensual» and «Histórico» go down from a family to its products; a product is keyed with this mark in the
+# frames' product_group, so its figures are computed exactly as a family's are.
+PRODUCT = "producto:"
+ALL_PRODUCTS = "Todos los productos"
 ZOOM_HEIGHT = 300  # the enlarged chart, in the window its green magnifier opens (D-460)
 # D-458: a tile takes the window's height less what is above and below it (the header, the green panel, the tabs, the
 # cards and the table), never less than the floor.
@@ -68,13 +72,26 @@ def compared(start: tuple[int, int], end: tuple[int, int]) -> str:
     return f"{month_label(start)} → {month_label(end)}"
 
 
+def is_product(name: str) -> bool:
+    return isinstance(name, str) and name.startswith(PRODUCT)
+
+
+def product_name(name: str) -> str:
+    """The product's own name, as ODEPA writes it (D-443: data names are never translated)."""
+    return name[len(PRODUCT) :]
+
+
 def family_label(family: str) -> str:
-    """The family as a chart or a table names it."""
+    """The family (or a product, D-478) as a chart or a table names it."""
+    if is_product(family):
+        return product_name(family)
     return say("Toda la canasta", "The whole basket") if family == BASKET else home_mockup.short_family(family)
 
 
 def family_name(family: str) -> str:
-    """The family inside a sentence: «toda la canasta», «la familia Frutas»."""
+    """The family inside a sentence: «toda la canasta», «la familia Frutas», «el producto Plátano» (D-478)."""
+    if is_product(family):
+        return say(f"el producto {product_name(family)}", f"the product {product_name(family)}")
     if family == BASKET:
         return say("toda la canasta", "the whole basket")
     short = home_mockup.short_family(family)
@@ -333,6 +350,31 @@ def history(rows, margins, seasonal, alerts_found, family, last) -> dict[str, An
 
 def families(rows: pd.DataFrame) -> list[str]:
     return sorted(set(rows["product_group"]) - {IPC, BASKET})
+
+
+def product_frames(
+    series: pd.DataFrame, ipc: pd.DataFrame, margins: pd.DataFrame, seasonal: pd.DataFrame, alerts_found: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, str]]:
+    """D-478: the frames of «Mensual» and «Histórico» one level down. Each product is keyed PRODUCT + its name, its
+    index is the median of its own consumer series against January 2022 (the family's rule), and K1, K4 and K6 keep
+    their rows under the product. The last item says the family of every product found in any of them, so a family's
+    alerts and K1 pairs are exactly the sum of its products' (a product without an index shows «—», never a guess)."""
+    rows, _ = inflation_view.build_family_index(series.assign(product_group=PRODUCT + series["product"]), ipc)
+
+    def down(frame: pd.DataFrame) -> pd.DataFrame:
+        return frame.assign(product_group=PRODUCT + frame["product"])
+
+    family_of = {
+        PRODUCT + product: family
+        for frame in (series, margins, seasonal, alerts_found)
+        for product, family in zip(frame["product"], frame["product_group"])
+    }
+    return rows, down(margins), down(seasonal), down(alerts_found), family_of
+
+
+def products_of(family_of: dict[str, str], family: str) -> list[str]:
+    """The products of a family (every product for the whole basket), by name."""
+    return sorted((key for key, group in family_of.items() if family == BASKET or group == family), key=product_name)
 
 
 def wholesale_families(margins: pd.DataFrame) -> list[str]:
@@ -940,7 +982,9 @@ def season_chart(profile: pd.DataFrame, mode: str, width: Any = "container", hei
 def build_table(summaries: list[dict[str, Any]], chosen: str, columns: list[tuple[str, str, Any]]) -> str:
     """By family: one figure per column, the whole basket first and the family chosen lit. columns: (label, hint,
     cell) where cell(figures) gives (text, tone, numeric)."""
-    header = f"<th>{html.escape(say('Familia', 'Family'))}</th>" + "".join(
+    products = any(is_product(item["family"]) for item in summaries)  # D-478: a family over its products
+    first = say("Familia y sus productos", "Family and its products") if products else say("Familia", "Family")
+    header = f"<th>{html.escape(first)}</th>" + "".join(
         f'<th title="{html.escape(hint, quote=True)}">{html.escape(label)}</th>' for label, hint, _ in columns
     )
     body = []
@@ -950,7 +994,8 @@ def build_table(summaries: list[dict[str, Any]], chosen: str, columns: list[tupl
         for _, _, cell in columns:
             text, shade, numeric = cell(item)
             cells.append(f'<td class="{"num " if numeric else ""}{shade}">{html.escape(text)}</td>')
-        body.append(f"<tr{lit}><td>{html.escape(family_label(item['family']))}</td>{''.join(cells)}</tr>")
+        indent = ' class="ba-product"' if is_product(item["family"]) else ""
+        body.append(f"<tr{lit}><td{indent}>{html.escape(family_label(item['family']))}</td>{''.join(cells)}</tr>")
     return f'<div class="ba-table"><table><thead><tr>{header}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
 
 
@@ -1264,6 +1309,7 @@ def build_css(palette: dict[str, str], green: str) -> str:
 .ba-table td {{ padding:2px 8px; border-bottom:1px solid {border}; color:{text}; }}
 .ba-table td.num {{ text-align:right; font-variant-numeric:tabular-nums; }}
 .ba-table td.rise {{ color:{rise}; }} .ba-table td.fall {{ color:{fall}; }}
+.ba-table td.ba-product {{ padding-left:22px; }}
 .ba-table tr.ba-chosen td {{ background:color-mix(in srgb, {accent} 10%, transparent); color:{ink}; font-weight:600; }}
 @media (max-width:1100px) {{ .ba-cards {{ grid-template-columns:repeat(3, minmax(0, 1fr)); }} }}
 /* D-458: under 1400 px the filters wrap under the six tabs; the green panel already names the period, so they drop

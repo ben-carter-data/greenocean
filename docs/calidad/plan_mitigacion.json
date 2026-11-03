@@ -1229,6 +1229,58 @@
           "referencia": "D-473"
         }
       ]
+    },
+    {
+      "id": "F-26",
+      "categoria": "código",
+      "falla": [
+        "La ayuda de un botón queda encima de la ventana que abrió",
+        "A button's help stays over the window it opened"
+      ],
+      "deteccion": [
+        "Una captura del autor de la ventana «bajas fuertes»",
+        "A screenshot by the author of the «bajas fuertes» window"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La ayuda de Streamlit sigue al cursor y no se cierra cuando se abre una ventana",
+        "Streamlit's help follows the cursor and does not close when a window opens"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: la ventana y sus cifras estaban bien",
+        "None: the window and its figures were right"
+      ],
+      "correctiva": [
+        "Mientras hay una ventana abierta, las ayudas de los botones no se muestran",
+        "While a window is open, the buttons' help is not shown"
+      ],
+      "estacion": 9,
+      "caso_real": "D-478",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "Sobre la ventana verde de bajas fuertes se leía la ayuda del botón rojo: «Subidas fuera de lo habitual…».",
+            "Over the green window of sharp drops, the red button's help read «Subidas fuera de lo habitual…»."
+          ],
+          "diagnostico": [
+            "La ayuda se abrió al pasar el cursor por el botón rojo y quedó sobre la ventana.",
+            "The help opened when the cursor passed over the red button and stayed over the window."
+          ],
+          "solucion": [
+            "Una regla de estilo oculta las ayudas mientras hay una ventana abierta.",
+            "A style rule hides the help texts while a window is open."
+          ],
+          "comentario": [
+            "Apareció con los dos botones de D-477.",
+            "It appeared with the two buttons of D-477."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-478"
+        }
+      ]
     }
   ]
 }
