@@ -7,8 +7,10 @@ name: semanal
 # git keeps only its pointer, etl/datos.version, so the history no longer grows with it.
 on:
   schedule:
-    # Tuesdays at 12:00 UTC (09:00 in Chile in summer time, 08:00 in winter time).
-    - cron: "0 12 * * 2"
+    # D-485: three attempts on Tuesdays, at 12:17, 14:17 and 16:17 UTC (09:17, 11:17 and 13:17 in Chile in summer
+    # time). GitHub delays or skips scheduled runs when it is busy, most at the top of the hour; the guard below makes
+    # an attempt do nothing once a load of the day is green.
+    - cron: "17 12,14,16 * * 2"
   workflow_dispatch:
     inputs:
       simulate_failure:
@@ -19,17 +21,47 @@ on:
 permissions:
   contents: write
   issues: write
+  # D-485 lets the guard read today's runs of this workflow
+  actions: read
+
+# D-485: one load at a time; an attempt that starts while another runs waits for it, so two never publish together.
+concurrency:
+  group: semanal
+  cancel-in-progress: false
 
 jobs:
   weekly-load:
     runs-on: ubuntu-latest
     timeout-minutes: 20  # D-351: GitHub cuts a stuck load; the panel's window stops asking at the same minute
     steps:
+      # D-485: a scheduled attempt runs only if no load of this workflow was green today (UTC); a manual run always
+      # runs. The later steps read the answer, so a skipped attempt ends in seconds and records nothing in etl_run.
+      - name: Check whether today's load is already done
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          done=$(gh run list -R "$GITHUB_REPOSITORY" --workflow semanal.yml --status success \
+            --created ">=$(date -u +%Y-%m-%d)" --json databaseId --jq 'length')
+          if [ "$done" -gt 0 ]; then
+            echo "A load of today is already green: this attempt does nothing."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.guard.outputs.run == 'true'
       - uses: actions/setup-python@v5
+        if: steps.guard.outputs.run == 'true'
         with:
           python-version: "3.11"
       - run: pip install -r requirements-pipeline.txt
+        if: steps.guard.outputs.run == 'true'
 
       # D-047: the files of closed years do not change, so they are kept in the
       # Actions cache. The agent skips a closed year whose file is already there
@@ -37,10 +69,12 @@ jobs:
       # current year and with input.csv: in January the year that just closed
       # is downloaded complete once, instead of reusing a copy from mid-year.
       - name: Find the current year
+        if: steps.guard.outputs.run == 'true'
         id: current_year
         run: echo "year=$(date +%Y)" >> "$GITHUB_OUTPUT"
 
       - name: Restore the closed-year files
+        if: steps.guard.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: agent/downloads/*.csv
@@ -48,27 +82,32 @@ jobs:
 
       # The load history (etl_run) and the 90 % check read the database published last week.
       - name: Get the published database
+        if: steps.guard.outputs.run == 'true'
         run: python bi/served_database.py
 
       - name: Download the ODEPA files
+        if: steps.guard.outputs.run == 'true'
         run: python agent/agent.py
 
       # The SQLite backup (etl/datos.db), built on this machine for the parity test and never
       # published (D-154, D-270).
       - name: Run the ETL (SQLite backup)
+        if: steps.guard.outputs.run == 'true'
         run: python etl/etl.py
 
       # Bronze in Parquet, then dbt builds and tests every model; the panel's DuckDB
       # file is replaced only if everything passed.
       - name: Build the data warehouse with dbt
+        if: steps.guard.outputs.run == 'true'
         run: python etl/pipeline.py
 
       - name: Simulate a failure
-        if: ${{ inputs.simulate_failure }}
+        if: ${{ steps.guard.outputs.run == 'true' && inputs.simulate_failure }}
         run: exit 1
 
       # Includes the parity test: SQLite and DuckDB must hold the same figures.
       - name: Run the tests against the new database
+        if: steps.guard.outputs.run == 'true'
         # D-366: only the tests of the data and the pipeline; the screens are checked by the CI of every push and
         # never stop the data from being published. D-341: speed budgets run locally, not on a shared runner.
         run: pytest -q -m "datos and not rendimiento"
@@ -76,6 +115,7 @@ jobs:
       # First the file replaces the one in the release, then the pointer is committed: the panel
       # never reads a pointer whose file is not there yet.
       - name: Publish the database
+        if: steps.guard.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -88,6 +128,7 @@ jobs:
           git push
 
       - name: Publish the weekly report
+        if: steps.guard.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.16 |
+| Version | 3.17 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -43,7 +43,7 @@ This is how we know that something failed, as in the «Monitoring» tab of [[vis
 
 ## 2. What happens automatically
 
-The weekly job (`.github/workflows/semanal.yml`) runs every Tuesday at 12:00 UTC: 09:00 in Chilean summer time and 08:00 in winter time. It downloads the sources, builds and tests the database, publishes it in the «base-actual» release and creates the weekly report. The full sequence, step by step, is in the [load sequence of the SAD](../arquitectura/SAD.md#4-the-load-of-each-week).
+The weekly job (`.github/workflows/semanal.yml`) runs every Tuesday at 12:17 UTC: 09:17 in Chilean summer time and 08:17 in winter time. If GitHub delays or skips the scheduled task, the load tries again at 14:17 and 16:17 UTC; an attempt that finds a green load of the same day ends doing nothing, and two loads never run at once (D-485). It downloads the sources, builds and tests the database, publishes it in the «base-actual» release and creates the weekly report. The full sequence, step by step, is in the [load sequence of the SAD](../arquitectura/SAD.md#4-the-load-of-each-week).
 
 It can also be launched by hand: from «Operations center», with the «Run pipeline now» button (it requires the control code), or from the workflow page on GitHub. The run's window shows the live flow on top, focused on the load: which piece works and which message travels at each step (D-413).
 
@@ -55,7 +55,7 @@ After every load that ends in green, the quality workflow proposes the weekly qu
 
 | When | What is checked or done | Where |
 |---|---|---|
-| Every Tuesday, after 12:00 UTC | That the run ended green | «Operations» tab of «Operations center», or the GitHub email if it failed |
+| Every Tuesday, after 12:17 UTC | That the run ended green | «Operations» tab of «Operations center», or the GitHub email if it failed |
 | Every Tuesday | That the issue «Informe semanal YYYY-MM-DD» (weekly report) exists, the only open one: the previous one is closed with a link to the new one (D-438) | Issues of the repository |
 | When in doubt about the figures | The quality verdict and the audit controls | «Quality and audit» |
 | Every January | Add to `agent/input.csv` the two lines of the new year (wholesale and consumer), with the URL ODEPA publishes on the page of each dataset | `agent/input.csv` |
@@ -128,7 +128,7 @@ The links used to run the project, grouped by task.
 | Task | Link | What it is for | When to use it | What to click |
 |---|---|---|---|---|
 | Check failures | [Actions](https://github.com/ben-carter-data/greenocean/actions) | See every run of the three workflows and its state | When the «Run failed» email or the panel's red notice arrives | The red run → the job → the red step |
-| Check failures | [Weekly load](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml) | Only the Tuesday loads and the manual ones | Every Tuesday, after 12:00 UTC | The latest run → «weekly-load» |
+| Check failures | [Weekly load](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml) | Only the Tuesday loads and the manual ones | Every Tuesday, after 12:17 UTC | The latest run → «weekly-load» |
 | Check failures | [Tests](https://github.com/ben-carter-data/greenocean/actions/workflows/pruebas.yml) | Lint, mypy and pytest of every push | After every push | The run of the commit → «pytest» or «lint» |
 | Check failures | [Quality](https://github.com/ben-carter-data/greenocean/actions/workflows/calidad.yml) | The quality measure of every push and the weekly report | If the panel or the email warns of an indicator past its acceptable | The run → «medir» → the red step |
 | Approve a report | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) | Review the quality report the workflow did not merge by itself | If it stayed open, with the code past its acceptable (D-436) | «Actualizar medición de calidad» → «Files changed» → «Merge pull request», or «Close pull request» |
@@ -220,3 +220,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.14 | 2026-11-02 | How we know that something failed is drawn with the «Monitoring» tab of the «Operations center» (1), instead of a calendar of its own; the quality pull request is merged by itself if the code is within its acceptable (3, D-436); «served database» becomes «DuckDB database» (D-455) |
 | 3.15 | 2026-11-02 | The week's dashboard is called «Weekly» (4, 8.1, D-459) |
 | 3.16 | 2026-11-03 | The weekly quality report measures 5 data indicators: missing regions or channels and atypical prices of the week are added (2, D-475) |
+| 3.17 | 2026-11-03 | The load is scheduled at 12:17 UTC with two more attempts, 14:17 and 16:17, and two never run at once (D-485) |

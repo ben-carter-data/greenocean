@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.16 |
+| Versión | 3.17 |
 | Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -43,7 +43,7 @@ Así se sabe que algo falló, como en la pestaña «Monitoreo» de [[vista:Centr
 
 ## 2. Qué ocurre automáticamente
 
-El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. Descarga las fuentes, construye y prueba la base, la publica en el release «base-actual» y crea el informe semanal. La secuencia completa, paso a paso, está en la [secuencia de la carga del SAD](../arquitectura/SAD.md#4-la-carga-de-cada-semana).
+El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:17 UTC: las 09:17 en el horario de verano de Chile y las 08:17 en el de invierno. Si GitHub atrasa o se salta la tarea programada, la carga vuelve a intentar a las 14:17 y 16:17 UTC; un intento que encuentra una carga en verde del mismo día termina sin hacer nada, y nunca corren dos cargas a la vez (D-485). Descarga las fuentes, construye y prueba la base, la publica en el release «base-actual» y crea el informe semanal. La secuencia completa, paso a paso, está en la [secuencia de la carga del SAD](../arquitectura/SAD.md#4-la-carga-de-cada-semana).
 
 También se puede lanzar a mano: desde «Centro de operación», con el botón «Ejecutar pipeline ahora» (requiere la clave de control), o desde la página del workflow en GitHub. La ventana de la ejecución muestra arriba el flujo en vivo, enfocado en la carga: qué pieza trabaja y qué mensaje viaja en cada paso (D-413).
 
@@ -55,7 +55,7 @@ Después de cada carga que termina en verde, el workflow de calidad propone el i
 
 | Cuándo | Qué se revisa o se hace | Dónde |
 |---|---|---|
-| Cada martes, después de las 12:00 UTC | Que la ejecución terminó en verde | Pestaña «Operación» de «Centro de operación», o el correo de GitHub si falló |
+| Cada martes, después de las 12:17 UTC | Que la ejecución terminó en verde | Pestaña «Operación» de «Centro de operación», o el correo de GitHub si falló |
 | Cada martes | Que existe el issue «Informe semanal AAAA-MM-DD», el único abierto: el anterior queda cerrado con un enlace al nuevo (D-438) | Issues del repositorio |
 | Ante una duda sobre las cifras | El veredicto de calidad y los controles de auditoría | «Calidad y auditoría» |
 | Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos | `agent/input.csv` |
@@ -128,7 +128,7 @@ Los enlaces que se usan para operar el proyecto, agrupados por tarea.
 | Tarea | Enlace | Para qué sirve | Cuándo usarlo | En qué hacer clic |
 |---|---|---|---|---|
 | Revisar fallas | [Actions](https://github.com/ben-carter-data/greenocean/actions) | Ver cada ejecución de los tres workflows y su estado | Cuando llega el correo «Run failed» o el aviso rojo del panel | La ejecución en rojo → el job → el paso en rojo |
-| Revisar fallas | [Carga semanal](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml) | Solo las cargas de cada martes y las manuales | Cada martes, después de las 12:00 UTC | La última ejecución → «weekly-load» |
+| Revisar fallas | [Carga semanal](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml) | Solo las cargas de cada martes y las manuales | Cada martes, después de las 12:17 UTC | La última ejecución → «weekly-load» |
 | Revisar fallas | [Pruebas](https://github.com/ben-carter-data/greenocean/actions/workflows/pruebas.yml) | Lint, mypy y pytest de cada push | Después de cada push | La ejecución del commit → «pytest» o «lint» |
 | Revisar fallas | [Calidad](https://github.com/ben-carter-data/greenocean/actions/workflows/calidad.yml) | La medición de calidad de cada push y el informe semanal | Si el panel o el correo avisan un indicador fuera de su aceptable | La ejecución → «medir» → el paso en rojo |
 | Aprobar un informe | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) | Revisar el informe de calidad que el workflow no fusionó solo | Si quedó abierto, con el código fuera de su aceptable (D-436) | «Actualizar medición de calidad» → «Files changed» → «Merge pull request», o «Close pull request» |
@@ -220,3 +220,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.14 | 02-11-2026 | Cómo se sabe que algo falló se dibuja con la pestaña «Monitoreo» del «Centro de operación» (1), en vez de un calendario propio; el pull request de calidad se fusiona solo si el código está en su aceptable (3, D-436); «base servida» pasa a «Base DuckDB» (D-455) |
 | 3.15 | 02-11-2026 | El dashboard de la semana se llama «Semanal» (4, 8.1, D-459) |
 | 3.16 | 03-11-2026 | El informe semanal de calidad mide 5 indicadores de datos: se suman regiones o canales ausentes y precios atípicos de la semana (2, D-475) |
+| 3.17 | 03-11-2026 | La carga se programa a las 12:17 UTC con dos intentos más, 14:17 y 16:17, y nunca corren dos a la vez (D-485) |

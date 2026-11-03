@@ -1070,8 +1070,8 @@ def sad_scenarios(mode):
         + tile(
             "semanal.yml",
             say(
-                "martes 12:00 UTC y desde «Centro de operación»: ODEPA e INE → dbt → pruebas; si todo pasa, publica la Base DuckDB y abre el «Informe semanal»",
-                "Tuesdays 12:00 UTC and from «Operations center»: ODEPA and INE → dbt → tests; if everything passes, publishes the DuckDB database and opens the «Weekly report»",
+                "martes 12:17 UTC y desde «Centro de operación»: ODEPA e INE → dbt → pruebas; si todo pasa, publica la Base DuckDB y abre el «Informe semanal»",
+                "Tuesdays 12:17 UTC and from «Operations center»: ODEPA and INE → dbt → tests; if everything passes, publishes the DuckDB database and opens the «Weekly report»",
             ),
             "RF-01 · RF-02 · RF-03 · RF-08",
         )
@@ -1253,7 +1253,7 @@ def sad_weekly_sequence(mode):
             ("release", say("Release y main", "Release and main"), "brand:git"),
         ],
         [
-            ("actions", "agent", say("martes 12:00 UTC: inicia", "Tuesday 12:00 UTC: starts"), "order"),
+            ("actions", "agent", say("martes 12:17 UTC: inicia", "Tuesday 12:17 UTC: starts"), "order"),
             ("agent", "sources", say("descarga los CSV de ODEPA", "downloads the ODEPA CSV files"), "flow"),
             ("sources", "agent", say("archivos + huella SHA-256", "files + SHA-256 fingerprint"), "back"),
             ("agent", "etl", say("filas crudas → raw.db y bronce", "raw rows → raw.db and bronze"), "flow"),

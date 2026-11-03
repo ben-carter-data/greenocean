@@ -73,7 +73,7 @@ STEPS = [
         "place": (0, 0),
         "workflow": [],
         "log": False,
-        "hint": "Corre solo cada martes a las 12:00 UTC (09:00 en Chile en verano, 08:00 en invierno). Para adelantarlo: «Ejecutar pipeline "
+        "hint": "Corre solo cada martes a las 12:17 UTC (09:17 en Chile en verano, 08:17 en invierno). Para adelantarlo: «Ejecutar pipeline "
         "ahora», a la derecha, con tu clave de control, o «Run workflow» en GitHub.",
         "links": [("Run workflow", project.WORKFLOW_PAGE_URL, True), ("Tokens de GitHub", project.TOKENS_URL, True)],
     },

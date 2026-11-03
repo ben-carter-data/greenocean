@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.18 |
+| Versión | 3.19 |
 | Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -106,7 +106,7 @@ Cada paso empieza solo si el anterior terminó bien:
 
 | Paso | Qué ocurre |
 |---|---|
-| 1 | A las 12:00 UTC, GitHub Actions crea una máquina nueva y recupera de su caché los CSV de los años cerrados |
+| 1 | A las 12:17 UTC, GitHub Actions crea una máquina nueva y recupera de su caché los CSV de los años cerrados |
 | 2 | Descarga del release «base-actual» la Base DuckDB de la semana anterior y verifica su huella. De ella salen el historial de cargas y la comparación del paso 6 |
 | 3 | El agente descarga de ODEPA el archivo del año en curso y los faltantes, y registra la huella SHA-256 de cada uno en `manifest.json` |
 | 4 | El ETL en Python calcula los precios por su cuenta y escribe el respaldo `etl/datos.db` |
@@ -517,3 +517,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.16 | 02-11-2026 | Los escenarios clave nombran las pestañas «Mensual» e «Histórico» de «Análisis BA y BI», que reemplazan a «Tendencias» (2.1, D-457) |
 | 3.17 | 02-11-2026 | El dashboard de la semana se llama «Semanal», bajo el título «Dashboards» (2.1, 5, 6.5, D-459) |
 | 3.18 | 03-11-2026 | El plan de calidad mide 14 indicadores (D-475); el diagrama entidad-relación nombra latest_by_source fuera del modelo (D-474) |
+| 3.19 | 03-11-2026 | La carga parte a las 12:17 UTC, con dos intentos más (D-485) |

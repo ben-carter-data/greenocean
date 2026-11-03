@@ -104,17 +104,30 @@ STEPS = [
         "github",
         "Disparo",
         "martes o a mano",
-        "El cron lo lanza cada martes a las 12:00 UTC (09:00 en Chile en horario de verano, 08:00 en invierno). También se lanza a mano: desde el "
+        "El cron lo lanza cada martes a las 12:17 UTC (09:17 en Chile en horario de verano, 08:17 en invierno), con dos "
+        "intentos más a las 14:17 y 16:17 si GitHub se atrasa (D-485). También se lanza a mano: desde el "
         "Centro de operación, con la clave de control, por la API de GitHub; o desde GitHub, donde se puede pedir una falla simulada.",
         "on: schedule, workflow_dispatch",
-        "semanal.yml::0 12 * * 2",
+        "semanal.yml::17 12,14,16 * * 2",
+        "",
+    ),
+    (
+        "cd_guard",
+        "cd",
+        "github",
+        "1 · Guardia",
+        "¿ya hubo carga hoy?",
+        "Un intento programado revisa si ese día ya hubo una carga en verde; si la hubo, termina en segundos sin hacer "
+        "nada (D-485). Una carga lanzada a mano corre siempre.",
+        "Check whether today's load is already done",
+        "semanal.yml::Check whether today's load is already done",
         "",
     ),
     (
         "cd_year",
         "cd",
         "github",
-        "1 · Año vigente",
+        "2 · Año vigente",
         "clave de la caché",
         "Calcula el año en curso: la caché de los años cerrados se renueva cuando cambia el año.",
         "Find the current year",
@@ -125,7 +138,7 @@ STEPS = [
         "cd_cache",
         "cd",
         "github",
-        "2 · Caché",
+        "3 · Caché",
         "años cerrados",
         "Restaura de la caché de Actions los CSV de los años cerrados, que ya no cambian.",
         "Restore the closed-year files",
@@ -136,7 +149,7 @@ STEPS = [
         "cd_base",
         "cd",
         "duckdb",
-        "3 · Base publicada",
+        "4 · Base publicada",
         "la de la semana pasada",
         "Descarga del release «base-actual» la base que se publicó la semana anterior y comprueba su huella: de ella salen "
         "el historial de cargas y la comparación del 90 %.",
@@ -148,7 +161,7 @@ STEPS = [
         "cd_download",
         "cd",
         "python",
-        "4 · Descarga",
+        "5 · Descarga",
         "ODEPA (agent.py)",
         "Descarga los CSV de ODEPA que faltan o cambiaron, y anota su huella en manifest.json.",
         "Download the ODEPA files",
@@ -159,7 +172,7 @@ STEPS = [
         "cd_etl",
         "cd",
         "sqlite",
-        "5 · ETL",
+        "6 · ETL",
         "respaldo SQLite",
         "Construye en esta máquina el respaldo en SQLite (datos.db), con un camino independiente de dbt, para la prueba de "
         "paridad. No se publica.",
@@ -171,7 +184,7 @@ STEPS = [
         "cd_dbt",
         "cd",
         "dbt",
-        "6 · dbt build",
+        "7 · dbt build",
         "31 pruebas",
         "Escribe el bronce en Parquet y dbt construye y prueba todos los modelos; solo si todo pasa se reemplaza datos.duckdb.",
         "Build the data warehouse with dbt",
@@ -182,7 +195,7 @@ STEPS = [
         "cd_fail",
         "cd",
         "fail",
-        "7 · Falla simulada",
+        "8 · Falla simulada",
         "solo si se pide",
         "Solo corre cuando una ejecución manual desde GitHub pide simulate_failure: corta el job para probar que la base "
         "publicada no cambia. El botón del panel nunca la pide.",
@@ -194,7 +207,7 @@ STEPS = [
         "cd_pytest",
         "cd",
         "pytest",
-        "8 · pytest",
+        "9 · pytest",
         "contra la base nueva",
         "Corre las pruebas contra la base nueva, incluida la paridad SQLite ↔ DuckDB. Si falla, no se publica nada.",
         "Run the tests against the new database",
@@ -205,7 +218,7 @@ STEPS = [
         "cd_publish",
         "cd",
         "github",
-        "9 · Publicar",
+        "10 · Publicar",
         "release y puntero",
         "Reemplaza datos.duckdb en el release «base-actual» y después sube a main su puntero (etl/datos.version) y "
         "manifest.json. El historial de Git no guarda la base.",
@@ -217,7 +230,7 @@ STEPS = [
         "cd_report",
         "cd",
         "github",
-        "10 · Informe",
+        "11 · Informe",
         "issue semanal",
         "Publica el informe de la semana como un issue de GitHub.",
         "Publish the weekly report",
@@ -250,7 +263,7 @@ STEPS = [
 ]
 # The four phases of the weekly load, each with its steps in the workflow's order: (key, name, logo, steps).
 PHASES = [
-    ("preparar", "Preparar", "github", ["cd_year", "cd_cache", "cd_base"]),
+    ("preparar", "Preparar", "github", ["cd_guard", "cd_year", "cd_cache", "cd_base"]),
     ("ingerir", "Ingerir", "python", ["cd_download", "cd_etl"]),
     ("probar", "Construir y probar", "dbt", ["cd_dbt", "cd_fail", "cd_pytest"]),
     ("publicar", "Publicar", "github", ["cd_publish", "cd_report"]),

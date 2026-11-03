@@ -242,7 +242,7 @@ TECH_GLOSSARY = {
         "nombre": "GitHub Actions",
         "sigla": "",
         "que_es": "servicio de GitHub que ejecuta workflows en máquinas Ubuntu temporales.",
-        "rol": "semanal.yml corre cada martes a las 12:00 UTC (o a mano) y pruebas.yml en cada push y pull request.",
+        "rol": "semanal.yml corre cada martes a las 12:17 UTC (o a mano) y pruebas.yml en cada push y pull request.",
     },
     "github_issues": {
         "nombre": "GitHub Issues",
@@ -592,7 +592,7 @@ TECH_GLOSSARY_EN = {
         "GitHub Actions",
         "",
         "GitHub service that runs workflows on temporary Ubuntu machines.",
-        "semanal.yml runs every Tuesday at 12:00 UTC (or by hand) and pruebas.yml on every push and pull request.",
+        "semanal.yml runs every Tuesday at 12:17 UTC (or by hand) and pruebas.yml on every push and pull request.",
     ),
     "github_issues": (
         "GitHub Issues",

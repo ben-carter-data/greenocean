@@ -31,9 +31,10 @@ REQUEST_TIMEOUT_SECONDS = 10
 TOKEN_EXPIRATION_HEADER = "GitHub-Authentication-Token-Expiration"
 TOKEN_WARNING_DAYS = 15  # D-409: amber at 15 days or fewer, in the panel and in «Configuración»
 
-# Schedule of semanal.yml: Tuesdays at 12:00 UTC.
+# Schedule of semanal.yml: Tuesdays at 12:17 UTC, the first of three attempts (D-485).
 SCHEDULE_WEEKDAY = 1  # Monday is 0
 SCHEDULE_HOUR_UTC = 12
+SCHEDULE_MINUTE = 17
 
 RUN_OK = "ok"
 RUN_FAILED = "failed"
@@ -44,6 +45,7 @@ TRIGGER_NAMES = {"schedule": "Automática", "workflow_dispatch": "Manual"}
 SIMULATED_FAILURE_STEP = "Simulate a failure"
 # Workflow steps the reader cares about, in Spanish. Setup steps are left out.
 STEP_NAMES = {
+    "Check whether today's load is already done": "Revisa si la carga de hoy ya se hizo",  # D-485
     "Restore the closed-year files": "Archivos de años cerrados (caché)",
     "Get the published database": "Base publicada la semana anterior",
     "Download the ODEPA files": "Descarga de ODEPA",
@@ -63,10 +65,10 @@ STEP_NAMES = {
 
 # region Schedule and status
 def calculate_next_scheduled_run(now_utc: datetime) -> datetime:
-    """Next Tuesday 12:00 UTC strictly after now_utc (a timezone-aware datetime)."""
+    """Next Tuesday 12:17 UTC strictly after now_utc (a timezone-aware datetime)."""
     days_ahead = (SCHEDULE_WEEKDAY - now_utc.weekday()) % 7
     candidate = (now_utc + timedelta(days=days_ahead)).replace(
-        hour=SCHEDULE_HOUR_UTC, minute=0, second=0, microsecond=0
+        hour=SCHEDULE_HOUR_UTC, minute=SCHEDULE_MINUTE, second=0, microsecond=0
     )
     if candidate <= now_utc:
         candidate += timedelta(days=7)

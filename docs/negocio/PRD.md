@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.31 |
+| Versión | 3.32 |
 | Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -117,7 +117,7 @@ Los requisitos funcionales (RF) dicen qué hace el producto. Los no funcionales 
 
 | ID | Requisito | Criterio medible | Evidencia |
 |---|---|---|---|
-| RF-01 | Carga semanal automática | Un workflow corre cada martes a las 12:00 UTC (`0 12 * * 2`) | `.github/workflows/semanal.yml`, `tests/test_prd_traceability.py::test_rf01_the_weekly_workflow_runs_on_tuesdays` |
+| RF-01 | Carga semanal automática | Un workflow corre cada martes a las 12:17 UTC, con dos intentos más a las 14:17 y 16:17 si GitHub se atrasa | `.github/workflows/semanal.yml`, `tests/test_prd_traceability.py::test_rf01_the_weekly_workflow_runs_on_tuesdays` |
 | RF-02 | Ninguna fila se pierde | Filas leídas = cargadas + rechazadas: diferencia 0 en cada carga | `dbt/tests/rnf05_rows_reconcile.sql`, `tests/test_etl_run.py::test_rn11_rows_read_equal_rows_loaded_plus_rows_rejected` |
 | RF-03 | Solo se publica una carga válida | Si falla una de las 31 pruebas de dbt, la carga lee menos del 90 % de la anterior, falla pytest sobre la base nueva, falta una semana en medio de los datos o una fuente lleva más de 2 semanas sin publicar, la Base DuckDB no cambia; GitHub Actions marca la ejecución como fallida y avisa al autor por correo. Se publica hasta la última semana completa en ambas fuentes, sin rellenar; las pruebas de velocidad informan y nunca bloquean | `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, `tests/test_pipeline_gate.py::test_rf03_a_load_with_far_fewer_rows_than_the_last_good_one_is_refused`, `tests/test_late_sources.py::test_d356_a_hole_in_the_middle_of_the_data_stops_the_load`, `tests/test_late_sources.py::test_d356_a_recent_week_one_source_has_not_published_does_not_stop_the_load_and_waits`, `.github/workflows/semanal.yml` |
 | RF-04 | Precios reales junto a los nominales | El factor de cada semana sale del IPC del mes de su lunes; las semanas posteriores al último mes publicado se marcan como provisionales | `tests/test_ipc_audit.py::test_weekly_factor_uses_the_month_of_the_monday_and_the_last_published_month`, `tests/test_ipc_audit.py::test_only_weeks_after_the_last_published_month_are_provisional` |
@@ -251,3 +251,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.29 | 03-11-2026 | El plan de calidad pasa a 14 indicadores: regiones o canales ausentes y precios atípicos de la semana (RNF-04, D-475) |
 | 3.30 | 03-11-2026 | Las alertas de precio se separan en alzas fuertes y bajas fuertes (RF-05, D-477) |
 | 3.31 | 03-11-2026 | Las vistas parten por familia y bajan a los productos; cada cifra dice cómo se calcula (D-478, D-480) |
+| 3.32 | 03-11-2026 | La carga semanal tiene tres intentos el martes (RF-01, D-485) |

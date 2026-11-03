@@ -153,9 +153,9 @@ PIECES: dict[str, tuple[str, int, int, str, tuple[str, str], tuple[str, str], st
         82,
         "clock",
         ("Actions", "Actions"),
-        ("cron martes 12:00 UTC", "cron Tue 12:00 UTC"),
+        ("cron martes 12:17 UTC", "cron Tue 12:17 UTC"),
         ".github/workflows/semanal.yml",
-        'cron: "0 12 * * 2"',
+        'cron: "17 12,14,16 * * 2"',
     ),
     "cache": (
         "github",
@@ -363,8 +363,8 @@ ARROWS: dict[str, dict[str, Any]] = {
         "ask": ("Arranca el job weekly-load en un runner ubuntu", "Starts the weekly-load job on an ubuntu runner"),
         "answer": ("El resultado de cada paso y el de la ejecución", "The result of every step and of the run"),
         "when": (
-            "Cada martes a las 12:00 UTC (cron), o a mano con «Ejecutar pipeline ahora»",
-            "Every Tuesday at 12:00 UTC (cron), or by hand with «Run pipeline now»",
+            "Cada martes a las 12:17 UTC (cron), o a mano con «Ejecutar pipeline ahora»",
+            "Every Tuesday at 12:17 UTC (cron), or by hand with «Run pipeline now»",
         ),
         "why": (
             "Nadie tiene que acordarse de cargar los datos: GitHub los carga cada semana.",
@@ -579,6 +579,7 @@ RUNNER = "runner"
 # Each step of semanal.yml (as GitHub names it in the run) and what it moves: arrows travel, pieces work.
 STEP_ELEMENTS: dict[str, list[str]] = {
     "Set up job": ["start"],
+    "Check whether today's load is already done": ["actions"],  # D-485: it reads today's runs
     "Run actions/checkout@v4": ["repo"],
     "Run actions/setup-python@v5": ["python"],
     "Run pip install -r requirements-pipeline.txt": ["pypi"],

@@ -263,10 +263,10 @@ NODES = {
         ("top", 2),
         "El workflow de la carga semanal, escrito por el proyecto.",
         "Descarga, construye, prueba y publica la Base DuckDB en una máquina de GitHub, y abre el «Informe semanal».",
-        "Cada martes a las 12:00 UTC, o a mano.",
+        "Cada martes a las 12:17 UTC, o a mano.",
         "Pipeline y arquitectura",
         [
-            ("cron del martes", "0 12 * * 2: la carga corre sola cada martes."),
+            ("cron del martes", "17 12,14,16 * * 2: la carga corre sola cada martes."),
             ("workflow_dispatch", "la ejecución manual, desde GitHub o desde el panel con la clave."),
         ],
     ),
@@ -651,10 +651,10 @@ LINKS = [
         "github",
         "semanal",
         "order",
-        "martes 12:00 UTC",
+        "martes 12:17 UTC",
         ["orquestacion"],
         "week",
-        "GitHub Actions corre semanal.yml cada martes a las 12:00 UTC (cron 0 12 * * 2); el Autor también puede lanzarla "
+        "GitHub Actions corre semanal.yml cada martes a las 12:17 UTC (cron 17 12,14,16 * * 2); el Autor también puede lanzarla "
         "a mano.",
         "Una máquina temporal con el repositorio, que corre los pasos de la carga.",
     ),
@@ -665,7 +665,7 @@ LINKS = [
         "lanza la carga",
         ["orquestacion"],
         "week",
-        "Martes 12:00 UTC (cron 0 12 * * 2): una máquina de GitHub corre los pasos de la carga.",
+        "Martes 12:17 UTC (cron 17 12,14,16 * * 2): una máquina de GitHub corre los pasos de la carga.",
         "Si un paso falla, los siguientes no corren.",
     ),
     (
@@ -1049,7 +1049,7 @@ LINK_EVIDENCE = {
     ("professional", "streamlit"): ("bi/sql_explorer.py", "ROW_LIMIT = 5000"),
     ("author", "devops"): ("bi/dashboard.py", 'SECRET_CONTROL_CODE = "CONTROL_CODE"'),
     ("author", "github"): (PLATFORM, "GitHub"),
-    ("github", "semanal"): (".github/workflows/semanal.yml", 'cron: "0 12 * * 2"'),
+    ("github", "semanal"): (".github/workflows/semanal.yml", 'cron: "17 12,14,16 * * 2"'),
     ("semanal", "agent"): (".github/workflows/semanal.yml", "run: python agent/agent.py"),
     ("semanal", "release"): (".github/workflows/semanal.yml", "gh release upload"),
     ("semanal", "ci"): (".github/workflows/semanal.yml", "run: pytest -q"),
@@ -1103,7 +1103,7 @@ OWNER_BOXES = [
 # The walk through a Tuesday load (D-441): (one line, the nodes it lights, the lines it moves).
 TOUR = [
     (
-        "Martes 12:00 UTC: GitHub corre semanal.yml en una máquina temporal.",
+        "Martes 12:17 UTC: GitHub corre semanal.yml en una máquina temporal.",
         ["semanal", "github"],
         [("github", "semanal"), ("semanal", "agent")],
     ),

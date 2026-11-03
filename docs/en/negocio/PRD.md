@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.31 |
+| Version | 3.32 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -117,7 +117,7 @@ Functional requirements (RF) say what the product does. Non-functional requireme
 
 | ID | Requirement | Measurable criterion | Evidence |
 |---|---|---|---|
-| RF-01 | Automatic weekly load | A workflow runs every Tuesday at 12:00 UTC (`0 12 * * 2`) | `.github/workflows/semanal.yml`, `tests/test_prd_traceability.py::test_rf01_the_weekly_workflow_runs_on_tuesdays` |
+| RF-01 | Automatic weekly load | A workflow runs every Tuesday at 12:17 UTC, with two more attempts at 14:17 and 16:17 if GitHub is late | `.github/workflows/semanal.yml`, `tests/test_prd_traceability.py::test_rf01_the_weekly_workflow_runs_on_tuesdays` |
 | RF-02 | No row is lost | Rows read = loaded + rejected: difference 0 in every load | `dbt/tests/rnf05_rows_reconcile.sql`, `tests/test_etl_run.py::test_rn11_rows_read_equal_rows_loaded_plus_rows_rejected` |
 | RF-03 | Only a valid load is published | If one of the 31 dbt tests fails, the load reads less than 90 % of the previous one, pytest fails on the new database, a week is missing in the middle of the data or a source has gone more than 2 weeks without publishing, the DuckDB database does not change; GitHub Actions marks the run as failed and emails the author. Publication goes up to the last week complete in both sources, filling nothing in; the speed tests inform and never block | `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, `tests/test_pipeline_gate.py::test_rf03_a_load_with_far_fewer_rows_than_the_last_good_one_is_refused`, `.github/workflows/semanal.yml`, `tests/test_late_sources.py::test_d356_a_hole_in_the_middle_of_the_data_stops_the_load`, `tests/test_late_sources.py::test_d356_a_recent_week_one_source_has_not_published_does_not_stop_the_load_and_waits` |
 | RF-04 | Real prices next to nominal ones | The factor of each week comes from the CPI of the month of its Monday; the weeks after the last published month are marked as provisional | `tests/test_ipc_audit.py::test_weekly_factor_uses_the_month_of_the_monday_and_the_last_published_month`, `tests/test_ipc_audit.py::test_only_weeks_after_the_last_published_month_are_provisional` |
@@ -251,3 +251,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.29 | 2026-11-03 | The quality plan grows to 14 indicators: missing regions or channels and atypical prices of the week (RNF-04, D-475) |
 | 3.30 | 2026-11-03 | Price alerts split into sharp rises and sharp drops (RF-05, D-477) |
 | 3.31 | 2026-11-03 | The views start by family and go down to the products; each figure says how it is computed (D-478, D-480) |
+| 3.32 | 2026-11-03 | The weekly load has three attempts on Tuesday (RF-01, D-485) |

@@ -88,7 +88,7 @@ def test_d455_the_usage_profiles_are_the_three_views_of_the_panel():
 
 def test_rf01_the_weekly_workflow_runs_on_tuesdays():
     workflow = (ROOT / ".github" / "workflows" / "semanal.yml").read_text(encoding="utf-8")
-    assert re.search(r'cron:\s*"0 12 \* \* 2"', workflow)  # Tuesday, 12:00 UTC
+    assert re.search(r'cron:\s*"17 12,14,16 \* \* 2"', workflow)  # Tuesday, 12:00 UTC
 
 
 def menu_labels():
