@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.27 |
+| Versión | 3.28 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -149,7 +149,7 @@ Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 sema
 
 Estas son seis capturas reales, del 02-11-2026, de cinco páginas principales y en los cuatro temas de color. El dashboard Semanal aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
 
-- **Menú:** cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera reúne, bajo el título «Dashboards», tres recuadros con ícono de dashboard, que siguen a la vista aunque la sección se pliegue: Semanal, Último dato por canal y Análisis BA y BI (D-442, D-452, D-453, D-456, D-459). Los tres abren con el menú plegado, para dar el ancho a sus gráficos, y el botón que lo abre palpita en verde (D-462).
+- **Menú:** cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera reúne, bajo el título «Dashboards», tres recuadros con ícono de dashboard, que siguen a la vista aunque la sección se pliegue: Semanal, Último dato por canal y Análisis BA y BI (D-442, D-452, D-453, D-456, D-459). La app abre con el menú abierto; al ir a un dashboard o a una página de diagramas, el menú se pliega para darles el ancho, y el botón que lo abre palpita en verde (D-462, D-463).
 - **Semanal:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Los tres pasos quedan siempre juntos en una sola pantalla; la tabla de productos llena el panel 3, se desplaza sola y se amplía con su propio botón (D-446, D-447).
 - **Último dato por canal:** una tarjeta por canal, con su ícono 3D en sus propios colores (D-453), su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del dashboard Semanal y se comporta igual que él, aunque la otra fuente todavía no publique esa semana (D-404 a D-406, D-452).
 - **Análisis BA y BI:** seis pestañas (D-456, D-457). «Mensual» es un período, los últimos 12 meses o un año, mes a mes: cinco cifras clave (cambio de precios, frente al IPC, brecha consumidor–mayorista, alertas de precio y mayor alza mensual), tres gráficos (precio mes a mes, cambio de cada mes y alertas de precio por mes) y la tabla por familia. «Histórico» es toda la historia, de enero 2022 al último mes que publicó el INE: cinco cifras clave (cambio desde enero 2022, frente al IPC, año de mayor alza, mes más barato y alertas de precio), tres gráficos (precio desde enero 2022, cambio de cada año y temporada) y la tabla por familia. Cada gráfico dice qué meses muestra, y su lupa verde lo abre en grande, con qué mide y qué se deduce; cada cifra explica al pasar el cursor cómo se calcula. Las otras cuatro son Precios e inflación, Insights, Interesados y Método. Sobre las pestañas, un recuadro verde dice qué se está viendo, de qué mes a qué mes y por qué empieza y termina ahí; cambia con la pestaña y el período (D-458).
@@ -247,3 +247,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.25 | 02-11-2026 | Los tres dashboards de «Negocio · BA y BI» van bajo el título «Dashboards», y el primero, el de la semana, se llama «Semanal» (3.1 a 3.4, 4, 6, 7, D-459) |
 | 3.26 | 02-11-2026 | En «Análisis BA y BI» las tarjetas son más finas, los meses se leen en dos líneas cortas y una lupa verde abre cada gráfico en grande (7, D-460) |
 | 3.27 | 02-11-2026 | Los tres dashboards abren con el menú plegado y el botón que lo abre palpita en verde (7, D-462) |
+| 3.28 | 02-11-2026 | La app abre con el menú abierto; se pliega al ir a un dashboard o a una página de diagramas (7, D-463) |

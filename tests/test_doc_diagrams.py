@@ -46,7 +46,9 @@ def test_every_document_diagram_is_used_by_a_document():
 def test_d205_each_view_is_one_html_document_without_script(name, mode):
     page = doc_diagrams.DOC_DIAGRAMS[name](mode)
     assert page.startswith("<!doctype html>") and "<script" not in page
-    assert "robot" not in page.lower() and name in doc_diagrams.HEIGHTS
+    # the word, not the bytes of an embedded image: a capture's base64 can spell it by chance
+    words = re.sub(r"data:[^\"')\s]+", "", page).lower()
+    assert "robot" not in words and name in doc_diagrams.HEIGHTS
 
 
 def graph_lines(page):

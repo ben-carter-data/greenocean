@@ -187,7 +187,13 @@ def test_d462_a_dashboard_opens_with_the_menu_folded_and_its_button_beating_in_g
     assert 'sidebar.dataset.collapsed === "false"' in script  # how Streamlit marks the menu today
     assert "window.__goFoldedView === view" in script  # once per page opened: a menu opened by hand stays open
     assert "<" not in script.replace("<script>", "").replace("</script>", "").replace("tries++ <", "")
-    for view, folds in ((dashboard.HOME_PAGE, True), (dashboard.PAGE_BA, True), (dashboard.PAGE_DIAGRAMS, False)):
+    assert "window.__goFoldedView === undefined" in script  # D-463: the first page of the visit keeps the menu open
+    for view, folds in (
+        (dashboard.HOME_PAGE, True),
+        (dashboard.PAGE_BA, True),
+        (dashboard.PAGE_DIAGRAMS, True),
+        (dashboard.PAGE_OPERATIONS, False),
+    ):
         app = draw("profesional", view)
         assert not app.exception
         scripts = [str(block.proto.body) for block in app.get("html") if "__goFoldedView" in str(block.proto.body)]

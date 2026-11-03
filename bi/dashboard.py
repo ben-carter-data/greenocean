@@ -2250,7 +2250,9 @@ def show_app_header(window):
     /* D-462: with the menu folded, the page starts at the top, to the right of the logo and its unfold button, instead
        of leaving a band under them. */
     .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMainBlockContainer"] {{padding-top:12px !important;
-        padding-left:112px !important;}}
+        padding-left:68px !important;}}
+    /* D-463: folded, the unfold button sits under the logo, not beside it, so the page needs only a narrow margin. */
+    [data-testid="stExpandSidebarButton"] {{position:fixed !important; left:20px; top:56px; z-index:1000;}}
     .reading-guide {{font-size:.8rem; margin:5px 0 14px; color:{palette['text']};}}
     .reading-term {{font-size:inherit; margin-left:0; border-bottom:1px dotted currentColor; font-weight:400;}}
     .regional-detail {{width:100%; font-size:.75rem; border-collapse:collapse;}}
@@ -8340,6 +8342,8 @@ DASHBOARD_FOLD_SCRIPT = r"""<script>
 (() => {
     const view = "__VIEW__";
     const fold = "__FOLD__" === "yes";
+    // D-463: the app opens with its menu open; it folds only on going to a dashboard or a diagram
+    if (window.__goFoldedView === undefined) { window.__goFoldedView = view; return; }
     if (window.__goFoldedView === view) return;
     window.__goFoldedView = view;
     if (!fold || window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches) return;
@@ -8359,8 +8363,9 @@ DASHBOARD_FOLD_SCRIPT = r"""<script>
 
 
 def show_dashboard_menu_fold(view, mode):
-    """D-462: on the three dashboards the menu folds on opening and its button beats in green; elsewhere it stays."""
-    is_dashboard = view in DASHBOARD_TILES
+    """D-462, D-463: on going to a dashboard or a page of diagrams the menu folds and its button beats in green;
+    elsewhere it stays. The first page of the visit keeps it open."""
+    is_dashboard = view in FOLD_MENU_VIEWS
     if is_dashboard:
         green = ba_green(mode)
         st.markdown(
@@ -9113,6 +9118,17 @@ FOLDER_TILE_BLOCK = "documentos"
 SOURCES_TILE_BLOCK = "fuentes"
 # D-442, D-452, D-453: the two dashboards are tiles, not lines, at the head of «Negocio · BA y BI».
 DASHBOARD_TILES = [PAGE_HOME, PAGE_CHANNELS, PAGE_BA]
+# D-463: the pages whose dashboards or diagrams want the width: the menu folds on going to them.
+FOLD_MENU_VIEWS = [
+    *DASHBOARD_TILES,
+    PAGE_DIAGRAMS,
+    PAGE_ARCHITECTURE,
+    PAGE_STACK,
+    PAGE_APP_MAP,
+    PAGE_SECURITY,
+    PAGE_GIT,
+    PAGE_RUNS,
+]
 TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK}
 # A dashboard in miniature: three figures over a bar chart and a line, in the colours of the charts.
 DASHBOARD_TILE_SVG = (

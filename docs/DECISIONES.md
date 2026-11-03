@@ -3755,3 +3755,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Detalle de Streamlit:** esta versión marca el menú con `data-collapsed`, no con `aria-expanded`; el guion lee los dos.
 - **Medición (Playwright):** Semanal abre con el menú plegado y el botón latiendo; abierto a mano, sigue abierto; Pipeline y linaje no late; Análisis BA y BI se pliega otra vez.
 - **Pruebas:** `tests/test_menu_order.py::test_d462_a_dashboard_opens_with_the_menu_folded_and_its_button_beating_in_green`.
+
+## D-463 · La app abre con el menú abierto; se pliega al ir a un dashboard o a una página de diagramas
+
+- **Pedido del autor:** al abrir la app el menú debe estar abierto. El plegado automático de D-462 vale solo al ir a un dashboard o a cualquier página de diagramas. Y con el menú plegado no debe quedar un margen grande a la izquierda.
+- **Decisión:**
+  - **Apertura:** la primera página de la visita deja el menú abierto, también Semanal tras «Elige tu vista».
+  - **Plegado:** el menú se pliega una vez al ir a Semanal, Último dato por canal, Análisis BA y BI, Pipeline y linaje, Modelo de datos, Stack y evidencia, Mapa de la app, Arquitectura de seguridad, Git workflow o Centro de operación. Abierto a mano, sigue abierto en esa página. En esas páginas el botón palpita en verde.
+  - **Margen:** con el menú plegado, el botón que lo abre va bajo el logo, no a su lado, y la página empieza a 68 px del borde en vez de 112 px.
+- **Medición (Playwright):** «Elige tu vista» y Semanal abren con el menú abierto; Calidad y auditoría lo deja abierto; Pipeline y linaje lo pliega; Semanal, abierta desde el menú, lo pliega.
+- **Documentos:** PRD 3.28 (7) y las seis capturas, en los dos idiomas.
+- **Pruebas:** `tests/test_menu_order.py::test_d462_a_dashboard_opens_with_the_menu_folded_and_its_button_beating_in_green`, con la primera página y las de diagramas.
