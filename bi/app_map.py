@@ -646,6 +646,18 @@ LINKS = [
         "Un cambio de código con su decisión D-xxx, con la cuenta del autor.",
         "pruebas.yml y calidad.yml corren sobre ese commit.",
     ),
+    # D-469: the start of the weekly load: GitHub Actions runs semanal.yml by its cron (or the Autor, by hand).
+    (
+        "github",
+        "semanal",
+        "order",
+        "martes 12:00 UTC",
+        ["orquestacion"],
+        "week",
+        "GitHub Actions corre semanal.yml cada martes a las 12:00 UTC (cron 0 12 * * 2); el Autor también puede lanzarla "
+        "a mano.",
+        "Una máquina temporal con el repositorio, que corre los pasos de la carga.",
+    ),
     (
         "semanal",
         "agent",
@@ -1037,6 +1049,7 @@ LINK_EVIDENCE = {
     ("professional", "streamlit"): ("bi/sql_explorer.py", "ROW_LIMIT = 5000"),
     ("author", "devops"): ("bi/dashboard.py", 'SECRET_CONTROL_CODE = "CONTROL_CODE"'),
     ("author", "github"): (PLATFORM, "GitHub"),
+    ("github", "semanal"): (".github/workflows/semanal.yml", 'cron: "0 12 * * 2"'),
     ("semanal", "agent"): (".github/workflows/semanal.yml", "run: python agent/agent.py"),
     ("semanal", "release"): (".github/workflows/semanal.yml", "gh release upload"),
     ("semanal", "ci"): (".github/workflows/semanal.yml", "run: pytest -q"),
@@ -1092,7 +1105,7 @@ TOUR = [
     (
         "Martes 12:00 UTC: GitHub corre semanal.yml en una máquina temporal.",
         ["semanal", "github"],
-        [("semanal", "agent")],
+        [("github", "semanal"), ("semanal", "agent")],
     ),
     ("Instala las dependencias de PyPI, cada una con su tope.", ["pypi", "semanal"], [("pypi", "semanal")]),
     (
@@ -1156,8 +1169,8 @@ TOUR = [
 # semanal.yml on Tuesday (or the Autor, by hand); the job installs, takes the published database, downloads ODEPA, lands
 # it, copies it to bronze, adds the IPC, builds with dbt, tests, publishes, reports; calidad.yml follows; Streamlit
 # Community Cloud takes the new pointer and the panel serves the week to the people.
-STORY_START = "Martes 12:00 UTC: GitHub Actions corre semanal.yml; también puede lanzarla el Autor, a mano."
 STORY = [
+    ("github", "semanal"),
     ("pypi", "semanal"),
     ("release", "semanal"),
     ("semanal", "agent"),
@@ -1192,9 +1205,9 @@ PEOPLE_KEYS = {"visitor", "professional", "author"}
 
 
 def story_steps():
-    """The story as [line index, towards a person, node]: first the node that starts it (no line), then each line."""
+    """The story as [line index, towards a person]: each line in its turn, from GitHub's start to the people."""
     index = {link[:2]: number for number, link in enumerate(LINKS)}
-    return [[-1, False, "semanal"]] + [[index[pair], pair[0] in PEOPLE_KEYS, ""] for pair in STORY]
+    return [[index[pair], pair[0] in PEOPLE_KEYS] for pair in STORY]
 
 
 def evidence_label(source, target):
@@ -1612,6 +1625,8 @@ def build_css(palette):
 .am-views {{ display:flex; gap:4px; margin-bottom:4px; }}
 /* D-441: the second bar (rhythms and the Tuesday walk) costs a row: the map rows sit closer to keep one screen. */
 .am-main {{ row-gap:6px; }} .am-main .am-node {{ padding:2px 4px; }} .am-main .am-layer {{ margin-bottom:8px; }}
+/* D-469: room over the top row, where the line from GitHub to semanal.yml runs with its label. */
+.am-main {{ margin-top:16px; }}
 /* D-441: the pieces of the map fill their space: bigger logos, with «i» and the magnifier beside them. */
 .am-main .am-logo {{ width:36px; height:36px; }}
 .am-lines {{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:1; }}
@@ -1621,8 +1636,10 @@ def build_css(palette):
 .am-hit.live {{ pointer-events:stroke; }}
 /* D-468: no moving dot: the line of each step blinks on its turn, and its two ends stand out. */
 .am-msg {{ display:none !important; }}
-@keyframes am-blink {{ 0%, 100% {{ opacity:1; }} 50% {{ opacity:.15; }} }}
-.am .am-main .am-line.blink {{ opacity:1 !important; stroke-width:2.6px; animation:am-blink .85s ease-in-out infinite; }}
+@keyframes am-blink {{ from {{ opacity:0; }} to {{ opacity:1; }} }}
+.am .am-main .am-line.blink {{ opacity:1 !important; stroke-width:2.6px; animation:am-blink .35s ease-out; }}
+/* D-469: at rest one line shows at a time, in the order the load runs; every other line and label waits hidden. */
+.am.telling .am-main .am-line:not(.blink), .am.telling .am-main .am-label:not(.story) {{ opacity:0 !important; }}
 .am .am-main .am-label.story {{ opacity:1 !important; }}
 .am .am-main .am-node.lit {{ background:color-mix(in srgb, #f0b347 14%, transparent); box-shadow:0 0 0 1.5px #f0b347 inset; }}
 .am-tip code.am-src {{ font-size:10.5px; padding:0 4px; border-radius:4px; color:{muted};
@@ -2039,10 +2056,8 @@ SCRIPT = r"""<script>
         const hit = document.createElementNS(ns, "path");
         hit.setAttribute("class", "am-hit");
         hit.dataset.index = index;
-        hit.addEventListener("click", (event) => { event.stopPropagation(); openCard('[data-link="' + index + '"]'); });
+        // D-469: the map answers only to a click on an «i» or a magnifier: no line reacts to the cursor
         const label = document.createElementNS(ns, "text");
-        hit.addEventListener("mouseenter", () => label.classList.add("peek"));
-        hit.addEventListener("mouseleave", () => label.classList.remove("peek"));
         svg.appendChild(hit);
         const dot = document.createElementNS(ns, "circle");
         dot.setAttribute("r", "3.6");
@@ -2086,7 +2101,7 @@ SCRIPT = r"""<script>
         if (state.tour) { show = state.tour.links.includes(String(index)); }
         else if (state.pick) { show = state.pick.has(index); }
         else if (state.hover || theme || rhythm) { show = false; }
-        else { show = !!base || (!!state.story && state.story[0] === index); }
+        else { show = !!state.story && state.story[0] === index; }  // D-469: one line at a time, nothing else
         if (show) { pick.add(index); }
       });
       return pick;
@@ -2316,47 +2331,7 @@ SCRIPT = r"""<script>
       map.classList.remove("has-focus");
       main.querySelectorAll(".on").forEach((element) => element.classList.remove("on"));
     };
-    main.querySelectorAll(".am-node").forEach((item) => {
-      const key = item.dataset.key;
-      // The piece's connections, one at a time; its description lists them all.
-      const mine = links.map((_, index) => index).filter((index) => links[index][0] === key || links[index][1] === key);
-      const light = (index) => {
-        main.querySelectorAll(".on").forEach((element) => element.classList.remove("on"));
-        map.classList.add("has-focus");
-        item.classList.add("on");
-        lines().forEach((line) => {
-          if (Number(line.dataset.index) !== index) { return; }
-          line.classList.add("on");
-          const other = node(main, line.dataset.from === key ? line.dataset.to : line.dataset.from);
-          if (other) { other.classList.add("on"); }
-        });
-      };
-      const enter = () => {
-        if (state.tour || map.dataset.filter || map.dataset.rhythm) { return; }
-        state.hover = key;
-        playSeq(mine, light);
-        dodge(item);
-      };
-      const leave = () => {
-        if (state.hover !== key) { return; }
-        stopSeq();
-        item.style.zIndex = "";
-        unhover();
-        refresh();
-      };
-      item.addEventListener("mouseenter", enter);
-      item.addEventListener("focus", enter);
-      item.addEventListener("mouseleave", leave);
-      item.addEventListener("blur", leave);
-      const open = (event) => {
-        if (event.target.closest(".am-rchip, .am-lupa, .am-info")) { return; }
-        openCard('[data-card="' + key + '"]');
-      };
-      item.addEventListener("click", open);
-      item.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(event); }
-      });
-    });
+    // D-469: a piece does nothing under the cursor nor on a click of its own: only its «i» and its magnifier act.
     // Cards: one at a time, closed with their button or Escape.
     const closeCards = () => {
       map.querySelectorAll(".am-card").forEach((card) => { card.hidden = true; });
@@ -2522,27 +2497,32 @@ SCRIPT = r"""<script>
     // D-467: at rest, the week's data travels its real way, one line at a time: from ODEPA and the INE through each stage
     // to the panel and the people; the story waits while a piece, a theme, the walk or a description is in view.
     const story = JSON.parse(main.dataset.story || "[]");
-    const start = map.querySelector(".am-story-start");
     const tale = { at: 0, timer: null };
     const tell = () => {
       clearTimeout(tale.timer);
       if (!story.length) { return; }
       const resting = !state.tour && !state.pick && !state.hover && !state.tip && !map.dataset.filter
         && !map.dataset.rhythm && !main.hidden;
+      map.classList.toggle("telling", resting);
       if (!resting) {
         if (state.story) { state.story = null; }
         tale.timer = setTimeout(tell, 700);
         return;
       }
-      const [index, , key] = story[tale.at];
+      const [index] = story[tale.at];
       state.story = story[tale.at];
       refresh();
       caption.hidden = false;
       caption.querySelector("b").textContent = (tale.at + 1) + " / " + story.length;
-      caption.querySelector("span").textContent = index === -1 ? start.textContent
-        : nameOf(links[index][0]) + " → " + nameOf(links[index][1]) + ": " + whats[index];
+      caption.querySelector("span").textContent =
+        nameOf(links[index][0]) + " → " + nameOf(links[index][1]) + ": " + whats[index];
       tale.at = (tale.at + 1) % story.length;
-      tale.timer = setTimeout(tell, tale.at === 0 ? 3200 : 1900);
+      // D-469: the line shows, then goes, and only after a pause does the next one show
+      tale.timer = setTimeout(() => {
+        state.story = null;
+        refresh();
+        tale.timer = setTimeout(tell, tale.at === 0 ? 1600 : 450);
+      }, 1500);
     };
     new ResizeObserver(settle(drawMain)).observe(map);
     map.querySelectorAll(".am-istage").forEach((stage) => new ResizeObserver(settle(() => drawInside(stage))).observe(stage));
@@ -2653,7 +2633,7 @@ def build_map_html(palette, addresses, facts=None):
         f"{layers}{bands}{nodes}</div>"
         f"{insides}{cards}"
         f'<p class="am-caption" hidden><b></b><span></span></p>'
-        f'<span class="am-story-start" hidden>{esc(STORY_START)}</span>'
+        ''
         f'<div class="am-whats" hidden>{whats}</div><div class="am-tour" hidden>{tour}</div>'
         f'<div class="am-bar am-foot"><span class="am-legend">{legend}</span></div>'
         "</div>" + SCRIPT

@@ -262,13 +262,12 @@ def test_d441_a_logo_names_one_piece_and_every_line_shows_its_direction():
             f'aria-label="{app_map.esc(app_map.NODES[key][0])}"' in markup
             and f'class="am-name">{app_map.esc(short)}' in markup
         )
-    assert (
-        "part.head = arrow(part.svg, part.path);" in app_map.SCRIPT
-        and 'hit.addEventListener("mouseenter", () => label.classList.add("peek"));' in app_map.SCRIPT
-    )
+    assert "part.head = arrow(part.svg, part.path);" in app_map.SCRIPT
+    # D-469: nothing answers to the cursor: no line nor piece reacts on hover, only an «i» or a magnifier on a click
+    assert '"mouseenter"' not in app_map.SCRIPT and "playSeq(mine, light);" not in app_map.SCRIPT
     css = app_map.build_css(charts.get_palette(charts.THEMES[0]))
     # Several lines never show at once: a piece, a theme or a rhythm plays its lines one at a time, with labels.
-    assert ".am.has-focus .am-label.on { opacity:1; }" in css and "playSeq(mine, light);" in app_map.SCRIPT
+    assert ".am.has-focus .am-label.on { opacity:1; }" in css
 
 
 def test_d441_lines_are_orthogonal_and_each_has_a_colour_of_its_own_in_every_theme():
@@ -425,9 +424,9 @@ def test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description
     click on its «i», never under the cursor, and while it is open nothing moves. The «i» and the magnifier sit on the
     logo's corners."""
     steps = app_map.story_steps()
-    assert steps[0] == [-1, False, "semanal"]  # Tuesday: GitHub Actions starts semanal.yml
-    pairs = [app_map.LINKS[index][:2] for index, _, _ in steps[1:]]
-    assert pairs[:3] == [("pypi", "semanal"), ("release", "semanal"), ("semanal", "agent")]
+    pairs = [app_map.LINKS[index][:2] for index, _ in steps]
+    # D-469: it starts where the load starts: GitHub Actions runs semanal.yml on Tuesday
+    assert pairs[:4] == [("github", "semanal"), ("pypi", "semanal"), ("release", "semanal"), ("semanal", "agent")]
     assert pairs[-2:] == [("visitor", "streamlit"), ("professional", "streamlit")]
     order = [pair for pair in pairs]
     position = order.index
@@ -438,9 +437,15 @@ def test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description
     assert position(("github", "stcloud")) < position(("release", "streamlit")) < position(("visitor", "streamlit"))
     script, css = app_map.SCRIPT, app_map.build_css(charts.get_palette(charts.THEMES[0]))
     assert "else { on = !!told && told[0] === index; }" in script  # one line at a time
-    assert ".am-msg { display:none !important; }" in css and "animation:am-blink" in css  # it blinks, nothing travels
+    assert ".am-msg { display:none !important; }" in css and "animation:am-blink" in css  # it shows, nothing travels
+    # D-469: at rest one line at a time: it shows, it goes, a pause, and the next
+    assert (
+        ".am.telling .am-main .am-line:not(.blink)" in css
+        and "else { show = !!state.story && state.story[0] === index; }" in script
+    )
+    assert "setTimeout(tell, tale.at === 0 ? 1600 : 450)" in script
     assert ".am-node.tipped .am-tip { display:grid; }" in css and ":hover .am-tip" not in css
     assert "svg.pauseAnimations()" in script and "!state.tip" in script
     assert ".am-info { position:absolute; top:3px; right:calc(50% + 7px);" in css
     markup = app_map.build_map_html(charts.get_palette(charts.THEMES[0]), {})
-    assert "data-story=" in markup and app_map.esc(app_map.STORY_START) in markup
+    assert "data-story=" in markup

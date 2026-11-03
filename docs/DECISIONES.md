@@ -3814,3 +3814,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Revisión:** la pieza «Agente de ingesta» reúne `agent/agent.py` y `etl/ine.py`, como dice su ficha; por eso el IPC del INE pasa por ella. No era un error.
 - **Medición (Playwright):** los pasos 4 a 11 se suceden uno por vez, cada uno con una sola flecha y su punta parpadeando y sus dos piezas iluminadas.
 - **Pruebas:** `tests/test_app_map.py::test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description_opens_on_its_i`, con el orden real y sin bolitas.
+
+## D-469 · «Mapa de la app»: nada responde al cursor, el recorrido parte en GitHub y se ve una flecha por vez
+
+- **Pedido del autor:** el cursor no debe mostrar flechas: el mapa responde solo al clic sobre la «i» o la lupa. El flujo debe verse partir de la acción de GitHub. Y debe ser intermitente: aparece una flecha y desaparece antes de que aparezca la siguiente, en el orden de ejecución.
+- **Decisión:**
+  - **Solo clics:** una pieza ya no reacciona al pasar el cursor ni a un clic propio, y una flecha tampoco. Solo actúan la «i» (la explicación corta, D-467) y la lupa (el interior). Los filtros, los ritmos y el «Recorrido del martes» siguen con su botón.
+  - **Desde GitHub:** una flecha nueva, «GitHub → semanal.yml: martes 12:00 UTC» (el cron de `semanal.yml`; el Autor también puede lanzarla a mano), abre el recorrido y su primer paso. El recorrido tiene 30 pasos y empieza en ella.
+  - **Una flecha por vez:** en reposo no se dibuja ninguna otra flecha. La del paso aparece con sus dos piezas iluminadas y el texto bajo el mapa, se mantiene un segundo y medio, desaparece, y tras una pausa aparece la siguiente.
+  - **Aire arriba:** el mapa baja 16 px para que la flecha de GitHub, que corre sobre la fila de arriba, no roce los filtros.
+- **Medición (Playwright):** el paso 1 muestra solo la flecha de GitHub a `semanal.yml`; luego PyPI, la base anterior y el agente, cada una sola y con una pausa sin flechas entre ellas. Con el cursor sobre dbt no se ilumina nada.
+- **Pruebas:** `tests/test_app_map.py` (ningún `mouseenter` en el guion, el recorrido parte en GitHub, una línea por vez con su pausa).

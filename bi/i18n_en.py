@@ -2493,7 +2493,9 @@ PAGES = {
     "Durante el desarrollo; nunca en la carga ni en el panel.": "During development; never in the load or in the panel.",
     "copia por año": "copy per year",
     "IPC, directo": "CPI, straight",
-    "Martes 12:00 UTC: GitHub Actions corre semanal.yml; también puede lanzarla el Autor, a mano.": "Tuesday 12:00 UTC: GitHub Actions runs semanal.yml; the Author can also launch it by hand.",  # D-468
+    "martes 12:00 UTC": "Tuesday 12:00 UTC",  # D-469
+    "GitHub Actions corre semanal.yml cada martes a las 12:00 UTC (cron 0 12 * * 2); el Autor también puede lanzarla a mano.": "GitHub Actions runs semanal.yml every Tuesday at 12:00 UTC (cron 0 12 * * 2); the Author can also launch it by hand.",
+    "Una máquina temporal con el repositorio, que corre los pasos de la carga.": "A temporary machine with the repository, which runs the steps of the load.",
     "fuentes": "sources",
     "descarga y huella": "download and fingerprint",
     "HTML de cada vista": "HTML of each view",
