@@ -352,6 +352,7 @@ PAGES = {
     "Ver la consulta en GitHub ↗": "See the query on GitHub ↗",
     "El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las relaciones entre ellas. Los tipos se leen de la base.": "The model in the classic notation: each table with its columns and types, its keys and the relationships between them. The types are read from the database.",
     "Fuera del diagrama: ine_ipc_source (copia cruda del INE), dbt_node y dbt_result (la traza de dbt).": "Outside the diagram: ine_ipc_source (raw copy of the INE), dbt_node and dbt_result (the dbt trace).",
+    "También fuera: latest_by_source, las 2 últimas semanas de cada fuente, ya con sus nombres y sin claves (D-365).": "Also outside: latest_by_source, the last 2 weeks of each source, already with their names and no keys (D-365).",
     "Modelo entidad-relación de datos.duckdb": "Entity-relationship model of datos.duckdb",
     "PK clave primaria · FK clave foránea · pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · línea punteada: relación lógica, sin clave foránea": "PK primary key · FK foreign key · crow's foot: many rows · double bar: one · circle: there may be none · dotted line: logical relationship, without a foreign key",
     "ipc_weekly toma el IPC del mes de su lunes (ipc_year, ipc_month) de ipc_monthly (year, month)": "ipc_weekly takes the CPI of the month of its Monday (ipc_year, ipc_month) from ipc_monthly (year, month)",
@@ -1511,7 +1512,7 @@ PAGES = {
     "se duerme sin visitas": "sleeps without visits",
     "Paso 10 · Informe": "Step 10 · Report",
     "CONTROL_CODE · GITHUB_TOKEN · GITHUB_READ_TOKEN": "CONTROL_CODE · GITHUB_TOKEN · GITHUB_READ_TOKEN",
-    "Mide los 12 indicadores en cada push y, tras una carga en verde, propone el informe en un pull request, que se fusiona solo si el código está en su aceptable.": "Measures the 12 indicators on every push and, after a green load, proposes the report in a pull request, merged on its own if the code is in its acceptable range.",
+    "Mide los 14 indicadores en cada push y, tras una carga en verde, propone el informe en un pull request, que se fusiona solo si el código está en su aceptable.": "Measures the 14 indicators on every push and, after a green load, proposes the report in a pull request, merged on its own if the code is in its acceptable range.",
     "GitHub Actions corre las pruebas y la medición de calidad; Streamlit Community Cloud despliega desde main. Una insignia roja en main es lo primero que ve una visita.": "GitHub Actions runs the suite and the quality measure; Streamlit Community Cloud deploys from main. A red badge on main is the first thing a visitor sees.",
     # D-443: what the scripts write on the page
     "Acercar": "Zoom in",

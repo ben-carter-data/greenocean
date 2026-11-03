@@ -147,12 +147,20 @@
         "{detalle} dbt tests passed."
       ],
       "comparables_pct": [
-        "{detalle} precios con comparación válida.",
-        "{detalle} prices with a valid comparison."
+        "{detalle} precios con comparación válida, de los que tenían precio la semana anterior.",
+        "{detalle} prices with a valid comparison, of those that had a price the week before."
       ],
       "rechazadas_pct": [
         "{detalle} filas rechazadas de las leídas.",
         "{detalle} rejected rows out of those read."
+      ],
+      "ausencias_region_canal": [
+        "Ausentes en la última semana: {detalle}.",
+        "Missing in the latest week: {detalle}."
+      ],
+      "atipicos_pct": [
+        "{detalle} precios de la última semana marcados ATIPICO.",
+        "{detalle} prices of the latest week marked ATIPICO."
       ],
       "vigencia_dias": [
         "Última carga registrada el {detalle}.",

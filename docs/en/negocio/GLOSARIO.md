@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.10 |
-| Date | 2026-11-02 |
+| Version | 2.11 |
+| Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Define once the acronyms and terms used by the panel and the documents. |
@@ -43,7 +43,7 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | Real price | A price expressed in pesos of the last published month of the CPI. | BA and BI analysis (Prices and inflation) | Indicators |
 | Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | BA and BI analysis (Prices and inflation) | Indicators |
 | Data quality indicator | Each of the 11 indicators measured on every load on the published database, in five dimensions. | Quality and audit | Indicators |
-| Quality plan indicator | Each of the 12 indicators of the SQAP (8 of code and 4 of data) that the quality workflow measures every week. | Method and quality | Indicators |
+| Quality plan indicator | Each of the 14 indicators of the SQAP (8 of code and 6 of data) that the quality workflow measures every week. | Method and quality | Indicators |
 | Quality dimension | An aspect of quality that is measured: completeness, timeliness, validity, uniqueness, consistency and accuracy. | Quality and audit | Indicators |
 | DAMA-DMBOK | Data management guide of DAMA International (*Data Management Body of Knowledge*); the quality dimensions come from it. | — | Indicators |
 | ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Weekly, Pipeline and lineage | Sources |
@@ -119,3 +119,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.8 | 2026-11-02 | The pages that became tabs of «BA and BI analysis» are named «BA and BI analysis (tab)» (D-456) |
 | 2.9 | 2026-11-02 | The «Trends» tab of «BA and BI analysis» becomes «Monthly» and «Historical» (D-457) |
 | 2.10 | 2026-11-02 | The week's dashboard is called «Weekly» (D-459) |
+| 2.11 | 2026-11-03 | The quality plan has 14 indicators (D-475) |

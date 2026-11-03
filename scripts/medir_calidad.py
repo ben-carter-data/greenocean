@@ -536,29 +536,57 @@ def measure_process():
 
 
 def measure_data(python):
-    """The quality of the real data, read from the served database by the project's own code (D-323): the share of the
-    latest week's prices that have a valid comparison with the week before, the share of the series seen in the last 12
-    weeks that have a price in the latest one, and how old the latest data and the latest load are."""
+    """The quality of the real data, read from the served database by the project's own code (D-323): of the latest
+    week's prices that also had a price the week before, the share with a valid comparison in the same regions (D-475;
+    the prices that reappear after a gap are counted apart and never alert), the regions and channels present in each
+    of the 8 weeks before that are missing in the latest one, the share of the latest week's prices marked ATIPICO, the
+    share of the series seen in the last 12 weeks that have a price in the latest one, and how old the latest data and
+    the latest load are."""
     code = r"""
 import json, datetime
+import pandas as pd
 from bi import queries, alerts, overview
 prices = queries.run_query("k6_national_weekly_price")
 variations = alerts.add_weekly_variation(prices.copy())
+key = ["product", "variety", "quality", "channel", "normalized_unit"]
+variations = variations.sort_values(key + ["week_start"])
+gap = (variations["week_start"] - variations.groupby(key)["week_start"].shift(1)).dt.days
+variations["had_last_week"] = gap == 7
 week = variations["week_start"].max()
 now = variations[variations["week_start"] == week]
-valid = now["variation"].notna().sum()
+base = now[now["had_last_week"]]
+valid = base["variation"].notna().sum()
 weeks = sorted(prices["week_start"].unique())
 recent = prices[prices["week_start"].isin(weeks[-12:])]
-key = ["product", "variety", "quality", "channel", "normalized_unit"]
 seen = recent[key].drop_duplicates()
 latest = prices[prices["week_start"] == weeks[-1]][key].drop_duplicates()
+present = queries.run_sql(
+    "SELECT w.week_start, r.region, c.channel FROM weekly_price w JOIN dim_region r USING (region_id) "
+    "JOIN dim_channel c USING (channel_id) WHERE w.flag IS NULL GROUP BY ALL"
+)
+last_weeks = sorted(present["week_start"].unique())
+def missing(column):
+    steady = set.intersection(*[set(present.loc[present["week_start"] == w, column]) for w in last_weeks[-9:-1]])
+    return sorted(steady - set(present.loc[present["week_start"] == last_weeks[-1], column]))
+regions, channels = missing("region"), missing("channel")
+flags = queries.run_sql(
+    "SELECT count(*) AS precios, count(*) FILTER (WHERE flag = 'ATIPICO') AS atipicos FROM weekly_price "
+    "WHERE week_start = (SELECT max(week_start) FROM weekly_price)"
+).iloc[0]
 runs = queries.run_sql("SELECT max(started_at) AS last FROM etl_run")
 load = queries.run_sql("SELECT rows_read, rows_rejected FROM etl_run ORDER BY run_id DESC LIMIT 1").iloc[0]
 today = datetime.date.today()
 last_week = datetime.date.fromisoformat(str(weeks[-1])[:10])
 last_load = datetime.date.fromisoformat(str(runs["last"][0])[:10])
-print(json.dumps({"semana": str(weeks[-1])[:10], "precios_semana": int(len(now)), "con_comparacion": int(valid),
-                  "pct_comparacion": round(valid / len(now) * 100, 1), "series_activas": int(len(seen)),
+print(json.dumps({"semana": str(weeks[-1])[:10], "precios_semana": int(len(now)),
+                  "con_semana_anterior": int(len(base)), "con_comparacion": int(valid),
+                  "pct_comparacion": round(valid / len(base) * 100, 1) if len(base) else None,
+                  "reapariciones": int(len(now) - len(base)),
+                  "regiones_ausentes": regions, "canales_ausentes": channels,
+                  "regiones_canales_ausentes": len(regions) + len(channels),
+                  "precios_atipicos": int(flags["atipicos"]), "precios_semana_base": int(flags["precios"]),
+                  "pct_atipicos": round(int(flags["atipicos"]) / int(flags["precios"]) * 100, 3) if int(flags["precios"]) else None,
+                  "series_activas": int(len(seen)),
                   "series_con_dato": int(len(latest.merge(seen))), "pct_series_con_dato": round(len(latest.merge(seen)) / len(seen) * 100, 1),
                   "dias_desde_ultima_semana": (today - last_week).days - 6, "dias_desde_ultima_carga": (today - last_load).days,
                   "filas_leidas": int(load["rows_read"]), "filas_rechazadas": int(load["rows_rejected"]),

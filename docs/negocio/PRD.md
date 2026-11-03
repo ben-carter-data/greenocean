@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.28 |
-| Fecha | 02-11-2026 |
+| Versión | 3.29 |
+| Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar qué problema resuelve GreenOcean, para quién, qué preguntas responde y qué debe cumplir para que sus cifras sean confiables. |
@@ -129,7 +129,7 @@ Los requisitos funcionales (RF) dicen qué hace el producto. Los no funcionales 
 | RNF-01 | Costo cero y sin vencimientos | Ningún servicio de pago; solo planes gratuitos permanentes ([ADR-31 · No usar un data warehouse en la nube](../arquitectura/ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube)) | `docs/arquitectura/ADR.md` |
 | RNF-02 | Cada cifra se puede comprobar | Los precios semanales se reconstruyen desde las filas crudas y por un segundo camino independiente, sin dbt: diferencia 0 | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price`, `tests/test_data_audit.py::test_the_panel_reproduces_the_reference_figures_of_its_week` |
 | RNF-03 | Seguridad | Ningún secreto en el repositorio; el workflow semanal tiene solo los permisos que usa; el panel no puede escribir la base | `tests/test_security.py::test_no_secret_is_tracked_by_git`, `tests/test_security.py::test_the_weekly_job_has_least_privilege`, `tests/test_sql_explorer.py::test_read_only_statements_are_accepted` |
-| RNF-04 | Calidad vigilada en cada cambio | pytest y la compilación de dbt corren en cada push. Los 11 indicadores de calidad de los datos se miden en cada carga, y uno fuera de su umbral cambia el veredicto. Los 12 indicadores del plan de calidad se miden cada semana ([Plan de calidad](../calidad/PLAN_DE_CALIDAD.md)) | `.github/workflows/pruebas.yml`, `tests/test_quality_audit.py::test_a_degraded_measure_turns_its_indicator_and_the_verdict_red` |
+| RNF-04 | Calidad vigilada en cada cambio | pytest y la compilación de dbt corren en cada push. Los 11 indicadores de calidad de los datos se miden en cada carga, y uno fuera de su umbral cambia el veredicto. Los 14 indicadores del plan de calidad se miden cada semana ([Plan de calidad](../calidad/PLAN_DE_CALIDAD.md)) | `.github/workflows/pruebas.yml`, `tests/test_quality_audit.py::test_a_degraded_measure_turns_its_indicator_and_the_verdict_red` |
 | RNF-05 | Legible en computador, tableta y teléfono | Ninguna página se desplaza a lo ancho entre 1024 × 768 y 1920 × 1080, en tableta vertical (768 × 1024) ni en teléfono horizontal (844 × 390); en vertical, el panel pide girar el teléfono. En 1024 × 768 se acepta el desplazamiento vertical, sin cortes | `tests/medicion/medir.cjs` |
 | RNF-06 | Cada página principal en una pantalla | En la ventana del navegador de una pantalla de 1440 × 900 (1440 × 790 útiles), a 1280 × 800 y a 1920 × 1000, cada página principal se ve entera, sin desplazar | `tests/medicion/medir.cjs` |
 
@@ -248,3 +248,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.26 | 02-11-2026 | En «Análisis BA y BI» las tarjetas son más finas, los meses se leen en dos líneas cortas y una lupa verde abre cada gráfico en grande (7, D-460) |
 | 3.27 | 02-11-2026 | Los tres dashboards abren con el menú plegado y el botón que lo abre palpita en verde (7, D-462) |
 | 3.28 | 02-11-2026 | La app abre con el menú abierto; se pliega al ir a un dashboard o a una página de diagramas (7, D-463) |
+| 3.29 | 03-11-2026 | El plan de calidad pasa a 14 indicadores: regiones o canales ausentes y precios atípicos de la semana (RNF-04, D-475) |

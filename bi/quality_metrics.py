@@ -23,7 +23,13 @@ WEEKLY_FOLDER = REPORTS_FOLDER / "semanales"
 SERIES_WEEKLY, SERIES_BUILD = "semanal", "construccion"
 # D-431: a weekly report holds only what is measured once per load; the code is checked by the CI of every push and the
 # days since the last load are the panel's.
-WEEKLY_INDICATORS = ("pruebas_dbt_pct", "comparables_pct", "rechazadas_pct")
+WEEKLY_INDICATORS = (
+    "pruebas_dbt_pct",
+    "comparables_pct",
+    "rechazadas_pct",
+    "ausencias_region_canal",  # D-475
+    "atipicos_pct",  # D-475
+)
 
 # (key, Spanish label, English label, unit, ISO/IEC 25010 characteristic, command that reproduces it)
 INDICATORS = [
@@ -75,6 +81,23 @@ INDICATORS = [
         "python scripts/medir_calidad.py",
     ),
     ("rechazadas_pct", "Filas rechazadas", "Rejected rows", "%", "adecuacion", "SELECT … FROM etl_run"),
+    # D-475: a region or a channel that stops reporting, and a week with too many atypical prices.
+    (
+        "ausencias_region_canal",
+        "Regiones o canales ausentes",
+        "Missing regions or channels",
+        "",
+        "adecuacion",
+        "python scripts/medir_calidad.py",
+    ),
+    (
+        "atipicos_pct",
+        "Precios atípicos de la semana",
+        "Atypical prices of the week",
+        "%",
+        "adecuacion",
+        "python scripts/medir_calidad.py",
+    ),
     ("vigencia_dias", "Días desde la última carga", "Days since the last load", "días", "fiabilidad", "etl_run"),
 ]
 
@@ -83,8 +106,8 @@ INDICATORS = [
 SCHEDULE = [
     (
         (
-            "Los 12 indicadores del plan de calidad: 8 de código y 4 de datos",
-            "The 12 indicators of the quality plan: 8 of code and 4 of data",
+            "Los 14 indicadores del plan de calidad: 8 de código y 6 de datos",
+            "The 14 indicators of the quality plan: 8 of code and 6 of data",
         ),
         ("Automático: workflow «calidad» (scripts/medir_calidad.py)", "Automatic: «calidad» workflow"),
         (
@@ -170,10 +193,15 @@ def unit_text(unit: str, english: bool = False) -> str:
     return UNITS_EN.get(unit, unit) if english else unit
 
 
+def percent_decimals(value: Any) -> int:
+    """D-475: a share under 1 % keeps two decimals (0,25 %), so a small acceptable is not rounded away; else one."""
+    return 2 if isinstance(value, float) and abs(value) < 1 and value % 1 else 1
+
+
 def show(value: Any, unit: str, english: bool = False) -> str:
     if value is None:
         return "—"
-    decimals = 2 if unit == "s" else 1 if unit == "%" else 0
+    decimals = 2 if unit == "s" else percent_decimals(value) if unit == "%" else 0
     return number(value, decimals, english) + (f" {unit_text(unit, english)}" if unit else "")
 
 
@@ -205,6 +233,8 @@ def values(report: dict[str, Any]) -> dict[str, Any]:
         ),
         "comparables_pct": data.get("pct_comparacion"),
         "rechazadas_pct": data.get("pct_rechazadas"),
+        "ausencias_region_canal": data.get("regiones_canales_ausentes"),
+        "atipicos_pct": data.get("pct_atipicos"),
         "vigencia_dias": data.get("dias_desde_ultima_carga"),
     }
 
@@ -220,7 +250,7 @@ def goal_text(goal: dict[str, Any], english: bool = False) -> str:
     if not goal:
         return "—"
     sign, limit = ("≤", goal["max"]) if "max" in goal else ("≥", goal["min"])
-    return f"{sign} {number(limit, 1 if isinstance(limit, float) else 0, english)}"
+    return f"{sign} {number(limit, percent_decimals(limit) if isinstance(limit, float) else 0, english)}"
 
 
 def rows(baseline: dict[str, Any], report: dict[str, Any], goals: dict[str, Any]) -> list[dict[str, Any]]:
@@ -492,7 +522,10 @@ def where_text(key: str, measurement: dict[str, Any], row: dict[str, Any], engli
         "cobertura_por_modulo": ", ".join(f"{name} ({value} %)" for name, value in lowest[:1]),
         "cobertura_total": ", ".join(f"{name} ({value} %)" for name, value in lowest),
         "pruebas_dbt_pct": f"{dbt.get('pruebas_ok')} {of} {dbt.get('pruebas_total')}",
-        "comparables_pct": f"{data.get('con_comparacion')} {of} {data.get('precios_semana')}",
+        # D-475: of the prices that also had one the week before; the reappearances, apart.
+        "comparables_pct": f"{data.get('con_comparacion')} {of} {data.get('con_semana_anterior', data.get('precios_semana'))}",
+        "ausencias_region_canal": ", ".join(data.get("regiones_ausentes", []) + data.get("canales_ausentes", [])),
+        "atipicos_pct": f"{data.get('precios_atipicos')} {of} {data.get('precios_semana_base')}",
         "rechazadas_pct": f"{data.get('filas_rechazadas')} {of} {data.get('filas_leidas')}",
         "vigencia_dias": str(data.get("dias_desde_ultima_carga")),
     }.get(key, "")

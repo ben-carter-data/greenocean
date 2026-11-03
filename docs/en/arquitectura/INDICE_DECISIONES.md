@@ -83,7 +83,7 @@ Which tools build the database and when it is published.
 | The data warehouse moves to dbt, DuckDB and Parquet with exactly the same results | [Parquet, dbt Core and DuckDB](ADR.md#adr-30--parquet-dbt-core-and-duckdb) | D-154 |
 | The two builds of the database are compared without ambiguity, the CPI included | — | D-194 |
 | DuckDB 2.0 waits until a slow query is reviewed | — | D-227 |
-| The published database lives in a GitHub release; the repository keeps only its pointer | [Publish the served database in a release that each load replaces](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) | D-270 |
+| The published database lives in a GitHub release; the repository keeps only its pointer | [Publish the DuckDB database in a release that each load replaces](ADR.md#adr-35--publish-the-duckdb-database-in-a-release-that-each-load-replaces) | D-270 |
 | The performance tests leave the CI and stay local | — | D-341 |
 | Publication goes up to the last week complete in both sources, filling nothing in; a late source does not block the load | [Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass) | D-356 |
 | The weekly load runs only the data and pipeline tests; the screen tests run on every push | — | D-366 |

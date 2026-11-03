@@ -244,8 +244,8 @@
     ]
   },
   "comparables_pct": {
-    "min": 81,
-    "meta": 81,
+    "min": 97,
+    "meta": 97,
     "margen_critico": 10,
     "tipo": "datos",
     "medida": "cumplimiento",
@@ -254,8 +254,8 @@
       "On every weekly load"
     ],
     "que_mide": [
-      "Precios de la semana con una comparación válida contra la semana anterior.",
-      "Prices of the week with a valid comparison against the week before."
+      "De los precios de la semana que también tenían precio la semana anterior, los que se comparan en las mismas regiones. Los que reaparecen tras un hueco se cuentan aparte y no alertan (D-475).",
+      "Of the week's prices that also had a price the week before, those compared in the same regions. Those that reappear after a gap are counted apart and do not alert (D-475)."
     ],
     "por_que": [
       "Sin comparación no hay variación que mostrar; si bajan mucho, el panel dice menos de lo que parece.",
@@ -266,8 +266,8 @@
       "The dashboard's own code computes it on the DuckDB database."
     ],
     "accion": [
-      "Ver si falta una región o un canal entero; si la causa es la fuente, registrarla como incidente externo.",
-      "Check whether a whole region or channel is missing; if the source is the cause, record it as an external incident."
+      "Ver si una región dejó de informar un producto; si la causa es la fuente, registrarla como incidente externo.",
+      "Check whether a region stopped reporting a product; if the source is the cause, record it as an external incident."
     ]
   },
   "rechazadas_pct": {
@@ -295,6 +295,60 @@
     "accion": [
       "Ver el motivo de los rechazos en Calidad y auditoría.",
       "See the reason for the rejections in Quality and audit."
+    ]
+  },
+  "ausencias_region_canal": {
+    "max": 0,
+    "meta": 0,
+    "margen_critico": 2,
+    "tipo": "datos",
+    "medida": "conteo",
+    "frecuencia": [
+      "En cada carga semanal",
+      "On every weekly load"
+    ],
+    "que_mide": [
+      "Regiones o canales con precios en cada una de las 8 semanas anteriores que no tienen ninguno en la última.",
+      "Regions or channels with prices in each of the 8 weeks before that have none in the latest one."
+    ],
+    "por_que": [
+      "Si una región o un canal entero desaparece, los promedios cambian sin que cambie ningún precio.",
+      "If a whole region or channel disappears, the averages change without any price changing."
+    ],
+    "como": [
+      "Lo calcula scripts/medir_calidad.py sobre la Base DuckDB.",
+      "scripts/medir_calidad.py computes it on the DuckDB database."
+    ],
+    "accion": [
+      "Ver en la fuente si es un feriado o una falla; si la causa es la fuente, registrarla como incidente externo.",
+      "Check at the source whether it is a holiday or a failure; if the source is the cause, record it as an external incident."
+    ]
+  },
+  "atipicos_pct": {
+    "max": 0.25,
+    "meta": 0.25,
+    "margen_critico": 0.25,
+    "tipo": "datos",
+    "medida": "falla",
+    "frecuencia": [
+      "En cada carga semanal",
+      "On every weekly load"
+    ],
+    "que_mide": [
+      "Precios de la última semana marcados ATIPICO: a más de 5 veces o a menos de 1/5 de la mediana de su producto (RN-12).",
+      "Prices of the latest week marked ATIPICO: more than 5 times or less than 1/5 of their product's median (RN-12)."
+    ],
+    "por_que": [
+      "Los atípicos quedan fuera de los indicadores; si de pronto son muchos, cambió algo en la fuente o en las unidades.",
+      "Atypical prices stay out of the indicators; if they suddenly are many, something changed in the source or in the units."
+    ],
+    "como": [
+      "Lo calcula scripts/medir_calidad.py sobre la Base DuckDB.",
+      "scripts/medir_calidad.py computes it on the DuckDB database."
+    ],
+    "accion": [
+      "Ver los precios apartados en Calidad y auditoría; si la causa es la fuente, registrarla como incidente externo.",
+      "See the prices set apart in Quality and audit; if the source is the cause, record it as an external incident."
     ]
   },
   "vigencia_dias": {

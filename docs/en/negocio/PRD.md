@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.28 |
-| Date | 2026-11-02 |
+| Version | 3.29 |
+| Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain which problem GreenOcean solves, for whom, which questions it answers and what it must meet for its figures to be reliable. |
@@ -129,7 +129,7 @@ Functional requirements (RF) say what the product does. Non-functional requireme
 | RNF-01 | Zero cost and no expiry | No paid service; only permanent free plans ([ADR-31 · Do not use a cloud data warehouse](../arquitectura/ADR.md#adr-31--do-not-use-a-cloud-data-warehouse)) | `docs/arquitectura/ADR.md` |
 | RNF-02 | Every figure can be checked | Weekly prices are rebuilt from the raw rows and along a second, independent path without dbt: difference 0 | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price`, `tests/test_data_audit.py::test_the_panel_reproduces_the_reference_figures_of_its_week` |
 | RNF-03 | Security | No secret in the repository; the weekly workflow has only the permissions it uses; the panel cannot write to the database | `tests/test_security.py::test_no_secret_is_tracked_by_git`, `tests/test_security.py::test_the_weekly_job_has_least_privilege`, `tests/test_sql_explorer.py::test_read_only_statements_are_accepted` |
-| RNF-04 | Quality watched on every change | pytest and the dbt compilation run on every push. The 11 data quality indicators are measured on every load, and one outside its threshold changes the verdict. The 12 indicators of the quality plan are measured every week ([Quality plan](../calidad/PLAN_DE_CALIDAD.md)) | `.github/workflows/pruebas.yml`, `tests/test_quality_audit.py::test_a_degraded_measure_turns_its_indicator_and_the_verdict_red` |
+| RNF-04 | Quality watched on every change | pytest and the dbt compilation run on every push. The 11 data quality indicators are measured on every load, and one outside its threshold changes the verdict. The 14 indicators of the quality plan are measured every week ([Quality plan](../calidad/PLAN_DE_CALIDAD.md)) | `.github/workflows/pruebas.yml`, `tests/test_quality_audit.py::test_a_degraded_measure_turns_its_indicator_and_the_verdict_red` |
 | RNF-05 | Readable on computer, tablet and phone | No page scrolls sideways between 1024 × 768 and 1920 × 1080, on a portrait tablet (768 × 1024) or on a landscape phone (844 × 390); in portrait, the panel asks to turn the phone. At 1024 × 768 vertical scrolling is accepted, without cuts | `tests/medicion/medir.cjs` |
 | RNF-06 | Each main page on one screen | In the browser window of a 1440 × 900 screen (1440 × 790 usable), at 1280 × 800 and at 1920 × 1000, each main page is seen whole, without scrolling | `tests/medicion/medir.cjs` |
 
@@ -248,3 +248,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.26 | 2026-11-02 | In «BA and BI analysis» the cards are thinner, the months read in two short lines and a green magnifier opens each chart large (7, D-460) |
 | 3.27 | 2026-11-02 | The three dashboards open with the menu folded and the button that opens it beats in green (7, D-462) |
 | 3.28 | 2026-11-02 | The app opens with the menu open; it folds on going to a dashboard or a page of diagrams (7, D-463) |
+| 3.29 | 2026-11-03 | The quality plan grows to 14 indicators: missing regions or channels and atypical prices of the week (RNF-04, D-475) |

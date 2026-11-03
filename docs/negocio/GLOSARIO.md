@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 2.10 |
-| Fecha | 02-11-2026 |
+| Versión | 2.11 |
+| Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Definir una sola vez las siglas y los términos que usan el panel y los documentos. |
@@ -43,7 +43,7 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | Precio real | Precio expresado en pesos del último mes publicado del IPC. | Análisis BA y BI (Precios e inflación) | Indicadores |
 | Semana provisional | Semana de un mes cuyo IPC aún no se publica; usa el último mes disponible. | Análisis BA y BI (Precios e inflación) | Indicadores |
 | Indicador de calidad de los datos | Cada uno de los 11 indicadores que se miden en cada carga sobre la base publicada, en cinco dimensiones. | Calidad y auditoría | Indicadores |
-| Indicador del plan de calidad | Cada uno de los 12 indicadores del SQAP (8 de código y 4 de datos) que el workflow de calidad mide cada semana. | Método y calidad | Indicadores |
+| Indicador del plan de calidad | Cada uno de los 14 indicadores del SQAP (8 de código y 6 de datos) que el workflow de calidad mide cada semana. | Método y calidad | Indicadores |
 | Dimensión de calidad | Aspecto de la calidad que se mide: completitud, actualidad, validez, unicidad, consistencia y exactitud. | Calidad y auditoría | Indicadores |
 | DAMA-DMBOK | Guía de gestión de datos de DAMA International (*Data Management Body of Knowledge*); de ella vienen las dimensiones de calidad. | — | Indicadores |
 | ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Semanal, Pipeline y linaje | Fuentes |
@@ -119,3 +119,4 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | 2.8 | 02-11-2026 | Las páginas que pasaron a pestañas de «Análisis BA y BI» se nombran «Análisis BA y BI (pestaña)» (D-456) |
 | 2.9 | 02-11-2026 | La pestaña «Tendencias» de «Análisis BA y BI» pasa a «Mensual» e «Histórico» (D-457) |
 | 2.10 | 02-11-2026 | El dashboard de la semana se llama «Semanal» (D-459) |
+| 2.11 | 03-11-2026 | El plan de calidad tiene 14 indicadores (D-475) |

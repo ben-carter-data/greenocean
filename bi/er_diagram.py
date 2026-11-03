@@ -28,8 +28,9 @@ LOWER_WIDTHS = {"etl_run": 235, "ipc_weekly": 240}
 FONT = 12.5
 MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
 
-# The tables of the model, in the order they are drawn. The dbt trace (dbt_node, dbt_result)
-# and ine_ipc_source (a raw copy of the INE files) are not part of the model.
+# The tables of the model, in the order they are drawn. The dbt trace (dbt_node, dbt_result), ine_ipc_source (a raw
+# copy of the INE files) and latest_by_source (a flat read table without keys, D-365) are not part of the model; the
+# legend names them (D-474).
 TABLES = [
     "dim_product",
     "dim_channel",
@@ -256,8 +257,10 @@ def build_er_svg(schema, counts, mode, tooltips=None):
         f'pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · línea punteada: relación lógica, sin clave foránea</text>'
         f'<text x="{MARGIN}" y="{legend_y + 18}" font-size="12" fill="{shade["muted"]}">Fuera del diagrama: ine_ipc_source '
         f'(copia cruda del INE), dbt_node y dbt_result (la traza de dbt).</text>'
+        f'<text x="{MARGIN}" y="{legend_y + 36}" font-size="12" fill="{shade["muted"]}">También fuera: latest_by_source, '
+        f'las 2 últimas semanas de cada fuente, ya con sus nombres y sin claves (D-365).</text>'
     )
-    total = bottom + 56
+    total = bottom + 74
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {total}" width="100%" role="img" '
         f'aria-label="Modelo entidad-relación de datos.duckdb" font-family="{charts.CHART_FONT}">'

@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.15 |
-| Date | 2026-11-02 |
+| Version | 3.16 |
+| Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
 | Purpose | State what happens automatically, what is checked and when, and what to do about each failure. |
@@ -49,7 +49,7 @@ It can also be launched by hand: from «Operations center», with the «Run pipe
 
 If a step fails, the following ones do not run and the DuckDB database does not change ([ADR-11 · Publish only if the tests pass](../arquitectura/ADR.md#adr-11--publish-only-if-the-tests-pass)).
 
-After every load that ends in green, the quality workflow proposes the weekly quality report, with the 3 data indicators, as the pull request «Actualizar medición de calidad» (D-431). On every push it only measures, and fails if a code indicator is past its acceptable.
+After every load that ends in green, the quality workflow proposes the weekly quality report, with the 5 data indicators, as the pull request «Actualizar medición de calidad» (D-431). On every push it only measures, and fails if a code indicator is past its acceptable.
 
 ## 3. What is checked and when
 
@@ -219,3 +219,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.13 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
 | 3.14 | 2026-11-02 | How we know that something failed is drawn with the «Monitoring» tab of the «Operations center» (1), instead of a calendar of its own; the quality pull request is merged by itself if the code is within its acceptable (3, D-436); «served database» becomes «DuckDB database» (D-455) |
 | 3.15 | 2026-11-02 | The week's dashboard is called «Weekly» (4, 8.1, D-459) |
+| 3.16 | 2026-11-03 | The weekly quality report measures 5 data indicators: missing regions or channels and atypical prices of the week are added (2, D-475) |

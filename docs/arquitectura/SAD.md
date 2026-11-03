@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.17 |
-| Fecha | 02-11-2026 |
+| Versión | 3.18 |
+| Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo está construido GreenOcean, cómo corre cada semana, dónde viven sus datos y por qué tiene esa forma. |
@@ -114,7 +114,7 @@ Cada paso empieza solo si el anterior terminó bien:
 | 6 | Puerta de publicación. El proceso se detiene si falla una prueba de dbt, si la carga lee menos del 90 % de las filas de la última carga correcta, si a una fuente le falta una semana en medio de los datos o si una fuente lleva más de 2 semanas sin publicar (D-356). Si todo pasa, las tablas del panel se copian a un archivo nuevo que reemplaza a `etl/datos.duckdb`. Se publica hasta la última semana completa en ambas fuentes, sin rellenar, y `etl_run` guarda la semana que espera |
 | 7 | pytest corre sobre la base nueva, con la paridad entre el respaldo y DuckDB. Las pruebas de velocidad no corren aquí: solo informan (D-341) |
 | 8 | La máquina reemplaza la base en el release y sube su puntero, `etl/datos.version`, a la rama `main`. El panel detecta el puntero nuevo, descarga la base y verifica su huella antes de usarla |
-| 9 | Se publica el informe semanal como un issue del repositorio. Después, el workflow de calidad mide los 12 indicadores del plan de calidad y propone el informe de calidad como un pull request (D-363) |
+| 9 | Se publica el informe semanal como un issue del repositorio. Después, el workflow de calidad mide los 14 indicadores del plan de calidad y propone el informe de calidad como un pull request (D-363) |
 
 El trabajo tiene un límite de 20 minutos: si se cuelga, GitHub lo corta.
 
@@ -384,7 +384,7 @@ Es el mismo diagrama de la pestaña «Despliegue» de [[vista:Centro de operaci�
 
 La pestaña «Monitoreo» de [[vista:Centro de operación]] los reúne. El flujo en vivo de «Stack y evidencia» muestra la carga en curso pieza por pieza, para cualquier vista y sin logs (D-412).
 
-**Calidad del proyecto.** El [Plan de calidad del software (SQAP)](../calidad/PLAN_DE_CALIDAD.md) dice cómo se mide la calidad de los datos y del código, quién decide y qué pasa cuando algo falla. Sus 12 indicadores los mide el workflow de calidad. En cada push, falla si un indicador de código pasa su aceptable. El informe numerado se propone como pull request solo después de la carga semanal, o a mano (D-363). Si el último informe tiene más de 8 días, la alerta del autor lo dice y no lo muestra como el estado de hoy (D-361). Cada falla vivida queda en el registro de fallas, una línea por campo (D-342, D-354).
+**Calidad del proyecto.** El [Plan de calidad del software (SQAP)](../calidad/PLAN_DE_CALIDAD.md) dice cómo se mide la calidad de los datos y del código, quién decide y qué pasa cuando algo falla. Sus 14 indicadores los mide el workflow de calidad. En cada push, falla si un indicador de código pasa su aceptable. El informe numerado se propone como pull request solo después de la carga semanal, o a mano (D-363). Si el último informe tiene más de 8 días, la alerta del autor lo dice y no lo muestra como el estado de hoy (D-361). Cada falla vivida queda en el registro de fallas, una línea por campo (D-342, D-354).
 
 **Secretos y acceso.** El panel usa tres secretos, guardados en Streamlit y nunca en el repositorio:
 
@@ -423,7 +423,7 @@ La página «Configuración» también es solo del autor (D-409). Muestra en una
 
 | Límite | Situación actual | Respuesta prevista |
 |---|---|---|
-| Tamaño de la Base DuckDB | Una sola copia en un release, reemplazada por cada carga ([ADR-35](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza)); el historial de Git ya no crece con los datos | Un archivo de release admite hasta 2 GB; mucho antes convendría la opción de la sección 9.4 |
+| Tamaño de la Base DuckDB | Una sola copia en un release, reemplazada por cada carga ([ADR-35](ADR.md#adr-35--publicar-la-base-duckdb-en-un-release-que-cada-carga-reemplaza)); el historial de Git ya no crece con los datos | Un archivo de release admite hasta 2 GB; mucho antes convendría la opción de la sección 9.4 |
 | Duración de la carga | Cada carga rehace la historia completa desde 2022 ([ADR-10](ADR.md#adr-10--reconstruir-todo-en-cada-carga)) y tarda un poco más cada año | Cargas incrementales cuando la duración lo justifique |
 | Lectores simultáneos | Una aplicación gratuita de Streamlit que lee un archivo pequeño en solo lectura | Si varios equipos lo usaran a diario, el plan gratuito sería insuficiente: es uno de los umbrales de la sección 9.4 |
 
@@ -466,7 +466,7 @@ Con datos públicos, semanales y pequeños, leídos por un solo panel, un data w
 | Comprobar por un segundo camino | Un ETL en Python, independiente de dbt, calcula los mismos precios | [ADR-34](ADR.md#adr-34--separar-la-base-de-trabajo-de-dbt-la-base-que-lee-el-panel-y-el-respaldo) |
 | Capas declarativas y probadas | Bronce en Parquet; staging, intermedio y marts en dbt Core sobre DuckDB | [ADR-30](ADR.md#adr-30--parquet-dbt-core-y-duckdb) |
 | Bloquear solo lo que importa | Las pruebas que protegen los datos detienen la carga; las de velocidad solo informan y corren en local | D-341 |
-| Una sola copia publicada | La Base DuckDB vive en un release que cada carga reemplaza | [ADR-35](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) |
+| Una sola copia publicada | La Base DuckDB vive en un release que cada carga reemplaza | [ADR-35](ADR.md#adr-35--publicar-la-base-duckdb-en-un-release-que-cada-carga-reemplaza) |
 
 Las decisiones que dan forma a esta arquitectura, con su contexto, sus alternativas y sus consecuencias, están en los [Registros de decisiones de arquitectura (ADR)](ADR.md).
 
@@ -516,3 +516,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.15 | 02-11-2026 | La vista Usuario y los escenarios clave nombran «Análisis BA y BI», que reúne en pestañas Precios e inflación, Insights e Interesados (2.1, 5, D-456) |
 | 3.16 | 02-11-2026 | Los escenarios clave nombran las pestañas «Mensual» e «Histórico» de «Análisis BA y BI», que reemplazan a «Tendencias» (2.1, D-457) |
 | 3.17 | 02-11-2026 | El dashboard de la semana se llama «Semanal», bajo el título «Dashboards» (2.1, 5, 6.5, D-459) |
+| 3.18 | 03-11-2026 | El plan de calidad mide 14 indicadores (D-475); el diagrama entidad-relación nombra latest_by_source fuera del modelo (D-474) |

@@ -285,7 +285,7 @@ PIECES: dict[str, tuple[str, int, int, str, tuple[str, str], tuple[str, str], st
         552,
         "report",
         ("Calidad", "Quality"),
-        ("12 indicadores · informe", "12 indicators · report"),
+        ("14 indicadores · informe", "14 indicators · report"),
         ".github/workflows/calidad.yml",
         "workflow_run",
     ),
@@ -327,8 +327,8 @@ BAND_NOTES = {
         "On every push Ruff, mypy and pytest run (pruebas.yml); a failure shows before it reaches the app.",
     ),
     "quality": (
-        "Mide los 12 indicadores en cada push y, tras una carga en verde, propone el informe en un pull request, que se fusiona solo si el código está en su aceptable.",
-        "Measures the 12 indicators on every push and, after a green load, proposes the report in a pull request, merged on its own if the code is in its acceptable range.",
+        "Mide los 14 indicadores en cada push y, tras una carga en verde, propone el informe en un pull request, que se fusiona solo si el código está en su aceptable.",
+        "Measures the 14 indicators on every push and, after a green load, proposes the report in a pull request, merged on its own if the code is in its acceptable range.",
     ),
     "tokens": (
         "CONTROL_CODE, GITHUB_TOKEN y GITHUB_READ_TOKEN viven en los secretos de Streamlit; nunca se muestran.",

@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.15 |
-| Fecha | 02-11-2026 |
+| Versión | 3.16 |
+| Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Indicar qué ocurre de forma automática, qué se revisa y cuándo, y qué hacer ante cada falla. |
@@ -49,7 +49,7 @@ También se puede lanzar a mano: desde «Centro de operación», con el botón �
 
 Si un paso falla, los siguientes no se ejecutan y la Base DuckDB no cambia ([ADR-11 · Publicar solo si pasan las pruebas](../arquitectura/ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)).
 
-Después de cada carga que termina en verde, el workflow de calidad propone el informe semanal de calidad, con los 3 indicadores de datos, como pull request «Actualizar medición de calidad» (D-431). En cada push solo mide, y falla si un indicador de código pasa su aceptable: esa es la verificación del código, sin informe.
+Después de cada carga que termina en verde, el workflow de calidad propone el informe semanal de calidad, con los 5 indicadores de datos, como pull request «Actualizar medición de calidad» (D-431). En cada push solo mide, y falla si un indicador de código pasa su aceptable: esa es la verificación del código, sin informe.
 
 ## 3. Qué se revisa y cuándo
 
@@ -219,3 +219,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.13 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
 | 3.14 | 02-11-2026 | Cómo se sabe que algo falló se dibuja con la pestaña «Monitoreo» del «Centro de operación» (1), en vez de un calendario propio; el pull request de calidad se fusiona solo si el código está en su aceptable (3, D-436); «base servida» pasa a «Base DuckDB» (D-455) |
 | 3.15 | 02-11-2026 | El dashboard de la semana se llama «Semanal» (4, 8.1, D-459) |
+| 3.16 | 03-11-2026 | El informe semanal de calidad mide 5 indicadores de datos: se suman regiones o canales ausentes y precios atípicos de la semana (2, D-475) |

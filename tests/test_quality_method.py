@@ -14,6 +14,8 @@ from streamlit.testing.v1 import AppTest
 
 from bi import i18n, quality_method, quality_metrics
 
+# D-475: indicators added after the construction series closed (C-1 to C-7 keep their twelve).
+ADDED_AFTER_BUILD = {"ausencias_region_canal", "atipicos_pct"}
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
 FORBIDDEN = (
@@ -149,7 +151,8 @@ def test_d331_the_reports_are_numbered_frozen_and_the_latest_is_the_markdown():
         )
         assert report["anterior"] == (report["numero"] - 1 or None)
         # The report keeps the acceptables it was judged against and, per indicator, what the reader needs.
-        assert set(report["aceptables"]) == {key for key, *_ in quality_metrics.INDICATORS}
+        # D-475: the two indicators added after the series closed are not in it
+        assert set(report["aceptables"]) == {key for key, *_ in quality_metrics.INDICATORS} - ADDED_AFTER_BUILD
         for row in report["indicadores"]:
             assert {"valor", "falla", "falla_aceptable", "estado", "insight", "variacion"} <= set(row)
         # Rebuilt today from its own frozen measurement and acceptables, it says the same: nothing was edited.
@@ -160,6 +163,7 @@ def test_d331_the_reports_are_numbered_frozen_and_the_latest_is_the_markdown():
             {**policy, "modo_datos": report["modo_datos"]},
             previous["medicion"] if previous else None,
         )
+        rebuilt = [row for row in rebuilt if row["clave"] in report["aceptables"]]
         assert [row["estado"] for row in rebuilt] == [row["estado"] for row in report["indicadores"]]
     # The first reports are the measurements of the history, without anything made up.
     assert [report["codigo_evaluado"] for report in reports[:4]] == ["cf561e7", "6c6286c", "d66804c", "b015e3a"]
@@ -211,7 +215,16 @@ def test_d332_the_summary_reads_the_latest_report_and_never_claims_an_external_a
     overview = quality_method.build_overview(latest, goals, policy)
     within, nonconforming, measured = quality_metrics.report_counts(latest)
     assert f"Hoy: {within} de {measured} medidos dentro de lo aceptable" in overview
-    assert "Medimos los 12 indicadores del plan de calidad: 4 de los datos que publicamos y 8 del código" in overview
+    # D-475: C-7 measured 12 of today's 14; a weekly report measures only the data ones
+    assert (
+        "El informe C-7 mide 12 de los 14 indicadores del plan de calidad: 4 de los datos que publicamos y 8"
+        in overview
+    )
+    weekly = dict(latest, serie=quality_metrics.SERIES_WEEKLY, numero=1)
+    weekly["indicadores"] = [row for row in latest["indicadores"] if row["tipo"] == "datos"]
+    assert "El informe N° 1 mide los 4 indicadores de datos del plan de calidad" in quality_method.build_overview(
+        weekly, goals, policy
+    )
     # Only the indicators out of their acceptable carry their insight in sight; the rest on hover.
     attention = [row for row in latest["indicadores"] if row["estado"] in ("urgente", "critico")]
     assert overview.count("<li class=") == len(attention)
@@ -244,19 +257,19 @@ def test_d332_the_page_has_two_tabs_and_the_quality_section_holds_it_in_both_lan
 
 
 # region Acceptables, goals and insights (D-330)
-def test_d330_metas_keeps_the_approved_twelve_indicators_with_their_explanation():
+def test_d330_metas_keeps_the_approved_indicators_with_their_explanation():
     goals = quality_metrics.read(quality_metrics.GOALS_FILE)
     keys = [key for key, *_ in quality_metrics.INDICATORS]
-    assert set(keys) == {key for key in goals if key != "nota"} and len(keys) == 12
-    assert sum(goals[key]["tipo"] == "datos" for key in keys) == 4
+    assert set(keys) == {key for key in goals if key != "nota"} and len(keys) == 14  # D-475: 12 and two of data
+    assert sum(goals[key]["tipo"] == "datos" for key in keys) == 6
     for key in keys:
         goal = goals[key]
         assert ("max" in goal) != ("min" in goal) and "meta" in goal and "margen_critico" in goal, key
         assert all(len(goal[field]) == 2 and all(goal[field]) for field in ("que_mide", "por_que", "como", "accion"))
     # The approved numbers (2026-10-29).
     assert goals["cobertura_total"]["min"] == 90 and goals["cobertura_por_modulo"]["min"] == 70
-    assert goals["comparables_pct"]["min"] == 81 and goals["vigencia_dias"]["max"] == 8  # D-433: the 5th percentile
-    assert goals["comparables_pct"]["meta"] == 81  # the goal goes with the acceptable, as in every indicator (D-337)
+    assert goals["comparables_pct"]["min"] == 97 and goals["vigencia_dias"]["max"] == 8  # D-475: the 5th percentile
+    assert goals["comparables_pct"]["meta"] == 97  # the goal goes with the acceptable, as in every indicator (D-337)
     assert (
         goals["pip_audit_vulnerabilidades"]["max"] == 0 and goals["pip_audit_vulnerabilidades"]["margen_critico"] == 0
     )
@@ -280,10 +293,10 @@ def test_d330_the_state_says_meets_warning_urgent_or_critical():
 def test_d330_the_failure_reads_against_the_acceptable_and_the_insight_comes_from_the_policy():
     goals = quality_metrics.read(quality_metrics.GOALS_FILE)
     policy = quality_metrics.read(quality_metrics.POLICY_FILE)
-    report = dict(REPORT, datos={"pct_comparacion": 75.0, "pct_rechazadas": 0.01, "dias_desde_ultima_carga": 7})
+    report = dict(REPORT, datos={"pct_comparacion": 90.0, "pct_rechazadas": 0.01, "dias_desde_ultima_carga": 7})
     rows = {row["clave"]: row for row in quality_metrics.evaluate(report, goals, policy)}
     comparables = rows["comparables_pct"]
-    assert (comparables["falla"], comparables["falla_aceptable"], comparables["estado"]) == (25.0, 19.0, "urgente")
+    assert (comparables["falla"], comparables["falla_aceptable"], comparables["estado"]) == (10.0, 3, "urgente")
     assert not comparables["bloquea"] and "modo aviso" in comparables["insight"][0]  # data warns until approved
     ruff = rows["ruff_avisos"]
     assert ruff["estado"] == "urgente" and ruff["bloquea"] and goals["ruff_avisos"]["accion"][0] in ruff["insight"][0]
@@ -754,7 +767,11 @@ def test_d431_the_weekly_report_is_four_pages_measured_by_the_sqap_with_one_tabl
     assert "<th>Indicador</th><th>Estado</th><th>Causa</th><th>Disposición</th><th>Fecha</th>" in page
     assert "Una causa." in page and "De la serie de construcción." not in page
     # the code and the days since the last load are not in it
-    assert {row["clave"] for row in first["indicadores"]} == {"pruebas_dbt_pct", "comparables_pct", "rechazadas_pct"}
+    assert {row["clave"] for row in first["indicadores"]} == set(quality_metrics.WEEKLY_INDICATORS)
+    assert (
+        set(quality_metrics.WEEKLY_INDICATORS)
+        == {"pruebas_dbt_pct", "comparables_pct", "rechazadas_pct"} | ADDED_AFTER_BUILD
+    )
     # the comparison warns when the two reports do not measure the same indicators
     assert "cmp-warn" in page and "no miden los mismos indicadores" in page
 
@@ -780,11 +797,12 @@ def test_d433_the_comparable_prices_acceptable_is_the_fifth_percentile_and_the_c
     goals = quality_metrics.read(quality_metrics.GOALS_FILE)
     policy = quality_metrics.read(quality_metrics.POLICY_FILE)
     goal = goals["comparables_pct"]
-    assert (goal["min"], goal["meta"], goal["margen_critico"]) == (81, 81, 10)
-    # 83.3 %, the week of the report of 2026-10-31: within the acceptable now, not a non-conformity
-    assert quality_metrics.state(83.3, goal) == "cumple" and quality_metrics.state(75.7, goal) == "urgente"
-    assert quality_metrics.state(70.9, goal) == "critico"
-    rows = quality_metrics.evaluate({"datos": {"pct_comparacion": 83.3}}, goals, policy)
+    # D-475: measured over the prices that had one the week before, the 5th percentile is 97 %
+    assert (goal["min"], goal["meta"], goal["margen_critico"]) == (97, 97, 10)
+    # 98.1 %, the week of 2026-10-26 measured that way: within the acceptable, not a non-conformity
+    assert quality_metrics.state(98.1, goal) == "cumple" and quality_metrics.state(90.0, goal) == "urgente"
+    assert quality_metrics.state(86.9, goal) == "critico"
+    rows = quality_metrics.evaluate({"datos": {"pct_comparacion": 98.1}}, goals, policy)
     assert {row["clave"]: row["estado"] for row in rows}["comparables_pct"] == "cumple"
     # C-1 to C-7 are closed records: they keep the 90 % they were measured with and are never evaluated again
     for report in quality_metrics.read_series(quality_metrics.SERIES_BUILD):
@@ -877,3 +895,44 @@ def test_d437_a_weekly_non_conformity_closes_by_itself_when_its_indicator_is_bac
     assert records[2]["estado"] == ""  # the construction series is never touched (D-431)
     assert records[3]["estado"] == ""  # opened by this same report: only a later report closes it
     assert informe_calidad.close_back_in_range(report, path) == 0  # a second run closes nothing more
+
+
+def test_d475_comparables_count_only_last_weeks_prices_and_two_data_indicators_watch_absences_and_outliers():
+    """B: the comparison is measured over the prices that also had one the week before, the reappearances apart; C: a
+    region or channel that stops reporting, and a week with too many atypical prices, are indicators of their own."""
+    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
+    policy = quality_metrics.read(quality_metrics.POLICY_FILE)
+    assert (goals["ausencias_region_canal"]["max"], goals["ausencias_region_canal"]["medida"]) == (0, "conteo")
+    assert (goals["atipicos_pct"]["max"], goals["atipicos_pct"]["margen_critico"]) == (
+        0.25,
+        0.25,
+    )  # the 95th percentile
+    data = {
+        "con_semana_anterior": 737,
+        "con_comparacion": 723,
+        "pct_comparacion": 98.1,
+        "reapariciones": 131,
+        "regiones_ausentes": ["Región de Los Lagos"],
+        "canales_ausentes": [],
+        "regiones_canales_ausentes": 1,
+        "precios_atipicos": 12,
+        "precios_semana_base": 3300,
+        "pct_atipicos": 0.364,
+    }
+    rows = {row["clave"]: row for row in quality_metrics.evaluate({"datos": data}, goals, policy)}
+    assert rows["comparables_pct"]["estado"] == "cumple"
+    assert rows["ausencias_region_canal"]["estado"] == "urgente" and rows["atipicos_pct"]["estado"] == "urgente"
+    measured = {"datos": data}
+    assert quality_metrics.where_text("comparables_pct", measured, {})["detalle"] == "723 de 737"
+    assert quality_metrics.where_text("ausencias_region_canal", measured, {})["detalle"] == "Región de Los Lagos"
+    assert quality_metrics.where_text("atipicos_pct", measured, {}, english=True)["detalle"] == "12 of 3300"
+    # a share under 1 % keeps two decimals, so the acceptable is not rounded away
+    assert quality_metrics.show(0.25, "%") == "0,25 %" and quality_metrics.goal_text(goals["atipicos_pct"]) == "≤ 0,25"
+    assert quality_metrics.show(98.1, "%") == "98,1 %"
+    measurement = quality_metrics.read(quality_metrics.REPORT_FILE)["datos"]
+    assert measurement["con_comparacion"] <= measurement["con_semana_anterior"] <= measurement["precios_semana"]
+    assert measurement["reapariciones"] == measurement["precios_semana"] - measurement["con_semana_anterior"]
+    sqap = quality_metrics.SQAP_FILE.read_text(encoding="utf-8")
+    assert "Son los 14 indicadores del plan de calidad: 8 del código y 6 de los datos." in sqap and "97 %" in sqap
+    adr = i18n.document_path("ADR.md", "es").read_text(encoding="utf-8")
+    assert "**Revisión (D-475, 03-11-2026):**" in adr and "| 5 | 97,1 % |" in adr

@@ -83,7 +83,7 @@ Con qué herramientas se construye la base y cuándo se publica.
 | El data warehouse pasa a dbt, DuckDB y Parquet con exactamente los mismos resultados | [Parquet, dbt Core y DuckDB](ADR.md#adr-30--parquet-dbt-core-y-duckdb) | D-154 |
 | Las dos construcciones de la base se comparan sin ambigüedad, también el IPC | — | D-194 |
 | DuckDB 2.0 espera hasta que una consulta lenta quede revisada | — | D-227 |
-| La base publicada vive en un release de GitHub; el repositorio guarda solo su puntero | [Publicar la base servida en un release que cada carga reemplaza](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) | D-270 |
+| La base publicada vive en un release de GitHub; el repositorio guarda solo su puntero | [Publicar la Base DuckDB en un release que cada carga reemplaza](ADR.md#adr-35--publicar-la-base-duckdb-en-un-release-que-cada-carga-reemplaza) | D-270 |
 | Las pruebas de rendimiento salen del CI y siguen en local | — | D-341 |
 | Se publica hasta la última semana completa en ambas fuentes, sin rellenar; una fuente retrasada no bloquea la carga | [Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas) | D-356 |
 | La carga semanal corre solo las pruebas de datos y del pipeline; las de pantalla corren en cada push | — | D-366 |

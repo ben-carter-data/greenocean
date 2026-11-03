@@ -53,7 +53,7 @@ def failure_text(row: dict[str, Any], key: str = "falla") -> str:
     value = row[key]
     if value is None:
         return "—"
-    decimals = 1 if isinstance(value, float) and value % 1 else 0
+    decimals = quality_metrics.percent_decimals(value) if isinstance(value, float) and value % 1 else 0
     unit = quality_metrics.unit_text(row["unidad_falla"], i18n.is_english())
     return number(value, decimals) + (f" {unit}" if unit else "")
 
@@ -146,12 +146,21 @@ def build_overview(
     code = [row for row in rows if row["tipo"] == "codigo"]
     within, nonconforming, measured = quality_metrics.report_counts(report)
     plural = ("no conformidad", "non-conformity") if nonconforming == 1 else ("no conformidades", "non-conformities")
+    # D-475: the report says how many of the plan's indicators it measures; a closed report keeps the ones of its time.
+    name, total = quality_metrics.report_code(report, i18n.is_english()), len(quality_metrics.INDICATORS)
     lead = [
         t(
-            f"Medimos los {len(rows)} indicadores del plan de calidad: {len(data)} de los datos que publicamos y "
-            f"{len(code)} del código que los trata, cada uno contra un aceptable fijado por el autor.",
-            f"We measure the {len(rows)} indicators of the quality plan: {len(data)} of the data we publish and "
-            f"{len(code)} of the code that treats it, each against an acceptable set by the author.",
+            f"El informe {name} mide {len(rows)} de los {total} indicadores del plan de calidad: {len(data)} de los datos "
+            f"que publicamos y {len(code)} del código que los trata, cada uno contra un aceptable fijado por el autor.",
+            f"Report {name} measures {len(rows)} of the {total} indicators of the quality plan: {len(data)} of the data "
+            f"we publish and {len(code)} of the code that treats it, each against an acceptable set by the author.",
+        )
+        if code
+        else t(
+            f"El informe {name} mide los {len(rows)} indicadores de datos del plan de calidad, cada uno contra un "
+            "aceptable fijado por el autor; el código se verifica en el CI de cada push.",
+            f"Report {name} measures the {len(rows)} data indicators of the quality plan, each against an acceptable "
+            "set by the author; the code is checked by the CI of every push.",
         ),
         t(
             f"Hoy: {within} de {measured} medidos dentro de lo aceptable · {nonconforming} {plural[0]}.",

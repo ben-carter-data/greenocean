@@ -76,3 +76,13 @@ def test_relations_route_without_leaving_the_drawing():
     for index, (x, y, w, h) in enumerate(boxes):
         for x2, y2, w2, h2 in boxes[index + 1 :]:
             assert not (x < x2 + w2 and x2 < x + w and y < y2 + h2 and y2 < y + h)  # no two boxes overlap
+
+
+@needs_database
+def test_d474_every_table_of_the_database_is_drawn_or_named_outside_the_diagram():
+    """No table of the DuckDB database goes missing from the E-R diagram: it is drawn, or its legend names it."""
+    with queries.open_database(queries.DATABASE_FILE) as connection:
+        tables = {row[0] for row in connection.execute("SELECT table_name FROM information_schema.tables").fetchall()}
+    svg = er_diagram.build_er_svg(er_diagram.read_schema(), {}, charts.THEMES[0])
+    legend = svg[svg.index("Fuera del diagrama") :]
+    assert not {table for table in tables - set(er_diagram.TABLES) if table not in legend}

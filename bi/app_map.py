@@ -287,7 +287,7 @@ NODES = {
         ["calidad", "orquestacion"],
         ("top", 4),
         "El workflow de la medición y el informe de calidad, escrito por el proyecto.",
-        "Mide los 12 indicadores del plan de calidad y, tras una carga en verde, propone el informe semanal como pull "
+        "Mide los 14 indicadores del plan de calidad y, tras una carga en verde, propone el informe semanal como pull "
         "request, que se fusiona solo si el código está en su aceptable.",
         "En cada push y después de cada carga.",
         "Método y calidad",
@@ -755,7 +755,7 @@ LINKS = [
         "cada push",
         ["calidad"],
         "push",
-        "Cada push dispara la medición de los 12 indicadores.",
+        "Cada push dispara la medición de los 14 indicadores.",
         "La medición, como artefacto de la ejecución.",
     ),
     (

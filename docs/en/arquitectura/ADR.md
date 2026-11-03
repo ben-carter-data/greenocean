@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Architecture Decision Records (ADR), MADR format |
-| Version | 3.4 |
-| Date | 2026-11-02 |
+| Version | 3.5 |
+| Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain the eleven decisions that weigh most on the architecture of GreenOcean: why they were taken, which alternatives there were and what consequences they have. |
@@ -28,7 +28,7 @@ Each record keeps its original number, which is why the numbering is not consecu
 | [Do not use a cloud data warehouse](#adr-31--do-not-use-a-cloud-data-warehouse) | ADR-31 | Accepted | 2026-10-19 |
 | [Compute real prices with the INE food CPI](#adr-33--compute-real-prices-with-the-ine-food-cpi) | ADR-33 | Accepted | 2026-10-19 |
 | [Separate the dbt working database, the database the panel reads and the backup](#adr-34--separate-the-dbt-working-database-the-database-the-panel-reads-and-the-backup) | ADR-34 | Accepted | 2026-10-19 |
-| [Publish the served database in a release that each load replaces](#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) | ADR-35 | Accepted | 2026-10-24 |
+| [Publish the DuckDB database in a release that each load replaces](#adr-35--publish-the-duckdb-database-in-a-release-that-each-load-replaces) | ADR-35 | Accepted | 2026-10-24 |
 | [Calibrate the acceptable of the comparable prices with the history of the data](#adr-36--calibrate-the-acceptable-of-the-comparable-prices-with-the-history-of-the-data) | ADR-36 | Accepted | 2026-11-01 |
 
 ## In summary
@@ -65,12 +65,12 @@ Each decision of this document answers a concrete question: where the data comes
 
 ## ADR-04 · Do not commit the raw data to the repository
 
-- **Status:** accepted (D-020, raw data out of the repository); the DuckDB database and the backup left the repository in D-270 ([ADR-35](#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces)).
+- **Status:** accepted (D-020, raw data out of the repository); the DuckDB database and the backup left the repository in D-270 ([ADR-35](#adr-35--publish-the-duckdb-database-in-a-release-that-each-load-replaces)).
 - **Date:** 2026-10-11.
 - **Context:** each yearly ODEPA CSV file weighs up to about 65 MB and the raw database of all years, hundreds of MB. GitHub rejects files over 100 MB and the repository would grow with each load.
 - **Decision:** the CSV files and the landing database (`etl/raw.db`) are rebuilt on each load and stay out of the repository. The download log (`manifest.json`) is versioned, with the SHA-256 fingerprint of each file.
 - **Considered options:** versioning all the data; using large-file storage.
-- **Consequences:** the repository does not carry the raw data and each downloaded file can be verified against its fingerprint. A new copy of the project must run the agent to get the raw data; the database of the indicators is downloaded with one command ([ADR-35](#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces)).
+- **Consequences:** the repository does not carry the raw data and each downloaded file can be verified against its fingerprint. A new copy of the project must run the agent to get the raw data; the database of the indicators is downloaded with one command ([ADR-35](#adr-35--publish-the-duckdb-database-in-a-release-that-each-load-replaces)).
 - **Confirmation:** `tests/test_documents.py::test_adr04_the_raw_data_is_not_in_git` verifies it, on every push.
 
 ## ADR-10 · Rebuild everything on each load
@@ -143,9 +143,9 @@ Each decision of this document answers a concrete question: where the data comes
 - **Consequences:** the panel reads a light file that is always complete, and the backup makes it possible to check that two independent paths produce the same figures.
 - **Confirmation:** `tests/test_pipeline_gate.py::test_rf03_a_good_load_is_the_only_one_that_replaces_the_served_database` verifies it, on every push.
 
-## ADR-35 · Publish the served database in a release that each load replaces
+## ADR-35 · Publish the DuckDB database in a release that each load replaces
 
-- **Status:** accepted (D-270, DuckDB database in a release).
+- **Status:** accepted (D-270, DuckDB database in a release). It was taken with the title «Publish the served database…»; the name «served database» became «DuckDB database» in D-426 (D-474).
 - **Date:** 2026-10-24.
 - **Context:** each load committed the DuckDB database and the backup, about 48 MB. Git keeps every version of a file: the history grew by about 1 GB per year with copies nobody reads, because each new database already contains the whole history ([ADR-10](#adr-10--rebuild-everything-on-each-load)). The figures were measured on 2026-10-24, when the decision was taken.
 
@@ -177,6 +177,20 @@ Each decision of this document answers a concrete question: where the data comes
 - **Decision:** the acceptable becomes 81 %, the 5th percentile of the history, and so does the goal, as in the other 11 indicators, where goal and acceptable are the same (D-337). It is a calibration, not a relaxation of the standard: the 90 % was set with no reference to the historical distribution, and the value measured on the history of the source is the standard. With 81 %, 12 of the 251 weeks would have been out, the worst of them past the critical margin of 10 points (32.6 %, the week of 2022-05-09).
 - **Options considered:** keeping 90 % and recording each low week as an external incident, which kept an almost weekly false alert; keeping the goal at 90 % with the acceptable at 81 %, which would have left the indicator in «warning» in more than half of the weeks, the same false signal in yellow, and the dashboard's reading rule («while the bar does not pass the tick, it complies») would stop being true; using the 10th percentile (84.6 %), which would have marked 25 weeks, one in ten, that are not rare.
 - **Consequences:** the alert comes up only in a week that is rare for the source. Reports C-1 to C-7 are not evaluated again: they keep the acceptable of 90 % they were measured with, under the version of the SQAP in force then. The percentile is reviewed if the history changes a lot: it is the author's decision, never automatic.
+- **Revision (D-475, 2026-11-03):** the measure changes. It now counts only the week's prices that also had a price the week before; those that reappear after a gap are counted apart and do not alert, because their lack of a comparison is not a failure. With the same rule, the acceptable and the goal become 97 %, the 5th percentile of the new measure over the same 251 weeks: 9 weeks would have fallen under it and none under the critical margin (87 %). The week of 2026-10-26 gives 98.1 % (723 of 737), with 131 prices that reappear. Reports C-1 to C-7 are still not evaluated again.
+
+| Percentile | Comparable prices, D-475 measure |
+|---|---|
+| Minimum | 95.7 % |
+| 1 | 96.3 % |
+| 5 | 97.1 % |
+| 10 | 97.4 % |
+| 25 | 97.9 % |
+| 50 (median) | 98.3 % |
+| 75 | 98.7 % |
+| 90 | 99.0 % |
+| Maximum | 99.6 % |
+
 - **Confirmation:** verified by `tests/test_quality_method.py::test_d433_the_comparable_prices_acceptable_is_the_fifth_percentile_and_the_closed_reports_keep_theirs`, which runs on every push.
 
 ## Glossary
@@ -199,3 +213,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.2 | 2026-10-31 | ADR-11 extended by the late sources (D-356); the figures of ADR-35 labelled as measured when deciding (D-386); the document moves to `docs/arquitectura/` (D-381, D-388) |
 | 3.3 | 2026-11-01 | ADR-36: the acceptable of the comparable prices is calibrated with the history of the data (D-433) |
 | 3.4 | 2026-11-02 | «Served database» becomes «DuckDB database» in the text; the title of ADR-35 keeps the name it was taken with (D-455) |
+| 3.5 | 2026-11-03 | The title of ADR-35 uses the official name «DuckDB database»; its status recalls the original title (D-474); ADR-36 revised: the measure of the comparable prices and its 97 % acceptable (D-475) |

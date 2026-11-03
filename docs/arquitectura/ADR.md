@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Registros de decisiones de arquitectura (ADR), formato MADR |
-| Versión | 3.4 |
-| Fecha | 02-11-2026 |
+| Versión | 3.5 |
+| Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar las once decisiones que más pesan en la arquitectura de GreenOcean: por qué se tomaron, qué alternativas había y qué consecuencias tienen. |
@@ -28,7 +28,7 @@ Cada registro conserva su número original, por eso la numeración no es correla
 | [No usar un data warehouse en la nube](#adr-31--no-usar-un-data-warehouse-en-la-nube) | ADR-31 | Aceptada | 19-10-2026 |
 | [Calcular precios reales con el IPC de alimentos del INE](#adr-33--calcular-precios-reales-con-el-ipc-de-alimentos-del-ine) | ADR-33 | Aceptada | 19-10-2026 |
 | [Separar la base de trabajo de dbt, la base que lee el panel y el respaldo](#adr-34--separar-la-base-de-trabajo-de-dbt-la-base-que-lee-el-panel-y-el-respaldo) | ADR-34 | Aceptada | 19-10-2026 |
-| [Publicar la base servida en un release que cada carga reemplaza](#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) | ADR-35 | Aceptada | 24-10-2026 |
+| [Publicar la Base DuckDB en un release que cada carga reemplaza](#adr-35--publicar-la-base-duckdb-en-un-release-que-cada-carga-reemplaza) | ADR-35 | Aceptada | 24-10-2026 |
 | [Calibrar el aceptable de los precios comparables con la historia de los datos](#adr-36--calibrar-el-aceptable-de-los-precios-comparables-con-la-historia-de-los-datos) | ADR-36 | Aceptada | 01-11-2026 |
 
 ## En resumen
@@ -65,12 +65,12 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 
 ## ADR-04 · No subir los datos crudos al repositorio
 
-- **Estado:** aceptada (D-020, datos crudos fuera del repositorio); la Base DuckDB y el respaldo salieron del repositorio en D-270 ([ADR-35](#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza)).
+- **Estado:** aceptada (D-020, datos crudos fuera del repositorio); la Base DuckDB y el respaldo salieron del repositorio en D-270 ([ADR-35](#adr-35--publicar-la-base-duckdb-en-un-release-que-cada-carga-reemplaza)).
 - **Fecha:** 11-10-2026.
 - **Contexto:** cada CSV anual de ODEPA pesa hasta unos 65 MB y la base cruda de todos los años, cientos de MB. GitHub rechaza archivos de más de 100 MB y el repositorio crecería con cada carga.
 - **Decisión:** los CSV y la base de aterrizaje (`etl/raw.db`) se reconstruyen en cada carga y quedan fuera del repositorio. Se versiona el registro de descargas (`manifest.json`), con la huella SHA-256 de cada archivo.
 - **Opciones consideradas:** versionar todos los datos; usar almacenamiento de archivos grandes.
-- **Consecuencias:** el repositorio no carga con los datos crudos y cada archivo descargado se puede verificar contra su huella. Una copia nueva del proyecto debe ejecutar el agente para obtener los datos crudos; la base de los indicadores se descarga con un comando ([ADR-35](#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza)).
+- **Consecuencias:** el repositorio no carga con los datos crudos y cada archivo descargado se puede verificar contra su huella. Una copia nueva del proyecto debe ejecutar el agente para obtener los datos crudos; la base de los indicadores se descarga con un comando ([ADR-35](#adr-35--publicar-la-base-duckdb-en-un-release-que-cada-carga-reemplaza)).
 - **Confirmación:** la verifica `tests/test_documents.py::test_adr04_the_raw_data_is_not_in_git`, que corre en cada push.
 
 ## ADR-10 · Reconstruir todo en cada carga
@@ -143,9 +143,9 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 - **Consecuencias:** el panel lee un archivo liviano y siempre completo, y el respaldo permite comprobar que dos caminos independientes producen las mismas cifras.
 - **Confirmación:** la verifica `tests/test_pipeline_gate.py::test_rf03_a_good_load_is_the_only_one_that_replaces_the_served_database`, que corre en cada push.
 
-## ADR-35 · Publicar la base servida en un release que cada carga reemplaza
+## ADR-35 · Publicar la Base DuckDB en un release que cada carga reemplaza
 
-- **Estado:** aceptada (D-270, Base DuckDB en un release).
+- **Estado:** aceptada (D-270, Base DuckDB en un release). Se tomó con el título «Publicar la base servida…»; el nombre «base servida» pasó a «Base DuckDB» en D-426 (D-474).
 - **Fecha:** 24-10-2026.
 - **Contexto:** cada carga subía con un commit la Base DuckDB y el respaldo, unos 48 MB. Git conserva cada versión de un archivo: el historial crecía cerca de 1 GB por año con copias que nadie consulta, porque cada base nueva ya contiene la historia completa ([ADR-10](#adr-10--reconstruir-todo-en-cada-carga)). Las cifras se midieron el 24-10-2026, al tomar la decisión.
 
@@ -177,6 +177,20 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 - **Decisión:** el aceptable pasa a 81 %, el percentil 5 de la historia, y la meta también, como en los otros 11 indicadores, donde meta y aceptable coinciden (D-337). Es una calibración, no una relajación del estándar: el 90 % se fijó sin referencia a la distribución histórica, y el valor medido sobre la historia de la fuente es el estándar. Con 81 %, 12 de las 251 semanas habrían quedado fuera, la peor de ellas más allá del margen crítico de 10 puntos (32,6 %, la semana del 09-05-2022).
 - **Opciones consideradas:** dejar el 90 % y registrar cada semana baja como incidente externo, lo que mantenía una alerta falsa casi semanal; dejar la meta en 90 % con el aceptable en 81 %, con lo que el indicador habría quedado en «aviso» en más de la mitad de las semanas, la misma señal falsa en amarillo, y la regla de lectura del panel («mientras la barra no pase la raya, cumple») dejaría de ser cierta; usar el percentil 10 (84,6 %), que habría marcado 25 semanas, una de cada diez, sin que fueran raras.
 - **Consecuencias:** la alerta sale solo en una semana rara para la fuente. Los informes C-1 a C-7 no se vuelven a evaluar: guardan el aceptable de 90 % con que se midieron, bajo la versión del SQAP vigente entonces. El percentil se revisa si la historia cambia mucho: es una decisión del autor, nunca automática.
+- **Revisión (D-475, 03-11-2026):** la medida cambia. Ahora cuenta solo los precios de la semana que también tenían precio la semana anterior; los que reaparecen tras un hueco se cuentan aparte y no alertan, porque su falta de comparación no es una falla. Con la misma regla, el aceptable y la meta pasan a 97 %, el percentil 5 de la nueva medida en las mismas 251 semanas: 9 semanas habrían quedado bajo él y ninguna bajo el margen crítico (87 %). La semana del 26-10-2026 da 98,1 % (723 de 737), con 131 precios que reaparecen. Los informes C-1 a C-7 siguen sin reevaluarse.
+
+| Percentil | Precios comparables, medida de D-475 |
+|---|---|
+| Mínimo | 95,7 % |
+| 1 | 96,3 % |
+| 5 | 97,1 % |
+| 10 | 97,4 % |
+| 25 | 97,9 % |
+| 50 (mediana) | 98,3 % |
+| 75 | 98,7 % |
+| 90 | 99,0 % |
+| Máximo | 99,6 % |
+
 - **Confirmación:** la verifica `tests/test_quality_method.py::test_d433_the_comparable_prices_acceptable_is_the_fifth_percentile_and_the_closed_reports_keep_theirs`, que corre en cada push.
 
 ## Glosario
@@ -199,3 +213,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.2 | 31-10-2026 | ADR-11 ampliado por las fuentes retrasadas (D-356); las cifras de ADR-35 rotuladas como medidas al decidir (D-386); el documento pasa a `docs/arquitectura/` (D-381, D-388) |
 | 3.3 | 01-11-2026 | ADR-36: el aceptable de los precios comparables se calibra con la historia de los datos (D-433) |
 | 3.4 | 02-11-2026 | «Base servida» pasa a «Base DuckDB» en el texto; el título de ADR-35 conserva el nombre con que se tomó (D-455) |
+| 3.5 | 03-11-2026 | El título de ADR-35 usa el nombre oficial «Base DuckDB»; su estado recuerda el título original (D-474); ADR-36 revisado: la medida de los precios comparables y su aceptable de 97 % (D-475) |

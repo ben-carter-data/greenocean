@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.11 |
-| Fecha | 02-11-2026 |
+| Versión | 1.12 |
+| Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Decir qué calidad cuida GreenOcean, cómo la mide, quién decide y qué pasa cuando algo falla. |
@@ -44,7 +44,7 @@ Medimos dos calidades. La primera es la de los datos que publicamos, según la n
 
 [[diagrama:calidades]]
 
-Son los 12 indicadores del plan de calidad: 8 del código y 4 de los datos. Cada uno tiene escrito qué mide, por qué importa, cómo se mide y qué hacer si falla. Todo eso vive en `docs/calidad/metas.json`, y la página «Método y calidad» lo muestra.
+Son los 14 indicadores del plan de calidad: 8 del código y 6 de los datos. Cada uno tiene escrito qué mide, por qué importa, cómo se mide y qué hacer si falla. Todo eso vive en `docs/calidad/metas.json`, y la página «Método y calidad» lo muestra.
 
 No hay que confundirlos con los 11 indicadores de calidad de los datos, que se miden en cada carga sobre la base publicada y se ven en «Calidad y auditoría». Esos protegen cada publicación; los del plan miden el proyecto semana a semana.
 
@@ -70,7 +70,7 @@ Cada indicador tiene una meta (el valor deseado), un aceptable (el peor valor qu
 
 Los valores de cada indicador están en `docs/calidad/metas.json`, y los nombres de los estados, en `docs/calidad/politica.json`.
 
-El aceptable de un indicador de datos se calibra con la historia de la fuente, no a ojo: marca lo que es raro en esos datos. El de los precios con comparación válida es 81 %, el percentil 5 de 251 semanas, igual que su meta ([ADR-36](../arquitectura/ADR.md#adr-36--calibrar-el-aceptable-de-los-precios-comparables-con-la-historia-de-los-datos), D-433). Un cambio de aceptable vale desde el informe siguiente: los informes ya escritos guardan el aceptable con que se midieron.
+El aceptable de un indicador de datos se calibra con la historia de la fuente, no a ojo: marca lo que es raro en esos datos. El de los precios con comparación válida es 97 %, el percentil 5 de 251 semanas, igual que su meta ([ADR-36](../arquitectura/ADR.md#adr-36--calibrar-el-aceptable-de-los-precios-comparables-con-la-historia-de-los-datos), D-433). Se mide sobre los precios que también tenían precio la semana anterior; los que reaparecen tras un hueco se cuentan aparte y no alertan (D-475). El de los precios atípicos de la semana es 0,25 %, el percentil 95 de 252 semanas. Una región o un canal con precios en cada una de las 8 semanas anteriores que falta en la última es una ausencia, y el aceptable es 0 (D-475). Un cambio de aceptable vale desde el informe siguiente: los informes ya escritos guardan el aceptable con que se midieron.
 
 ## 7. Pruebas que bloquean y pruebas que informan
 
@@ -82,7 +82,7 @@ El ejemplo es F-10 del registro de fallas. Una prueba de velocidad, que era info
 
 ## 8. Informes de calidad
 
-Hay un solo informe numerado: el informe semanal de calidad, uno por semana de datos (D-431). El workflow de calidad lo genera solo cuando la carga semanal terminó en verde, con sus pruebas pasadas y la base publicada, y lo propone como pull request (D-363). Mide los 3 indicadores de datos de cada carga: pruebas de datos dbt superadas, precios con comparación válida y filas rechazadas. Los 8 indicadores de código se verifican en el CI de cada push: pasan o fallan en GitHub Actions, sin informe. Los días desde la última carga se ven en el panel, no en el informe.
+Hay un solo informe numerado: el informe semanal de calidad, uno por semana de datos (D-431). El workflow de calidad lo genera solo cuando la carga semanal terminó en verde, con sus pruebas pasadas y la base publicada, y lo propone como pull request (D-363). Mide los 5 indicadores de datos de cada carga: pruebas de datos dbt superadas, precios con comparación válida, filas rechazadas, regiones o canales ausentes y precios atípicos de la semana (D-475). Los 8 indicadores de código se verifican en el CI de cada push: pasan o fallan en GitHub Actions, sin informe. Los días desde la última carga se ven en el panel, no en el informe.
 
 El informe tiene cuatro páginas: la portada, con la versión de este plan con que se midió; los resultados; la comparación con otro informe, que avisa si los dos no miden los mismos indicadores; y una sola tabla de no conformidades e incidencias, con las abiertas y las de esa semana. La metodología vive solo en este plan. Un informe no se edita después: si algo cambia, sale el informe siguiente. Si los indicadores de código están en su aceptable, el pull request se fusiona solo y el panel muestra el informe; si no, queda abierto y lo revisa el autor; si sigue abierto a la semana siguiente, el informe nuevo lo reemplaza con el mismo número (D-436). En el panel, cada informe se abre como presentación y se descarga en PDF (D-333, D-347).
 
@@ -134,3 +134,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.9 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
 | 1.10 | 02-11-2026 | Los 11 indicadores de los datos se dibujan con el flujo de «Calidad y auditoría» (3), en vez de «El ciclo de cada semana» (D-455) |
 | 1.11 | 02-11-2026 | El dashboard de la semana se llama «Semanal» (10, D-459) |
+| 1.12 | 03-11-2026 | Los precios comparables se miden sobre los que tenían precio la semana anterior, con aceptable 97 %; dos indicadores nuevos de datos: regiones o canales ausentes y precios atípicos de la semana (3, 6, 8, ADR-36, D-475) |

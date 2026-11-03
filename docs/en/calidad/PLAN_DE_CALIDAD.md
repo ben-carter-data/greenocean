@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.11 |
-| Date | 2026-11-02 |
+| Version | 1.12 |
+| Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Say which quality GreenOcean looks after, how it measures it, who decides and what happens when something fails. |
@@ -44,7 +44,7 @@ We measure two qualities. The first is that of the data we publish, following th
 
 [[diagrama:calidades]]
 
-They are the 12 indicators of the quality plan: 8 of the code and 4 of the data. Each one has written down what it measures, why it matters, how it is measured and what to do if it fails. All of that lives in `docs/calidad/metas.json`, and the page «Method and quality» shows it.
+They are the 14 indicators of the quality plan: 8 of the code and 6 of the data. Each one has written down what it measures, why it matters, how it is measured and what to do if it fails. All of that lives in `docs/calidad/metas.json`, and the page «Method and quality» shows it.
 
 They are not the 11 data quality indicators, which are measured on every load on the published database and shown in «Quality and audit». Those protect each publication; the plan's indicators measure the project week by week.
 
@@ -70,7 +70,7 @@ Each indicator has a goal (the wanted value), an acceptable (the worst value tol
 
 The values of each indicator are in `docs/calidad/metas.json`, and the names of the states, in `docs/calidad/politica.json`.
 
-The acceptable of a data indicator is calibrated with the history of the source, not by eye: it marks what is rare in those data. The one of the prices with a valid comparison is 81 %, the 5th percentile of 251 weeks, the same as its goal ([ADR-36](../arquitectura/ADR.md#adr-36--calibrate-the-acceptable-of-the-comparable-prices-with-the-history-of-the-data), D-433). A change of acceptable holds from the next report: the reports already written keep the acceptable they were measured with.
+The acceptable of a data indicator is calibrated with the history of the source, not by eye: it marks what is rare in those data. The one of the prices with a valid comparison is 97 %, the 5th percentile of 251 weeks, the same as its goal ([ADR-36](../arquitectura/ADR.md#adr-36--calibrate-the-acceptable-of-the-comparable-prices-with-the-history-of-the-data), D-433). It is measured over the prices that also had a price the week before; those that reappear after a gap are counted apart and do not alert (D-475). The one of the atypical prices of the week is 0.25 %, the 95th percentile of 252 weeks. A region or a channel with prices in each of the 8 weeks before that is missing in the latest one is an absence, and the acceptable is 0 (D-475). A change of acceptable holds from the next report: the reports already written keep the acceptable they were measured with.
 
 ## 7. Tests that block and tests that inform
 
@@ -82,7 +82,7 @@ The example is F-10 of the failure register. A speed test, which was informative
 
 ## 8. Quality reports
 
-There is only one numbered report: the weekly quality report, one per data week (D-431). The quality workflow makes it only when the weekly load ended in green, with its tests passed and the database published, and proposes it as a pull request (D-363). It measures the 3 data indicators of each load: dbt data tests passed, prices with a valid comparison and rejected rows. The 8 code indicators are checked by the CI of every push: they pass or fail in GitHub Actions, with no report. The days since the last load are shown in the dashboard, not in the report.
+There is only one numbered report: the weekly quality report, one per data week (D-431). The quality workflow makes it only when the weekly load ended in green, with its tests passed and the database published, and proposes it as a pull request (D-363). It measures the 5 data indicators of each load: dbt data tests passed, prices with a valid comparison, rejected rows, missing regions or channels and atypical prices of the week (D-475). The 8 code indicators are checked by the CI of every push: they pass or fail in GitHub Actions, with no report. The days since the last load are shown in the dashboard, not in the report.
 
 The report has four pages: the cover, with the version of this plan it was measured by; the results; the comparison with another report, which warns when the two do not measure the same indicators; and one table of non-conformities and incidents, with the open ones and the ones of that week. The method lives only in this plan. A report is never edited afterwards: if something changes, the next report comes out. If the code indicators are within their acceptable, the pull request is merged by itself and the dashboard shows the report; otherwise it stays open and the author reviews it; if it is still open the week after, the new report replaces it with the same number (D-436). In the dashboard, each report opens as a presentation and downloads as a PDF (D-333, D-347).
 
@@ -134,3 +134,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.9 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
 | 1.10 | 2026-11-02 | The 11 data indicators are drawn with the flow of «Quality and audit» (3), instead of «The cycle of each week» (D-455) |
 | 1.11 | 2026-11-02 | The week's dashboard is called «Weekly» (10, D-459) |
+| 1.12 | 2026-11-03 | The comparable prices are measured over those that had a price the week before, with a 97 % acceptable; two new data indicators: missing regions or channels and atypical prices of the week (3, 6, 8, ADR-36, D-475) |
