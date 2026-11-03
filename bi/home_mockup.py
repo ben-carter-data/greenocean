@@ -401,7 +401,7 @@ STEP_TEXTS = {
 }
 LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una familia'}
 SEARCH_DARK, SEARCH_LIGHT = '#39ff14', '#00a83a'  # D-450: fluorescent green
-TREND_LABEL = 'Tendencia de las últimas 8 semanas'
+TREND_LABEL = 'Mediana semanal de las últimas 8 semanas, todo Chile'  # D-480: always national, said on hover
 
 
 def step_chip(step, texts=None):
@@ -446,7 +446,7 @@ def sparkline(values, label=None):
     state = change_state(points[-1] / 100)
     return (
         f'<span class="mock-spark {state}"><svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" role="img" '
-        f'aria-label="{esc(label or TREND_LABEL)}"><polyline points="{coords}" fill="none" stroke="currentColor" '
+        f'aria-label="{esc(label or TREND_LABEL)}"><title>{esc(label or TREND_LABEL)}</title><polyline points="{coords}" fill="none" stroke="currentColor" '
         'stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></span>'
     )
 
@@ -523,7 +523,8 @@ def regional_map(
         )
     legend = (
         '<span><i class="rise"></i>Subieron</span><span><i class="fall"></i>Bajaron</span>'
-        '<span><i class="neutral"></i>Sin cambio claro</span><span><i class="nodata"></i>Sin dato</span>'
+        '<span title="Alzas y bajas parejas (no se distinguen del azar) o la mayoría sin cambio">'
+        '<i class="neutral"></i>Sin cambio claro</span><span><i class="nodata"></i>Sin dato</span>'
     )
     scope = (
         f'Viendo: <b>{esc(short_region(selected_region))}</b> · <a href="{esc(region_link(None))}" target="_self">Ver todo Chile</a>'
@@ -541,8 +542,10 @@ def regional_map(
         + panel_hint(
             'Precios por región',
             '<strong>¿Hacia dónde se movieron los precios?</strong>'
-            '<span>% de precios comparables que siguió la dirección dominante. Mapa en proporción real; '
-            'cada región se lee en su fila.</span>',
+            '<span>Cada precio de la región (un producto en un canal) se compara con la semana anterior: subió, '
+            'bajó o sin cambio (menos de 0,05 %). La cifra es el % del grupo más grande. La región se pinta roja o '
+            'azul solo si sus alzas y bajas difieren más que el azar (prueba de signos, p &lt; 0,05); si no, gris '
+            '«=», aunque un grupo pase de la mitad. Mapa en proporción real; cada región se lee en su fila.</span>',
         )
         + f'</div><div class="mock-scope-row"><p class="mock-scope">{scope}</p>{button}</div>'
         f'<div class="mock-regional-legend">{legend}</div>'
@@ -682,7 +685,9 @@ def family_movement(
         + panel_hint(
             'Variación por familia',
             '<strong>¿Qué familias subieron y cuáles bajaron?</strong>'
-            f'<span>Mediana de variaciones de precios comparables, {esc(scope)}.</span>{note}',
+            f'<span>Mediana (el valor del medio) del cambio de cada precio comparable frente a la semana anterior, '
+            f'{esc(scope)}. «Sin cambio»: menos de 0,05 %. La línea pequeña: esa mediana en las últimas 8 '
+            f'semanas, siempre de todo Chile.</span>{note}',
         )
         + '</div>'
         f'<span class="mock-place">Región: <b>{esc(place)}</b></span>'
@@ -704,6 +709,17 @@ def products_note(published, hidden=0):
     return '<p class="mock-products-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</p>'
 
 
+# D-480: what each figure of step 3 is computed from, so none is silent.
+PRODUCTS_HINT = panel_hint(
+    'Detalle de productos',
+    '<strong>¿Qué productos explican el cambio?</strong>'
+    '<span>Un precio es un producto con su variedad, calidad, canal y unidad. «Mediana»: el valor del medio de sus '
+    'cambios frente a la semana anterior. «Regiones ↑ / ↓»: en todo Chile, las regiones donde ese precio subió o bajó '
+    '0,05 % o más; las que no cambiaron no se cuentan. «Ver cálculo · n de m regiones»: m son las regiones que publica '
+    'la fuente.</span>',
+)
+
+
 def products_heading(family, average, scope, shown=None, total=None, note='', step=None):
     state = change_state(average) if average is not None else 'neutral'
     chip = (
@@ -720,7 +736,8 @@ def products_heading(family, average, scope, shown=None, total=None, note='', st
     )
     # D-322: one line, so the table keeps the room: the label, the family, the question (on hover), the median and the count.
     return (
-        f'<div class="mock-products-heading mock-products-slim">{step_chip(step)}<span class="mock-kicker">Detalle de productos</span>'
+        f'<div class="mock-products-heading mock-products-slim">{step_chip(step)}{PRODUCTS_HINT}'
+        '<span class="mock-kicker">Detalle de productos</span>'
         f'<span class="mock-products-family">{esc(short_family(family))}</span>'
         f'<h2 title="¿Qué productos explican el cambio?">¿Qué productos explican el cambio?</h2>{chip}'
         f'<span class="mock-products-scope">en {esc(scope)}</span>{count}</div>' + note
@@ -826,13 +843,19 @@ def products_table(rows, week_label, previous_label, query='', selected=None, pu
             else 'No hay productos con precio en ambas semanas para esta selección.'
         )
         body = [f'<tr><td colspan="7" class="mock-empty">{empty}</td></tr>']
+    price_title = (
+        'Precio publicado en la región elegida'
+        if selected
+        else 'Precio medio: promedio de las regiones con precio publicado en las dos semanas'
+    )
     return (
         f'<div class="mock-products-table{" mock-with-family" if show_family else ""}" role="region" tabindex="0" '
         'aria-label="Productos de la familia"><table><thead><tr>'
         '<th>Producto</th>' + ('<th>Familia</th>' if show_family else '') + '<th>Canal</th>'
-        f'<th class="num" title="Precio medio: promedio de las regiones con precio publicado en las dos semanas"><span class="mock-th-word">Precio</span> {esc(previous_label)}</th>'
-        f'<th class="num" title="Precio medio: promedio de las regiones con precio publicado en las dos semanas"><span class="mock-th-word">Precio</span> {esc(week_label)}</th><th class="num">Variación</th>'
-        '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; haz clic en el conteo para ver cuáles">Regiones ↑ / ↓</th></tr></thead>'
+        f'<th class="num" title="{price_title}"><span class="mock-th-word">Precio</span> {esc(previous_label)}</th>'
+        f'<th class="num" title="{price_title}"><span class="mock-th-word">Precio</span> {esc(week_label)}</th><th class="num">Variación</th>'
+        '<th class="num" title="En todo Chile, regiones donde el mismo producto y canal subió / bajó 0,05 % o más; las '
+        'que no cambiaron no se cuentan. Pasa el cursor por el conteo para ver cuáles">Regiones ↑ / ↓</th></tr></thead>'
         '<tbody>' + ''.join(body) + '</tbody></table></div>'
     )
 

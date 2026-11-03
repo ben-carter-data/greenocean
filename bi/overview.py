@@ -29,7 +29,9 @@ from bi.weeks import week_range
 
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
 STILL = 0.0005
-QUIET = 0.3  # in %: the weekly change under which the weeks table shows only a dot (D-314)
+# in %: the weekly change under which the weeks table shows only a dot (D-314); D-480: the same «sin cambio» as «La
+# semana», so a +0,2 % week never reads «Subió» there and «·» here
+QUIET = STILL * 100
 # A state that passes (every test, every indicator in its threshold): green, never the blue of a fall.
 GOOD = "#199e70"
 MARKET_WEEKS = 26
@@ -270,7 +272,7 @@ def build_heat_table_html(
         for c in columns:
             v = cells.get((name, c))
             if v is None:
-                tds.append('<td class="ov-ht-empty">·</td>')
+                tds.append('<td class="ov-ht-empty">—</td>')  # D-480: no data is a dash, never the dot of «sin cambio»
                 continue
             if totals is not None and abs(v) < QUIET:  # a change this small is a dot, never «-0,0» (D-314)
                 tds.append('<td class="ov-ht-quiet">·</td>')
@@ -292,7 +294,10 @@ def build_heat_table_html(
             f'<tr{row_class}><th scope="row" title="{html.escape(full, quote=True)}">{label}</th>{"".join(tds)}</tr>'
         )
     if totals is not None:
-        head += f'<th class="ov-ht-total-head">{html.escape(total_title)}</th>'
+        chained = i18n.tr("Cambio de todo el período: los cambios semanales encadenados, (1 + c₁) × … × (1 + cₙ) − 1")
+        head += (
+            f'<th class="ov-ht-total-head" title="{html.escape(chained, quote=True)}">{html.escape(total_title)}</th>'
+        )
     return f'<div class="ov-ht" style="--cols:{len(columns) + (totals is not None)}"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
 
 
@@ -465,7 +470,7 @@ def consumer_insights(
     lines = []
     if len(fell):
         lines.append(
-            f"Esta semana bajaron {join(f'{short(f)} ({signed(c)})' for f, c in zip(fell['product_group'], fell['change']))}; "
+            f"Esta semana, en mediana frente a la semana anterior, bajaron {join(f'{short(f)} ({signed(c)})' for f, c in zip(fell['product_group'], fell['change']))}; "
             f"subieron {join(f'{short(f)} ({signed(c)})' for f, c in zip(rose['product_group'], rose['change'])) or 'ninguna familia'}."
         )
     if drops:
@@ -479,10 +484,11 @@ def consumer_insights(
         )
     if len(above):
         lines.append(
-            f"Desde enero 2022, {join(short(f) for f in above['family'])} subieron más que el IPC de alimentos "
-            f"({signed(ipc_total)}): son las que más pesan hoy en la canasta. "
+            f"Desde enero 2022, {join(short(f) for f in above['family'])} subieron más de {inflation_view.SAME_PACE_POINTS:.0f} puntos sobre "
+            f"el IPC de alimentos ({signed(ipc_total)}). "
             + (
-                f"{join(short(f) for f in below['family'])} subieron menos: en términos reales, se abarataron."
+                f"{join(short(f) for f in below['family'])} quedaron más de {inflation_view.SAME_PACE_POINTS:.0f} puntos por debajo: en "
+                "términos reales, se abarataron."
                 if len(below)
                 else ""
             )
@@ -547,7 +553,7 @@ def wholesale_insights(variations: pd.DataFrame, week: Any, margins: pd.DataFram
     if not rows.empty:
         moves = rows.groupby("product_group")["variation"].median().mul(100)
         lines.append(
-            "En el mercado mayorista, el cambio típico de la semana fue "
+            "En el mercado mayorista, la mediana del cambio frente a la semana anterior fue "
             + join(f"{short(f)} {signed(v)}" for f, v in moves.items())
             + "."
         )
@@ -559,7 +565,7 @@ def wholesale_insights(variations: pd.DataFrame, week: Any, margins: pd.DataFram
         )[::-1][:3]
         if drops:
             lines.append(
-                "Las mayores bajas mayoristas: "
+                "Las mayores bajas mayoristas, con al menos dos cotizaciones por semana: "
                 + join(f"{product} · {short(family)} ({signed(value)})" for product, _, value, family in drops)
                 + "."
             )
@@ -567,7 +573,7 @@ def wholesale_insights(variations: pd.DataFrame, week: Any, margins: pd.DataFram
     if not week_margins.empty:
         gaps = week_margins.groupby("product_group")["margin"].median().mul(100)
         lines.append(
-            "Del precio mayorista al consumidor, el mismo producto sube típicamente "
+            "Del precio mayorista al consumidor, el mismo producto sube en mediana (brecha K1) "
             + join(f"{short(f)} {signed(v)}" for f, v in gaps.items())
             + ": es el margen que separa la compra por mayor de la góndola."
         )

@@ -500,3 +500,23 @@ def test_d478_the_last_weeks_go_down_to_a_family_and_its_products():
     assert '¿Qué productos vienen subiendo, semana a semana?' in page
     assert 'class="ov-ht-lit"' in page and 'Frutas · toda la familia' in page
     assert page.index('Frutas · toda la familia') < page.index('Plátano')  # the family first, over its products
+
+
+def test_d480_step_three_says_how_each_figure_is_computed():
+    row = {
+        'product': 'Pan',
+        'variety': '',
+        'quality': '',
+        'channel': 'Panadería',
+        'normalized_unit': 'kilo',
+        'variation': 0.1,
+        'national_price': 1100.0,
+        '_previous_price': 1000.0,
+    }
+    national = home_mockup.products_table([row], 'b', 'a')
+    regional = home_mockup.products_table([row], 'b', 'a', selected='Región de Ñuble')
+    assert 'promedio de las regiones' in national and 'promedio de las regiones' not in regional
+    assert 'Precio publicado en la región elegida' in regional
+    heading = home_mockup.products_heading('Pan', 0.01, 'todo Chile', 1, 1, step=3)
+    assert 'mock-hint' in heading and 'Regiones ↑ / ↓' in heading and '0,05 %' in heading
+    assert '<title>' in home_mockup.sparkline([1, 2, 3]) and 'todo Chile' in home_mockup.TREND_LABEL

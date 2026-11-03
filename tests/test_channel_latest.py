@@ -271,6 +271,7 @@ def test_d453_each_channel_card_has_its_own_3d_icon_in_its_own_colours():
             "week": "2026-10-26",
             "median": 0.008,
             "prices": 45,
+            "compared": 40,
             "families": ["Pan"],
             "late": None,
         }

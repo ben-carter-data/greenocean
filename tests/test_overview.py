@@ -3,6 +3,7 @@ page's or Calidad y auditoría's, recomputed here from the same tables."""
 
 import re
 
+import pandas as pd
 import pytest
 
 from bi import alerts, charts, dashboard, home_mockup, overview, queries
@@ -170,3 +171,21 @@ def test_d478_the_insights_name_the_family_of_each_product(market):
         if text.startswith("Las mayores bajas")
     )
     assert all(f"{product} · {home_mockup.short_family(family)}" in line for product, _, _, family in drops)
+
+
+def test_d480_no_silent_calculation_in_the_weeks_table():
+    # «Sin cambio» is the same in «Últimas semanas» as in «La semana», and no data never reads like no change.
+    assert overview.QUIET == overview.STILL * 100
+    frame = pd.DataFrame({"family": ["Pan", "Pan"], "week": ["a", "b"], "change": [0.2, None]}).dropna()
+    table = overview.build_heat_table_html(
+        frame,
+        "family",
+        "week",
+        "change",
+        ["a", "b"],
+        ["Pan"],
+        {"rise": "red", "fall": "blue"},
+        totals={"Pan": 0.2},
+        total_title="Total",
+    )
+    assert "+0,2" in table and '<td class="ov-ht-empty">—</td>' in table and "encadenados" in table

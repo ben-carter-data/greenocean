@@ -602,8 +602,10 @@ def change_card(label: str, figures: dict[str, Any], start, end) -> str:
         percent(figures["change"]),
         compared(start, end),
         say(
-            f"Cambio del índice de {month_label(start)} a {month_label(end)}.",
-            f"Change of the index from {month_label(start)} to {month_label(end)}.",
+            f"Cambio del índice de {month_label(start)} a {month_label(end)}; el índice usa solo las series con "
+            "precio en enero 2022 y en el último mes (muestra fija).",
+            f"Change of the index from {month_label(start)} to {month_label(end)}; the index uses only the series "
+            "priced in January 2022 and in the last month (fixed sample).",
         )
         + " "
         + definition("Alza frente al IPC"),

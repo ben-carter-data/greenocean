@@ -573,9 +573,8 @@ ALERT_DIRECTION_KEY = "home_alert_direction"
 CONTEXT_BASIS_KEY = "context_price_basis"
 BASIS_NOMINAL, BASIS_REAL = "Precios del día", "Sin inflación"
 BASIS_HELP = (
-    "Precios del día: lo que se pagó cada semana. Sin inflación (IPC): todos los precios en pesos del "
-    "último mes publicado por el INE, descontada la inflación de alimentos, para comparar con años "
-    "anteriores sin que la inflación los haga parecer caros."
+    "Precios del día: el índice con los precios pagados. Sin inflación (IPC): el índice de la familia dividido por "
+    "el IPC de alimentos del INE, por 100; sobre 100, la familia subió más que los alimentos en general."
 )
 # The switch of Pipeline y linaje: the whole journey first, its dbt stretch on demand.
 PIPELINE_VIEW_KEY = "pipeline_view"
@@ -5139,8 +5138,9 @@ INFLATION_TERMS = [
     (
         "Métrica",
         "Índice ene 2022 = 100",
-        "Cada mes, el precio promedio de cada serie de consumidor de ODEPA sobre su precio de enero 2022, por 100; "
-        "la familia toma la mediana de sus series.",
+        "Cada mes, el precio promedio de las semanas de cada serie de consumidor de ODEPA sobre su precio de enero "
+        "2022, por 100; la familia toma la mediana de sus series, sin ponderar. Solo entran las series con precio en "
+        "enero 2022 y en el último mes del INE (muestra fija).",
     ),
 ]
 
@@ -5342,6 +5342,10 @@ def show_overview_insights(mode, version):
     gaps = margin_now.groupby("product_group")["margin"].median().mul(100) if not margin_now.empty else None
     market_count = sum(len(data["wholesale"]) for data in overview.read_points().values())
     first_year = overview.ipc_twelve_months(rows).iloc[0]
+    first_month = ba_trends.month_label((first_year["month_start"].year, first_year["month_start"].month))
+    last_month = ba_trends.month_label(last)
+    santiago = len(overview.read_points().get("Región Metropolitana de Santiago", {}).get("wholesale", []))
+    points = f"{inflation_view.SAME_PACE_POINTS:.0f}"
     short = home_mockup.short_family
     fell = moves[moves["state"] == "Bajó"]["product_group"].map(short)
     rose = moves[moves["state"] == "Subió"]["product_group"].map(short)
@@ -5350,14 +5354,16 @@ def show_overview_insights(mode, version):
             "¿Qué está subiendo y qué está bajando esta semana?",
             "Persona común",
             PAGE_HOME,
-            f"Subieron: {overview.join(rose) or 'ninguna familia'}. Bajaron: {overview.join(fell) or 'ninguna familia'}.",
+            f"Subieron: {overview.join(rose) or 'ninguna familia'}. Bajaron: {overview.join(fell) or 'ninguna familia'}. "
+            "Mediana de cada familia frente a la semana anterior.",
         ),
         (
             "¿Qué alimentos se encarecieron más desde 2022?",
             "Persona común",
             "Precios e inflación",
             (
-                f"{overview.join(above)} subieron más que los alimentos en general ({overview.signed(ipc_total)})."
+                f"{overview.join(above)} subieron más de {points} puntos sobre el IPC de alimentos desde enero 2022 "
+                f"({overview.signed(ipc_total)})."
                 if len(above)
                 else "Ninguna familia subió más que los alimentos en general."
             ),
@@ -5366,20 +5372,30 @@ def show_overview_insights(mode, version):
             "¿La inflación de los alimentos está bajando?",
             "Persona común",
             "Precios e inflación",
-            f"Sí, sigue subiendo pero más lento: de {overview.signed(first_year['change'])} al año a {overview.signed(ipc_year)}.",
+            # D-480: the answer is computed, never a fixed «Sí», and both months are named
+            (
+                f"Sí: en 12 meses a {last_month} bajó {overview.signed(ipc_year)}."
+                if ipc_year < 0
+                else f"Sí, sube más lento: de {overview.signed(first_year['change'])} en 12 meses a {first_month} a "
+                f"{overview.signed(ipc_year)} a {last_month}."
+                if ipc_year < first_year["change"]
+                else f"No, sube más rápido: de {overview.signed(first_year['change'])} en 12 meses a {first_month} a "
+                f"{overview.signed(ipc_year)} a {last_month}."
+            ),
         ),
         (
             "¿Dónde se compra por mayor?",
             "Comerciante mayorista",
             PAGE_INSIGHTS,
-            f"{market_count} mercados mayoristas en {len(overview.read_points())} regiones, 3 de ellos en Santiago.",
+            f"{market_count} mercados mayoristas en {len(overview.read_points())} regiones, {santiago} de ellos en Santiago.",
         ),
         (
             "¿Cuánto se agrega entre el mercado mayorista y el consumidor?",
             "Comerciante mayorista",
             "Consultas SQL · Brecha mayorista",
             (
-                f"En promedio, {overview.join(f'{short(f)} {overview.signed(v)}' for f, v in gaps.items())}."
+                f"Mediana de la brecha (K1), semana {weeks.week_range(week)}: "
+                f"{overview.join(f'{short(f)} {overview.signed(v)}' for f, v in gaps.items())}."
                 if gaps is not None
                 else "Sin datos esta semana."
             ),
@@ -5476,7 +5492,15 @@ def show_weeks_table(mode, version):
     upto = variations[variations["week_start"] <= week]
     families = [group for group in OVERVIEW_FAMILIES if group in set(variations["product_group"])]
     with st.container(horizontal=True, vertical_alignment="center", key="weeks_head"):
-        st.caption(tr("Variación semanal, %. Rojo: subió · Azul: bajó."))
+        st.caption(
+            tr("Variación semanal (mediana, todo Chile), %. Rojo: subió · Azul: bajó."),
+            help=tr(
+                "Cada celda es la mediana (el valor del medio) del cambio de cada precio comparable de todo Chile frente "
+                "a la semana anterior; la fila de un producto reúne sus variedades, calidades, canales y unidades. "
+                "«·»: sin cambio (menos de 0,05 %), como en «La semana». «—»: sin dato. «Total»: los cambios semanales "
+                "encadenados. Las alzas y bajas de la «Lectura del período» cuentan las semanas de 0,05 % o más."
+            ),
+        )
         # D-478: the families first; a family or a search goes down to its products
         family = st.selectbox(
             tr("Familia"),
@@ -5724,7 +5748,10 @@ def show_ba_filters(tab):
             key="ba_family",
             format_func=lambda name: tr(home_mockup.short_family(name)),
             width=210,
-            help=tr("Toda la canasta reúne todas las series de consumidor; una familia, solo las suyas."),
+            help=tr(
+                "Toda la canasta: la mediana de todas las series de consumidor, sin ponderar (el IPC del INE pondera "
+                "por gasto); una familia, solo las suyas."
+            ),
         )
         # D-478: under the family, any of its products (of the whole basket, each with its family); typing searches
         family_of = read_ba_products(get_database_version())[-1]
@@ -6082,9 +6109,9 @@ def build_channel_cards_html(cards, address_of, total_families=None):
             f'<span class="ch-source">{html.escape(tr(source))}</span></span></span>'
             f'<span class="ch-week">{html.escape(tr("Semana {}").format(i18n.tr_week(card["week"])))}</span>'
             f'<span class="ch-change {tone}">{html.escape(figure)}'
-            f'<small>{html.escape(tr("variación mediana frente a la semana anterior"))}</small></span>'
-            f'<span class="ch-bar" aria-hidden="true"><i class="{tone}" style="{bar_style(change, scale)}"></i></span>'
-            f'<span class="ch-prices">{html.escape(tr("{} precios").format(charts.format_thousands(card["prices"])))}'
+            f'<small>{html.escape(tr("mediana de {} precios comparables frente a la semana anterior").format(charts.format_thousands(card["compared"])))}</small></span>'
+            f'<span class="ch-bar" title="{html.escape(tr("Escala: la mayor variación entre las tarjetas"), quote=True)}"><i class="{tone}" style="{bar_style(change, scale)}"></i></span>'
+            f'<span class="ch-prices">{html.escape(tr("{} precios por región").format(charts.format_thousands(card["prices"])))}'
             + (
                 # D-476: the reason, so the reader does not take the short count for missing data
                 f'<span class="ch-families">'
@@ -6209,8 +6236,8 @@ def show_price_context_page(mode):
         lead = (
             "Sin inflación: la línea punteada es la canasta del INE (100). Arriba de ella, la familia subió más."
             if real
-            else "Precios de consumidor de ODEPA, mediana por familia; la línea punteada es el IPC de alimentos. "
-            "Misma escala en todos los gráficos."
+            else "Precios de consumidor de ODEPA, mediana por familia de las series con precio en enero 2022 y en el "
+            "último mes; la línea punteada es el IPC de alimentos. Misma escala en todos los gráficos."
         )
         # The switch takes the width it needs, so it is never cut on a narrow window.
         with st.container(horizontal=True, vertical_alignment="center"):

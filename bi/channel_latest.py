@@ -109,6 +109,7 @@ def channel_cards(frame: pd.DataFrame) -> list[dict[str, Any]]:
                 "week": week,
                 "before": before,
                 "prices": int(len(valid)),
+                "compared": len(changes),  # D-480: the prices the median rests on, said on the card
                 "median": median,
                 "late": late,
                 "families": sorted(valid["product_group"].unique()),
