@@ -3790,3 +3790,15 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Colores:** cada año tiene su propio color; la altura de la barra dice cuánto subió o bajó, y la raya corta sigue siendo el IPC de ese año.
 - **Medición (Playwright):** en la misma pestaña, tras ir a Análisis BA y BI (menú plegado), escribir la dirección de la app abre Semanal con el menú abierto.
 - **Pruebas:** `tests/test_ba_trends.py::test_d466_each_year_has_its_own_colour` y la del menú en `tests/test_menu_order.py`.
+
+## D-467 · «Mapa de la app»: los datos recorren su camino real una flecha a la vez, sin marcos, y la ficha corta se abre con la «i»
+
+- **Pedido del autor:** el mapa se veía saturado. Sin cambiar su contenido: la «i», la lupa y el nombre van con el logo y no fuera; se quitan los marcos, cuyos bordes se mezclaban con las flechas; la explicación de una pieza se abre con un clic en su «i», no al pasar el cursor, y mientras está abierta la animación se detiene; la animación sigue el orden real de la app, desde la fuente, por cada etapa, hasta las personas, una flecha a la vez, también donde dos cosas ocurren a la vez. Flechas libres, visibles y precisas.
+- **Diagnóstico:** en reposo se movían a la vez todas las flechas marcadas «siempre», sobre todo los accesos de las personas, así que la animación parecía empezar por los usuarios. La explicación aparecía bajo el cursor y tapaba la figura mientras todo seguía moviéndose.
+- **Decisión:**
+  - **El recorrido:** en reposo, un solo punto recorre las flechas en el orden de los datos: ODEPA mayorista y consumidor → Agente → raw.db → Parquet; INE → Agente → Parquet; Parquet → dbt → Base DuckDB → Release → Panel web → HTML y gráficos → Usuario y Profesional. Hacia las personas va al revés de su línea de acceso, porque los datos salen hacia ellas. Todas las flechas siguen dibujadas; solo se mueve la de su turno. El recorrido espera mientras se mira una pieza, un tema, un ritmo, el «Recorrido del martes» o una explicación. El orden vive en `STORY`, en `bi/app_map.py`.
+  - **La «i»:** un clic muestra la explicación corta de la pieza y detiene todo movimiento; un clic fuera o Escape la cierra. Un clic en la pieza sigue abriendo su ficha completa, y la lupa, su interior.
+  - **Las piezas:** la «i» y la lupa van sobre las esquinas superiores del logo, como parte de la pieza.
+  - **Sin marcos:** se quitan los marcos de dueño (proyecto, plataformas, fuentes y personas) y el fondo de las dos últimas filas. Cada fila conserva su nombre, y cada columna, el suyo.
+- **Medición (Playwright):** en reposo se mueve un punto por vez, en el orden del recorrido (raw.db → Parquet, INE → Agente, Agente → Parquet, Parquet → dbt…); con la «i» de dbt abierta, las animaciones quedan en pausa.
+- **Pruebas:** `tests/test_app_map.py::test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description_opens_on_its_i` y la de las líneas, sin marcos.

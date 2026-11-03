@@ -296,7 +296,8 @@ def test_d441_lines_are_orthogonal_and_each_has_a_colour_of_its_own_in_every_the
     # Parallel lines keep apart, and a head always lands on the logo (a side or its top), never under a name.
     assert "near[axis][n] ? NEAR : 0" in app_map.SCRIPT and "whole.bottom" not in app_map.SCRIPT
     markup = app_map.build_map_html(charts.get_palette(charts.THEMES[0]), {})
-    assert markup.count('class="am-shade s-1"') == 1 and markup.count('class="am-shade s-2"') == 1
+    # D-467: no owner boxes and no shaded bands, whose edges crossed the lines; a row keeps only its name
+    assert 'class="am-shade' not in markup and 'class="am-own' not in markup and markup.count('class="am-band"') == 2
     assert " C" not in app_map.SCRIPT.split("const smooth")[1].split("};")[0]
     for theme in charts.THEMES:
         palette = charts.get_palette(theme)
@@ -416,3 +417,24 @@ def test_d441_the_tuesday_walk_follows_the_real_sequence(facts):
     assert first == sorted(first) and len(set(first)) == len(first)
     if facts["database"]:
         assert str(app_map_detail.count_kind(facts, "test")) in " ".join(text for text, _, _ in steps)
+
+
+def test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description_opens_on_its_i():
+    """At rest a single dot travels the lines in the order the data takes, from the sources to the people (their access
+    lines backwards); the description of a piece opens with a click on its «i», never under the cursor, and while it is
+    open nothing moves. The «i» and the magnifier sit on the logo's corners."""
+    steps = app_map.story_steps()
+    pairs = [app_map.LINKS[index][:2] for index, _ in steps]
+    assert pairs[0] == ("odepa", "agent") and pairs[-2:] == [("visitor", "streamlit"), ("professional", "streamlit")]
+    assert [back for _, back in steps] == [pair[0] in app_map.PEOPLE_KEYS for pair in pairs]
+    order = [pair[1] for pair in pairs]
+    assert order.index("sqlite") < order.index("parquet") < order.index("dbt") < order.index("duckdb")
+    assert order.index("duckdb") < order.index("release") < order.index("streamlit")
+    script, css = app_map.SCRIPT, app_map.build_css(charts.get_palette(charts.THEMES[0]))
+    assert "go = !!state.story && state.story[0] === Number(dot.dataset.index);" in script  # one line at a time
+    assert 'move.setAttribute("keyPoints", "1;0");' in script  # to the people, backwards along their access
+    assert ".am-node.tipped .am-tip { display:grid; }" in css and ":hover .am-tip" not in css
+    assert "svg.pauseAnimations()" in script and "!state.tip" in script
+    assert ".am-info { position:absolute; top:3px; right:calc(50% + 7px);" in css
+    markup = app_map.build_map_html(charts.get_palette(charts.THEMES[0]), {})
+    assert "data-story=" in markup

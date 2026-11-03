@@ -1152,6 +1152,34 @@ TOUR = [
 ]
 
 
+# D-467: what moves at rest, one line at a time, in the order the data really takes: from the sources, through each
+# stage, to the people. A line drawn from a person to the panel (their access) is travelled backwards: the week's data
+# goes out to them.
+STORY = [
+    ("odepa", "agent"),
+    ("odepa_consumer", "agent"),
+    ("agent", "sqlite"),
+    ("sqlite", "parquet"),
+    ("ine", "agent"),
+    ("agent", "parquet"),
+    ("parquet", "dbt"),
+    ("dbt", "duckdb"),
+    ("duckdb", "release"),
+    ("release", "streamlit"),
+    ("streamlit", "web"),
+    ("streamlit", "charts"),
+    ("visitor", "streamlit"),
+    ("professional", "streamlit"),
+]
+PEOPLE_KEYS = {"visitor", "professional", "author"}
+
+
+def story_steps():
+    """The story as [line index, travelled backwards]."""
+    index = {link[:2]: number for number, link in enumerate(LINKS)}
+    return [[index[pair], pair[0] in PEOPLE_KEYS] for pair in STORY]
+
+
 def evidence_label(source, target):
     """The short name of where a line happens: the file name, or the platform."""
     place, detail = LINK_EVIDENCE[(source, target)]
@@ -1598,7 +1626,7 @@ def build_css(palette):
 .am-shade.s-2 {{ background:color-mix(in srgb, {text} 10%, transparent); border-radius:0 0 11px 11px; }}
 .am-own span {{ position:absolute; top:-8px; left:12px; padding:0 6px; font-size:10.5px; font-weight:700;
   letter-spacing:.08em; text-transform:uppercase; background:var(--am-surface, transparent); white-space:nowrap; }}
-.am-band {{ grid-column:2 / 9; align-self:start; border-top:1px solid color-mix(in srgb, {border} 70%, transparent);
+.am-band {{ grid-column:2 / 9; align-self:start; border-top:0;
   position:relative; z-index:0; height:0; margin-top:-7px; }}
 .am-band span {{ position:absolute; top:-8px; left:12px; padding:0 6px; font-size:10px; font-weight:600;
   letter-spacing:.08em; text-transform:uppercase; color:{muted}; background:var(--am-surface, transparent); }}
@@ -1617,18 +1645,19 @@ def build_css(palette):
 /* A line that runs down a column passes behind the names, never through them. */
 .am-istage .am-name, .am-istage .am-sub {{ background:{palette["background"]}; padding:0 3px; }}
 .am-more {{ margin-left:4px; font-size:10.5px; font-weight:500; color:{accent}; }}
-.am-lupa {{ position:absolute; top:0; left:calc(50% + 14px); width:17px; height:17px; padding:0; border-radius:50%;
+/* D-467: the «i» and the magnifier sit on the logo's upper corners, part of the piece, not beside it. */
+.am-lupa {{ position:absolute; top:3px; left:calc(50% + 7px); width:15px; height:15px; padding:0; border-radius:50%;
   cursor:zoom-in; color:{accent};
   border:1px solid color-mix(in srgb, {accent} 60%, transparent); background:var(--am-surface, transparent); z-index:3; }}
 .am-lupa:hover, .am-lupa:focus-visible {{ background:color-mix(in srgb, {accent} 22%, transparent); outline:none; }}
-.am-info {{ position:absolute; top:0; right:calc(50% + 14px); width:17px; height:17px; padding:0; border-radius:50%;
+.am-info {{ position:absolute; top:3px; right:calc(50% + 7px); width:15px; height:15px; padding:0; border-radius:50%;
   cursor:pointer; color:{accent}; border:1px solid color-mix(in srgb, {accent} 60%, transparent);
-  background:var(--am-surface, transparent); z-index:3; font:italic 700 11px/15px Georgia, serif; text-align:center; }}
+  background:var(--am-surface, transparent); z-index:3; font:italic 700 10px/13px Georgia, serif; text-align:center; }}
 .am-info:hover, .am-info:focus-visible {{ background:color-mix(in srgb, {accent} 22%, transparent); outline:none; }}
 /* A magnifier drawn with CSS (st.html drops inline SVG): a ring and its handle. */
-.am-lupa::before {{ content:""; position:absolute; left:3.5px; top:3px; width:6px; height:6px; border-radius:50%;
+.am-lupa::before {{ content:""; position:absolute; left:2.5px; top:2.5px; width:5.5px; height:5.5px; border-radius:50%;
   border:1.5px solid currentColor; }}
-.am-lupa::after {{ content:""; position:absolute; left:10px; top:10.5px; width:4px; height:1.5px; background:currentColor;
+.am-lupa::after {{ content:""; position:absolute; left:9px; top:9.5px; width:3.5px; height:1.5px; background:currentColor;
   transform:rotate(45deg); transform-origin:left center; border-radius:1px; }}
 .am-rchip {{ font:inherit; font-size:10px; font-weight:600; padding:1px 7px; border-radius:8px; cursor:pointer;
   border:1px solid currentColor; background:color-mix(in srgb, currentColor 8%, transparent); white-space:nowrap; }}
@@ -1643,7 +1672,7 @@ def build_css(palette):
 .am-tip i {{ margin-top:5px; font-style:normal; font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:{muted}; }}
 .am-tip b {{ color:{ink}; font-weight:600; }}
 .am-tip-name {{ font-size:13px; }}
-.am-node:hover .am-tip, .am-node:focus-visible .am-tip {{ display:grid; }}
+.am-node.tipped .am-tip {{ display:grid; }}
 .am-node[style*="grid-column:1"] .am-tip, .am-node[style*="grid-column:2"] .am-tip,
 .am-node[style*="grid-column:3"] .am-tip {{ left:0; transform:none; }}
 .am-node[style*="grid-column:7"] .am-tip, .am-node[style*="grid-column:8"] .am-tip,
@@ -1729,7 +1758,7 @@ SCRIPT = r"""<script>
     const links = JSON.parse(main.dataset.links);
     const whats = Array.from(map.querySelectorAll(".am-whats span"), (item) => item.textContent);
     const prefix = "am" + Math.random().toString(36).slice(2, 8) + "-";
-    const state = { hover: null, tour: null, pick: null };
+    const state = { hover: null, tour: null, pick: null, tip: null, story: null };
     const node = (stage, key) => stage.querySelector('[data-key="' + key + '"]');
     // D-441: orthogonal lines, as in an entity-relationship diagram. The stage becomes a grid of small cells; every
     // piece (logo, name, buttons) and every caption of the drawing is a wall. Each line takes the cheapest path: few
@@ -2001,6 +2030,7 @@ SCRIPT = r"""<script>
         dot.dataset.index = index;
         const move = document.createElementNS(ns, "animateMotion");
         move.setAttribute("repeatCount", "indefinite");
+        move.setAttribute("begin", "indefinite");
         const along = document.createElementNS(ns, "mpath");
         along.setAttribute("href", "#" + prefix + index);
         move.appendChild(along);
@@ -2128,6 +2158,22 @@ SCRIPT = r"""<script>
         placed.push(best.area);
       });
     };
+    // A dot starts when it is its turn: once along its line (the story) or again and again (a piece, a theme, the walk);
+    // backwards for the people, who receive the data along the line of their access.
+    const run = (dot, once, back) => {
+      const move = dot.querySelector("animateMotion");
+      if (!move) { return; }
+      move.setAttribute("repeatCount", once ? "1" : "indefinite");
+      move.setAttribute("fill", once ? "freeze" : "remove");
+      if (back) {
+        move.setAttribute("keyPoints", "1;0");
+        move.setAttribute("keyTimes", "0;1");
+        move.setAttribute("calcMode", "linear");
+      } else {
+        ["keyPoints", "keyTimes", "calcMode"].forEach((name) => move.removeAttribute(name));
+      }
+      try { move.beginElement(); } catch (error) { /* the line is not drawn yet */ }
+    };
     // Which lines show, which nodes dim and which dots travel, from the filter, the rhythm, the cursor or the walk.
     const refresh = () => {
       const theme = map.dataset.filter, rhythm = map.dataset.rhythm, step = state.tour;
@@ -2150,14 +2196,17 @@ SCRIPT = r"""<script>
           : !!state.pick && (!!theme || !!rhythm) && state.pick.has(Number(line.dataset.index));
         line.classList.toggle("show", show);
       });
+      const atRest = !step && !state.pick && !state.hover && !theme && !rhythm;
       dots().forEach((dot) => {
-        const line = main.querySelector('.am-line[data-index="' + dot.dataset.index + '"]');
         let go;
         if (step) { go = step.links.includes(dot.dataset.index); }
         else if (state.pick) { go = state.pick.has(Number(dot.dataset.index)); }
         else if (state.hover || theme || rhythm) { go = false; }
-        else { go = line.dataset.base === "1" && line.dataset.rhythm === "always"; }
+        // D-467: at rest, only the line the story has reached, one at a time, from the sources to the people
+        else { go = !!state.story && state.story[0] === Number(dot.dataset.index); }
+        const was = dot.classList.contains("go");
         dot.classList.toggle("go", go);
+        if (go && !was && !atRest) { run(dot, false, false); }
       });
       place(main.querySelectorAll(state.hover ? ".am-label.on" : step || theme || rhythm ? ".am-label.show" : ".am-label.base"));
     };
@@ -2312,6 +2361,7 @@ SCRIPT = r"""<script>
     map.querySelectorAll(".am-close").forEach((button) => button.addEventListener("click", closeCards));
     map.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") { return; }
+      if (state.tip) { closeTip(); return; }
       if (map.querySelector(".am-card:not([hidden])")) { closeCards(); }
       else if (map.classList.contains("am-full") && crumb.hidden) { map.classList.remove("am-full"); }
       else { back(); }
@@ -2326,12 +2376,33 @@ SCRIPT = r"""<script>
       drawMain();
     };
     crumb.querySelector("button").addEventListener("click", back);
+    // D-467: the description of a piece opens with a click on its «i», never under the cursor, and while it is open
+    // nothing moves; a click anywhere else or Escape closes it.
+    const svgs = () => main.querySelectorAll("svg");
+    const closeTip = () => {
+      const open = main.querySelector(".am-node.tipped");
+      if (open) { open.classList.remove("tipped"); open.style.zIndex = ""; }
+      if (state.tip) {
+        state.tip = null;
+        svgs().forEach((svg) => { if (svg.unpauseAnimations) { svg.unpauseAnimations(); } });
+      }
+    };
     map.querySelectorAll(".am-info").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.stopPropagation();
-        openCard('[data-card="' + button.dataset.card + '"]');
+        const item = button.closest(".am-node");
+        const again = item.classList.contains("tipped");
+        closeTip();
+        if (again) { return; }
+        state.tip = item.dataset.key;
+        item.classList.add("tipped");
+        dodge(item);
+        clearInterval(seq.timer);  // the piece's lines stop on the one in view
+        seq.timer = null;
+        svgs().forEach((svg) => { if (svg.pauseAnimations) { svg.pauseAnimations(); } });
       });
     });
+    map.addEventListener("click", (event) => { if (!event.target.closest(".am-info, .am-tip")) { closeTip(); } });
     map.querySelectorAll(".am-zoom, .am-lupa").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -2437,9 +2508,30 @@ SCRIPT = r"""<script>
       let timer = null;
       return () => { clearTimeout(timer); timer = setTimeout(work, 90); };
     };
+    // D-467: at rest, the week's data travels its real way, one line at a time: from ODEPA and the INE through each stage
+    // to the panel and the people; the story waits while a piece, a theme, the walk or a description is in view.
+    const story = JSON.parse(main.dataset.story || "[]");
+    const tale = { at: 0, timer: null };
+    const tell = () => {
+      clearTimeout(tale.timer);
+      if (!story.length) { return; }
+      const resting = !state.tour && !state.pick && !state.hover && !state.tip && !map.dataset.filter
+        && !map.dataset.rhythm && !main.hidden;
+      if (!resting) { state.story = null; tale.timer = setTimeout(tell, 700); return; }
+      const [index, back] = story[tale.at];
+      state.story = [index, back];
+      refresh();
+      const dot = main.querySelector('.am-msg[data-index="' + index + '"]');
+      const part = parts[index];
+      let wait = 1800;
+      if (dot && part) { run(dot, true, back); wait = parseFloat(part.move.getAttribute("dur") || "1.6") * 1000 + 250; }
+      tale.at = (tale.at + 1) % story.length;
+      tale.timer = setTimeout(tell, tale.at === 0 ? wait + 900 : wait);
+    };
     new ResizeObserver(settle(drawMain)).observe(map);
     map.querySelectorAll(".am-istage").forEach((stage) => new ResizeObserver(settle(() => drawInside(stage))).observe(stage));
     drawMain();
+    tell();
   });
 })();
 </script>"""
@@ -2495,14 +2587,10 @@ def build_map_html(palette, addresses, facts=None):
         f'<span class="am-layer" style="grid-column:{index}">{esc(name)}</span>'
         for index, name in enumerate(LAYERS, start=1)
     )
-    owners = "".join(
-        f'<div class="am-own o-{owner}" style="grid-row:{rows};grid-column:{columns}"><span>{esc(label)}</span></div>'
-        for owner, rows, columns, label in OWNER_BOXES
-    )
+    # D-467: no owner boxes and no shaded bands: their edges crossed the lines. A row keeps only its name.
     bands = "".join(
-        f'<div class="am-shade s-{step}" style="grid-row:{row}"></div>'
         f'<div class="am-band" style="grid-row:{row}"><span>{esc(label)}</span></div>'
-        for step, (row, label) in enumerate(ROW_LABELS.items(), start=1)
+        for row, label in ROW_LABELS.items()
     )
     nodes = "".join(build_node(key, palette) for key in NODES)
     data = esc(
@@ -2544,8 +2632,9 @@ def build_map_html(palette, addresses, facts=None):
         f'<div class="am-crumb" hidden><button type="button">← {esc("Volver")}</button>'
         f'<span>{esc("Mapa de la app")} › <b></b></span></div>'
         f'<div class="am-stage am-main" data-links="{data}" data-phases="{esc(json.dumps(rhythm_phases()))}" '
+        f'data-story="{esc(json.dumps(story_steps()))}" '
         f'aria-label="{esc("Mapa de la app")}">'
-        f"{owners}{layers}{bands}{nodes}</div>"
+        f"{layers}{bands}{nodes}</div>"
         f"{insides}{cards}"
         f'<p class="am-caption" hidden><b></b><span></span></p>'
         f'<div class="am-whats" hidden>{whats}</div><div class="am-tour" hidden>{tour}</div>'
