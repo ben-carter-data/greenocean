@@ -3766,3 +3766,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Medición (Playwright):** «Elige tu vista» y Semanal abren con el menú abierto; Calidad y auditoría lo deja abierto; Pipeline y linaje lo pliega; Semanal, abierta desde el menú, lo pliega.
 - **Documentos:** PRD 3.28 (7) y las seis capturas, en los dos idiomas.
 - **Pruebas:** `tests/test_menu_order.py::test_d462_a_dashboard_opens_with_the_menu_folded_and_its_button_beating_in_green`, con la primera página y las de diagramas.
+
+## D-464 · «Modelo de datos»: sus diagramas toman el alto libre de la pantalla
+
+- **Pedido del autor:** en «Modelo de datos» quedaba un margen grande bajo el diagrama entidad-relación; el diagrama puede verse más grande y nítido.
+- **Diagnóstico:** las tres vistas se ajustan al alto de la ventana restando un margen fijo para lo que va arriba y abajo: 427 px la entidad-relación (D-232), 371 px «Dónde viven los datos» (D-236) y 395 px «Cruces entre bases» (D-237). Desde que la página empieza más arriba (D-462, D-463), esos márgenes dejaban entre 166 y 188 px vacíos bajo el diagrama.
+- **Decisión:** los márgenes bajan a 287, 235 y 249 px. El dibujo sigue siendo el mismo SVG, que no pierde nitidez al crecer.
+- **Medición (Playwright):** a 1440 × 900, la entidad-relación pasa de 473 a 613 px de alto, «Dónde viven los datos» de 529 a 665 px y «Cruces entre bases» de 505 a 651 px; a 1266 × 712, la entidad-relación pasa de 285 a 425 px. Ninguna vista desplaza la página.

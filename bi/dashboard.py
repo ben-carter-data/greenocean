@@ -2974,7 +2974,8 @@ def build_architecture_css(mode):
     /* The diagram always fits the window (D-232): the viewport is as wide as the height left
        allows, by the drawing's own proportion; the zoom buttons bring it closer inside the panel. */
     .fit-modelo {{position:relative;}}
-    .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 427px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
+    /* D-464: 287 px, what the header, the chips, the tabs, the phrase and the zoom buttons take today (427 px left 166 px empty). */
+    .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 287px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
     .fit-modelo .zoom-buttons {{position:absolute; bottom:-46px; right:0; margin:0; z-index:2;}}
     .arch-legend {{display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
         border-top:1px solid {palette['card_border']}; font-size:12px; line-height:1.5; color:{palette['text']};}}
@@ -3015,7 +3016,7 @@ def show_architecture_page(mode):
             '<span class="fit-donde" aria-hidden="true"></span><style>'
             '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"],'
             '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"] iframe '
-            '{height:max(calc(100vh - 371px), 380px) !important; flex:none !important; min-height:0 !important;}'
+            '{height:max(calc(100vh - 235px), 380px) !important; flex:none !important; min-height:0 !important;}'
             '</style>',
             unsafe_allow_html=True,
         )
@@ -3034,7 +3035,7 @@ def show_architecture_page(mode):
             '<span class="fit-cruces" aria-hidden="true"></span><style>'
             '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"],'
             '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"] iframe '
-            '{height:max(calc(100vh - 395px), 380px) !important; flex:none !important; min-height:0 !important;}'
+            '{height:max(calc(100vh - 249px), 380px) !important; flex:none !important; min-height:0 !important;}'
             '</style>',
             unsafe_allow_html=True,
         )
