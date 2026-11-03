@@ -464,11 +464,14 @@ def test_d471_the_steps_of_the_load_sit_beside_the_map_grouped_by_who_runs_them(
     listing = app_map.build_story_list()
     assert listing.count('class="am-step"') == 30 and listing.count('class="am-steps-group"') == 4
     assert app_map.esc(app_map.STORY_PARALLEL) in listing  # the one place where two things run at once
-    for text in (
-        [title for title, _ in app_map.STORY_GROUPS]
-        + [app_map.STORY_TITLE, app_map.STORY_PARALLEL]
-        + [note for note in notes.values() if " " in note and "." not in note.split()[0]]
-    ):
+    spanish = [
+        "lo revisa agent.py al bajar",
+        "las pruebas de dbt",
+        "fuente atrasada, pocas filas",
+        "se escribe datos.duckdb",
+    ]
+    assert set(spanish) <= set(notes.values())  # the other notes are files and commands, kept as they are
+    for text in [title for title, _ in app_map.STORY_GROUPS] + [app_map.STORY_TITLE, app_map.STORY_PARALLEL] + spanish:
         assert i18n.lookup(text), text
     script = app_map.SCRIPT
     assert 'item.classList.toggle("now", Number(item.dataset.step) === tale.at)' in script
