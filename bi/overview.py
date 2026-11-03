@@ -15,7 +15,6 @@ from __future__ import annotations
 from typing import Any
 
 import base64
-import html
 import json
 import re
 import unicodedata
@@ -29,9 +28,6 @@ from bi.weeks import week_range
 
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
 STILL = 0.0005
-# in %: the weekly change under which the weeks table shows only a dot (D-314); D-480: the same «sin cambio» as «La
-# semana», so a +0,2 % week never reads «Subió» there and «·» here
-QUIET = STILL * 100
 # A state that passes (every test, every indicator in its threshold): green, never the blue of a fall.
 GOOD = "#199e70"
 MARKET_WEEKS = 26
@@ -109,36 +105,6 @@ def family_heat(variations: pd.DataFrame, weeks: int = HEAT_WEEKS) -> pd.DataFra
     frame = valid.groupby(["product_group", "week_start"])["variation"].median().mul(100).rename("change").reset_index()
     frame["family"] = frame["product_group"].map(home_mockup.short_family)
     frame["week"] = [week_range(w) for w in frame["week_start"]]  # D-374: the range, never the Monday alone
-    return frame
-
-
-def product_heat(
-    variations: pd.DataFrame, weeks: int = HEAT_WEEKS, family: str | None = None, query: str = ""
-) -> pd.DataFrame:
-    """D-478: the same table one level down: one row per product of a family (or per searched product of the whole
-    basket, named with its family), its median change of each week, computed as the family's is."""
-    last = sorted(variations["week_start"].unique())[-weeks:]
-    valid = comparable(variations[variations["week_start"].isin(last)])
-    if family:
-        valid = valid[valid["product_group"] == family]
-    if query:
-        valid = valid[[matches_search(row, query) for row in valid.to_dict("records")]]
-    frame = (
-        valid.groupby(["product_group", "product", "week_start"])["variation"]
-        .median()
-        .mul(100)
-        .rename("change")
-        .reset_index()
-    )
-    frame["family"] = (
-        frame["product"]
-        if family
-        else [
-            f"{product} · {home_mockup.short_family(group)}"
-            for product, group in zip(frame["product"], frame["product_group"])
-        ]
-    )
-    frame["week"] = [week_range(w) for w in frame["week_start"]]
     return frame
 
 
@@ -242,91 +208,6 @@ def style(chart: Any, mode: str, height: int | None = None) -> Any:
     return charts.apply_chart_style(chart.properties(width="container", height=height or "container"), mode)
 
 
-def build_heat_table_html(
-    frame: pd.DataFrame,
-    row: str,
-    column: str,
-    value: str,
-    columns: list[str],
-    rows: list[str],
-    palette: dict[str, str],
-    logos: dict[str, str] | None = None,
-    totals: dict[str, float] | None = None,
-    total_title: str = "",
-    lit: str | None = None,
-) -> str:
-    """D-301: the heat table as an HTML table that fills its card: one row per family with its picture, one column per
-    period, each cell tinted by its change (red rises, blue falls, the stronger the darker) and its value written in it.
-    On a narrow window the first column stays and the periods scroll."""
-    cells = {(r, c): v for r, c, v in zip(frame[row], frame[column], frame[value])}
-    limit = max(1.0, float(frame[value].abs().quantile(0.9))) if not frame.empty else 1.0
-    head = "".join(f"<th>{html.escape(str(c))}</th>" for c in columns)
-    body = []
-    for name in rows:
-        picture = (logos or {}).get(name)
-        full = next((family for family, short in home_mockup.FAMILY_SHORT_NAMES.items() if short == name), name)
-        label = (
-            f'<img src="{picture}" alt="">' if picture else '<span class="ov-ht-dot"></span>'
-        ) + f"<span>{html.escape(name)}</span>"
-        tds = []
-        for c in columns:
-            v = cells.get((name, c))
-            if v is None:
-                tds.append('<td class="ov-ht-empty">—</td>')  # D-480: no data is a dash, never the dot of «sin cambio»
-                continue
-            if totals is not None and abs(v) < QUIET:  # a change this small is a dot, never «-0,0» (D-314)
-                tds.append('<td class="ov-ht-quiet">·</td>')
-                continue
-            tone = palette["rise"] if v >= STILL * 100 else palette["fall"] if v <= -STILL * 100 else None
-            strength = min(1.0, abs(v) / limit)
-            style = (
-                f' style="background:color-mix(in srgb, {tone} {12 + strength * 70:.0f}%, transparent)"' if tone else ""
-            )
-            strong = " ov-ht-strong" if tone and strength > 0.6 else ""
-            number = f"{v:+.1f}".replace(".", ",")
-            tds.append(f'<td class="ov-ht-cell{strong}"{style}>{number}</td>')
-        if totals is not None:
-            total = totals.get(name)
-            text = "" if total is None else ("0,0 %" if round(total, 1) == 0 else f"{total:+.1f} %".replace(".", ","))
-            tds.append(f'<td class="ov-ht-total">{text}</td>')
-        row_class = ' class="ov-ht-lit"' if name == lit else ""  # D-478: the family over its products
-        body.append(
-            f'<tr{row_class}><th scope="row" title="{html.escape(full, quote=True)}">{label}</th>{"".join(tds)}</tr>'
-        )
-    if totals is not None:
-        chained = i18n.tr("Cambio de todo el período: los cambios semanales encadenados, (1 + c₁) × … × (1 + cₙ) − 1")
-        head += (
-            f'<th class="ov-ht-total-head" title="{html.escape(chained, quote=True)}">{html.escape(total_title)}</th>'
-        )
-    return f'<div class="ov-ht" style="--cols:{len(columns) + (totals is not None)}"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
-
-
-def heat_table_css(palette: dict[str, str]) -> str:
-    ink, muted, border = palette["strong_text"], palette["reference"], palette["card_border"]
-    return f"""<style>
-.ov-ht {{ overflow-x:auto; }}
-.ov-ht table {{ width:100%; min-width:calc(170px + var(--cols) * 64px); border-collapse:collapse; table-layout:fixed; margin:0; }}
-.ov-ht th, .ov-ht td {{ border:1px solid {border} !important; }}
-.ov-ht thead th {{ border-top:0 !important; }}
-.ov-ht thead th {{ font-size:12px; font-weight:600; color:{muted}; text-align:center; padding:0 0 2px; background:transparent !important; }}
-.ov-ht thead th:first-child, .ov-ht tbody th {{ width:24%; min-width:150px; }}
-.ov-ht tbody th {{ text-align:left; font-weight:600; font-size:13px; color:{ink}; padding:0 8px 0 0; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis; position:sticky; left:0; background:{palette['card']} !important; }}
-.ov-ht tbody th img {{ width:20px; height:20px; vertical-align:middle; margin-right:8px; object-fit:contain; }}
-.ov-ht tbody th span {{ vertical-align:middle; }}
-.ov-ht-dot {{ display:inline-block; width:20px; height:20px; margin-right:8px; vertical-align:middle; }}
-.ov-ht td {{ text-align:center; font-size:13px; line-height:1.2; font-variant-numeric:tabular-nums; color:{ink};
-  background:color-mix(in srgb, {border} 30%, transparent); padding:0 2px; min-width:54px; }}
-.ov-ht td.ov-ht-strong {{ color:#ffffff; font-weight:600; }}
-.ov-ht td.ov-ht-empty {{ color:{muted}; }}
-.ov-ht td.ov-ht-quiet {{ color:{muted}; opacity:.55; background:transparent !important; }}
-.ov-ht tr.ov-ht-lit th, .ov-ht tr.ov-ht-lit td.ov-ht-total {{ color:{palette['accent']}; }}
-.ov-ht tr.ov-ht-lit {{ border-bottom:2px solid {border} !important; }}
-.ov-ht td.ov-ht-total {{ font-weight:700; color:{ink}; border-left:2px solid {border} !important; }}
-.ov-ht thead th.ov-ht-total-head {{ color:{ink}; border-left:2px solid {border} !important; }}
-</style>"""
-
-
 # endregion
 
 
@@ -391,52 +272,6 @@ def signed(value: float) -> str:
 
 def join(names: Any) -> str:
     return i18n.join_names(list(names))
-
-
-def period_totals(heat: pd.DataFrame) -> pd.Series:
-    """Each family's change over the whole period of the weeks table, its weekly medians chained, in %."""
-    return (
-        heat.sort_values("week_start")
-        .groupby("family")["change"]
-        .apply(lambda changes: ((1 + changes / 100).prod() - 1) * 100)
-    )
-
-
-def weeks_insight(heat: pd.DataFrame, products: bool = False) -> list[str]:
-    """The reading of the whole period of the weeks table (D-311, D-314): the family that got dearest and the one that
-    got cheapest (the first and last of the table's Total column), how many weeks each rose or fell by at least what
-    the table paints, and how many weeks more families rose than fell. Every figure comes from the table's cells."""
-    weeks = heat["week_start"].nunique()
-    chained = period_totals(heat)
-    rose = (heat["change"] >= QUIET).groupby(heat["family"]).sum().reindex(chained.index, fill_value=0)
-    fell = (heat["change"] <= -QUIET).groupby(heat["family"]).sum().reindex(chained.index, fill_value=0)
-    by_week = (heat["change"] >= QUIET).groupby(heat["week_start"]).sum() - (heat["change"] <= -QUIET).groupby(
-        heat["week_start"]
-    ).sum()
-    top, low = chained.idxmax(), chained.idxmin()
-    if products:  # D-478: the same reading, one level down
-        return [
-            i18n.tr(
-                "En estas {} semanas, {} es el producto que más se encareció: {} acumulado, con alzas en {} de ellas."
-            ).format(weeks, top, signed(chained[top]), int(rose[top])),
-            i18n.tr("{} es el que más bajó: {} acumulado, con bajas en {} semanas.").format(
-                low, signed(chained[low]), int(fell[low])
-            ),
-            i18n.tr("En {} de las {} semanas subieron más productos de los que bajaron.").format(
-                int((by_week > 0).sum()), weeks
-            ),
-        ]
-    return [
-        i18n.tr("En estas {} semanas, {} es la que más se encareció: {} acumulado, con alzas en {} de ellas.").format(
-            weeks, i18n.tr(top), signed(chained[top]), int(rose[top])
-        ),
-        i18n.tr("{} es la que más bajó: {} acumulado, con bajas en {} semanas.").format(
-            i18n.tr(low), signed(chained[low]), int(fell[low])
-        ),
-        i18n.tr("En {} de las {} semanas subieron más familias de las que bajaron.").format(
-            int((by_week > 0).sum()), weeks
-        ),
-    ]
 
 
 def best_drops(variations: pd.DataFrame, week: Any, count: int = 3) -> list[tuple[str, str, float, str]]:

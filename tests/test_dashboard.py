@@ -1288,11 +1288,11 @@ def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
     app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PROFESSIONAL
     app.run()
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
-    assert '.home-alert-gallery-legend' in markup and '[class*="st-key-home_alert_card_"]' in markup
+    assert '.home-alert-level-guide' in markup and '.mock-alert-mark' in markup
     app.button(key='home_alert_trigger').click().run()
     assert not app.exception
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
-    assert 'home-alert-overview-marker' in markup
+    assert 'home-alert-level-guide' in markup  # D-489: the levels of step 3, no window
 
 
 def test_movement_ring_parts_cover_comparable_series_not_the_top_n():

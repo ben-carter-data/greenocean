@@ -77,8 +77,9 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
     assert rows['_distance'].is_monotonic_decreasing
     table = dashboard.home_alert_table(rows)
     assert len(table) == len(rows)
-    assert table['N.º'].tolist() == list(range(1, len(rows) + 1))
-    assert {'Nivel', 'Familia', 'Producto', 'Canal', 'Unidad', 'Anterior', 'Actual', 'Variación'} <= set(table)
+    # D-489: in step 3 the unit goes with the product and the family is chosen in step 2, so the table fits the panel
+    assert list(table) == ['Nivel', 'Producto', 'Canal', 'Anterior', 'Actual', 'Variación']
+    assert all(' · $/' in name for name in table['Producto'])
     # D-477: a rise takes the rise words, a drop the drop words; D-478: every level is at least «fuerte», as its alert
     rises = {'Alza extrema', 'Alza muy fuerte', 'Alza fuerte'}
     drops = {'Baja extrema', 'Baja muy fuerte', 'Baja fuerte'}
@@ -109,41 +110,45 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
-def test_alert_button_opens_family_overview_without_leaving_dashboard():
+def test_d489_a_chip_shows_the_alerts_in_step_three_without_a_window():
     app = AppTest.from_file(ROOT / 'bi/dashboard.py', default_timeout=60)
     app.session_state['visitor_profile'] = 'profesional'
     app.run()
     assert not app.exception
-    assert not app.dataframe
     assert app.button(key='home_alert_trigger') not in app.sidebar.button  # on top of the Resumen (D-169)
     app.button(key='home_alert_trigger').click().run()
     assert not app.exception
+    assert app.query_params['alerta'] == dashboard.RISE and app.query_params['familia'] == dashboard.ALL_VALUES
     week = dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]
-    alert_rows = dashboard.home_alert_rows(week, dashboard.ALL_VALUES)
-    assert (
-        len([button for button in app.button if str(button.key).startswith('home_alert_family_')])
-        == alert_rows['product_group'].nunique()
+    rows = dashboard.home_alert_rows(week, dashboard.ALL_VALUES, direction=dashboard.RISE)
+    markup = ' '.join(block.value for block in app.markdown)
+    assert 'precio nacional de ODEPA' in markup and dashboard.alert_count_text(len(rows), dashboard.RISE) in markup
+    assert len(app.dataframe) == 1 and len(app.dataframe[0].value) == len(rows)  # every family's
+    assert not [block for block in app.get('dialog')]
+
+
+def test_d489_a_family_row_carries_its_sharp_rises_and_drops_as_links_of_their_own():
+    rows = [
+        {'product_group': 'Frutas', 'variation': -0.02, 'national_variation': -0.02},
+        {'product_group': 'Pan', 'variation': 0.01, 'national_variation': 0.01},
+    ]
+    markup = home_mockup.family_movement(
+        rows,
+        lambda family: f'#{family}',
+        None,
+        'todo Chile',
+        alerts={'Frutas': (4, 2)},
+        alert_link=lambda family, direction: f'#{family}-{direction}',
+        alert_chosen=('Frutas', 'baja'),
     )
-    assert not app.dataframe
-    assert not app.expander
-    assert 'ALERTA DE PRECIO' in (ROOT / 'bi/assets/alert-price.svg').read_text()
-
-
-@pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
-def test_alert_family_detail_renders_its_toolbar_and_table():
-    script = '''
-import streamlit as st
-from bi import dashboard
-week = dashboard.read_cached_filter_options(dashboard.get_database_version())["week"][0]
-st.session_state["home_alert_selected_family"] = "Frutas"
-dashboard.show_home_alerts_dialog(
-    week, dashboard.ALL_VALUES, None, dashboard.charts.MODE_DARK)
-'''
-    app = AppTest.from_string(script, default_timeout=60).run()
-    assert not app.exception
-    assert app.button(key='home_alert_back')
-    assert len([box for box in app.selectbox if str(box.key).startswith('home_alert_unit_')]) == 1
-    assert app.dataframe
+    item = markup.split('<div class="mock-movement-item">', 1)[1].split('</div>', 1)[0]
+    row, marks = item.split('</a>', 1)  # the row's link closes before the marks: links are never nested
+    assert 'href="#Frutas"' in row and 'mock-alert-mark' not in row
+    assert 'href="#Frutas-alza"' in marks and '>▲4</a>' in marks and '>▼2</a>' in marks
+    assert 'class="mock-alert-mark fall on"' in marks  # the one shown in step 3
+    assert 'title="Muestra en la tabla solo las 4 alzas fuertes de Frutas' in marks  # what the click does, first
+    assert markup.count('mock-alert-mark') == 2  # Pan has no alert, so no mark
+    assert 'una familia puede bajar en conjunto y tener productos que subieron' in markup  # the hint says why
 
 
 def test_d096_sidebar_footer_shows_the_real_alert_count():
@@ -486,20 +491,6 @@ def test_d478_the_whole_basket_names_each_products_family():
     assert '<th>Familia</th>' not in one_family and 'mock-family-cell' not in one_family
     empty = home_mockup.products_table([], '12–18 oct', '5–11 oct', query='kiw', show_family=True)
     assert 'Ningún producto empieza por «kiw» en la canasta.' in empty
-
-
-@pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
-def test_d478_the_last_weeks_go_down_to_a_family_and_its_products():
-    app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=90)
-    app.query_params.update({'vista': dashboard.PAGE_HOME, 'perfil': 'profesional'})
-    app.session_state[dashboard.HOME_VIEW_KEY] = dashboard.HOME_VIEWS[1]
-    app.session_state['weeks_family'] = 'Frutas'
-    app.run()
-    assert not app.exception
-    page = ' '.join(block.value for block in app.markdown)
-    assert '¿Qué productos vienen subiendo, semana a semana?' in page
-    assert 'class="ov-ht-lit"' in page and 'Frutas · toda la familia' in page
-    assert page.index('Frutas · toda la familia') < page.index('Plátano')  # the family first, over its products
 
 
 def test_d480_step_three_says_how_each_figure_is_computed():

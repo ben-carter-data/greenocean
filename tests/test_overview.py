@@ -1,9 +1,6 @@
 """«Dashboard» (D-296): the macro view repeats no figure of its own; each one is the Resumen's, the Precios e inflación
 page's or Calidad y auditoría's, recomputed here from the same tables."""
 
-import re
-
-import pandas as pd
 import pytest
 
 from bi import alerts, charts, dashboard, home_mockup, overview, queries
@@ -48,42 +45,6 @@ def test_d303_changing_the_language_keeps_the_dashboard_working():
     assert not app.exception
 
 
-@needs_database
-def test_d311_the_reading_of_the_period_chains_the_cells_of_the_weeks_table(market):
-    _, variations, _ = market
-    heat = overview.family_heat(variations, weeks=8)
-    lines = overview.weeks_insight(heat)
-    chained = {
-        family: ((1 + rows.sort_values("week_start")["change"] / 100).prod() - 1) * 100
-        for family, rows in heat.groupby("family")
-    }
-    top = max(chained, key=chained.get)
-    rises = int((heat[heat["family"] == top]["change"] >= overview.QUIET).sum())
-    assert lines[0].startswith(f"En estas 8 semanas, {top} es la que más se encareció: {overview.signed(chained[top])}")
-    assert f"con alzas en {rises} de ellas" in lines[0] and len(lines) == 3
-    # D-314: the table's Total column is the same chain, its rows go from the most to the least, and no cell reads «-0,0».
-    totals = overview.period_totals(heat)
-    assert totals.to_dict() == pytest.approx(chained)
-    order = list(totals.sort_values(ascending=False).index)
-    table = overview.build_heat_table_html(
-        heat,
-        "family",
-        "week",
-        "change",
-        list(dict.fromkeys(heat.sort_values("week_start")["week"])),
-        order,
-        charts.get_palette(charts.THEMES[0]),
-        totals=totals.to_dict(),
-        total_title="Total 8 sem",
-    )
-    assert "Total 8 sem" in table and "-0,0" not in table and "−0,0" not in table
-    assert (
-        overview.signed(chained[top]).replace(" %", "") in table.replace(".", ",")
-        or f"{chained[top]:+.1f}".replace(".", ",") in table
-    )
-    assert table.index(f">{order[0]}<") < table.index(f">{order[-1]}<")
-
-
 def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
     source = (dashboard.Path(dashboard.__file__)).read_text(encoding="utf-8")
     assert "def show_overview_page" not in source and "def show_overview_inflation" not in source
@@ -97,9 +58,8 @@ def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
     ]  # D-325: «Dónde comprar» is gone; D-365: «Último dato por canal» sits next to the Dashboard
     assert dashboard.DOOR_PAGES == {}  # D-398: «Precios e inflación» left the Dashboard's header for the menu
     assert dashboard.RETIRED_VIEWS["Dashboard general"] == dashboard.HOME_PAGE
-    assert re.search(
-        r'key=OVERVIEW_WEEKS_KEY,\s*width=190', source
-    )  # the table of weeks opens as a dialog from the Dashboard
+    # D-490: the table of the last weeks left «Semanal», with its selector
+    assert "def show_weeks_table" not in source and "HOME_VIEWS" not in source
     assert charts.get_palette(charts.THEMES[0]) and home_mockup
 
 
@@ -134,29 +94,6 @@ def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
 
 
 @needs_database
-def test_d478_the_weeks_table_goes_down_to_the_products_of_a_family(market):
-    _, variations, _ = market
-    heat = overview.product_heat(variations, 8, "Frutas")
-    last = sorted(variations["week_start"].unique())[-8:]
-    valid = variations[
-        variations["week_start"].isin(last)
-        & (variations["product_group"] == "Frutas")
-        & variations["variation"].notna()
-    ]
-    assert set(heat["family"]) == set(valid["product"])  # every product of the family, nothing else
-    for (product, week), rows in valid.groupby(["product", "week_start"]):
-        cell = heat[(heat["family"] == product) & (heat["week_start"] == week)]["change"]
-        assert cell.iloc[0] == pytest.approx(rows["variation"].median() * 100)  # the family's rule, one level down
-    lines = overview.weeks_insight(heat, products=True)
-    assert "es el producto que más se encareció" in lines[0] and "productos de los que bajaron" in lines[2]
-    # the search finds a product in every family, each named with its family
-    found = overview.product_heat(variations, 8, None, "platano")
-    assert set(found["family"]) == {f"Plátano · {home_mockup.short_family('Frutas')}"}
-    assert overview.matches_search({"product": "Plátano", "variety": "Barraganete"}, "pla barra")
-    assert not overview.matches_search({"product": "Plátano", "variety": "Barraganete"}, "lechuga")
-
-
-@needs_database
 def test_d478_the_insights_name_the_family_of_each_product(market):
     _, variations, week = market
     drops = overview.best_drops(variations, week)
@@ -173,21 +110,3 @@ def test_d478_the_insights_name_the_family_of_each_product(market):
         if text.startswith("Las mayores bajas")
     )
     assert all(f"{product} · {home_mockup.short_family(family)}" in line for product, _, _, family in drops)
-
-
-def test_d480_no_silent_calculation_in_the_weeks_table():
-    # «Sin cambio» is the same in «Últimas semanas» as in «La semana», and no data never reads like no change.
-    assert overview.QUIET == overview.STILL * 100
-    frame = pd.DataFrame({"family": ["Pan", "Pan"], "week": ["a", "b"], "change": [0.2, None]}).dropna()
-    table = overview.build_heat_table_html(
-        frame,
-        "family",
-        "week",
-        "change",
-        ["a", "b"],
-        ["Pan"],
-        {"rise": "red", "fall": "blue"},
-        totals={"Pan": 0.2},
-        total_title="Total",
-    )
-    assert "+0,2" in table and '<td class="ov-ht-empty">—</td>' in table and "encadenados" in table
