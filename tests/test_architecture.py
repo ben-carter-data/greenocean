@@ -301,3 +301,21 @@ def test_d368_the_observability_band_holds_github_rest_api_in_both_journeys():
 
     for text in ("API REST de GitHub", "dos tokens · cargas, logs, lanzar, cancelar", tooltip):
         assert text in i18n_en.PAGES, text
+
+
+def test_d473_the_capital_layer_names_and_their_lines_have_their_english():
+    """«Pipeline y linaje» writes its layers in capitals, which the English audit did not catch: each has its entry."""
+    from bi import i18n
+
+    for text in (
+        "FUENTES",
+        "INGESTA",
+        "ATERRIZAJE",
+        "INTERMEDIO",
+        "CONSUMO",
+        "EJECUTA",
+        "Agente ODEPA",
+        "SQLite · tal cual llega",
+        "Parquet · copia exacta",
+    ):
+        assert i18n.lookup(text), text

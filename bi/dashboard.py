@@ -8189,12 +8189,14 @@ FOLD_SIDEBAR_SCRIPT = f"""<script>
 // D-166: a phone turned sideways shows the computer layout, menu included. Streamlit
 // folded the menu when the page opened upright, so it opens again on turning.
 const phoneLandscape = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
+// D-473: Streamlit marks the menu with data-collapsed; older versions, with aria-expanded.
+const isOpen = (sidebar) => sidebar.dataset.collapsed === "false" || sidebar.getAttribute("aria-expanded") === "true";
 const openMenu = () => {{
     let attempts = 0;
     const open = () => {{
         const sidebar = document.querySelector('[data-testid="stSidebar"]');
         const button = document.querySelector('[data-testid="stExpandSidebarButton"]');
-        if (sidebar && sidebar.getAttribute("aria-expanded") === "true") {{ return; }}
+        if (sidebar && isOpen(sidebar)) {{ return; }}
         if (button) {{ button.click(); }} else if (attempts++ < 40) {{ setTimeout(open, 100); }}
     }};
     open();
@@ -8211,10 +8213,10 @@ let tries = 0;
 const fold = () => {{
     const sidebar = document.querySelector('[data-testid="stSidebar"]');
     const button = document.querySelector('[data-testid="stSidebarCollapseButton"] button');
-    if (sidebar && button && sidebar.getAttribute("aria-expanded") === "true") {{
+    if (sidebar && button && isOpen(sidebar)) {{
         button.click();
         try {{ sessionStorage.setItem("sidebarFolded", "yes"); }} catch (error) {{}}
-    }} else if (sidebar && sidebar.getAttribute("aria-expanded") === "false") {{
+    }} else if (sidebar && !isOpen(sidebar)) {{
         try {{ sessionStorage.setItem("sidebarFolded", "yes"); }} catch (error) {{}}
     }} else if (tries++ < 40) {{
         setTimeout(fold, 100);

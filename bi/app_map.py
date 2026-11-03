@@ -329,7 +329,7 @@ NODES = {
         ("top", 8),
         "El servicio gratuito que publica el panel.",
         "Corre el Panel web desde la rama main y guarda sus secretos: CONTROL_CODE, GITHUB_TOKEN y GITHUB_READ_TOKEN.",
-        "Siempre; despierta la app cuando alguien la visita.",
+        "Al abrir el panel; despierta la app cuando alguien la visita.",
         "Stack y evidencia",
         [],
     ),
@@ -1382,8 +1382,10 @@ def build_tip(key):
         )
     # Up to three short columns (what it is, what it touches, what it includes), so the box is wide and low and covers
     # as little of the drawing as possible.
+    # D-473: the full card (its numbers, with the command that gives each one) opens from here
+    more = f'<button type="button" class="am-tipcard" data-card="{key}">{esc("Ver la ficha completa")}</button>'
     return (
-        f'<span class="am-tip" role="tooltip"><span class="am-tip-col">{left}</span>'
+        f'<span class="am-tip" role="tooltip"><span class="am-tip-col">{left}{more}</span>'
         f'<span class="am-tip-col">{right}</span>{extra}</span>'
     )
 
@@ -1761,6 +1763,11 @@ def build_css(palette):
 .am-tip i {{ margin-top:5px; font-style:normal; font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:{muted}; }}
 .am-tip b {{ color:{ink}; font-weight:600; }}
 .am-tip-name {{ font-size:13px; }}
+.am-tipcard {{ pointer-events:auto; align-self:flex-start; margin-top:8px; padding:3px 9px; border-radius:8px; cursor:pointer; font:inherit;
+  font-size:11.5px; font-weight:600; color:{accent}; border:1px solid color-mix(in srgb, {accent} 55%, transparent);
+  background:transparent; }}
+.am-tipcard::after {{ content:" →"; }}
+.am-tipcard:hover, .am-tipcard:focus-visible {{ background:color-mix(in srgb, {accent} 16%, transparent); outline:none; }}
 .am-node.tipped .am-tip {{ display:grid; }}
 .am-node[style*="grid-column:1"] .am-tip, .am-node[style*="grid-column:2"] .am-tip,
 .am-node[style*="grid-column:3"] .am-tip {{ left:0; transform:none; }}
@@ -2442,6 +2449,11 @@ SCRIPT = r"""<script>
       });
     });
     map.addEventListener("click", (event) => { if (!event.target.closest(".am-info, .am-tip")) { closeTip(); } });
+    map.querySelectorAll(".am-tipcard").forEach((button) => button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      closeTip();
+      openCard('[data-card="' + button.dataset.card + '"]');
+    }));
     map.querySelectorAll(".am-zoom, .am-lupa").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -2548,14 +2560,14 @@ SCRIPT = r"""<script>
       return () => { clearTimeout(timer); timer = setTimeout(work, 90); };
     };
     // D-467: at rest, the week's data travels its real way, one line at a time: from ODEPA and the INE through each stage
-    // to the panel and the people; the story waits while a piece, a theme, the walk or a description is in view.
+    // to the panel and the people; the story waits while a piece, a theme, the walk, a description or a card is in view.
     const story = JSON.parse(main.dataset.story || "[]");
     const tale = { at: 0, timer: null };
     const tell = () => {
       clearTimeout(tale.timer);
       if (!story.length) { return; }
       const resting = !state.tour && !state.pick && !state.hover && !state.tip && !map.dataset.filter
-        && !map.dataset.rhythm && !main.hidden;
+        && !map.dataset.rhythm && !main.hidden && !map.classList.contains("has-card");
       map.classList.toggle("telling", resting);
       if (!resting) {
         if (state.story) { state.story = null; }

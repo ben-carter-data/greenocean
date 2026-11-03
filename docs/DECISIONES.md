@@ -3850,3 +3850,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** en pantalla completa se quitan el recuadro y su margen; la lista «La carga semanal, paso a paso» ocupa la columna derecha, a toda la altura. La explicación de la «i» se abre encima mientras se lee, con la animación detenida.
 - **Medición (Playwright):** a 1440 × 900, en pantalla completa, el mapa ocupa la izquierda y la lista la derecha; la «i» de dbt abre su explicación sin cubrir la lista entera.
 - **Pruebas:** `tests/test_app_map.py` (sin el recuadro vacío y con la fila del mapa y su lista en pantalla completa).
+
+## D-473 · Cierre de la app: el inglés de «Pipeline y linaje», la ficha completa del mapa, «Al abrir el panel», las imágenes del README y el menú en pantallas angostas
+- **Pedido del autor:** terminar la app con cinco arreglos cortos.
+- **1. Inglés de «Pipeline y linaje»:** el diagrama mostraba en español FUENTES, INGESTA, ATERRIZAJE, INTERMEDIO, CONSUMO, EJECUTA, «Agente ODEPA», «SQLite · tal cual llega» y «Parquet · copia exacta». Ahora cada uno tiene su inglés. La auditoría de idioma no los veía, porque reconoce el español por sus acentos y palabras cortas; queda anotado como F-25.
+- **2. Ficha completa en el «Mapa de la app»:** desde D-467 la «i» abre solo la explicación corta, y la ficha con las cifras y sus comandos ya no se podía abrir. La explicación lleva ahora el botón «Ver la ficha completa», que la cierra y abre la ficha. El recorrido espera mientras la ficha está abierta.
+- **3. «Al abrir el panel»:** el ritmo «Siempre» hacía pensar que algo corre todo el tiempo. Nada corre así: el Panel web trabaja cuando alguien lo abre. El ritmo se llama ahora «Al abrir el panel» (en inglés, «When the panel opens»).
+- **4. Imágenes del README:** las cuatro capturas eran del 31-10, con el menú anterior. Se tomaron de nuevo a 1440 × 900, en la vista Profesional y sin el respaldo `etl/datos.db`, como en producción: Semanal, «Análisis BA y BI (Insights)», «Pipeline y linaje» y «Calidad y auditoría».
+- **5. Menú en pantallas angostas (D-166):** el script que pliega el menú en un teléfono horizontal leía `aria-expanded`, que Streamlit ya no escribe. Ahora lee también `data-collapsed`, como el pliegue de los dashboards.
+- **Medición (Playwright):** en el «Mapa de la app», la «i» de DuckDB y luego «Ver la ficha completa» abren la ficha, cierran la explicación y detienen el recorrido. En inglés, la auditoría ya no encuentra español en «Pipeline y linaje» ni en el «Mapa de la app».
+- **Pruebas:** `tests/test_architecture.py` (el inglés de las etiquetas en mayúsculas) y `tests/test_app_map.py` (el botón de la ficha, la pausa del recorrido y el nombre del ritmo).

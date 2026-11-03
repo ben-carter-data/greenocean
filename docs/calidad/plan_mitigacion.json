@@ -1177,6 +1177,58 @@
           "referencia": "D-441"
         }
       ]
+    },
+    {
+      "id": "F-25",
+      "categoria": "código",
+      "falla": [
+        "Un texto corto en mayúsculas queda en español en la página en inglés",
+        "A short text in capitals stays in Spanish on the English page"
+      ],
+      "deteccion": [
+        "Una revisión del diagrama «Pipeline y linaje» en inglés",
+        "A review of the «Pipeline y linaje» diagram in English"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La auditoría de idioma reconoce el español por sus acentos y palabras cortas, y una etiqueta como «INGESTA» no tiene ninguno",
+        "The language audit recognizes Spanish by its accents and short words, and a label such as «INGESTA» has none"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: la página en español estaba bien y los datos no cambian",
+        "None: the Spanish page was fine and the data does not change"
+      ],
+      "correctiva": [
+        "Cada etiqueta del diagrama tiene su inglés, y una prueba lo exige",
+        "Each label of the diagram has its English, and a test requires it"
+      ],
+      "estacion": 9,
+      "caso_real": "D-473",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "En inglés, el diagrama «Pipeline y linaje» mostraba FUENTES, INGESTA, ATERRIZAJE, INTERMEDIO, CONSUMO y EJECUTA.",
+            "In English, the «Pipeline y linaje» diagram showed FUENTES, INGESTA, ATERRIZAJE, INTERMEDIO, CONSUMO and EJECUTA."
+          ],
+          "diagnostico": [
+            "Esas etiquetas no tenían entrada en inglés y la auditoría no las veía como español.",
+            "Those labels had no English entry and the audit did not see them as Spanish."
+          ],
+          "solucion": [
+            "Se agregó el inglés de cada etiqueta y una prueba que lo exige.",
+            "The English of each label was added, with a test that requires it."
+          ],
+          "comentario": [
+            "La falla venía de antes; se vio al revisar la app completa en inglés.",
+            "The failure was older; it showed up when reviewing the whole app in English."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-473"
+        }
+      ]
     }
   ]
 }

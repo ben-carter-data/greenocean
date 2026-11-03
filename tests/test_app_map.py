@@ -478,3 +478,17 @@ def test_d471_the_steps_of_the_load_sit_beside_the_map_grouped_by_who_runs_them(
     script = app_map.SCRIPT
     assert 'item.classList.toggle("now", Number(item.dataset.step) === tale.at)' in script
     assert "tale.at = Number(item.dataset.step);" in script and "const side = aside && aside.offsetWidth" in script
+
+
+def test_d473_the_full_card_opens_from_the_description_and_the_panel_rhythm_says_when_it_works():
+    """The «i» description carries the button to the full card, and the panel's rhythm says it works when opened, never
+    «Siempre»: nothing in the system runs all the time."""
+    tip = app_map.build_tip("duckdb")
+    assert 'class="am-tipcard" data-card="duckdb"' in tip and "Ver la ficha completa" in tip
+    script = app_map.SCRIPT
+    assert "closeTip();\n      openCard('[data-card=\"' + button.dataset.card + '\"]');" in script
+    assert '!map.classList.contains("has-card")' in script  # the story waits while the card is open
+    rhythms = dict(app_map_detail.RHYTHMS)
+    assert rhythms["always"] == "Al abrir el panel" and "Siempre" not in rhythms.values()
+    for text in ("Ver la ficha completa", "Al abrir el panel"):
+        assert i18n.lookup(text), text

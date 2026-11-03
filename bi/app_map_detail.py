@@ -33,7 +33,7 @@ RHYTHMS = [
     ("month", "Cada mes"),
     ("push", "Cada push"),
     ("manual", "Manual"),
-    ("always", "Siempre"),
+    ("always", "Al abrir el panel"),  # D-473: nothing runs all the time; the panel works when opened
 ]
 RHYTHM_OWNER = {"week": "semanal", "month": "ine", "push": "pruebas", "manual": "author", "always": "streamlit"}
 
