@@ -25,7 +25,9 @@ PACE = inflation_view.SAME_PACE_POINTS
 ZOOM_HEIGHT = 300  # the enlarged chart, in the window its green magnifier opens (D-460)
 # D-458: a tile takes the window's height less what is above and below it (the header, the green panel, the tabs, the
 # cards and the table), never less than the floor.
-TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 603, 154, 128
+TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 603, 230, 210
+# D-461: on a low window the charts keep their floor and the table scrolls inside its own box, under the charts.
+TABLE_RESERVED, TABLE_FLOOR = 588, 140
 
 # One chart of a tab: its title, the months it shows, what it measures, what follows from it, and how to draw it at a
 # width and a height.
@@ -1254,9 +1256,10 @@ def build_css(palette: dict[str, str], green: str) -> str:
   line-height:1.3 !important; }}
 .ba-zoom-title span {{ display:block; font-weight:400; font-size:12.5px; color:{muted}; }}
 [role="dialog"]:has(.ba-zoom-title) [data-testid="stElementToolbar"] {{ display:none !important; }}
+.ba-table {{ max-height:max(calc(100vh - {TABLE_RESERVED}px), {TABLE_FLOOR}px); overflow:auto; }}
 .ba-table table {{ width:100%; border-collapse:collapse; font-size:12.5px; }}
 .ba-table th {{ text-align:left; font-weight:600; color:{muted}; padding:4px 8px; border-bottom:1px solid {border};
-  cursor:help; }}
+  cursor:help;  position:sticky; top:0; z-index:1; background:{card_color};}}
 .ba-table td {{ padding:2px 8px; border-bottom:1px solid {border}; color:{text}; }}
 .ba-table td.num {{ text-align:right; font-variant-numeric:tabular-nums; }}
 .ba-table td.rise {{ color:{rise}; }} .ba-table td.fall {{ color:{fall}; }}
@@ -1271,7 +1274,8 @@ def build_css(palette: dict[str, str], green: str) -> str:
   .st-key-ba_tab button p {{ font-size:13.5px !important; }}
   .st-key-ba_filters [data-testid="stElementContainer"] {{ width:166px !important; max-width:166px !important; }}
   .st-key-ba_filters [data-testid="stElementContainer"]:last-child {{ width:172px !important; max-width:172px !important; }}
-  .ba-context p {{ font-size:12.5px !important; }} }}
+  .ba-context p {{ font-size:12.5px !important; }}
+  .ba-table {{ max-height:max(calc(100vh - {TABLE_RESERVED - 35}px), {TABLE_FLOOR}px); }} }}
 </style>"""
 
 

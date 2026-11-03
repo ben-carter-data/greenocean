@@ -263,6 +263,15 @@ def test_d460_the_green_magnifier_opens_the_chart_large_in_a_window():
     assert '[class*="st-key-ba_enlarge_"] button [data-testid="stIconMaterial"] { color:#39ff14 !important;' in css
     assert "drop-shadow(0 0 3px #39ff14)" in css  # it glows
     assert "st-key-ba_zoom_" not in css and ":hover [class*" not in css  # no more opening on hover
+    # D-461: on a low window the charts keep 230 px and the table scrolls inside its box, its header in sight
+    assert "min-height:max(calc(100vh - 603px), 230px)" in css
+    assert (
+        ".ba-table {{ max-height:max(calc(100vh - 588px), 140px); overflow:auto; }}".replace("{{", "{").replace(
+            "}}", "}"
+        )
+        in css
+    )
+    assert "position:sticky; top:0;" in css
     words = ba_trends.zoom_text("lo que mide", "lo que se deduce")
     assert "<b>Qué mide</b> lo que mide" in words and "<b>Qué se deduce</b> lo que se deduce" in words
 

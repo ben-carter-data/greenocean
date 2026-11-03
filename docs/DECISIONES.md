@@ -3736,3 +3736,11 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Medición (Playwright):** todo cabe sin desplazar la página a 1440 × 900, 1440 × 790 (español e inglés), 1366 × 768, 1280 × 800 y 1280 × 720. Los gráficos miden 297 px de alto a 1440 × 900 (antes 263), 187 px a 1440 × 790 (antes 154) y 197 px a 1280 × 800 (antes 128).
 - **Documentos:** PRD 3.26 (7) y la captura M-3, en los dos idiomas.
 - **Pruebas:** `tests/test_ba_trends.py::test_d460_the_green_magnifier_opens_the_chart_large_in_a_window`, `::test_d460_each_tab_draws_three_charts_and_each_magnifier_opens_its_window` (la lupa abre la ventana con sus textos y su gráfico) y `::test_d457_every_month_of_a_period_has_its_point_and_its_label` (las etiquetas en dos líneas en la página y completas en la ventana).
+
+## D-461 · «Análisis BA y BI»: los gráficos nunca bajan de 230 px; en una ventana baja, la tabla se desplaza por dentro
+
+- **Pedido del autor:** en su pantalla, más baja que la medida de 1440 × 790, los gráficos se veían aún más comprimidos que antes de D-460.
+- **Diagnóstico:** los gráficos toman el alto que deja la ventana, sobre un piso de 154 px (128 px en una ventana angosta). En una ventana baja ese piso mandaba y la tabla se quedaba con el resto; antes de D-458 los gráficos medían 182 px fijos.
+- **Decisión:** el piso de los gráficos sube a 230 px (210 px bajo 1400 px de ancho). La tabla por familia va en su propia caja, que se desplaza por dentro con el encabezado siempre a la vista, y toma el alto que queda, nunca menos de 140 px. En una ventana alta no cambia nada: la tabla cabe entera y no se desplaza.
+- **Medición (Playwright):** a 1440 × 790 los gráficos miden 230 px (antes 187) y la tabla muestra 7 de sus 9 filas; a 1440 × 900, 297 px y la tabla entera; a 1280 × 720, 210 px. Nada desplaza la página a 1440 × 900, 1440 × 790 ni 1280 × 720; a 1440 px de ancho, solo una ventana de menos de unos 720 px de alto desplaza la página.
+- **Pruebas:** `tests/test_ba_trends.py::test_d460_the_green_magnifier_opens_the_chart_large_in_a_window` revisa también el piso de los gráficos y la caja de la tabla.
