@@ -1,19 +1,19 @@
 {
-  "generado": "2026-10-31 04:44 UTC",
-  "commit": "30fe842",
-  "python": "3.11.17",
+  "generado": "2026-11-03 19:23 UTC",
+  "commit": "eb58be0",
+  "python": "3.11.18",
   "ruff": {
     "orden": "/tmp/tools/bin/ruff check bi etl agent tests --select E,F,W",
     "version": "ruff 0.17.2",
-    "errores": 1326,
+    "errores": 1841,
     "por_codigo": {
-      "E501": 1326
+      "E501": 1841
     },
     "errores_sin_largo_de_linea": 0,
     "formato": {
       "orden": "ruff format --check bi etl agent tests",
       "por_reformatear": 0,
-      "ya_formateados": 135
+      "ya_formateados": 155
     }
   },
   "mypy": {
@@ -23,16 +23,16 @@
     "errores": 0,
     "errores_revisando_cuerpos_sin_tipos": 0,
     "por_modulo": {},
-    "funciones": 128,
-    "con_tipo_de_retorno": 128
+    "funciones": 139,
+    "con_tipo_de_retorno": 139
   },
   "cobertura": {
     "orden": "pytest -q -m \"not rendimiento\" --cov=bi --cov=etl --cov=agent",
-    "pruebas_ok": 1121,
+    "pruebas_ok": 1357,
     "pruebas_omitidas": 10,
     "salida": 1,
-    "total": 94.5,
-    "logica_critica": 93.0,
+    "total": 95.2,
+    "logica_critica": 93.8,
     "modulos_criticos": {
       "etl/etl.py": 95.8,
       "etl/bronze.py": 97.1,
@@ -40,9 +40,9 @@
       "etl/pipeline.py": 91.3,
       "bi/queries.py": 100.0,
       "bi/alerts.py": 100.0,
-      "bi/overview.py": 77.3,
-      "bi/inflation_view.py": 97.9,
-      "bi/control.py": 96.2,
+      "bi/overview.py": 82.0,
+      "bi/inflation_view.py": 98.6,
+      "bi/control.py": 96.9,
       "bi/served_database.py": 95.3,
       "bi/quality.py": 87.2
     },
@@ -50,48 +50,57 @@
       "agent/agent.py": 87.3,
       "bi/actions_view.py": 94.1,
       "bi/alerts.py": 100.0,
+      "bi/app_diagrams.py": 96.5,
       "bi/app_map.py": 100.0,
+      "bi/app_map_detail.py": 99.1,
       "bi/architecture.py": 99.4,
+      "bi/ba_trends.py": 97.8,
       "bi/brand_icons.py": 100.0,
+      "bi/business_analysis.py": 98.0,
       "bi/buttons.py": 100.0,
-      "bi/channel_latest.py": 87.0,
+      "bi/channel_icons.py": 100.0,
+      "bi/channel_latest.py": 87.3,
       "bi/charts.py": 94.1,
       "bi/compact_table.py": 93.2,
-      "bi/control.py": 96.2,
-      "bi/dashboard.py": 91.0,
+      "bi/configuration.py": 98.9,
+      "bi/control.py": 96.9,
+      "bi/dashboard.py": 92.0,
+      "bi/data_terms.py": 100.0,
       "bi/database_crossings.py": 98.6,
       "bi/database_map.py": 100.0,
       "bi/deployment.py": 100.0,
       "bi/devops.py": 98.4,
       "bi/doc_diagrams.py": 100.0,
-      "bi/doc_figures.py": 100.0,
+      "bi/doc_figures.py": 99.3,
       "bi/doc_views.py": 100.0,
-      "bi/documents_folder.py": 98.6,
+      "bi/documents_folder.py": 98.7,
       "bi/er_diagram.py": 100.0,
       "bi/git_workflow.py": 100.0,
-      "bi/github_actions.py": 95.4,
+      "bi/github_actions.py": 95.5,
       "bi/github_page.py": 98.5,
-      "bi/home_mockup.py": 89.8,
-      "bi/i18n.py": 97.4,
+      "bi/home_mockup.py": 90.1,
+      "bi/i18n.py": 97.9,
       "bi/i18n_en.py": 100.0,
-      "bi/inflation_view.py": 97.9,
+      "bi/inflation_view.py": 98.6,
+      "bi/interest_map.py": 100.0,
       "bi/lag.py": 100.0,
       "bi/lineage.py": 98.4,
+      "bi/live_flow.py": 99.2,
       "bi/monitoring.py": 100.0,
       "bi/operation_center.py": 98.9,
-      "bi/overview.py": 77.3,
+      "bi/overview.py": 82.0,
       "bi/page_bar.py": 100.0,
-      "bi/project.py": 96.0,
+      "bi/project.py": 95.8,
       "bi/quality.py": 87.2,
-      "bi/quality_evidence.py": 95.8,
+      "bi/quality_evidence.py": 100.0,
       "bi/quality_live.py": 98.1,
-      "bi/quality_method.py": 98.4,
-      "bi/quality_metrics.py": 94.7,
-      "bi/quality_view.py": 95.7,
-      "bi/quality_viewer.py": 100.0,
+      "bi/quality_method.py": 98.6,
+      "bi/quality_metrics.py": 95.0,
+      "bi/quality_view.py": 94.0,
+      "bi/quality_viewer.py": 98.9,
       "bi/queries.py": 100.0,
-      "bi/report.py": 91.3,
-      "bi/run_monitor.py": 93.4,
+      "bi/report.py": 92.2,
+      "bi/run_monitor.py": 95.1,
       "bi/security_map.py": 100.0,
       "bi/security_plan.py": 86.7,
       "bi/served_database.py": 95.3,
@@ -100,6 +109,7 @@
       "bi/star_model.py": 100.0,
       "bi/storage_map.py": 98.7,
       "bi/tech_glossary.py": 100.0,
+      "bi/weeks.py": 100.0,
       "bi/zoom.py": 100.0,
       "etl/bronze.py": 97.1,
       "etl/etl.py": 95.8,
@@ -112,15 +122,17 @@
   "bandit": {
     "orden": "bandit -r bi etl agent",
     "version": "bandit 1.9.4",
-    "alta": 0,
-    "media": 25,
-    "baja": 15,
+    "alta": 1,
+    "media": 27,
+    "baja": 17,
     "por_regla": {
-      "B105": 8,
+      "B105": 9,
+      "B608": 26,
       "B405": 1,
       "B314": 1,
       "B101": 4,
-      "B608": 24,
+      "B112": 1,
+      "B324": 1,
       "B404": 1,
       "B603": 1
     }
@@ -140,8 +152,8 @@
   "secretos": {
     "orden": "detect-secrets scan $(git ls-files)",
     "version": "1.5.0",
-    "archivos_revisados": 253,
-    "candidatos": 27,
+    "archivos_revisados": 275,
+    "candidatos": 30,
     "por_archivo": {
       "agent/downloads/manifest.json": [
         "Hex High Entropy String",
@@ -156,6 +168,7 @@
         "Hex High Entropy String"
       ],
       "bi/app_map.py": [
+        "Secret Keyword",
         "Secret Keyword"
       ],
       "bi/architecture.py": [
@@ -168,6 +181,8 @@
         "Secret Keyword"
       ],
       "bi/i18n_en.py": [
+        "Secret Keyword",
+        "Secret Keyword",
         "Secret Keyword",
         "Secret Keyword",
         "Secret Keyword"
@@ -193,8 +208,8 @@
         "Base64 High Entropy String"
       ]
     },
-    "falsos_positivos": 27,
-    "sin_clasificar": 0,
+    "falsos_positivos": 29,
+    "sin_clasificar": 1,
     "historial_con_patrones_de_claves": 0,
     "nota": "gitleaks no está instalado en este equipo; se usó detect-secrets y una búsqueda de patrones en el historial"
   },
@@ -212,8 +227,8 @@
     }
   },
   "pruebas": {
-    "pruebas": 1137,
-    "archivos_de_prueba": 65
+    "pruebas": 1368,
+    "archivos_de_prueba": 75
   },
   "datos": {
     "orden": "python scripts/medir_calidad.py (función measure_data)",
@@ -233,7 +248,7 @@
     "series_con_dato": 868,
     "pct_series_con_dato": 73.4,
     "dias_desde_ultima_semana": 2,
-    "dias_desde_ultima_carga": 3,
+    "dias_desde_ultima_carga": 0,
     "filas_leidas": 2541374,
     "filas_rechazadas": 201,
     "pct_rechazadas": 0.008,
