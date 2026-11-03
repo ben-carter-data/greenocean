@@ -1,6 +1,6 @@
-"""«Último dato por canal» (D-365): the last week each source published, each in its own block.
+"""The channels of step 2 of «Semanal» (D-365, D-494): the last week each source published, each in its own block.
 
-Since D-356 the Dashboard and the indicators publish up to the last week complete in both sources. This page reads
+Since D-356 the Dashboard and the indicators publish up to the last week complete in both sources. Step 2 reads
 `latest_by_source`, which keeps the last two weeks of each source without that cut, and shows each source with its own
 latest week: the change by family against its previous week and its products, like the overview. A source behind the
 other says which week it has not published yet. Pure: no Streamlit; the dashboard draws the blocks.

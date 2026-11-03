@@ -48,14 +48,13 @@ def test_d303_changing_the_language_keeps_the_dashboard_working():
 def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
     source = (dashboard.Path(dashboard.__file__)).read_text(encoding="utf-8")
     assert "def show_overview_page" not in source and "def show_overview_inflation" not in source
-    # D-453: the section opens with the Dashboard and «Último dato por canal» (D-365) as tiles
+    # D-453: the section opens with its dashboards as tiles; D-494: «Último dato por canal» became step 2 of Semanal
     # D-456: and «Análisis BA y BI», whose tabs hold «Interesados» (D-376), the method (D-377), «Precios e inflación»
     # (D-398) and «Insights»
     assert dashboard.MENU_BLOCKS[0][2] == [
         dashboard.HOME_PAGE,
-        dashboard.PAGE_CHANNELS,
         dashboard.PAGE_BA,
-    ]  # D-325: «Dónde comprar» is gone; D-365: «Último dato por canal» sits next to the Dashboard
+    ]  # D-325: «Dónde comprar» is gone
     assert dashboard.DOOR_PAGES == {}  # D-398: «Precios e inflación» left the Dashboard's header for the menu
     assert dashboard.RETIRED_VIEWS["Dashboard general"] == dashboard.HOME_PAGE
     # D-490: the table of the last weeks left «Semanal», with its selector
@@ -69,7 +68,6 @@ def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
     assert "show_where_page" not in source and "PAGE_WHERE" not in source
     assert [name for _, _, pages in dashboard.MENU_BLOCKS[:1] for name in pages] == [
         dashboard.HOME_PAGE,  # D-442
-        dashboard.PAGE_CHANNELS,  # D-365, D-452
         dashboard.PAGE_BA,  # D-456
     ]
     assert "Dónde comprar" not in dashboard.SIDEBAR_LABELS.values()
@@ -87,9 +85,9 @@ def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
         assert not app.exception
         markup = " ".join(block.value for block in app.sidebar.markdown)
         assert "Where to buy" not in markup and "Dónde comprar" not in markup
-        assert [link.proto.label for link in app.sidebar.get("page_link")][:3] in (
-            ["Semanal", "Último dato por canal", "Análisis BA y BI"],  # D-456, D-459: the section's three dashboards
-            ["Weekly", "Latest data by channel", "BA and BI analysis"],
+        assert [link.proto.label for link in app.sidebar.get("page_link")][:2] in (
+            ["Semanal", "Análisis BA y BI"],  # D-456, D-459, D-494: the section's two dashboards
+            ["Weekly", "BA and BI analysis"],
         )
 
 

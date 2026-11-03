@@ -399,10 +399,11 @@ def region_layout(geometry):
 
 STEP_TEXTS = {
     1: 'Elige una región',
-    2: 'Elige una familia',
-    3: 'Productos',  # D-492: the reader knows the products are there to be looked at
+    2: 'Elige un canal',  # D-494: optional; without one, every channel
+    3: 'Elige una familia',
+    4: 'Productos',  # D-492: the reader knows the products are there to be looked at
 }
-LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una familia'}
+LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una región', 4: 'Elige primero una familia'}
 SEARCH_DARK, SEARCH_LIGHT = '#39ff14', '#00a83a'  # D-450: fluorescent green
 TREND_LABEL = 'Mediana semanal de las últimas 8 semanas, todo Chile'  # D-480: always national, said on hover
 
@@ -638,6 +639,41 @@ def movement_note(model):
     if model.get('national') and model.get('coverage_changed'):
         sentences.append(f'En {number(model["coverage_changed"])} quedó fuera una región sin precio.')
     return '<span class="mock-movement-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</span>'
+
+
+def channel_list(cards, channel_link, selected, all_link, icon, step=None):
+    """D-494: step 2 of «Semanal», optional: every channel of the data, each with its own 3D icon (D-453) and the median
+    change of its comparable prices against its previous week, the figure of its card (D-404); «Todos los canales»
+    first, the choice when none is made."""
+    rows = [
+        f'<a class="mock-channel-row{" selected" if selected is None else ""}" href="{esc(all_link)}" target="_self">'
+        '<span class="mock-channel-all" aria-hidden="true"></span><strong>Todos los canales</strong></a>'
+    ]
+    for card in cards:
+        change = card['median']
+        state = 'neutral' if change is None else change_state(change)
+        figure = '—' if change is None else '0,0 %' if state == 'neutral' else percent(change * 100, True)
+        title = f'Mediana de {number(card["compared"])} precios comparables frente a su semana anterior'
+        content = data_terms.channel_content(card['channel'])  # D-494: what is inside, so «Mayorista» is not misread
+        rows.append(
+            f'<a class="mock-channel-row {state}{" selected" if card["channel"] == selected else ""}" '
+            f'href="{esc(channel_link(card["channel"]))}" target="_self" title="{esc(title)}">'
+            f'{icon(card["channel"])}<strong>{esc(data_terms.term(card["channel"]))}'
+            f'<small class="mock-channel-change">{esc(content + " · ") if content else ""}<b>{figure}</b></small>'
+            '</strong></a>'
+        )
+    return (
+        '<section class="mock-channels"><div class="mock-step-row">'
+        + step_chip(step)
+        + panel_hint(
+            'Canal',
+            '<strong>¿Dónde se compra?</strong><span>Opcional: sin elegir, se ven todos los canales. Cada canal muestra '
+            'su última semana publicada y la mediana del cambio de sus precios comparables frente a la anterior.</span>',
+        )
+        + '</div>'
+        + ''.join(rows)
+        + '</section>'
+    )
 
 
 def family_movement(

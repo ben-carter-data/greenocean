@@ -32,6 +32,23 @@ CHANNELS = {
     "Supermercado": "Supermarket",
     "Supermercado en Línea": "Online supermarket",
 }
+# D-494: what a channel that does not sell every family holds, said under its name in step 2 of «Semanal», so
+# «Mayorista» is not read as a shop of everything. tests/test_channel_latest.py checks it against the data; the name
+# stays ODEPA's, first, so every price can still be traced to its source.
+CHANNEL_CONTENTS = {
+    "Mayorista": ("frutas y hortalizas", "fruit and vegetables"),
+    "Mercado Mayorista": ("legumbres", "pulses"),
+    "Carnicería": ("carnes", "meat"),
+    "Panadería": ("pan", "bread"),
+}
+
+
+def channel_content(channel):
+    """D-494: what a channel holds, in the reader's language, or None when it sells several families."""
+    content = CHANNEL_CONTENTS.get(channel)
+    return None if content is None else content[1] if i18n.is_english() else content[0]
+
+
 UNITS = {"kilo": "kilo", "litro": "liter", "unidad": "unit"}
 QUALITIES = {
     "1a (cosecha lavada)": "1st (washed, harvest)",

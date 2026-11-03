@@ -923,12 +923,10 @@ def sad_scenarios(mode):
             [
                 tile(
                     say("Semanal", "Weekly"),
-                    say("alertas de precio", "price alerts"),
+                    say(
+                        "región, canal, familia y alertas de precio", "region, channel, family and price alerts"
+                    ),  # D-494
                     "P-1 · RF-05",
-                ),
-                tile(
-                    say("Último dato por canal", "Latest data by channel"),
-                    say("cada canal con su semana", "each channel with its week"),
                 ),
                 # D-456: one page, in tabs, gathers the history and the former four pages of the section.
                 tile(

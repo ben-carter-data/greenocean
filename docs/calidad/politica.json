@@ -232,8 +232,8 @@
       "ODEPA has not published the week {} yet"
     ],
     "ultimo_dato": [
-      "El dashboard Semanal y los indicadores publican hasta la semana común; «Último dato por canal» muestra la última semana de cada fuente, rotulada.",
-      "The Weekly dashboard and the indicators publish up to the common week; «Último dato por canal» shows each source's latest week, labelled."
+      "El dashboard Semanal y los indicadores publican hasta la semana común; al elegir un canal en el paso 2 de Semanal se ve la última semana de esa fuente, rotulada.",
+      "The Weekly dashboard and the indicators publish up to the common week; choosing a channel in step 2 of Weekly shows that source's latest week, labelled."
     ]
   },
   "pruebas_de_la_carga": {

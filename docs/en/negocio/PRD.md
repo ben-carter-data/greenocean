@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.37 |
+| Version | 3.38 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -55,8 +55,8 @@ Each stakeholder has a question, a decision that depends on the answer and a pag
 | Stakeholder | Who they are | What they ask | What decision it helps them make | Where the answer is |
 |---|---|---|---|---|
 | People and families | Whoever buys the food for their home | Which foods are going up? | What to buy before going shopping | [[vista:Weekly]] |
-| Restaurants and grocery stores | Whoever buys food to cook or to sell | When and where is it best to buy? | When and in which channel to buy | [[vista:Weekly]] · [[vista:Latest data by channel]] |
-| Wholesalers, farmers and market vendors | Whoever sells wholesale or at the street market | How does the wholesale price compare with the consumer price? | At what price to sell | [[vista:Latest data by channel]] |
+| Restaurants and grocery stores | Whoever buys food to cook or to sell | When and where is it best to buy? | When and in which channel to buy | [[vista:Weekly]] |
+| Wholesalers, farmers and market vendors | Whoever sells wholesale or at the street market | How does the wholesale price compare with the consumer price? | At what price to sell | [[vista:Weekly]] |
 | Journalists and economists | Whoever reports on the economy or analyzes it | Which foods rise more than inflation, according to official data? | What to report, with figures that can be checked | [[vista:Prices and inflation]] · [[vista:Insights]] |
 | Technical teams and recruiters | Whoever designs data systems or evaluates who builds them | How is a reliable data pipeline built and operated? | Which practices to follow or whom to hire | [[vista:Pipeline and lineage]] · [[vista:Method and quality]] · [[vista:Git workflow]] |
 
@@ -66,7 +66,7 @@ The panel has three profiles, the same as the window that asks for the view on e
 
 | Profile | What they use it for |
 |---|---|
-| User | The business, with no account: the section «Business · BA and BI», with its three dashboards: Weekly, guided in three steps, Latest data by channel and BA and BI analysis, with its tabs Monthly, Historical, Prices and inflation, Insights, Stakeholders and Method |
+| User | The business, with no account: the section «Business · BA and BI», with its two dashboards: Weekly, guided in four steps, and BA and BI analysis, with its tabs Monthly, Historical, Prices and inflation, Insights, Stakeholders and Method |
 | Professional | The whole project, with no account, ordered by its role (Data Eng, BA, BI, DevOps or Security), with the read-only SQL queries |
 | Author | The same as Professional, plus «Operations center», «GitHub Actions» and «Settings», the «Action required» alert and the manual load; it asks for the control code, which is never in the repository |
 
@@ -90,11 +90,11 @@ Each stakeholder sits on a ring according to **how much their decision depends o
 | Stakeholder | Interest | Why | Opens |
 |---|---|---|---|
 | Restaurants and grocery stores | High | They buy every week, and the channel and the week they buy in change their cost | [[vista:Weekly]] |
-| Wholesalers, farmers and market vendors | High | Every week they set their selling price against the wholesale and the consumer price | [[vista:Latest data by channel]] |
+| Wholesalers, farmers and market vendors | High | Every week they set their selling price against the wholesale and the consumer price | [[vista:Weekly]] |
 | Journalists and economists | High | Every story on prices needs an official figure that can be checked | [[vista:Prices and inflation]] |
 | People and families | Medium | It helps them before they shop, but what they buy does not depend on these data alone | [[vista:Weekly]] |
 | Technical teams and recruiters | Medium | They review it now and then, for how it is built, not for the week's figures | [[vista:Pipeline and lineage]] |
-| ODEPA | Low | It publishes the prices: it provides the data, it does not decide with them | [[vista:Latest data by channel]] |
+| ODEPA | Low | It publishes the prices: it provides the data, it does not decide with them | [[vista:Weekly]] |
 | INE | Low | It publishes the food CPI: it provides the data, it does not decide with them | [[vista:Prices and inflation]] |
 
 ## 4. Business questions
@@ -149,9 +149,9 @@ With the load of 2026-10-31, the database holds 821,072 weekly prices over 252 w
 
 These are six real captures, of 2026-11-02, of five main pages and in the four color themes. The Weekly dashboard appears twice: as the User sees it and as the Professional sees it. The dark theme is the one on entry.
 
-- **Menu:** five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first gathers, under the title «Dashboards», three tiles with a dashboard icon, which stay in sight even when the section folds: Weekly, Latest data by channel and BA and BI analysis (D-442, D-452, D-453, D-456, D-459). The app opens with the menu open; on going to a dashboard or a page of diagrams the menu folds to give them the width, and the button that opens it beats in green (D-462, D-463).
-- **Weekly:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done. The three steps always stay together on one screen; the products table fills panel 3, scrolls by itself and is enlarged with its own button (D-446, D-447). With «The whole basket», the table names each product's family (D-478), and the «i» of each step says how each figure is computed: against which week, with which median, with which threshold and in which scope (D-480).
-- **Latest data by channel:** one card per channel, with its 3D icon in its own colours (D-453), its latest week, its prices, its change and the families it publishes. Each card opens that channel with the steps of the Weekly dashboard and behaves exactly like it, even if the other source has not published that week yet (D-404 to D-406, D-452).
+- **Menu:** five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first gathers, under the title «Dashboards», two tiles with a dashboard icon, which stay in sight even when the section folds: Weekly and BA and BI analysis (D-442, D-453, D-456, D-459, D-494). The app opens with the menu open; on going to a dashboard or a page of diagrams the menu folds to give them the width, and the button that opens it beats in green (D-462, D-463).
+- **Weekly:** it reads in four numbered steps. First a region or all of Chile is chosen; then, if wished, a channel; then a family, and last its products are shown. Each step opens when the one before is done; the channel is optional and without it every channel is shown (D-494). The steps always stay together on one screen; the products table fills panel 4, scrolls by itself and is enlarged with its own button (D-446, D-447). With «The whole basket», the table names each product's family (D-478), and the «i» of each step says how each figure is computed: against which week, with which median, with which threshold and in which scope (D-480).
+- **Channel (step 2 of Weekly):** each channel with its 3D icon in its own colours (D-453) and the median of its change. On choosing one, Weekly shows only its prices and its latest published week, even if the other source has not published that week yet, and says which families that channel publishes (D-404 to D-406, D-494).
 - **BA and BI analysis:** six tabs (D-456, D-457). «Monthly» is one period, the last 12 months or one year, month by month: five key figures (price change, against the CPI, consumer–wholesale gap, price alerts and biggest monthly rise), three charts (price month by month, change of each month and price alerts by month) and the table by family. «Historical» is the whole history, from January 2022 to the last month the INE published: five key figures (change since January 2022, against the CPI, year of the biggest rise, cheapest month and price alerts), three charts (price since January 2022, change of each year and season) and the table by family. Each chart says which months it shows, and its green magnifier opens it large, with what it measures and what follows from it; each figure explains on hover how it is computed. The other four are Prices and inflation, Insights, Stakeholders and Method. Above the tabs, a green panel says what is being shown, from which month to which and why it starts and ends there; it follows the tab and the period (D-458). «Monthly» and «Historical» start by family, with «The whole basket» by default; the «Product» selector goes down to one of its products, computed with the family's rule, and the table shows the family with its products under it (D-478).
 - **Stack and evidence:** two views. «Tools» explains each tool; «Live system flow» shows the real pieces, what they say to each other and the running load (D-412).
 
@@ -257,3 +257,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.35 | 2026-11-03 | «Semanal» shows only the week: the table of the last weeks leaves (D-490) |
 | 3.36 | 2026-11-03 | The chosen family's alerts, between step 2 and step 3; the order no longer has «Inusuales» (RF-05, D-491) |
 | 3.37 | 2026-11-03 | Step 3 is called «Productos»; the search sits by the alerts and looks within the one chosen (RF-05, D-492) |
+| 3.38 | 2026-11-03 | Weekly has four steps: the channel becomes step 2, optional, and the section keeps two dashboards (D-494) |

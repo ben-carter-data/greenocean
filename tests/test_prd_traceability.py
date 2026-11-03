@@ -75,7 +75,6 @@ def test_d455_the_usage_profiles_are_the_three_views_of_the_panel():
         assert name in menu_labels() or name in ("Negocio · BA y BI", "Acción requerida"), name
     for page in (
         "Semanal",
-        "Último dato por canal",
         "Interesados",
         "Precios e inflación",
         "Insights",

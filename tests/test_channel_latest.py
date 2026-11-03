@@ -9,7 +9,7 @@ import re
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from bi import channel_latest, dashboard, i18n
+from bi import channel_latest, dashboard, home_mockup, i18n
 
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
@@ -77,45 +77,6 @@ def test_d365_the_change_of_each_product_is_recomputed_by_sql_from_the_table():
         assert all(row["_regions"][:2] == (2, 0) for row in rows)  # both regions rose 10 %
 
 
-def test_d404_the_page_draws_one_whole_card_per_channel_and_a_card_opens_its_channel(monkeypatch):
-    for profile in ("consulta", "profesional"):
-        app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
-        app.session_state["visitor_profile"] = profile
-        app.run()
-        assert "Último dato por canal" in [link.proto.label for link in app.sidebar.get("page_link")], profile
-    # D-398: the overview's header no longer links to it; the menu does, in every view.
-    assert "Ver último dato por canal" not in [link.proto.label for link in app.main.get("page_link")]
-    script = (
-        f"import sys\nsys.path.insert(0, {str(ROOT)!r})\nimport pandas as pd\nfrom bi import dashboard\n"
-        "from tests.test_channel_latest import sample\n"
-        # AppTest runs in this process: the sample is put back at the end and the channel caches are emptied,
-        # or the next tests read the sample instead of the database.
-        "SAVED = dashboard.read_latest_by_source\n"
-        "dashboard.read_latest_by_source = lambda version: sample()\n"
-        "try:\n"
-        "    dashboard.render_page(dashboard.PAGE_CHANNELS)\n"
-        "finally:\n"
-        "    dashboard.read_latest_by_source = SAVED\n"
-        "    for cached in (dashboard.read_channel_frame, dashboard.read_channel_national_prices,\n"
-        "                   dashboard.read_channel_week_snapshot, dashboard.read_cached_all_variations_in):\n"
-        "        cached.clear()\n"
-    )
-    page = AppTest.from_string(script, default_timeout=90).run()
-    assert not page.exception
-    text = " ".join(block.value for block in page.markdown)
-    assert text.count('<a class="ch-card"') == 2  # the whole card is the link, one per channel
-    assert "canal=Mercado" in text and "canal=Feria+libre" in text
-    assert "Semana 12–18 oct" in text and "Semana 19–25 oct" in text  # D-374: each channel's own week
-    assert text.count('class="ch-state late"') == 1 and "ODEPA aún no publica la semana 19–25 oct" in text
-    assert text.count('class="ch-state ok"') == 1
-    # a card opens its channel: its own latest week and its products
-    page.query_params["canal"] = "Feria libre"
-    page.run()
-    assert not page.exception
-    detail = " ".join(block.value for block in page.markdown)
-    assert 'class="mock-products-table"' in detail and '<a class="ch-card"' not in detail
-
-
 def test_d404_each_channel_card_says_its_week_prices_change_and_state():
     cards = {card["channel"]: card for card in channel_latest.channel_cards(sample())}
     assert [card["source"] for card in channel_latest.channel_cards(sample())] == ["wholesale", "consumer"]
@@ -135,22 +96,9 @@ def test_d365_the_table_is_served_and_documented():
         and "int_prices__weekly" in model
     )
     assert "### latest_by_source" in i18n.document_path("SAD.md", "es").read_text(encoding="utf-8")
-    # D-452, D-453: the second dashboard tile, at the head of «Negocio · BA y BI»
-    assert dashboard.PAGE_CHANNELS in next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
-    assert dashboard.DASHBOARD_TILES[:2] == [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS]
-
-
-def test_d380_the_channel_page_hands_its_scope_in_spanish_so_the_sentences_translate_whole():
-    import inspect
-
-    from bi import dashboard
-
-    source = inspect.getsource(dashboard.show_channels_page)
-    # A scope translated before drawing («all of Chile») leaves «…mediana de 51 precios comparables · all of Chile»
-    # half in each language; the page translates whole sentences, as the Dashboard's does.
-    assert 'tr("todo Chile")' not in source
-    # D-405: a channel page is drawn by the Dashboard itself, which hands its scope in Spanish and translates whole.
-    assert "show_market_overview(mode" in inspect.getsource(dashboard.show_channel_detail)
+    # D-494: the page left the menu; its channels are step 2 of «Semanal», and its old address opens it
+    assert dashboard.PAGE_CHANNELS not in next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
+    assert dashboard.RETIRED_VIEWS[dashboard.PAGE_CHANNELS] == dashboard.HOME_PAGE
 
 
 needs_database = pytest.mark.skipif(not dashboard.queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
@@ -160,11 +108,17 @@ needs_database = pytest.mark.skipif(not dashboard.queries.DATABASE_FILE.exists()
 def test_d405_a_channel_page_is_the_panorama_with_that_channel_and_the_panorama_keeps_its_own():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
     app.session_state["visitor_profile"] = "profesional"
+    # D-494: an old address of the channel page opens «Semanal» with that channel chosen in step 2
     app.query_params.update({"vista": dashboard.PAGE_CHANNELS, "canal": "Feria libre"})
     app.run()
     assert not app.exception
     page = " ".join(block.value for block in app.markdown)
-    assert "Último dato por canal › </span><b>Feria libre</b>" in page  # the path names the channel
+    assert "Semanal › </span><b>Feria libre</b>" in page  # the path names the channel
+    assert (
+        'class="mock-channel-row rise selected"' in page
+        or 'class="mock-channel-row fall selected"' in page
+        or ('class="mock-channel-row neutral selected"' in page)
+    )
     assert 'class="mock-products-table"' in page and "mock-movement" in page  # the Dashboard's own panels
     channels = set(re.findall(r'</td><td>([^<]+)</td><td class="num">', page))
     assert channels == {"Feria libre"}, channels  # only that channel's products
@@ -174,7 +128,7 @@ def test_d405_a_channel_page_is_the_panorama_with_that_channel_and_the_panorama_
     app.run()
     assert not app.exception
     panorama = " ".join(block.value for block in app.markdown)
-    assert "Último dato por canal ›" not in panorama
+    assert "Semanal › </span>" not in panorama and 'class="mock-channel-row selected"' in panorama  # «Todos»
 
 
 @needs_database
@@ -195,14 +149,25 @@ def test_d405_in_the_common_week_a_channel_has_the_same_national_prices_as_the_p
     assert mine.sort_index().values == pytest.approx(theirs.sort_index().values)
 
 
-def test_d406_the_cards_share_one_scale_and_say_their_coverage():
-    cards = channel_latest.channel_cards(sample())
-    markup = dashboard.build_channel_cards_html(cards, lambda channel: f"?canal={channel}", total_families=3)
-    widths = re.findall(r'class="ch-bar"[^>]*><i class="[^"]*" style="[^"]*width:([\d.]+)%', markup)
-    assert len(widths) == 2 and max(float(width) for width in widths) == 50.0  # the largest change fills its half
-    # D-476: a channel that covers fewer families says why: the source publishes only those for it
-    assert markup.count('<span class="ch-families">ODEPA solo publica 1 de las 3 familias en este canal</span>') == 2
-    assert dashboard.bar_style(-0.05, 0.1) == "left:25.0%;width:25.0%" and dashboard.bar_style(None, 1) == "width:0"
+@needs_database
+def test_d494_what_a_channel_holds_is_said_under_its_name_and_matches_the_data():
+    from bi import data_terms
+
+    with duckdb.connect(str(dashboard.queries.DATABASE_FILE), read_only=True) as connection:
+        frame = connection.execute("SELECT channel, product_group, product FROM latest_by_source").df()
+    families = frame.groupby("channel")["product_group"].agg(set).to_dict()
+    # what each label says is what ODEPA publishes in that channel
+    assert families["Mayorista"] == {"Frutas", "Hortalizas"}
+    pulses = frame[frame["channel"] == "Mercado Mayorista"]
+    assert set(pulses["product_group"]) == {"Abarrotes y otros"}
+    assert all(re.match(r"(Poroto|Lenteja|Garbanzo|Arveja)", name) for name in pulses["product"])
+    assert families["Carnicería"] <= {"Carne bovina", "Carne de Cerdo - Ave - Cordero"}
+    assert families["Panadería"] == {"Pan"}
+    # a channel without a label sells several families
+    for channel, found in families.items():
+        assert channel in data_terms.CHANNEL_CONTENTS or len(found) >= 3, channel
+    assert data_terms.channel_content("Mayorista") == "frutas y hortalizas"
+    assert data_terms.channel_content("Supermercado") is None
 
 
 @needs_database
@@ -216,14 +181,16 @@ def test_d406_a_channel_that_covers_some_families_says_which_read_from_the_data(
     assert "Este canal publica 1 de las 7 familias: Pan." in captions
 
 
-def test_d406_a_card_keeps_the_view_and_the_steps_of_a_channel_do_not_reload_the_page():
-    # A card reloads the page like a document of the folder does: the view is kept once (D-357), never the author.
-    assert "a.ch-card" in dashboard.PROFILE_KEEPER_JS
-    # The map and family links of a channel page point to that same page: they are captured, not followed.
-    assert (
-        "params.get('vista') === here.get('vista') && params.get('canal') === here.get('canal')"
-        in dashboard.HOME_LINKS_JS
-    )
+def test_d494_a_channel_is_chosen_in_place_like_a_region_or_a_family():
+    # The links of step 2 point to «Semanal» itself, whatever the channel: they are captured, not followed.
+    assert "const samePage = params.get('vista') === here.get('vista');" in dashboard.HOME_LINKS_JS
+    assert "canal" in dashboard.HOME_LINK_PARAMETERS
+    cards = channel_latest.channel_cards(sample())
+    markup = home_mockup.channel_list(cards, lambda c: f"?canal={c}", "Feria libre", "?", lambda c: "", step=2)
+    assert markup.count('class="mock-channel-row') == len(cards) + 1  # «Todos los canales» first
+    assert "2</b><span>Elige un canal" in markup and 'href="?canal=Feria libre"' in markup
+    assert re.search(r'class="mock-channel-row \w+ selected" href="\?canal=Feria libre"', markup)
+    assert "+10,0 %" in markup  # the median change of its card (D-404)
 
 
 @needs_database
@@ -276,4 +243,5 @@ def test_d453_each_channel_card_has_its_own_3d_icon_in_its_own_colours():
             "late": None,
         }
     ]
-    assert '<span class="ch-head"><img class="ch-icon"' in dashboard.build_channel_cards_html(cards, lambda c: "#")
+    markup = home_mockup.channel_list(cards, lambda c: "#", None, "#", lambda c: channel_icons.image(c, 20), step=2)
+    assert '<img class="ch-icon"' in markup and "pan · " in markup  # D-494: its icon, and what it holds

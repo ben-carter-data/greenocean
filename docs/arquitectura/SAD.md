@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.20 |
+| Versión | 3.21 |
 | Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -130,7 +130,7 @@ Al abrirse, el panel compara su base con el puntero de la rama `main`. Si su cop
 
 La entrada pide la vista en cada visita y en cada recarga que hace el lector:
 
-- **Usuario:** el negocio. Sus tres dashboards: Semanal, guiado en tres pasos, Último dato por canal y Análisis BA y BI.
+- **Usuario:** el negocio. Sus dos dashboards: Semanal, guiado en cuatro pasos (el canal es opcional), y Análisis BA y BI.
 - **Profesional:** todo el proyecto, ordenado según el perfil que elige (Data Eng, BA, BI, DevOps o Seguridad).
 - **Autor:** lo mismo que Profesional, más su parte, con la clave de control.
 
@@ -252,7 +252,7 @@ Cada tabla de la Base DuckDB, su función y sus columnas.
 
 #### latest_by_source
 
-Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la página «Último dato por canal»; el dashboard Semanal y los indicadores leen `weekly_price`.
+Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee el paso 2, Canal, de Semanal (D-494); el dashboard Semanal y los indicadores leen `weekly_price`.
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -519,3 +519,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.18 | 03-11-2026 | El plan de calidad mide 14 indicadores (D-475); el diagrama entidad-relación nombra latest_by_source fuera del modelo (D-474) |
 | 3.19 | 03-11-2026 | La carga parte a las 12:17 UTC, con dos intentos más (D-485) |
 | 3.20 | 03-11-2026 | La carga parte a las 12:07 UTC, con un intento cada 15 minutos hasta las 14:52 y cada hora hasta las 02:07 (D-487) |
+| 3.21 | 03-11-2026 | El canal es el paso 2 de Semanal; latest_by_source lo alimenta (D-494) |

@@ -1,6 +1,6 @@
-"""The section «Negocio · BA y BI» (D-378, D-456): its three dashboards as tiles, the Dashboard, «Último dato por canal»
-and «Análisis BA y BI», which gathers the history of the prices and the former pages in its tabs; the app map lists the
-same pages in the same order."""
+"""The section «Negocio · BA y BI» (D-378, D-456, D-494): its two dashboards as tiles, «Semanal» and «Análisis BA y BI»,
+which gathers the history of the prices and the former pages in its tabs; the app map lists the same pages in the same
+order."""
 
 import hashlib
 from pathlib import Path
@@ -13,7 +13,7 @@ from bi import app_map, dashboard, i18n, queries
 DASHBOARD_FILE = str(Path(dashboard.__file__))
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
 # D-456: the section is its three dashboards, as tiles; what were its other pages are tabs of the third.
-TILES = [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS, dashboard.PAGE_BA]
+TILES = [dashboard.HOME_PAGE, dashboard.PAGE_BA]  # D-494
 TABS = ["Mensual", "Histórico", "Precios e inflación", "Insights", "Interesados", "Método"]  # D-457
 
 
@@ -27,7 +27,7 @@ def draw(profile, view, language="es"):
 def test_d456_the_section_is_its_three_dashboards_and_the_analysis_gathers_the_rest_in_tabs():
     assert dashboard.MENU_BLOCKS[0] == ("negocio", "Negocio · BA y BI", TILES)
     assert dashboard.DASHBOARD_TILES == TILES
-    assert dashboard.MENU_ORDER[:3] == TILES  # the path and the footer follow it (D-250)
+    assert dashboard.MENU_ORDER[:2] == TILES  # the path and the footer follow it (D-250)
     assert dashboard.BA_TABS == TABS
     # each former page opens its own tab, from its old address or from a link of a document
     assert dashboard.BA_TAB_OF_VIEW == {
@@ -43,8 +43,8 @@ def test_d456_the_section_is_its_three_dashboards_and_the_analysis_gathers_the_r
 @needs_database
 def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_only_it():
     for language, expected in (
-        ("es", ["Semanal", "Último dato por canal", "Análisis BA y BI"]),  # D-459
-        ("en", ["Weekly", "Latest data by channel", "BA and BI analysis"]),
+        ("es", ["Semanal", "Análisis BA y BI"]),  # D-459, D-494
+        ("en", ["Weekly", "BA and BI analysis"]),
     ):
         user = draw("consulta", dashboard.PAGE_BA, language)
         assert not user.exception
@@ -53,7 +53,7 @@ def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_o
         ] == expected  # the user view: only this block
         professional = draw("profesional", dashboard.PAGE_BA, language)
         assert not professional.exception
-        assert [link.proto.label for link in professional.sidebar.get("page_link")][:3] == expected
+        assert [link.proto.label for link in professional.sidebar.get("page_link")][:2] == expected
 
 
 @needs_database
@@ -68,7 +68,7 @@ def test_d378_the_main_pages_of_the_section_have_no_route_footer_and_the_next_se
     for view in TILES:  # a main page is one screen with one thin bar (D-264, D-267): the menu is its route
         assert view in dashboard.OVERVIEW_CLASS_BY_VIEW and footer(view) == [], view
     # The next section still follows the last page of this one, so the previous/next footers of the rest do not change.
-    assert dashboard.MENU_ORDER[2:4] == [dashboard.PAGE_BA, dashboard.PAGE_DIAGRAMS]
+    assert dashboard.MENU_ORDER[1:3] == [dashboard.PAGE_BA, dashboard.PAGE_DIAGRAMS]
 
 
 @needs_database
@@ -171,12 +171,12 @@ def test_d459_the_three_dashboards_sit_under_their_title_and_the_old_address_ope
     assert dashboard.PAGE_HOME == "Semanal" and dashboard.RETIRED_VIEWS["Dashboard"] == dashboard.HOME_PAGE
     assert i18n.EN["Semanal"] == "Weekly" and i18n.EN["Dashboards"] == "Dashboards"
     for language, labels, title in (
-        ("es", ["Semanal", "Último dato por canal", "Análisis BA y BI"], "Dashboards"),
-        ("en", ["Weekly", "Latest data by channel", "BA and BI analysis"], "Dashboards"),
+        ("es", ["Semanal", "Análisis BA y BI"], "Dashboards"),
+        ("en", ["Weekly", "BA and BI analysis"], "Dashboards"),
     ):
         app = draw("profesional", "Dashboard", language)
         assert not app.exception
-        assert [link.proto.label for link in app.sidebar.get("page_link")][:3] == labels
+        assert [link.proto.label for link in app.sidebar.get("page_link")][:2] == labels
         assert f'<p class="nav-subtitle">{title}</p>' in " ".join(block.value for block in app.sidebar.markdown)
         assert f"<b>{labels[0]}</b>" in " ".join(block.value for block in app.main.markdown)  # the page it opened
 

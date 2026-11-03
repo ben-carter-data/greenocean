@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.12 |
+| Version | 1.13 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -103,7 +103,7 @@ Each occurrence is written in one line per field and in plain language: what hap
 
 An external incident is a failure of the data sources: ODEPA or the INE. For example, a week that is not published or a file that changes its format. Faced with an incident, the load does not pass its checks and the dashboard keeps the last valid load, with its date in sight. Incidents are recorded in `docs/calidad/incidentes_externos.json`, and their response awaits the author's approval (D-334).
 
-**Late sources (D-356).** We publish up to the last week complete in both sources, filling in nothing. That is how the Weekly dashboard and the indicators read it. The page «Latest data by channel» shows each source's latest week, labelled (D-365). A recent week a source has not published yet does not block the load: it stays as an external incident and the app shows a quiet notice. The load stops only if a week is missing in the middle of the data, or if the source has gone more than 2 weeks without publishing. In that case the Author also gets an urgent alert.
+**Late sources (D-356).** We publish up to the last week complete in both sources, filling in nothing. That is how the Weekly dashboard and the indicators read it. Choosing a channel in step 2 of Weekly shows that source's latest week, labelled (D-365, D-494). A recent week a source has not published yet does not block the load: it stays as an external incident and the app shows a quiet notice. The load stops only if a week is missing in the middle of the data, or if the source has gone more than 2 weeks without publishing. In that case the Author also gets an urgent alert.
 
 ## 11. Who decides what
 
@@ -135,3 +135,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.10 | 2026-11-02 | The 11 data indicators are drawn with the flow of «Quality and audit» (3), instead of «The cycle of each week» (D-455) |
 | 1.11 | 2026-11-02 | The week's dashboard is called «Weekly» (10, D-459) |
 | 1.12 | 2026-11-03 | The comparable prices are measured over those that had a price the week before, with a 97 % acceptable; two new data indicators: missing regions or channels and atypical prices of the week (3, 6, 8, ADR-36, D-475) |
+| 1.13 | 2026-11-03 | Each source's latest week is seen by choosing its channel in Weekly (D-494) |

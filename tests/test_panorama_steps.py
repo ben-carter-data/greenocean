@@ -43,13 +43,19 @@ def test_d352_in_the_user_view_panels_two_and_three_start_locked_with_no_region_
     app = draw("consulta")
     text = page(app)
     assert not app.exception
-    for step in ("1</b><span>Elige una región", "2</b><span>Elige una familia", "3</b><span>Productos"):
+    for step in (  # D-494: the channel, optional, is step 2
+        "1</b><span>Elige una región",
+        "2</b><span>Elige un canal",
+        "3</b><span>Elige una familia",
+        "4</b><span>Productos",
+    ):
         assert step in text, step
     assert (
         "Elige primero una región" in text and "Elige primero una familia" in text
     )  # both phrases, with their padlock
-    assert text.count('class="mock-lock"') == 2
-    assert ".st-key-home_families" in text and ".st-key-home_products" in text and "saturate(.4)" in text
+    assert text.count('class="mock-lock"') == 3  # the channels and the families wait for the region
+    assert ".st-key-home_channels" in text and ".st-key-home_families" in text and ".st-key-home_products" in text
+    assert "saturate(.4)" in text
     assert re.search(r'mock-movement-row (rise|fall|neutral) selected', text) is None  # no family preselected
     assert "Clic en una región o en <b>Todo Chile</b>" in text and 'class="mock-all-chile"' in text
     assert all(box.disabled for box in app.text_input if box.key == "home_products_search")  # nothing to type yet
@@ -81,8 +87,8 @@ def test_d372_the_professional_and_the_author_wait_for_each_step_like_the_user()
     for state in ({}, {"admin_unlocked": True, "quality_alert_seen": True}):
         app = draw("profesional", state=state)
         text = page(app)
-        assert not app.exception and "1</b><span>Elige una región" in text and "3</b><span>Productos" in text
-        assert text.count('class="mock-lock"') == 2 and "Elige primero una región" in text and "saturate(.4)" in text
+        assert not app.exception and "1</b><span>Elige una región" in text and "4</b><span>Productos" in text
+        assert text.count('class="mock-lock"') == 3 and "Elige primero una región" in text and "saturate(.4)" in text
         assert all(box.disabled for box in app.text_input if box.key == "home_products_search")
         assert re.search(r"mock-movement-row (rise|fall|neutral) selected", text) is None  # no family preselected
     done = draw("profesional", state={"home_region_done": True, "home_family_done": True})
@@ -93,7 +99,7 @@ def test_d372_the_professional_and_the_author_wait_for_each_step_like_the_user()
 def test_d372_each_step_opens_with_its_number_in_a_big_circle_and_a_readable_text():
     from bi import i18n_en
 
-    assert home_mockup.step_chip(2) == '<span class="mock-step"><b>2</b><span>Elige una familia</span></span>'
+    assert home_mockup.step_chip(3) == '<span class="mock-step"><b>3</b><span>Elige una familia</span></span>'
     css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
     assert "width:30px;height:30px;border-radius:50%" in css and "font-size:14.5px" in css
     for text in home_mockup.STEP_TEXTS.values():
@@ -217,7 +223,7 @@ def test_d450_the_products_head_is_one_thin_line_and_the_families_stay_inside_th
     css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
     # Measured with Playwright at 1280 x 684 and 1440 x 790: no family row passes the panel's edge.
     assert (
-        ".stApp .st-key-home_overview .greenocean-mockup .mock-movement-row {grid-template-columns:42px minmax(92px,1.3fr)"
+        ".stApp .st-key-home_overview .greenocean-mockup .mock-movement-row {grid-template-columns:42px minmax(140px,1.3fr)"
         in css
     )
     assert (

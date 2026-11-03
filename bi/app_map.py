@@ -72,7 +72,7 @@ NODES = {
         "Publica los precios al consumidor por canal (feria libre, supermercado, carnicería y los demás), semanales, "
         "en un CSV por año.",
         "Publica cada semana; la carga descarga cada martes.",
-        "Último dato por canal",
+        "Semanal",  # D-494: its channels are step 2 of «Semanal»
         [],
     ),
     "ine": (
@@ -189,7 +189,7 @@ NODES = {
         [
             (
                 "Páginas",
-                "Semanal, Último dato por canal, Análisis BA y BI (Mensual, Histórico, Precios e inflación, "
+                "Semanal, Análisis BA y BI (Mensual, Histórico, Precios e inflación, "
                 "Insights, Interesados y Método), Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, "
                 "Arquitectura de seguridad, Calidad y auditoría, Método y calidad, Git workflow y la carpeta de "
                 "documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.",
@@ -203,8 +203,7 @@ NODES = {
         ["datos"],
         ("flow", 9),
         "Quien quiere saber cómo se mueven los precios: analista, compras, gerencia o público.",
-        "Ve el negocio: sus tres dashboards, Semanal, Último dato por canal y Análisis BA y BI, sin cuenta: los datos son "
-        "públicos.",
+        "Ve el negocio: sus dos dashboards, Semanal y Análisis BA y BI, sin cuenta: los datos son públicos.",
         "Cuando elige la vista Usuario.",
         "Semanal",
         [],

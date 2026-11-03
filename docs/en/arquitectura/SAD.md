@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.20 |
+| Version | 3.21 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -130,7 +130,7 @@ When it opens, the panel compares its database with the pointer of the `main` br
 
 The entry asks for the view on every visit and every reload the reader makes:
 
-- **User:** the business. Its three dashboards: Weekly, guided in three steps, Latest data by channel and BA and BI analysis.
+- **User:** the business. Its two dashboards: Weekly, guided in four steps (the channel is optional), and BA and BI analysis.
 - **Professional:** the whole project, ordered by the profile it picks (Data Eng, BA, BI, DevOps or Security).
 - **Author:** the same as Professional, plus its own part, with the control code.
 
@@ -252,7 +252,7 @@ Each table of the DuckDB database, its role and its columns.
 
 #### latest_by_source
 
-The last two weeks of each source, without the cut of D-356. Only the page «Latest data by channel» reads it; the Weekly dashboard and the indicators read `weekly_price`.
+The last two weeks of each source, without the cut of D-356. Only step 2, Channel, of Weekly reads it (D-494); the Weekly dashboard and the indicators read `weekly_price`.
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -519,3 +519,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.18 | 2026-11-03 | The quality plan measures 14 indicators (D-475); the entity-relationship diagram names latest_by_source outside the model (D-474) |
 | 3.19 | 2026-11-03 | The load starts at 12:17 UTC, with two more attempts (D-485) |
 | 3.20 | 2026-11-03 | The load starts at 12:07 UTC, with an attempt every 15 minutes until 14:52 and every hour until 02:07 (D-487) |
+| 3.21 | 2026-11-03 | The channel is step 2 of Weekly; latest_by_source feeds it (D-494) |

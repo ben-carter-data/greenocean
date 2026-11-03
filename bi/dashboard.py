@@ -132,6 +132,7 @@ RETIRED_VIEWS = {
     "Histórico y estacionalidad": "Contexto del precio",
     "Dashboard general": PAGE_HOME,
     "Dónde comprar": PAGE_HOME,  # D-325: the page is gone; its old address opens «Semanal»
+    PAGE_CHANNELS: PAGE_HOME,  # D-494: the channels are step 2 of «Semanal»; an old address keeps its «canal»
     "Dashboard": PAGE_HOME,  # D-459: its name until «Semanal»
 }
 PAGE_KPI = "Indicadores explicados"
@@ -216,7 +217,6 @@ WINDOWS = {
         PAGE_INSIGHTS,
         PAGE_SEASONALITY,
         PAGE_SQL,
-        PAGE_CHANNELS,
         PAGE_STAKEHOLDERS,
         PAGE_ANALYSIS,
         PAGE_BA,
@@ -298,7 +298,6 @@ PAGE_ICONS = {
     PAGE_SECURITY: ":material/lock:",
     PAGE_STACK: ":material/stacks:",
     PAGE_INSIGHTS: ":material/lightbulb:",
-    PAGE_CHANNELS: ":material/compare_arrows:",
     PAGE_STAKEHOLDERS: ":material/groups:",
     PAGE_ANALYSIS: ":material/analytics:",
     PAGE_BA: ":material/query_stats:",
@@ -332,7 +331,6 @@ PAGE_PATHS = {
     PAGE_SQL: "consultas-sql",
     PAGE_HOME: "dashboard",
     PAGE_INSIGHTS: "insights",
-    PAGE_CHANNELS: "ultimo-dato-por-canal",
     PAGE_STAKEHOLDERS: "interesados",
     PAGE_ANALYSIS: "analisis-de-negocio-y-sistemas",
     PAGE_BA: "analisis-ba-y-bi",
@@ -799,7 +797,7 @@ export default function(component) {
     } catch (e) {}
     const handler = (event) => {
         // D-406: a channel card is a reload the app makes too, like a document of the folder
-        const link = event.target.closest && event.target.closest(".df-actions a, .doc-path a, .doc-print, a.ch-card, a.im-node");
+        const link = event.target.closest && event.target.closest(".df-actions a, .doc-path a, .doc-print, a.im-node");
         if (link) remember();
         // D-373: the GreenOcean logo reopens «Elige tu vista» instead of going to the first page.
         const logo = event.target.closest && event.target.closest(
@@ -2202,7 +2200,6 @@ def apply_style(mode):
 
 OVERVIEW_CLASS_BY_VIEW = {
     PAGE_INSIGHTS: "overview-dashboard",
-    PAGE_CHANNELS: "overview-dashboard",
     PAGE_STAKEHOLDERS: "overview-dashboard",  # D-378: the section's main pages share one look, with no route footer
     PAGE_ANALYSIS: "overview-dashboard",
     PAGE_BA: "overview-dashboard",
@@ -2322,7 +2319,6 @@ def show_app_header(window):
 # The pages whose only header is one thin bar (D-264, D-267).
 BAR_VIEWS = {
     PAGE_INSIGHTS,
-    PAGE_CHANNELS,
     PAGE_STAKEHOLDERS,
     PAGE_ANALYSIS,
     PAGE_BA,
@@ -2608,8 +2604,8 @@ def read_latest_week():
 
 
 # D-405: the Dashboard's data, for every channel (the Dashboard itself) or for one channel with its own two latest weeks
-# (a channel page of «Último dato por canal», read from latest_by_source). The scope is set while a channel page draws;
-# every reader below keys its cache on it, so the Dashboard never shows a channel's numbers, and the same code draws both.
+# (step 2 of «Semanal», D-494, read from latest_by_source). The scope is set while «Semanal» draws with a channel;
+# every reader below keys its cache on it, so «Todos los canales» never shows a channel's numbers, and one code draws both.
 PRICE_SCOPE: contextvars.ContextVar[str | None] = contextvars.ContextVar("price_scope", default=None)
 NATIONAL_KEY = ["week_start", "product_group", "product", "variety", "quality", "channel", "normalized_unit"]
 
@@ -3800,9 +3796,9 @@ export default function(component) {
         // Only the map and family links: a product's «Contexto del precio» link
         // carries a view and a product key, and must navigate (D-123b).
         const params = url.searchParams;
-        // D-406: a channel page links to itself (its own «vista» and «canal»); another view navigates.
+        // D-406, D-494: «Semanal» links to itself, whatever its channel (step 2); another view navigates.
         const here = new URLSearchParams(window.location.search);
-        const samePage = params.get('vista') === here.get('vista') && params.get('canal') === here.get('canal');
+        const samePage = params.get('vista') === here.get('vista');
         if (!params.has('_home_region') || params.has('_home_key') || (params.has('vista') && !samePage)) return;
         event.preventDefault();
         setTriggerValue('link', url.search);
@@ -3811,7 +3807,7 @@ export default function(component) {
     return () => document.removeEventListener('click', handler, true);
 }
 """
-HOME_LINK_PARAMETERS = ("_home_region", "_home_week", "familia", "alerta")  # D-489: a family's sharp rises or drops
+HOME_LINK_PARAMETERS = ("_home_region", "_home_week", "familia", "alerta", "canal")  # D-489 alerts; D-494 channel
 # D-352: the reading order of the Dashboard. A map or «Todo Chile» click completes step 1, a family click step 2; for the
 # user view the panels 2 and 3 stay locked until the step before them is done, and a step done is never locked again.
 HOME_STEP_PARAMETER = "_home_step"
@@ -4216,7 +4212,7 @@ def show_family_alerts(week, family, direction, query):
         rows = rows[[matches_product_search(row, query) for row in rows.to_dict('records')]]
     st.markdown(
         '<div class="greenocean-mockup">'
-        + home_mockup.alert_heading(step=3)
+        + home_mockup.alert_heading(step=4)
         + home_mockup.alert_table(
             alert_items(rows), query, level_guide_text(direction == RISE, not is_public_profile())
         )
@@ -4347,7 +4343,11 @@ def build_steps_css(palette, region_open, family_open, flash, searched=False):
     rules = []
     if searched:
         rules.append('.st-key-home_products_search [data-testid="stTextInputRootElement"] {animation:none!important;}')
-    for container, opened in (("home_families", region_open), ("home_products", family_open)):
+    for container, opened in (
+        ("home_channels", region_open),
+        ("home_families", region_open),
+        ("home_products", family_open),
+    ):
         if not opened:
             rules.append(
                 f".st-key-{container} > *:not(:has(.mock-lock)) "
@@ -4406,7 +4406,6 @@ def show_market_overview(mode, prefix):
     importlib.reload(home_mockup)
     st.markdown(home_mockup.style(mode, charts.get_palette(mode)), unsafe_allow_html=True)
     options = read_cached_filter_options(get_database_version())
-    apply_home_link_click()
     apply_home_focus(options)
     if read_filter('week') not in options['week']:
         st.session_state[scoped('dashboard_week')] = options['week'][0]
@@ -4451,6 +4450,14 @@ def show_market_overview(mode, prefix):
             parameters[HOME_STEP_PARAMETER] = step
         return address + ('&' if '?' in address else '?') + urlencode(parameters)
 
+    def channel_link(chosen_channel):
+        # D-494: step 2 keeps the region and the family; without «_home_week» a channel opens on its own latest week
+        address = channel_address(chosen_channel) if chosen_channel else build_page_address(PAGE_HOME)
+        parameters = {'_home_region': region}
+        if family:
+            parameters['familia'] = family
+        return address + ('&' if '?' in address else '?') + urlencode(parameters)
+
     flash = st.session_state.pop(scoped(HOME_FLASH), None)
     palette = charts.get_palette(mode)
     if st.session_state.get('home_products_search'):
@@ -4484,8 +4491,7 @@ def show_market_overview(mode, prefix):
             unsafe_allow_html=True,
             width="content",
         )
-    # D-398: the header only places the reader. The week's price alerts, the table of the last weeks and the note of a
-    # late source are content, in one row under the bar; «Precios e inflación» and «Último dato por canal» are in the menu.
+    # D-398: the header only places the reader. The note of a late source is content, in one row under the bar.
     notice = describe_late_sources(latest['message'] if latest['status'] == etl.STATUS_LOADED else '')
     channel = current_channel()
     if channel is not None:  # D-405: a channel says only its own delay
@@ -4526,7 +4532,7 @@ def show_market_overview(mode, prefix):
                 return
             if not family_open:
                 st.markdown(
-                    f'<div class="greenocean-mockup">{home_mockup.lock_overlay(3)}</div>', unsafe_allow_html=True
+                    f'<div class="greenocean-mockup">{home_mockup.lock_overlay(4)}</div>', unsafe_allow_html=True
                 )
             rows = [
                 row
@@ -4574,7 +4580,7 @@ def show_market_overview(mode, prefix):
             heading.markdown(
                 '<div class="greenocean-mockup">'
                 + home_mockup.products_heading(
-                    products_family or 'Sin familia', average, scope, len(rows), total, note, step=3
+                    products_family or 'Sin familia', average, scope, len(rows), total, note, step=4
                 )
                 + '</div>',
                 unsafe_allow_html=True,
@@ -4625,7 +4631,9 @@ def show_market_overview(mode, prefix):
                     note,
                 )
 
-    map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
+    # D-494: the map gives a little room to the right side: steps 2 (the channels) and 3 (the families) side by side, of
+    # one height, and under both the alert line and the products, across the whole width.
+    map_column, detail_column = st.container(key='home_overview').columns([0.6, 1.6], gap='small')
     # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
     # sanitizer intentionally removes interactive SVG links.
     map_column.markdown(
@@ -4646,10 +4654,29 @@ def show_market_overview(mode, prefix):
     trends, basket_trend = read_home_trends(get_database_version(), week)
     basket_value = home_mockup.basket_median(model['family_rows'])
     with detail_column:
-        with st.container(key='home_families'):
+        channel_column, family_column = st.container(key='home_top').columns([0.25, 0.75], gap='small')
+        with channel_column, st.container(key='home_channels'):
             if not region_open:
                 st.markdown(
                     f'<div class="greenocean-mockup">{home_mockup.lock_overlay(2)}</div>', unsafe_allow_html=True
+                )
+            st.markdown(
+                '<div class="greenocean-mockup">'
+                + home_mockup.channel_list(
+                    read_channel_cards(get_database_version()),
+                    channel_link,
+                    current_channel(),
+                    channel_link(None),
+                    lambda name: channel_icons.image(name, 20),
+                    step=2,
+                )
+                + '</div>',
+                unsafe_allow_html=True,
+            )
+        with family_column, st.container(key='home_families'):
+            if not region_open:
+                st.markdown(
+                    f'<div class="greenocean-mockup">{home_mockup.lock_overlay(3)}</div>', unsafe_allow_html=True
                 )
             st.markdown(
                 '<div class="greenocean-mockup">'
@@ -4659,7 +4686,7 @@ def show_market_overview(mode, prefix):
                     family,
                     scope,
                     home_mockup.movement_note(model),
-                    step=2,
+                    step=3,
                     trends=trends,
                     basket=None if basket_value is None else (basket_value, basket_trend),
                     basket_link=overview_link(None if region == ALL_VALUES else region, ALL_VALUES, 'family'),
@@ -4716,23 +4743,38 @@ def show_products_dialog(
 
 
 def scope_address():
-    """The address of the page that draws the Dashboard: the Dashboard itself, or a channel page (D-405)."""
+    """The address of «Semanal», with its channel when step 2 has one (D-405, D-494)."""
     channel = current_channel()
     return build_page_address(PAGE_HOME) if channel is None else channel_address(channel)
 
 
 def scope_path():
-    """The path of the bar: the Dashboard's, or «… › Último dato por canal › Feria libre» (D-405)."""
+    """The path of the bar: «… › Semanal», and «… › Semanal › Feria libre» with a channel (D-405, D-494)."""
     channel = current_channel()
-    if channel is None:
-        return build_view_path(WINDOW_OF_VIEW[PAGE_HOME], PAGE_HOME)
-    return f"{build_view_path(WINDOW_OF_VIEW[PAGE_CHANNELS], PAGE_CHANNELS)} › {data_terms.term(channel)}"
+    path = build_view_path(WINDOW_OF_VIEW[PAGE_HOME], PAGE_HOME)
+    return path if channel is None else f"{path} › {data_terms.term(channel)}"
+
+
+@st.cache_data(show_spinner=False)
+def read_channel_cards(database_version):
+    """The channels of the data with their own latest week and median change (D-404), for step 2 (D-494)."""
+    frame = read_latest_by_source(database_version)
+    return channel_latest.channel_cards(frame) if frame is not None else []
 
 
 def show_home_page(mode):
-    """Market dashboard with latest-week rankings; diagrams have their own destination."""
-    with st.container(key="market_dashboard"):
-        show_market_overview(mode, "home")
+    """«Semanal» (D-494): its optional step 2 draws the whole page with one channel's prices and that channel's own latest
+    week (D-405); without a channel, every channel in the week both sources published (D-356)."""
+    apply_home_link_click()  # before the channel is read: a click on step 2 changes it
+    channel = st.query_params.get(CHANNEL_PARAMETER)
+    known = {card["channel"] for card in read_channel_cards(get_database_version())}
+    token = PRICE_SCOPE.set(channel) if channel in known else None
+    try:
+        with st.container(key="market_dashboard"):
+            show_market_overview(mode, "home")
+    finally:
+        if token is not None:
+            PRICE_SCOPE.reset(token)
 
 
 @st.cache_data
@@ -5780,143 +5822,14 @@ def build_analysis_css(palette):
 CHANNEL_PARAMETER = "canal"  # D-404: the channel a card opens
 
 
-def build_channel_cards_css(palette):
-    ink, text, muted, card, border, accent = (
-        palette["strong_text"],
-        palette["text"],
-        palette["reference"],
-        palette["card"],
-        palette["card_border"],
-        palette["accent"],
-    )
-    return f"""<style>
-.ch-grid {{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px; }}
-@media (max-width:1180px) {{ .ch-grid {{ grid-template-columns:repeat(2, minmax(0, 1fr)); }} }}
-a.ch-card {{ display:flex; flex-direction:column; gap:6px; padding:14px 16px; border-radius:14px; border:1px solid {border};
-  background:{card}; color:{text} !important; text-decoration:none !important; transition:border-color .15s ease, box-shadow .15s ease; }}
-a.ch-card:hover, a.ch-card:focus-visible {{ border-color:{accent}; box-shadow:0 10px 24px -16px {accent}; outline:none; }}
-.ch-head {{ display:flex; align-items:center; gap:10px; }}
-.ch-head .ch-icon {{ flex:none; width:44px; height:44px; filter:drop-shadow(0 4px 6px rgba(0,0,0,.18)); transition:transform .18s ease; }}
-a.ch-card:hover .ch-icon, a.ch-card:focus-visible .ch-icon {{ transform:translateY(-2px) scale(1.04); }}
-.ch-titles {{ display:flex; flex-direction:column; gap:1px; min-width:0; }}
-.ch-titles .ch-source {{ font-size:10.5px; }}
-.ch-name {{ font-size:15.5px; font-weight:600; color:{ink}; }}
-.ch-source {{ font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:{muted}; }}
-.ch-week {{ font-size:13px; color:{muted}; }}
-.ch-change {{ font-size:24px; font-weight:600; color:{ink}; font-variant-numeric:tabular-nums; line-height:1.2; }}
-.ch-change.rise {{ color:{palette["rise"]}; }} .ch-change.fall {{ color:{palette["fall"]}; }}
-.ch-change small {{ display:block; font-size:11.5px; font-weight:400; color:{muted}; }}
-.ch-prices {{ font-size:13px; }}
-.ch-families {{ display:block; margin-top:2px; font-size:12px; color:{muted}; }}
-.ch-bar {{ position:relative; height:6px; border-radius:3px; background:color-mix(in srgb, {border} 70%, transparent); }}
-.ch-bar::after {{ content:""; position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:{muted}; }}
-.ch-bar i {{ position:absolute; top:0; bottom:0; border-radius:3px; background:{muted}; }}
-.ch-bar i.rise {{ background:{palette["rise"]}; }} .ch-bar i.fall {{ background:{palette["fall"]}; }}
-.ch-state {{ align-self:flex-start; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600; }}
-.ch-state.ok {{ background:color-mix(in srgb, #2fa36b 18%, transparent); color:#2fa36b; }}
-.ch-state.late {{ background:color-mix(in srgb, #d99a1e 20%, transparent); color:#d99a1e; }}
-.ch-late {{ font-size:12px; color:{muted}; }}
-</style>"""
-
-
-def build_channel_cards_html(cards, address_of, total_families=None):
-    """D-404: the grid of channels; the whole card is the link to its page. D-406: each card says how many families it
-    covers, and its change is a bar drawn on one scale for every card."""
-    items = []
-    scale = max((abs(card["median"]) for card in cards if card["median"] is not None), default=0) or 1
-    for card in cards:
-        change = card["median"]
-        tone = (
-            ""
-            if change is None
-            else "rise"
-            if change >= overview.STILL
-            else "fall"
-            if change <= -overview.STILL
-            else ""
-        )
-        figure = "—" if change is None else ("0,0 %" if not tone else home_mockup.percent(change * 100, True))
-        state = (
-            f'<span class="ch-state late">{html.escape(tr("Atrasado"))}</span>'
-            f'<span class="ch-late">{html.escape(tr("ODEPA aún no publica la semana {}").format(i18n.tr_week(card["late"])))}</span>'
-            if card["late"]
-            else f'<span class="ch-state ok">{html.escape(tr("Al día"))}</span>'
-        )
-        source = dict(channel_latest.SOURCES).get(card["source"], card["source"])
-        items.append(
-            f'<a class="ch-card" href="{html.escape(address_of(card["channel"]), quote=True)}" target="_self">'
-            f'<span class="ch-head">{channel_icons.image(card["channel"])}'  # D-453: each channel's own 3D icon
-            f'<span class="ch-titles"><span class="ch-name">{html.escape(data_terms.term(card["channel"]))}</span>'
-            f'<span class="ch-source">{html.escape(tr(source))}</span></span></span>'
-            f'<span class="ch-week">{html.escape(tr("Semana {}").format(i18n.tr_week(card["week"])))}</span>'
-            f'<span class="ch-change {tone}">{html.escape(figure)}'
-            f'<small>{html.escape(tr("mediana de {} precios comparables frente a la semana anterior").format(charts.format_thousands(card["compared"])))}</small></span>'
-            f'<span class="ch-bar" title="{html.escape(tr("Escala: la mayor variación entre las tarjetas"), quote=True)}"><i class="{tone}" style="{bar_style(change, scale)}"></i></span>'
-            f'<span class="ch-prices">{html.escape(tr("{} precios por región").format(charts.format_thousands(card["prices"])))}'
-            + (
-                # D-476: the reason, so the reader does not take the short count for missing data
-                f'<span class="ch-families">'
-                f'{html.escape(tr("ODEPA solo publica {} de las {} familias en este canal").format(len(card["families"]), total_families))}'
-                "</span>"
-                if total_families and len(card["families"]) < total_families
-                else ""
-            )
-            + f"</span>{state}</a>"
-        )
-    return f'<div class="ch-grid">{"".join(items)}</div>'
-
-
-def bar_style(change, scale):
-    """A bar from the middle: to the right when the change rises, to the left when it falls, on the scale of the
-    largest change among the cards (D-406)."""
-    if change is None:
-        return "width:0"
-    width = min(50.0, abs(change) / scale * 50)
-    return f"left:50%;width:{width:.1f}%" if change >= 0 else f"left:{50 - width:.1f}%;width:{width:.1f}%"
-
-
 def read_all_families():
     """Every family of the data, for the coverage of each channel (D-406)."""
     return sorted(queries.run_sql("SELECT DISTINCT product_group FROM dim_product")["product_group"])
 
 
 def channel_address(channel):
-    address = build_page_address(PAGE_CHANNELS)
+    address = build_page_address(PAGE_HOME)  # D-494: a channel is step 2 of «Semanal»
     return address + ("&" if "?" in address else "?") + urlencode({CHANNEL_PARAMETER: channel})
-
-
-def show_channels_page(mode):
-    """«Último dato por canal» (D-365, D-404): one card per channel of the data, each with its own latest week; a card
-    opens that channel's page."""
-    palette = charts.get_palette(mode)
-    frame = read_latest_by_source(get_database_version())
-    cards = channel_latest.channel_cards(frame) if frame is not None else []
-    chosen = st.query_params.get(CHANNEL_PARAMETER)
-    if chosen in {card["channel"] for card in cards}:
-        show_channel_detail(mode, frame, next(card for card in cards if card["channel"] == chosen))
-        return
-    show_page_bar(
-        PAGE_CHANNELS,
-        PAGE_CHANNELS,
-        "La última semana que publicó cada canal, aunque otra fuente todavía no la publique: un clic abre el canal.",
-    )
-    st.markdown(home_mockup.style(mode, palette), unsafe_allow_html=True)
-    if not cards:
-        st.info(tr("Esta página se llena con la próxima carga semanal."))
-        return
-    st.markdown(build_channel_cards_css(palette), unsafe_allow_html=True)
-    st.markdown(build_channel_cards_html(cards, channel_address, len(read_all_families())), unsafe_allow_html=True)
-
-
-def show_channel_detail(mode, frame, card):
-    """D-405: one channel, drawn by the Dashboard itself (map, families and products, in its three steps), with that
-    channel's prices and its own latest week."""
-    token = PRICE_SCOPE.set(card["channel"])
-    try:
-        with st.container(key="market_dashboard"):
-            show_market_overview(mode, "channel")
-    finally:
-        PRICE_SCOPE.reset(token)
 
 
 def show_insights_page(mode):
@@ -8155,7 +8068,6 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_HOME: show_home_page,
     PAGE_DIAGRAMS: show_diagrams_page,
     PAGE_INSIGHTS: lambda mode: show_insights_page(mode),
-    PAGE_CHANNELS: lambda mode: show_channels_page(mode),
     PAGE_STAKEHOLDERS: lambda mode: show_stakeholders_page(mode),
     PAGE_ANALYSIS: lambda mode: show_ba_page(mode),  # D-456: its method is a tab of «Análisis BA y BI»
     PAGE_BA: lambda mode: show_ba_page(mode),
@@ -8853,11 +8765,10 @@ MENU_BLOCKS = [
     (
         "negocio",
         "Negocio · BA y BI",
-        # D-453: the section opens with its two dashboards as tiles, the Dashboard (D-442) and «Último dato por canal»
-        # (D-452), right before «Interesados»; D-378: then who it is for and the analysis (BA and BSA), then the prices.
-        # D-456: and the third, «Análisis BA y BI», which gathers in its tabs the history of the prices and the former
-        # pages «Precios e inflación», «Insights» and «Interesados», with the method: the section is three dashboards.
-        [PAGE_HOME, PAGE_CHANNELS, PAGE_BA],
+        # D-453: the section opens with its dashboards as tiles; D-456: «Análisis BA y BI» gathers in its tabs the history
+        # of the prices and the former pages «Precios e inflación», «Insights» and «Interesados», with the method.
+        # D-494: «Último dato por canal» became step 2 of «Semanal»: the section is two dashboards.
+        [PAGE_HOME, PAGE_BA],
     ),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG]),  # D-420: the Autor's only
@@ -8877,7 +8788,6 @@ MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS f
 MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages}
 # The menu's own glyphs, one per page, thin lines (Material Symbols).
 SIDEBAR_ICONS = {
-    PAGE_CHANNELS: ":material/compare_arrows:",
     PAGE_BA: ":material/query_stats:",
     PAGE_HOME: ":material/grid_view:",
     PAGE_DIAGRAMS: ":material/share:",
@@ -9161,7 +9071,7 @@ FOLDER_TILE_BLOCK = "documentos"
 # D-287: the sources are a tile of their own beside the folder; their links open in a floating panel.
 SOURCES_TILE_BLOCK = "fuentes"
 # D-442, D-452, D-453: the two dashboards are tiles, not lines, at the head of «Negocio · BA y BI».
-DASHBOARD_TILES = [PAGE_HOME, PAGE_CHANNELS, PAGE_BA]
+DASHBOARD_TILES = [PAGE_HOME, PAGE_BA]  # D-494
 # D-463: the pages whose dashboards or diagrams want the width: the menu folds on going to them.
 FOLD_MENU_VIEWS = [
     *DASHBOARD_TILES,
@@ -9268,9 +9178,8 @@ def show_footer_tiles(windows_by_title, current_window, current_view):
 
 
 def show_dashboard_tile(windows_by_title, current_window, current_view, view):
-    """D-442: the Dashboard, the weekly summary of prices, as a large tile; D-452: «Último dato por canal», the same
-    dashboard by source, a second one. D-453: both open the section «Negocio · BA y BI», right before «Interesados»;
-    a tile stays lit while its page is open."""
+    """D-442: «Semanal», the weekly summary of prices, as a large tile, and «Análisis BA y BI» under it (D-456, D-494).
+    D-453: they open the section «Negocio · BA y BI»; a tile stays lit while its page is open."""
     window = WINDOW_OF_VIEW[view]
     active = window == current_window and current_view == view
     index = DASHBOARD_TILES.index(view)
@@ -9302,7 +9211,7 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
             st.session_state[open_key] = not is_open
             st.rerun()
     tiles = [view for view in pages if view in DASHBOARD_TILES]
-    if tiles:  # D-459: the three dashboards under their own title, which stays with them when the section folds
+    if tiles:  # D-459: the dashboards under their own title, which stays with them when the section folds
         st.markdown(f'<p class="nav-subtitle">{html.escape(tr("Dashboards"))}</p>', unsafe_allow_html=True)
     for view in tiles:  # D-453: the dashboard tiles open the section and stay in sight when it folds (D-442)
         show_dashboard_tile(windows_by_title, current_window, current_view, view)

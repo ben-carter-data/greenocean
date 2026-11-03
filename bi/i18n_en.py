@@ -171,7 +171,7 @@ PAGES = {
     "GitHub · si el job falla": "GitHub · if the job fails",
     # D-382: the three people of the diagrams
     "Quien quiere saber cómo se mueven los precios: analista, compras, gerencia o público.": "Whoever wants to know how prices move: analyst, purchasing, management or the public.",
-    "Ve el negocio: sus tres dashboards, Semanal, Último dato por canal y Análisis BA y BI. No necesita cuenta ni clave.": "Sees the business: its three dashboards, Weekly, Latest data by channel and BA and BI analysis. They need no account or code.",
+    "Ve el negocio: sus dos dashboards, Semanal y Análisis BA y BI. No necesita cuenta ni clave.": "Sees the business: its two dashboards, Weekly and BA and BI analysis. They need no account or code.",
     "Quien revisa cómo está hecho: datos, arquitectura, calidad, DevOps o seguridad.": "Whoever reviews how it is built: data, architecture, quality, DevOps or security.",
     "Ve todo el proyecto, ordenado según su perfil, y usa el estudio SQL de solo lectura. No necesita cuenta ni clave.": "Sees the whole project, ordered by their profile, and uses the read-only SQL studio. They need no account or code.",
     "Ve lo mismo que el Profesional y, con la clave de control, la página «GitHub Actions», la alerta «Acción requerida» y la carga manual. Cambia el código y los secretos.": "Sees the same as the Professional and, with the control code, the «GitHub Actions» page, the «Action required» alert and the manual load. Changes the code and the secrets.",
@@ -185,7 +185,7 @@ PAGES = {
     "lanza": "launches",
     "la carga": "the load",
     "Guarda el código en main y la base publicada en un release, ejecuta la carga cada martes y responde a la API REST del panel: lanzar la carga, leer su estado y sus logs, y cancelarla.": "Keeps the code on main and the published database in a release, runs the load every Tuesday and answers the panel's REST API: start the load, read its state and logs, and cancel it.",
-    "Ve el negocio: sus tres dashboards, Semanal, Último dato por canal y Análisis BA y BI, sin cuenta: los datos son públicos.": "Sees the business: its three dashboards, Weekly, Latest data by channel and BA and BI analysis, with no account: the data is public.",
+    "Ve el negocio: sus dos dashboards, Semanal y Análisis BA y BI, sin cuenta: los datos son públicos.": "Sees the business: its two dashboards, Weekly and BA and BI analysis, with no account: the data is public.",
     "Cuando elige la vista Usuario.": "When they choose the User view.",
     "Quien revisa cómo está hecho el proyecto: datos, arquitectura, calidad, DevOps o seguridad.": "Whoever reviews how the project is built: data, architecture, quality, DevOps or security.",
     "Ve todo el panel, ordenado según su perfil, y usa el estudio SQL de solo lectura, sin cuenta.": "Sees the whole panel, ordered by their profile, and uses the read-only SQL studio, with no account.",
@@ -1413,8 +1413,8 @@ PAGES = {
     "Dibuja este panel con la Base DuckDB en solo lectura y lo publica en Streamlit Community Cloud desde la rama main.": "Draws this panel with the DuckDB database read-only and publishes it on Streamlit Community Cloud from the main branch.",
     "Cada vez que alguien abre una página.": "Every time someone opens a page.",
     "Páginas": "Pages",
-    "Semanal, Último dato por canal, Análisis BA y BI (Mensual, Histórico, Precios e inflación, Insights, Interesados y Método), Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, Arquitectura de seguridad, Calidad y auditoría, Método y calidad, Git workflow y la carpeta de documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.": "Weekly, Latest data by channel, BA and BI analysis (Monthly, Historical, Prices and inflation, Insights, Stakeholders and Method), Pipeline and lineage, Data model, SQL queries, Stack and evidence, App map, Security architecture, Quality and audit, Method and quality, Git workflow and the documents folder; the Author also sees Operations center, GitHub Actions and Settings.",
-    "Semanal · Último dato por canal · Análisis BA y BI": "Weekly · Latest data by channel · BA and BI analysis",  # D-459: the app map's section
+    "Semanal, Análisis BA y BI (Mensual, Histórico, Precios e inflación, Insights, Interesados y Método), Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, Arquitectura de seguridad, Calidad y auditoría, Método y calidad, Git workflow y la carpeta de documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.": "Weekly, BA and BI analysis (Monthly, Historical, Prices and inflation, Insights, Stakeholders and Method), Pipeline and lineage, Data model, SQL queries, Stack and evidence, App map, Security architecture, Quality and audit, Method and quality, Git workflow and the documents folder; the Author also sees Operations center, GitHub Actions and Settings.",
+    "Semanal · Análisis BA y BI": "Weekly · BA and BI analysis",  # D-459: the app map's section
     "el servicio gratuito que publica el panel y guarda sus secretos.": "the free service that publishes the panel and keeps its secrets.",
     "Cuando abre el panel.": "When they open the panel.",
     "Cuando cambia el código o lanza una carga manual.": "When they change the code or launch a manual load.",
@@ -2044,7 +2044,7 @@ PAGES = {
     "Una versión nueva incompatible rompió dos cargas: certifi y DuckDB. Desde D-435 cada dependencia tiene tope.": "A new incompatible version broke two loads: certifi and DuckDB. Since D-435 each dependency has a cap.",
     "Una vez por pestaña (D-430).": "Once per tab (D-430).",
     "Validación": "Validation",
-    "Ve el negocio: sus tres dashboards, Semanal, Último dato por canal y Análisis BA y BI, sin cuenta: los datos son públicos. Cuando elige la vista Usuario.": "Sees the business: its three dashboards, Weekly, Latest data by channel and BA and BI analysis, with no account: the data is public. When they choose the User view.",
+    "Ve el negocio: sus dos dashboards, Semanal y Análisis BA y BI, sin cuenta: los datos son públicos. Cuando elige la vista Usuario.": "Sees the business: its two dashboards, Weekly and BA and BI analysis, with no account: the data is public. When they choose the User view.",
     "Ve lo mismo que el Profesional; mantiene el código y los secretos, y con la clave de control lanza, sigue y cancela la carga desde el panel. Cuando cambia el código o lanza una carga manual.": "Sees the same as the Professional; maintains the code and the secrets, and with the control code launches, follows and cancels the load from the panel. When they change the code or launch a manual load.",
     "Ve todo el panel, ordenado según su perfil, y usa el estudio SQL de solo lectura, sin cuenta. Cuando elige la vista Profesional.": "Sees the whole panel, ordered by their profile, and uses the read-only SQL studio, with no account. When they choose the Professional view.",
     "Verde o rojo junto al commit.": "Green or red next to the commit.",
@@ -2238,6 +2238,12 @@ PAGES = {
     "Toda la canasta": "The whole basket",
     "Elige una región": "Choose a region",
     "Elige una familia": "Choose a family",
+    # D-494: step 2 of «Semanal», the channels
+    "Elige un canal": "Choose a channel",
+    "Todos los canales": "Every channel",
+    "¿Dónde se compra?": "Where is it bought?",
+    "Opcional: sin elegir, se ven todos los canales. Cada canal muestra su última semana publicada y la mediana del cambio de sus precios comparables frente a la anterior.": "Optional: without a choice, every channel is shown. Each channel shows its latest published week and the median change of its comparable prices against the one before.",
+    "Mediana de {n} precios comparables frente a su semana anterior": "Median of {} comparable prices against its previous week",
     "Productos": "Products",  # D-492: the name of step 3
     "Elige primero una región": "Choose a region first",
     "Elige primero una familia": "Choose a family first",

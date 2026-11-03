@@ -81,7 +81,6 @@ def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
         dashboard.PAGE_INSIGHTS,
         dashboard.PAGE_SEASONALITY,
         dashboard.PAGE_SQL,
-        dashboard.PAGE_CHANNELS,
         dashboard.PAGE_STAKEHOLDERS,  # D-376
         dashboard.PAGE_ANALYSIS,  # D-377
         dashboard.PAGE_BA,  # D-456: the four before it are its tabs; their addresses open them
@@ -972,9 +971,8 @@ def test_historical_root_link_keeps_the_requested_project_view_after_route_chang
 def test_d250_the_path_and_the_footer_follow_the_menu():
     order = dashboard.MENU_ORDER
     assert len(order) == len(set(order))
-    assert order[:3] == [  # D-442, D-452, D-456: the section is its three dashboards
+    assert order[:2] == [  # D-442, D-456, D-494: the section is its two dashboards
         dashboard.HOME_PAGE,
-        dashboard.PAGE_CHANNELS,
         dashboard.PAGE_BA,
     ]
     assert dashboard.PAGE_SAD not in dashboard.MENU_BLOCK_OF_VIEW and dashboard.PAGE_SAD in dashboard.FOLDER_ORDER
@@ -1257,16 +1255,15 @@ def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
     assert toggle.label == 'Negocio · BA y BI'
     tiles = [
         'Semanal',
-        'Último dato por canal',
         'Análisis BA y BI',
-    ]  # D-456, D-459: the section is its three dashboards
-    assert [link.proto.label for link in app.sidebar.get('page_link')][:3] == tiles
+    ]  # D-456, D-459, D-494: the section is its two dashboards
+    assert [link.proto.label for link in app.sidebar.get('page_link')][:2] == tiles
     toggle.click().run()
     assert not app.exception
     assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio').label == 'Negocio · BA y BI'
     links = [link.proto.label for link in app.sidebar.get('page_link')]
     # D-442, D-453: the dashboard tiles never fold with their section
-    assert links[:3] == tiles
+    assert links[:2] == tiles
 
 
 @needs_database
@@ -1466,9 +1463,9 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
     labels = [link.proto.label for link in app.sidebar.get('page_link')]
     # D-286: the documents folder closes the menu as a larger tile in the footer, always in sight; D-442: the
     # Dashboard opens it, a tile of its own over the sections; D-452: «Último dato por canal» is the tile under it.
-    assert labels == ['Semanal', 'Último dato por canal', 'Análisis BA y BI'] + [
-        page for pages in MENU_BLOCKS.values() for page in pages
-    ] + ['Documentos']
+    assert labels == ['Semanal', 'Análisis BA y BI'] + [page for pages in MENU_BLOCKS.values() for page in pages] + [
+        'Documentos'
+    ]
     assert all(link.proto.icon for link in app.sidebar.get('page_link')[:-1])
     markup = " ".join(block.value for block in app.sidebar.markdown)
     assert 'class="nav-source-link"' not in markup  # the sources are a tile with a floating panel (D-287)
@@ -1665,7 +1662,7 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
         assert blocks[:4] == expected and blocks[4:] == ["fuentes", "documentos"], role
         order = dashboard.visible_menu_order()
         start = order.index(dashboard.HOME_PAGE)
-        assert order[start : start + 3] == [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS, dashboard.PAGE_BA]
+        assert order[start : start + 2] == [dashboard.HOME_PAGE, dashboard.PAGE_BA]  # D-494
         firsts[role] = order[0]
     assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.HOME_PAGE  # D-378
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_DIAGRAMS
