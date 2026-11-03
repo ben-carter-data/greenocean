@@ -8344,9 +8344,9 @@ DASHBOARD_FOLD_SCRIPT = r"""<script>
     const view = "__VIEW__";
     const fold = "__FOLD__" === "yes";
     const wide = window.innerWidth >= __WIDE__ && !window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches;
-    // D-465: the page before, kept by the tab: the first page of the tab is the entry to the app
-    let last = null;
-    try { last = sessionStorage.getItem("goMenuView"); sessionStorage.setItem("goMenuView", view); } catch (error) { return; }
+    // D-466: the page before in this load of the app; each load (an address typed, a reload) is an entry and opens the menu
+    const last = window.__goMenuView === undefined ? null : window.__goMenuView;
+    window.__goMenuView = view;
     if (last === view) return;
     // Streamlit marks the menu with data-collapsed (aria-expanded in older versions)
     const isOpen = (sidebar) => sidebar.dataset.collapsed === "false" || sidebar.getAttribute("aria-expanded") === "true";
@@ -8366,8 +8366,8 @@ DASHBOARD_FOLD_SCRIPT = r"""<script>
 
 
 def show_dashboard_menu_fold(view, mode):
-    """D-462, D-463, D-465: on going to a dashboard or a page of diagrams the menu folds and its button beats in green;
-    elsewhere it stays. The first page of the tab, the entry to the app, opens it."""
+    """D-462, D-463, D-466: on going to a dashboard or a page of diagrams the menu folds and its button beats in green;
+    elsewhere it stays. Each load of the app, its entry, opens it."""
     is_dashboard = view in FOLD_MENU_VIEWS
     if is_dashboard:
         green = ba_green(mode)

@@ -366,3 +366,18 @@ def test_d458_the_panel_sits_above_the_tabs_and_follows_the_tab_and_the_period()
     assert inflation.count("no prueba que la inflación cause la subida") == 1
     stakeholders = draw({dashboard.BA_TAB_KEY: "Interesados"})  # the rule of the rings too
     assert stakeholders.count("Cada anillo dice cuánto depende") == 1 and 'class="im-criterion"' not in stakeholders
+
+
+def test_d466_each_year_has_its_own_colour():
+    years = pd.DataFrame(
+        {
+            "year": ["2022", "2023", "2024"],
+            "change": [16.4, 5.6, 4.6],
+            "ipc": [22.7, 5.2, 3.6],
+            "note": ["desde ene", "", ""],
+        }
+    )
+    spec = ba_trends.years_chart(years, "Vantablack").to_dict()
+    color = spec["layer"][0]["encoding"]["color"]
+    assert color["field"] == "year" and color["scale"]["range"] == ba_trends.YEAR_COLORS
+    assert len(set(ba_trends.YEAR_COLORS)) == len(ba_trends.YEAR_COLORS) >= 5  # 2022 to 2026, each apart

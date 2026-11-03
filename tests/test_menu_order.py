@@ -196,7 +196,7 @@ def test_d462_a_dashboard_opens_with_the_menu_folded_and_its_button_beating_in_g
     ):
         app = draw("profesional", view)
         assert not app.exception
-        scripts = [str(block.proto.body) for block in app.get("html") if "goMenuView" in str(block.proto.body)]
+        scripts = [str(block.proto.body) for block in app.get("html") if "__goMenuView" in str(block.proto.body)]
         key = hashlib.sha1(view.encode()).hexdigest()[:10]  # the page as a neutral key, not a Spanish name
         assert len(scripts) == 1 and f'const view = "{key}";' in scripts[0], view
         assert ('"yes" === "yes"' in scripts[0]) is folds, view

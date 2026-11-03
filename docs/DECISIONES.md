@@ -3780,3 +3780,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** la pestaña recuerda la página anterior (`sessionStorage`). En la primera página de la pestaña, la entrada a la app, el menú se abre aunque el navegador lo recuerde plegado. Al recargar o volver a dibujar la misma página no cambia. Al ir a otra página, se pliega si es un dashboard o una página de diagramas. En una pantalla angosta o en un teléfono girado manda la regla de antes (D-166).
 - **Medición (Playwright):** la entrada (Semanal) abre el menú; Pipeline y linaje lo pliega; al recargarla sigue plegado; una pestaña nueva lo abre otra vez.
 - **Pruebas:** `tests/test_menu_order.py::test_d462_a_dashboard_opens_with_the_menu_folded_and_its_button_beating_in_green`, con la regla de la entrada.
+
+## D-466 · Cada carga de la app abre el menú, y cada año tiene su color en «Cambio de cada año»
+
+- **Pedido del autor:** al entrar a la app el menú seguía plegado; y en el gráfico histórico «Cambio de cada año» todas las barras tenían el mismo color.
+- **Diagnóstico:** D-465 recordaba la página anterior en la pestaña (`sessionStorage`), así que cargar la app de nuevo en la misma pestaña contaba como ir a Semanal desde otra página, y la plegaba. Las barras se pintaban por subida o bajada, y todos los años subieron.
+- **Decisión:**
+  - **Menú:** la página anterior se recuerda solo durante una carga de la app. Cada carga, al escribir la dirección o al recargar, es una entrada y abre el menú; dentro de la carga, ir a un dashboard o a un diagrama lo pliega (D-463).
+  - **Colores:** cada año tiene su propio color; la altura de la barra dice cuánto subió o bajó, y la raya corta sigue siendo el IPC de ese año.
+- **Medición (Playwright):** en la misma pestaña, tras ir a Análisis BA y BI (menú plegado), escribir la dirección de la app abre Semanal con el menú abierto.
+- **Pruebas:** `tests/test_ba_trends.py::test_d466_each_year_has_its_own_colour` y la del menú en `tests/test_menu_order.py`.

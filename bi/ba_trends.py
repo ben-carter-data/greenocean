@@ -681,6 +681,10 @@ def history_cards(figures: dict[str, Any], last: tuple[int, int]) -> str:
 
 
 # region Charts
+# D-466: one colour per year in «Cambio de cada año», so each year reads apart; the bar's height says whether it rose.
+YEAR_COLORS = ["#5aa9ea", "#5fd39b", "#b49cff", "#f2b05e", "#ef7d8e", "#4dd0e1", "#f48fb1"]
+
+
 def sized(chart: Any, width: Any, height: int, mode: str) -> Any:
     return charts.apply_chart_style(chart.properties(width=width, height=height), mode)
 
@@ -859,12 +863,11 @@ def alerts_chart(
 
 
 def years_chart(years: pd.DataFrame, mode: str, width: Any = "container", height: int = 150) -> Any:
-    """The change of each year: a bar for the family, a short line for the food IPC of that year."""
+    """The change of each year: a bar for the family, in the colour of its year (D-466), a short line for the food IPC
+    of that year."""
     palette = charts.get_palette(mode)
-    rose, fell = say("subió", "rose"), say("bajó", "fell")
     frame = years.assign(
         label=[f"{year} ({note})" if note else year for year, note in zip(years["year"], years["note"])],
-        tone=[rose if value > 0 else fell for value in years["change"]],
     )
     tooltip = [
         alt.Tooltip("label:N", title=say("Año", "Year")),
@@ -877,9 +880,7 @@ def years_chart(years: pd.DataFrame, mode: str, width: Any = "container", height
         .encode(
             x=alt.X("year:N", title=None, axis=alt.Axis(labelAngle=0, labelFontSize=label_size(height))),
             y=alt.Y("change:Q", title=None, axis=alt.Axis(labelFontSize=label_size(height), tickCount=4)),
-            color=alt.Color(
-                "tone:N", scale=alt.Scale(domain=[rose, fell], range=[palette["rise"], palette["fall"]]), legend=None
-            ),
+            color=alt.Color("year:N", scale=alt.Scale(domain=list(frame["year"]), range=YEAR_COLORS), legend=None),
             tooltip=tooltip,
         )
     )
