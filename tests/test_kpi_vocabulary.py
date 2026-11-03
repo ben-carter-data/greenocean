@@ -39,3 +39,21 @@ def test_d385_each_business_kpi_names_its_technical_indicator_or_says_it_has_non
             assert f"{code} · {dashboard.KPI_PRESENTATION[code][0]}" in cell and re.search(rf"kpi={code}\b", cell), name
         else:
             assert cell == "—", name
+
+
+def test_d479_the_alert_chips_say_their_rule_in_the_words_of_each_view():
+    change, window = round(alerts.ALERT_MINIMUM_CHANGE * 100), alerts.ALERT_WINDOW_WEEKS
+    for rise in (True, False):
+        plain, formula = alerts.describe_kind(rise, False), alerts.describe_kind(rise, True)
+        assert f"al menos {change} % frente a la semana anterior" in plain
+        assert f"{window} semanas previas (desviación estándar)" in plain
+        assert f"{alerts.ALERT_DEVIATIONS} desviaciones estándar" in formula and f"{window} semanas previas" in formula
+        assert i18n.lookup(plain) and i18n.lookup(formula)
+    assert "Una oportunidad de compra." in alerts.describe_kind(False, False)
+    # Each level shows its threshold, taken from the same table that colours the rows.
+    plain, formula = dashboard.build_level_guide_html(False, False), dashboard.build_level_guide_html(False, True)
+    for floor, label, _, _ in dashboard.DROP_LEVELS:
+        assert label in plain
+        assert (f"{floor}× o más" if floor else f"más de {alerts.ALERT_DEVIATIONS}×") in plain
+        assert (f"≥ {floor} σ" if floor else f"> {alerts.ALERT_DEVIATIONS} σ") in formula
+    assert "desviación estándar" in plain and "desviación estándar" in formula

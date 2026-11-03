@@ -1330,7 +1330,7 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not app.exception
     alert = app.button(key="home_alert_trigger")
-    assert re.fullmatch(r"▲ \d+ alzas? fuertes?", alert.label) and "al menos 10 %" in alert.help
+    assert re.fullmatch(r"▲ \d+ alzas? fuertes?", alert.label) and "10 %" in alert.help and "12 semanas" in alert.help
     drop = app.button(key="home_drop_trigger")  # D-477: the sharp drops, a green chip beside it
     assert re.fullmatch(r"▼ \d+ bajas? fuertes?", drop.label) and drop not in app.sidebar.button
     # D-169: the trigger sits on top of the Resumen, out of the sidebar.

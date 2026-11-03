@@ -30,6 +30,31 @@ def describe_rule() -> str:
     )
 
 
+def describe_kind(rise: bool, professional: bool) -> str:
+    """D-479: what a sharp rise or a sharp drop is, from the same constants, so no figure is computed in silence.
+    The Usuario reads plain words with the statistical term in brackets; Profesional and Autor read the formula."""
+    change = round(ALERT_MINIMUM_CHANGE * 100)
+    if professional:
+        quotes = QUOTE_WORDS.get(ALERT_MINIMUM_QUOTES, str(ALERT_MINIMUM_QUOTES))
+        return (
+            f"K6 · variación semanal {'≥ +' if rise else '≤ −'}{change} % y a más de {ALERT_DEVIATIONS} desviaciones "
+            f"estándar del promedio de las variaciones de sus {ALERT_WINDOW_WEEKS} semanas previas; precio nacional, "
+            f"con {quotes} cotizaciones en cada semana."
+        )
+    return (
+        f"El precio {'subió' if rise else 'bajó'} al menos {change} % frente a la semana anterior: más de "
+        f"{ALERT_DEVIATIONS} veces lo que ese producto suele moverse en sus {ALERT_WINDOW_WEEKS} semanas previas "
+        f"(desviación estándar). {'Conviene comparar antes de comprar.' if rise else 'Una oportunidad de compra.'}"
+    )
+
+
+def describe_scale(professional: bool) -> str:
+    """D-479: what the number next to each level means."""
+    if professional:
+        return f"σ: desviación estándar de las variaciones semanales de las {ALERT_WINDOW_WEEKS} semanas previas."
+    return f"Veces lo que el producto suele moverse en {ALERT_WINDOW_WEEKS} semanas (desviación estándar)."
+
+
 # region Alerts
 def add_weekly_variation(prices: pd.DataFrame) -> pd.DataFrame:
     """Add the price change of each week against the week before, as a fraction.

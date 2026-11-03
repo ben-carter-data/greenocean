@@ -404,13 +404,17 @@ def test_d478_a_family_is_the_sum_of_its_products(history):
     # a product's index is the median of its own consumer series against January 2022, recomputed by hand
     key = ba_trends.PRODUCT + "Plátano"
     own = series[series["product"] == "Plátano"].assign(
-        key=lambda frame: frame["product_id"].astype(str) + "|" + frame["channel_id"].astype(str) + "|" + frame["normalized_unit"]
+        key=lambda frame: (
+            frame["product_id"].astype(str) + "|" + frame["channel_id"].astype(str) + "|" + frame["normalized_unit"]
+        )
     )
     base = own[(own["year"] == 2022) & (own["month"] == 1)].set_index("key")["price"]
     end = own[(own["year"] == last[0]) & (own["month"] == last[1])].set_index("key")["price"]
     kept = sorted(set(base.index) & set(end.index))
     expected = (end[kept] / base[kept] * 100).median()
-    drawn = product_rows[(product_rows["product_group"] == key) & (product_rows["month_start"] == pd.Timestamp(*last, 1))]
+    drawn = product_rows[
+        (product_rows["product_group"] == key) & (product_rows["month_start"] == pd.Timestamp(*last, 1))
+    ]
     assert drawn["index"].iloc[0] == pytest.approx(expected)
     assert ba_trends.family_label(key) == "Plátano" and ba_trends.family_name(key) == "el producto Plátano"
     assert family_of[key] == "Frutas"
@@ -427,4 +431,6 @@ def test_d478_mensual_shows_a_family_over_its_products():
     page = " ".join(block.value for block in app.markdown)
     assert "Familia y sus productos" in page
     table = page[page.index("Familia y sus productos") :]
-    assert table.index(">Frutas<") < table.index(">Plátano<") < table.index(">Aceituna")  # the chosen one under its family
+    assert (
+        table.index(">Frutas<") < table.index(">Plátano<") < table.index(">Aceituna")
+    )  # the chosen one under its family

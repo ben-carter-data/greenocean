@@ -4317,13 +4317,7 @@ def show_home_alerts_dialog(week, group, product_filter, mode, direction=RISE):
                     if st.button(label, key=f'home_alert_family_{index}', use_container_width=True):
                         st.session_state['home_alert_selected_family'] = family
                         st.rerun(scope='fragment')
-        st.caption(
-            'Un alza fuerte es una subida fuera de lo habitual para ese producto y de al menos 10 %; no significa que '
-            'el alimento sea el más caro.'
-            if rise
-            else 'Una baja fuerte es una bajada fuera de lo habitual para ese producto y de al menos 10 %: una buena '
-            'noticia para quien compra.'
-        )
+        st.caption(alerts.describe_kind(rise, not is_public_profile()))  # D-479: the rule, never computed in silence
         return
 
     st.html('<div class="home-alert-detail-marker"></div>')
@@ -4339,19 +4333,7 @@ def show_home_alerts_dialog(week, group, product_filter, mode, direction=RISE):
     if st.session_state.get(unit_key) not in units:
         st.session_state[unit_key] = units[0]
     with st.container(key='home_alert_detail_tools', horizontal=True, vertical_alignment='bottom', gap='small'):
-        st.html(
-            '<div class="home-alert-level-guide">'
-            '<span><i class="critical"></i>Alza extrema</span>'
-            '<span><i class="high"></i>Alza muy fuerte</span>'
-            '<span><i class="moderate"></i>Alza fuerte</span>'
-            '<small>El color indica cuán inusual fue el alza.</small></div>'
-            if rise
-            else '<div class="home-alert-level-guide">'
-            '<span><i class="drop-strong"></i>Baja extrema</span>'
-            '<span><i class="drop-medium"></i>Baja muy fuerte</span>'
-            '<span><i class="drop-light"></i>Baja fuerte</span>'
-            '<small>El color indica cuán inusual fue la baja.</small></div>'
-        )
+        st.html(build_level_guide_html(rise, not is_public_profile()))
         query = alert_search_input(f'home_alert_search_{selected}')
         selected_unit = st.selectbox(
             'Unidad',
@@ -4937,6 +4919,23 @@ def read_lineage(database_version):
 
 
 # region Alerts page
+LEVEL_DOTS = {RISE: ("critical", "high", "moderate"), DROP: ("drop-strong", "drop-medium", "drop-light")}
+
+
+def build_level_guide_html(rise, professional):
+    """D-479: each level with its threshold, in σ for Profesional and Autor and in «veces» for the Usuario, and what
+    the number means; before, only «El color indica cuán inusual fue…», a calculation nobody could see."""
+    levels = ALERT_LEVELS if rise else DROP_LEVELS
+    spans = []
+    for (floor, label, _, _), dot in zip(levels, LEVEL_DOTS[RISE if rise else DROP]):
+        if professional:
+            scale = f"≥ {floor} σ" if floor else f"> {alerts.ALERT_DEVIATIONS} σ"
+        else:
+            scale = f"{floor}× o más" if floor else f"más de {alerts.ALERT_DEVIATIONS}×"
+        spans.append(f'<span><i class="{dot}"></i>{label}<em>{scale}</em></span>')
+    return f'<div class="home-alert-level-guide">{"".join(spans)}<small>{alerts.describe_scale(professional)}</small></div>'
+
+
 def find_alert_level(distance, rise=True):
     """(label, icon, status) of an alert by its distance in standard deviations; D-477: a drop takes the drop words."""
     levels = ALERT_LEVELS if rise else DROP_LEVELS
@@ -9624,13 +9623,13 @@ def show_alert_notice(week):
             RISE,
             "home_alert_trigger",
             tr("▲ {} alzas fuertes").format(counts[RISE]) if counts[RISE] != 1 else tr("▲ 1 alza fuerte"),
-            tr("Subidas fuera de lo habitual para el producto y de al menos 10 % esta semana, en todo Chile."),
+            alerts.describe_kind(True, not is_public_profile()),
         ),
         (
             DROP,
             "home_drop_trigger",
             tr("▼ {} bajas fuertes").format(counts[DROP]) if counts[DROP] != 1 else tr("▼ 1 baja fuerte"),
-            tr("Bajadas fuera de lo habitual para el producto y de al menos 10 % esta semana, en todo Chile."),
+            alerts.describe_kind(False, not is_public_profile()),
         ),
     ]
     with st.container(key="home_alert_chips", horizontal=True, gap="small", width="content"):

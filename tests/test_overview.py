@@ -138,7 +138,9 @@ def test_d478_the_weeks_table_goes_down_to_the_products_of_a_family(market):
     heat = overview.product_heat(variations, 8, "Frutas")
     last = sorted(variations["week_start"].unique())[-8:]
     valid = variations[
-        variations["week_start"].isin(last) & (variations["product_group"] == "Frutas") & variations["variation"].notna()
+        variations["week_start"].isin(last)
+        & (variations["product_group"] == "Frutas")
+        & variations["variation"].notna()
     ]
     assert set(heat["family"]) == set(valid["product"])  # every product of the family, nothing else
     for (product, week), rows in valid.groupby(["product", "week_start"]):

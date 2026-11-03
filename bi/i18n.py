@@ -395,8 +395,6 @@ EN = {
     "▲ 1 alza fuerte": "▲ 1 sharp rise",
     "▼ {} bajas fuertes": "▼ {} sharp drops",
     "▼ 1 baja fuerte": "▼ 1 sharp drop",
-    "Subidas fuera de lo habitual para el producto y de al menos 10 % esta semana, en todo Chile.": "Rises out of the ordinary for the product and of at least 10 % this week, in all of Chile.",
-    "Bajadas fuera de lo habitual para el producto y de al menos 10 % esta semana, en todo Chile.": "Drops out of the ordinary for the product and of at least 10 % this week, in all of Chile.",
     "La vista Autor se cerró tras 30 min sin actividad.": "The Author view closed after 30 min without activity.",
     "La ingeniería de datos, la operación, la seguridad, el stack y la documentación.": "The data engineering, operations, security, the stack and the documentation.",
     "Clave": "Code",
