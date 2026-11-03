@@ -42,8 +42,8 @@ def test_d456_the_section_is_its_three_dashboards_and_the_analysis_gathers_the_r
 @needs_database
 def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_only_it():
     for language, expected in (
-        ("es", ["Dashboard", "Último dato por canal", "Análisis BA y BI"]),
-        ("en", ["Dashboard", "Latest data by channel", "BA and BI analysis"]),
+        ("es", ["Semanal", "Último dato por canal", "Análisis BA y BI"]),  # D-459
+        ("en", ["Weekly", "Latest data by channel", "BA and BI analysis"]),
     ):
         user = draw("consulta", dashboard.PAGE_BA, language)
         assert not user.exception
@@ -161,3 +161,20 @@ def test_d420_the_author_sees_the_whole_devops_section():
         "GitHub Actions",
         "Configuración",
     ]
+
+
+@needs_database
+def test_d459_the_three_dashboards_sit_under_their_title_and_the_old_address_opens_semanal():
+    # The three pages of «Negocio · BA y BI» are dashboards: they go under the title «Dashboards», and the weekly one,
+    # which was called «Dashboard» on its own, is «Semanal». An old address or bookmark still opens it.
+    assert dashboard.PAGE_HOME == "Semanal" and dashboard.RETIRED_VIEWS["Dashboard"] == dashboard.HOME_PAGE
+    assert i18n.EN["Semanal"] == "Weekly" and i18n.EN["Dashboards"] == "Dashboards"
+    for language, labels, title in (
+        ("es", ["Semanal", "Último dato por canal", "Análisis BA y BI"], "Dashboards"),
+        ("en", ["Weekly", "Latest data by channel", "BA and BI analysis"], "Dashboards"),
+    ):
+        app = draw("profesional", "Dashboard", language)
+        assert not app.exception
+        assert [link.proto.label for link in app.sidebar.get("page_link")][:3] == labels
+        assert f'<p class="nav-subtitle">{title}</p>' in " ".join(block.value for block in app.sidebar.markdown)
+        assert f"<b>{labels[0]}</b>" in " ".join(block.value for block in app.main.markdown)  # the page it opened

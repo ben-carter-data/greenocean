@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.9 |
+| Version | 2.10 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -34,19 +34,19 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 
 | Acronym or term | Meaning | Where it appears | Theme |
 |---|---|---|---|
-| KPI | Key performance indicator: each figure that measures something of the business. The technical indicators are numbered K1 to K8. | Dashboard, BA and BI analysis (Monthly), BA and BI analysis (Historical), BA and BI analysis (Method) | Indicators |
+| KPI | Key performance indicator: each figure that measures something of the business. The technical indicators are numbered K1 to K8. | Weekly, BA and BI analysis (Monthly), BA and BI analysis (Historical), BA and BI analysis (Method) | Indicators |
 | BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
 | BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | BA and BI analysis (Stakeholders) | Indicators |
 | BSA | Business systems analysis: the role that decides how the system meets what the business asks: what is measured, what blocks publication and what warns. | BA and BI analysis (Method) | Indicators |
 | RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
-| Price alert | A weekly change outside the average ± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week (K6). | Dashboard | Indicators |
+| Price alert | A weekly change outside the average ± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week (K6). | Weekly | Indicators |
 | Real price | A price expressed in pesos of the last published month of the CPI. | BA and BI analysis (Prices and inflation) | Indicators |
 | Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | BA and BI analysis (Prices and inflation) | Indicators |
 | Data quality indicator | Each of the 11 indicators measured on every load on the published database, in five dimensions. | Quality and audit | Indicators |
 | Quality plan indicator | Each of the 12 indicators of the SQAP (8 of code and 4 of data) that the quality workflow measures every week. | Method and quality | Indicators |
 | Quality dimension | An aspect of quality that is measured: completeness, timeliness, validity, uniqueness, consistency and accuracy. | Quality and audit | Indicators |
 | DAMA-DMBOK | Data management guide of DAMA International (*Data Management Body of Knowledge*); the quality dimensions come from it. | — | Indicators |
-| ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Dashboard, Pipeline and lineage | Sources |
+| ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Weekly, Pipeline and lineage | Sources |
 | INE | Chile's National Statistics Institute (*Instituto Nacional de Estadísticas*). It publishes the food CPI. | BA and BI analysis (Prices and inflation), Pipeline and lineage | Sources |
 | CPI (IPC) | Consumer price index (*índice de precios al consumidor*); here, the «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division published by the INE. | BA and BI analysis (Prices and inflation) | Sources |
 | CSV | Text file with comma-separated values: the format in which ODEPA publishes the prices. | Pipeline and lineage | Sources |
@@ -118,3 +118,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.7 | 2026-11-02 | «Served database» becomes «DuckDB database» in the definitions too, which still used the former name (D-455) |
 | 2.8 | 2026-11-02 | The pages that became tabs of «BA and BI analysis» are named «BA and BI analysis (tab)» (D-456) |
 | 2.9 | 2026-11-02 | The «Trends» tab of «BA and BI analysis» becomes «Monthly» and «Historical» (D-457) |
+| 2.10 | 2026-11-02 | The week's dashboard is called «Weekly» (D-459) |

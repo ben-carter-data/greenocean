@@ -88,7 +88,7 @@ def test_d375_the_next_week_never_widens_the_bar_and_the_section_name_gives_way_
     from bi import charts
 
     bar = home_mockup.dashboard_bar(
-        "Negocio · BA y BI › Dashboard",
+        "Negocio · BA y BI › Semanal",
         "19–25 oct 2026",
         [],
         [],
@@ -96,7 +96,7 @@ def test_d375_the_next_week_never_widens_the_bar_and_the_section_name_gives_way_
         next_label="26 oct – 1 nov",
     )
     path = bar[bar.index('class="home-bar-path"') : bar.index('class="home-bar-title"')]
-    assert '<span class="home-bar-section">Negocio · BA y BI › </span><b>Dashboard</b>' in path
+    assert '<span class="home-bar-section">Negocio · BA y BI › </span><b>Semanal</b>' in path  # D-459
     assert 'class="home-next-week"' in path  # under the page's name, beside the chip: it never widens the chip
     assert (
         '<span class="home-chip-week">19–25 oct</span><span class="home-chip-place"> · Arica y Parinacota</span>' in bar

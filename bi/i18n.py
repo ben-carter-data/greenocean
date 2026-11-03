@@ -259,7 +259,7 @@ EN = {
     "Incluye": "Includes",
     "Excluye": "Excludes",
     "Por qué": "Why",
-    "Los valores de cada KPI se ven en el Dashboard, en Insights y en Precios e inflación.": "The values of each KPI are on the Dashboard, Insights and Prices and inflation.",
+    "Los valores de cada KPI se ven en el dashboard Semanal, en Insights y en Precios e inflación.": "The values of each KPI are on the Weekly dashboard, Insights and Prices and inflation.",
     "Las definiciones de cada KPI están en «Análisis de negocio y sistemas».": "The definition of each KPI is in «Business and systems analysis».",
     "Ver las definiciones de los KPI": "See the KPI definitions",
     "KPI": "KPI",
@@ -295,6 +295,8 @@ EN = {
     "Documentos": "Documents",
     "Fuentes de datos": "Data sources",
     "Dashboard": "Dashboard",
+    # D-459: the three dashboards of «Negocio · BA y BI», under their title
+    "Dashboards": "Dashboards",  # «Semanal» is «Weekly» above
     "Precios e inflación": "Prices and inflation",
     "Pipeline y linaje": "Pipeline and lineage",
     "Modelo de datos": "Data model",
@@ -377,7 +379,7 @@ EN = {
     "{} de {} familias": "{} of {} families",
     "Este canal publica {} de las {} familias: {}.": "This channel publishes {} of the {} families: {}.",
     "La última semana que publicó cada canal, aunque otra fuente todavía no la publique: un clic abre el canal.": "The latest week each channel published, even if another source has not published it yet: a click opens the channel.",
-    "Vista del Dashboard": "Dashboard view",
+    "Vista del dashboard": "Dashboard view",
     "La semana": "The week",
     "Últimas semanas": "Last weeks",
     "▲ {} alertas de precio esta semana": "▲ {} price alerts this week",

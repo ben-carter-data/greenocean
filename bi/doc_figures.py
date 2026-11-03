@@ -922,7 +922,7 @@ def sad_scenarios(mode):
             say("Usuario · Negocio · BA y BI · sin cuenta", "User · Business · BA and BI · no account"),
             [
                 tile(
-                    say("Dashboard", "Dashboard"),
+                    say("Semanal", "Weekly"),
                     say("alertas de precio", "price alerts"),
                     "P-1 · RF-05",
                 ),

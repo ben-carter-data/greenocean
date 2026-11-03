@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.16 |
+| Version | 3.17 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -130,7 +130,7 @@ When it opens, the panel compares its database with the pointer of the `main` br
 
 The entry asks for the view on every visit and every reload the reader makes:
 
-- **User:** the business. The Dashboard, guided in three steps, Latest data by channel and BA and BI analysis.
+- **User:** the business. Its three dashboards: Weekly, guided in three steps, Latest data by channel and BA and BI analysis.
 - **Professional:** the whole project, ordered by the profile it picks (Data Eng, BA, BI, DevOps or Security).
 - **Author:** the same as Professional, plus its own part, with the control code.
 
@@ -252,7 +252,7 @@ Each table of the DuckDB database, its role and its columns.
 
 #### latest_by_source
 
-The last two weeks of each source, without the cut of D-356. Only the page «Latest data by channel» reads it; the Dashboard and the indicators read `weekly_price`.
+The last two weeks of each source, without the cut of D-356. Only the page «Latest data by channel» reads it; the Weekly dashboard and the indicators read `weekly_price`.
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -353,7 +353,7 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | `failures` | INTEGER | | Rows that do not meet the test |
 | `generated_at` | VARCHAR | | Date of the `dbt build` |
 
-**Weeks that wait.** When one source has already published a week and the other has not, that week does not enter the database. It waits for the other source, with nothing filled in. The line of `etl_run` of that load says so (`SOURCE_LATE: wholesale 2026-10-19`) and the Dashboard shows «ODEPA has not published the week of Oct 19–25 yet (wholesale)» (D-356, D-374).
+**Weeks that wait.** When one source has already published a week and the other has not, that week does not enter the database. It waits for the other source, with nothing filled in. The line of `etl_run` of that load says so (`SOURCE_LATE: wholesale 2026-10-19`) and the Weekly dashboard shows «ODEPA has not published the week of Oct 19–25 yet (wholesale)» (D-356, D-374).
 
 ## 7. Deployment
 
@@ -515,3 +515,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.14 | 2026-11-02 | The data is drawn with the journey by layers of «Pipeline and lineage», instead of a drawing of its own (6, D-455) |
 | 3.15 | 2026-11-02 | The User view and the key scenarios name «BA and BI analysis», which gathers in tabs Prices and inflation, Insights and Stakeholders (2.1, 5, D-456) |
 | 3.16 | 2026-11-02 | The key scenarios name the tabs «Monthly» and «Historical» of «BA and BI analysis», which replace «Trends» (2.1, D-457) |
+| 3.17 | 2026-11-02 | The week's dashboard is called «Weekly», under the title «Dashboards» (2.1, 5, 6.5, D-459) |

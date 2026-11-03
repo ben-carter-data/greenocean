@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.10 |
+| Version | 1.11 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -103,7 +103,7 @@ Each occurrence is written in one line per field and in plain language: what hap
 
 An external incident is a failure of the data sources: ODEPA or the INE. For example, a week that is not published or a file that changes its format. Faced with an incident, the load does not pass its checks and the dashboard keeps the last valid load, with its date in sight. Incidents are recorded in `docs/calidad/incidentes_externos.json`, and their response awaits the author's approval (D-334).
 
-**Late sources (D-356).** We publish up to the last week complete in both sources, filling in nothing. That is how the Dashboard and the indicators read it. The page «Latest data by channel» shows each source's latest week, labelled (D-365). A recent week a source has not published yet does not block the load: it stays as an external incident and the app shows a quiet notice. The load stops only if a week is missing in the middle of the data, or if the source has gone more than 2 weeks without publishing. In that case the Author also gets an urgent alert.
+**Late sources (D-356).** We publish up to the last week complete in both sources, filling in nothing. That is how the Weekly dashboard and the indicators read it. The page «Latest data by channel» shows each source's latest week, labelled (D-365). A recent week a source has not published yet does not block the load: it stays as an external incident and the app shows a quiet notice. The load stops only if a week is missing in the middle of the data, or if the source has gone more than 2 weeks without publishing. In that case the Author also gets an urgent alert.
 
 ## 11. Who decides what
 
@@ -133,3 +133,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.8 | 2026-11-01 | A non-conformity of the weekly series closes by itself when its indicator is back within the acceptable (8, D-437) |
 | 1.9 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
 | 1.10 | 2026-11-02 | The 11 data indicators are drawn with the flow of «Quality and audit» (3), instead of «The cycle of each week» (D-455) |
+| 1.11 | 2026-11-02 | The week's dashboard is called «Weekly» (10, D-459) |

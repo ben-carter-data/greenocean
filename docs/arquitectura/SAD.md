@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.16 |
+| Versión | 3.17 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -130,7 +130,7 @@ Al abrirse, el panel compara su base con el puntero de la rama `main`. Si su cop
 
 La entrada pide la vista en cada visita y en cada recarga que hace el lector:
 
-- **Usuario:** el negocio. El Dashboard, guiado en tres pasos, Último dato por canal y Análisis BA y BI.
+- **Usuario:** el negocio. Sus tres dashboards: Semanal, guiado en tres pasos, Último dato por canal y Análisis BA y BI.
 - **Profesional:** todo el proyecto, ordenado según el perfil que elige (Data Eng, BA, BI, DevOps o Seguridad).
 - **Autor:** lo mismo que Profesional, más su parte, con la clave de control.
 
@@ -252,7 +252,7 @@ Cada tabla de la Base DuckDB, su función y sus columnas.
 
 #### latest_by_source
 
-Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la página «Último dato por canal»; el Dashboard y los indicadores leen `weekly_price`.
+Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la página «Último dato por canal»; el dashboard Semanal y los indicadores leen `weekly_price`.
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -353,7 +353,7 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | `failures` | INTEGER | | Filas que no cumplen la prueba |
 | `generated_at` | VARCHAR | | Fecha del `dbt build` |
 
-**Semanas que esperan.** Cuando una fuente ya publicó una semana y la otra no, esa semana no entra a la base. Espera a la otra fuente, sin rellenar nada. La línea de `etl_run` de esa carga lo dice (`SOURCE_LATE: wholesale 2026-10-19`) y el Dashboard muestra «ODEPA aún no publica la semana 19–25 oct (mayorista)» (D-356, D-374).
+**Semanas que esperan.** Cuando una fuente ya publicó una semana y la otra no, esa semana no entra a la base. Espera a la otra fuente, sin rellenar nada. La línea de `etl_run` de esa carga lo dice (`SOURCE_LATE: wholesale 2026-10-19`) y el dashboard Semanal muestra «ODEPA aún no publica la semana 19–25 oct (mayorista)» (D-356, D-374).
 
 ## 7. Despliegue
 
@@ -515,3 +515,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.14 | 02-11-2026 | Los datos se dibujan con el recorrido por capas de «Pipeline y linaje», en vez de un dibujo propio (6, D-455) |
 | 3.15 | 02-11-2026 | La vista Usuario y los escenarios clave nombran «Análisis BA y BI», que reúne en pestañas Precios e inflación, Insights e Interesados (2.1, 5, D-456) |
 | 3.16 | 02-11-2026 | Los escenarios clave nombran las pestañas «Mensual» e «Histórico» de «Análisis BA y BI», que reemplazan a «Tendencias» (2.1, D-457) |
+| 3.17 | 02-11-2026 | El dashboard de la semana se llama «Semanal», bajo el título «Dashboards» (2.1, 5, 6.5, D-459) |

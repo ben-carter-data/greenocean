@@ -99,7 +99,9 @@ tr = i18n.tr
 
 # region Constants
 # The menu is the project journey; every destination is directly accessible.
-PAGE_HOME = "Dashboard"
+# D-459: the three pages of «Negocio · BA y BI» are dashboards, under the title «Dashboards»; the weekly one is
+# «Semanal», and the old address «Dashboard» opens it.
+PAGE_HOME = "Semanal"
 # D-296: the macro dashboard of the whole project, in tabs, like a BI tool; the first page of the menu.
 PAGE_INSIGHTS = "Insights"
 PAGE_CHANNELS = "Último dato por canal"  # D-365: each source with its own latest week
@@ -129,7 +131,8 @@ BA_TABS = [BA_MONTHLY_TAB, BA_HISTORY_TAB] + list(BA_TAB_OF_VIEW.values())
 RETIRED_VIEWS = {
     "Histórico y estacionalidad": "Contexto del precio",
     "Dashboard general": PAGE_HOME,
-    "Dónde comprar": PAGE_HOME,  # D-325: the page is gone; its old address opens the Dashboard
+    "Dónde comprar": PAGE_HOME,  # D-325: the page is gone; its old address opens «Semanal»
+    "Dashboard": PAGE_HOME,  # D-459: its name until «Semanal»
 }
 PAGE_KPI = "Indicadores explicados"
 PAGE_OPERATIONS = "Monitoreo"
@@ -4567,7 +4570,7 @@ def show_market_overview(mode, prefix):
     with st.container(key='home_info', horizontal=True, vertical_alignment='center'):
         home_view = (
             st.segmented_control(
-                tr('Vista del Dashboard'),
+                tr('Vista del dashboard'),
                 HOME_VIEWS,
                 default=HOME_VIEWS[0],
                 format_func=tr,
@@ -5189,7 +5192,7 @@ def show_overview_insights(mode, version):
         (
             "¿Qué está subiendo y qué está bajando esta semana?",
             "Persona común",
-            "Dashboard",
+            PAGE_HOME,
             f"Subieron: {overview.join(rose) or 'ninguna familia'}. Bajaron: {overview.join(fell) or 'ninguna familia'}.",
         ),
         (
@@ -5669,7 +5672,7 @@ def show_analysis_block(block, mode):
     elif block == "KPIs":
         show_analysis_lead(
             tr(
-                "Los valores de cada KPI se ven en el Dashboard, en Insights y en Precios e inflación. "
+                "Los valores de cada KPI se ven en el dashboard Semanal, en Insights y en Precios e inflación. "
                 "Un KPI con indicador técnico (K1 a K8) abre su cálculo paso a paso; los demás se calculan solo para "
                 "el panel."
             )
@@ -8721,7 +8724,7 @@ RELOAD_HOME_SCRIPT = """<script>
     for (const name of ["tema"]) {
         if (current.searchParams.has(name)) home.searchParams.set(name, current.searchParams.get(name));
     }
-    home.searchParams.set("vista", "Dashboard");
+    home.searchParams.set("vista", "__HOME__");
     try {
         const trail = JSON.parse(sessionStorage.getItem('greenoceanTrail') || '[]');
         const last = trail[trail.length - 1];
@@ -8733,7 +8736,7 @@ RELOAD_HOME_SCRIPT = """<script>
         window.location.replace(home.href);
     }
 })();
-</script>"""
+</script>""".replace("__HOME__", PAGE_HOME)
 
 
 # D-213: one section per kind of reader, open by default; each page lives in exactly one section.
@@ -8814,7 +8817,7 @@ SOURCE_ICON_SVG = (
     '<path fill="currentColor" d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>'
 )
 SIDEBAR_TOP_LABELS = {
-    REPORT_WINDOW: "Dashboard",
+    REPORT_WINDOW: "Dashboards",
     SECTION_TECHNICAL: "Ingeniería de datos",
     SECTION_PROJECT: "Proyecto",
     SECTION_LINKS: "Documentación",
@@ -8823,7 +8826,7 @@ SIDEBAR_TOP_LABELS = {
 }
 SIDEBAR_LABELS = {
     PAGE_INSIGHTS: "Insights",
-    PAGE_HOME: "Dashboard",
+    PAGE_HOME: "Semanal",
     PAGE_SEASONALITY: "Precios e inflación",
     PAGE_DIAGRAMS: "Pipeline y linaje",
     PAGE_OPERATIONS: "Calidad y auditoría",
@@ -8864,6 +8867,10 @@ def build_section_colors_css(dark):
     [class*="st-key-nav_group_"] button p::after {{content:"⌄"; margin-left:8px; opacity:0; transition:opacity .12s ease;}}
     [class*="st-key-nav_group_"] button:hover p::after {{opacity:.8;}}
     [class*="st-key-nav_group_"][class*="_folded"] button p::after {{content:"›"; opacity:.8;}}
+    /* D-459: «Dashboards», the title of the three tiles under «Negocio · BA y BI»: smaller than a section, set in. */
+    /* Its block keeps the -1rem of a markdown block (D-173), so the paragraph keeps 1rem under it. */
+    [data-testid="stSidebar"] p.nav-subtitle {{margin:0 0 calc(1rem + 3px) !important; padding:0 10px 0 22px; color:{heading} !important;
+        opacity:.8; font-size:.64rem !important; font-weight:600; letter-spacing:.14em; text-transform:uppercase;}}
     [class*="st-key-nav_block_"] [data-testid="stPageLink"] a {{position:relative; padding:5px 10px !important;
         min-height:36px !important; border-radius:10px !important; border:0 !important;
         background:transparent !important; box-shadow:none !important; gap:0 !important;}}
@@ -9165,9 +9172,11 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
         if st.button(tr(title), key=f"nav_toggle_{key}"):
             st.session_state[open_key] = not is_open
             st.rerun()
-    for view in pages:  # D-453: the dashboard tiles open the section and stay in sight when it folds (D-442)
-        if view in DASHBOARD_TILES:
-            show_dashboard_tile(windows_by_title, current_window, current_view, view)
+    tiles = [view for view in pages if view in DASHBOARD_TILES]
+    if tiles:  # D-459: the three dashboards under their own title, which stays with them when the section folds
+        st.markdown(f'<p class="nav-subtitle">{html.escape(tr("Dashboards"))}</p>', unsafe_allow_html=True)
+    for view in tiles:  # D-453: the dashboard tiles open the section and stay in sight when it folds (D-442)
+        show_dashboard_tile(windows_by_title, current_window, current_view, view)
     if not is_open:
         return
     if pages is SOURCE_LINKS:

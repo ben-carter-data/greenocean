@@ -150,7 +150,7 @@ def test_d283_the_language_follows_the_address_and_spanish_keeps_addresses_as_th
     app.run()
     assert not app.exception
     labels = [link.proto.label for link in app.sidebar.get("page_link")]
-    assert "Dashboard" in labels and "Documents" in labels and "Price overview" not in labels  # D-442
+    assert "Weekly" in labels and "Documents" in labels and "Price overview" not in labels  # D-442, D-459
     toggles = [button.label for button in app.sidebar.button if str(button.key).startswith("nav_toggle_")]
     assert toggles[:2] == ["Business · BA and BI", "Data engineering"]
     assert [button.proto.type for button in app.sidebar.button if str(button.key).startswith("language_")] == [
@@ -158,7 +158,7 @@ def test_d283_the_language_follows_the_address_and_spanish_keeps_addresses_as_th
         "primary",
     ]
     spanish = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
-    assert "lang" not in spanish.query_params and "Dashboard" in [
+    assert "lang" not in spanish.query_params and "Semanal" in [
         link.proto.label for link in spanish.sidebar.get("page_link")
     ]
 

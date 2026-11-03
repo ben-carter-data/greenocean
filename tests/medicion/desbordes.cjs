@@ -138,11 +138,11 @@ async function settle(page, timeout = 60000) {
           record({ ...where, page: `${link.name} › ${name}` }, await audit(page));
         } catch (error) { /* the tab went away */ }
       }
-      if (link.name.startsWith('Dashboard')) {
+      if (link.name.startsWith('Semanal') || link.name.startsWith('Weekly')) {
         const enlarge = page.locator('.st-key-home_products_enlarge button').first();
         if (await enlarge.count()) {
           await enlarge.click(); await page.waitForTimeout(1800);
-          record({ ...where, page: 'Dashboard › tabla ampliada' }, await audit(page));
+          record({ ...where, page: 'Semanal › tabla ampliada' }, await audit(page));
           await page.keyboard.press('Escape'); await page.waitForTimeout(500);
         }
       }

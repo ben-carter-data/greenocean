@@ -92,7 +92,7 @@ El data warehouse (`etl/datos.duckdb`, la base servida) es un modelo estrella: u
 | quality_outliers | ¿Qué precios se marcaron como atípicos? | Calidad de datos |
 | quality_rejected_rows | ¿Qué filas se rechazaron, tal como venían, y por qué motivo? | Calidad de datos |
 | quality_unconvertible_units | ¿Qué precios quedaron sin unidad comparable, por producto y canal? | Calidad de datos |
-| quality_week_range | ¿Qué semanas y años hay cargados en la base? | Dashboard |
+| quality_week_range | ¿Qué semanas y años hay cargados en la base? | Semanal |
 | k6_national_weekly_price | ¿Cuál es el precio nacional de cada producto y canal, semana a semana? | Alertas |
 | k6_usual_range_sql | ¿Qué cambios semanales salen de su rango habitual? (versión SQL de K6) | Alertas |
 | k5_weekly_variations_sql | ¿Cuánto cambió cada precio frente a la semana anterior, en las series largas? (versión SQL de K5) | Brecha de precio |

@@ -127,6 +127,6 @@ def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
         markup = " ".join(block.value for block in app.sidebar.markdown)
         assert "Where to buy" not in markup and "Dónde comprar" not in markup
         assert [link.proto.label for link in app.sidebar.get("page_link")][:3] in (
-            ["Dashboard", "Último dato por canal", "Análisis BA y BI"],  # D-456: the section's three dashboards
-            ["Dashboard", "Latest data by channel", "BA and BI analysis"],
+            ["Semanal", "Último dato por canal", "Análisis BA y BI"],  # D-456, D-459: the section's three dashboards
+            ["Weekly", "Latest data by channel", "BA and BI analysis"],
         )

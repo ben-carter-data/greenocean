@@ -60,7 +60,7 @@ NODES = {
         "Oficina de Estudios y Políticas Agrarias del Ministerio de Agricultura de Chile.",
         "Publica los precios mayoristas de frutas y hortalizas, diarios, en un CSV por año.",
         "Publica cada semana; la carga descarga cada martes.",
-        "Dashboard",
+        "Semanal",
         [],
     ),
     "odepa_consumer": (
@@ -185,11 +185,11 @@ NODES = {
         "Dibuja este panel con la Base DuckDB en solo lectura y lo publica en Streamlit Community Cloud "
         "desde la rama main.",
         "Cada vez que alguien abre una página.",
-        "Dashboard",
+        "Semanal",
         [
             (
                 "Páginas",
-                "Dashboard, Último dato por canal, Análisis BA y BI (Mensual, Histórico, Precios e inflación, "
+                "Semanal, Último dato por canal, Análisis BA y BI (Mensual, Histórico, Precios e inflación, "
                 "Insights, Interesados y Método), Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, "
                 "Arquitectura de seguridad, Calidad y auditoría, Método y calidad, Git workflow y la carpeta de "
                 "documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.",
@@ -203,9 +203,10 @@ NODES = {
         ["datos"],
         ("flow", 9),
         "Quien quiere saber cómo se mueven los precios: analista, compras, gerencia o público.",
-        "Ve el negocio: el Dashboard, Insights y los precios frente a la inflación, sin cuenta: los datos son públicos.",
+        "Ve el negocio: sus tres dashboards, Semanal, Último dato por canal y Análisis BA y BI, sin cuenta: los datos son "
+        "públicos.",
         "Cuando elige la vista Usuario.",
-        "Dashboard",
+        "Semanal",
         [],
     ),
     "professional": (
@@ -384,7 +385,7 @@ NODES = {
         ["navegador"],
         ("web", 7),
         "Biblioteca de gráficos declarativos de Python y su motor en el navegador.",
-        "Dibuja los gráficos de «Análisis BA y BI» y del Dashboard, con el formato de números del idioma.",
+        "Dibuja los gráficos de «Análisis BA y BI» y del dashboard Semanal, con el formato de números del idioma.",
         "En el navegador, cuando una página muestra un gráfico.",
         "Análisis BA y BI",
         [],

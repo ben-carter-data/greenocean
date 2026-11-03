@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.24 |
+| Versión | 3.25 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -54,8 +54,8 @@ Cada interesado tiene una pregunta, una decisión que depende de la respuesta y 
 
 | Interesado | Quién es | Qué pregunta se hace | Qué decisión le ayuda a tomar | Dónde está la respuesta |
 |---|---|---|---|---|
-| Personas y familias | Quien compra los alimentos de su casa | ¿Qué alimentos están subiendo? | Qué comprar antes de ir a comprar | [[vista:Dashboard]] |
-| Restaurantes y almacenes | Quien compra alimentos para cocinar o para vender | ¿Cuándo y dónde conviene comprar? | Cuándo y en qué canal comprar | [[vista:Dashboard]] · [[vista:Último dato por canal]] |
+| Personas y familias | Quien compra los alimentos de su casa | ¿Qué alimentos están subiendo? | Qué comprar antes de ir a comprar | [[vista:Semanal]] |
+| Restaurantes y almacenes | Quien compra alimentos para cocinar o para vender | ¿Cuándo y dónde conviene comprar? | Cuándo y en qué canal comprar | [[vista:Semanal]] · [[vista:Último dato por canal]] |
 | Mayoristas, agricultores y feriantes | Quien vende al por mayor o en la feria | ¿Cómo está el precio mayorista frente al de consumidor? | A qué precio vender | [[vista:Último dato por canal]] |
 | Periodistas y economistas | Quien informa sobre la economía o la analiza | ¿Qué alimentos suben más que la inflación, según datos oficiales? | Qué informar, con cifras que se pueden comprobar | [[vista:Precios e inflación]] · [[vista:Insights]] |
 | Equipos técnicos y reclutadores | Quien diseña sistemas de datos o evalúa a quien los construye | ¿Cómo se construye y se opera un pipeline de datos confiable? | Qué prácticas seguir o a quién contratar | [[vista:Pipeline y linaje]] · [[vista:Método y calidad]] · [[vista:Git workflow]] |
@@ -66,7 +66,7 @@ El panel tiene tres perfiles, los mismos de la ventana «Elige tu vista». Los i
 
 | Perfil | Para qué lo usa |
 |---|---|
-| Usuario | El negocio, sin cuenta: la sección «Negocio · BA y BI», con el Dashboard guiado en tres pasos, Último dato por canal y Análisis BA y BI, con sus pestañas Mensual, Histórico, Precios e inflación, Insights, Interesados y Método |
+| Usuario | El negocio, sin cuenta: la sección «Negocio · BA y BI», con sus tres dashboards: Semanal, guiado en tres pasos, Último dato por canal y Análisis BA y BI, con sus pestañas Mensual, Histórico, Precios e inflación, Insights, Interesados y Método |
 | Profesional | Todo el proyecto, sin cuenta, ordenado según su rol (Data Eng, BA, BI, DevOps o Seguridad), con las Consultas SQL de solo lectura |
 | Autor | Lo mismo que Profesional, más «Centro de operación», «GitHub Actions» y «Configuración», la alerta «Acción requerida» y la carga manual; pide la clave de control, que nunca está en el repositorio |
 
@@ -78,7 +78,7 @@ Usuarios reales hicieron dos revisiones: una de uso y una de arquitectura. Cada 
 
 | Revisión | Qué escuchamos | Qué cambió | Decisión |
 |---|---|---|---|
-| Revisión de uso | No sabían por dónde empezar a leer el Dashboard | El Dashboard se lee en tres pasos numerados; los pasos 2 y 3 esperan al anterior, con candado, en todas las vistas; la búsqueda se nota | D-352, D-372 |
+| Revisión de uso | No sabían por dónde empezar a leer el dashboard Semanal | El dashboard Semanal se lee en tres pasos numerados; los pasos 2 y 3 esperan al anterior, con candado, en todas las vistas; la búsqueda se nota | D-352, D-372 |
 | Revisión de arquitectura | Por un usuario real, sin cambios solicitados | — | — |
 
 ### 3.4 Mapa de interés
@@ -89,10 +89,10 @@ Cada interesado está en un anillo según **cuánto depende su decisión de esto
 
 | Interesado | Interés | Por qué | Dónde abre |
 |---|---|---|---|
-| Restaurantes y almacenes | Alto | Compran cada semana y el canal y la semana en que compran cambian su costo | [[vista:Dashboard]] |
+| Restaurantes y almacenes | Alto | Compran cada semana y el canal y la semana en que compran cambian su costo | [[vista:Semanal]] |
 | Mayoristas, agricultores y feriantes | Alto | Fijan cada semana su precio de venta frente al mayorista y al consumidor | [[vista:Último dato por canal]] |
 | Periodistas y economistas | Alto | Cada nota sobre precios necesita una cifra oficial que se pueda comprobar | [[vista:Precios e inflación]] |
-| Personas y familias | Medio | Les ayuda antes de comprar, pero su compra no depende solo de estos datos | [[vista:Dashboard]] |
+| Personas y familias | Medio | Les ayuda antes de comprar, pero su compra no depende solo de estos datos | [[vista:Semanal]] |
 | Equipos técnicos y reclutadores | Medio | Lo revisan de vez en cuando, por cómo se construye, no por las cifras de la semana | [[vista:Pipeline y linaje]] |
 | ODEPA | Bajo | Publica los precios: entrega los datos, no decide con ellos | [[vista:Último dato por canal]] |
 | INE | Bajo | Publica el IPC de alimentos: entrega los datos, no decide con ellos | [[vista:Precios e inflación]] |
@@ -103,7 +103,7 @@ Cada pregunta tiene la pantalla que la responde y una prueba que recalcula la re
 
 | ID | Pregunta | Pantalla que la responde | Evidencia |
 |---|---|---|---|
-| P-1 | ¿Qué precios cambiaron esta semana y cuáles son inusuales? | Dashboard | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
+| P-1 | ¿Qué precios cambiaron esta semana y cuáles son inusuales? | Semanal | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
 | P-2 | ¿El precio de hoy es normal para la temporada? | Consultas SQL · Precio vs. época | `tests/test_sql_explorer.py::test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas` |
 | P-3 | ¿Cuánto paga el consumidor sobre el mayorista? | Consultas SQL · Brecha mayorista | `tests/test_sql_explorer.py::test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas` |
 | P-4 | ¿Qué alimentos subieron más que la inflación? | Análisis BA y BI (Precios e inflación) | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
@@ -141,17 +141,17 @@ Los requisitos funcionales (RF) dicen qué hace el producto. Los no funcionales 
 | Conversión de unidades, agregación semanal y cálculo de precios reales | Sin llevar cada precio al kilo y a la semana no hay comparación (RN-03, RN-07); el IPC del INE descuenta la inflación (ADR-33) | Predicción de precios o explicación de sus causas | Con datos semanales públicos y sin una pregunta de predicción, un modelo no aporta (D-019); los indicadores describen lo ocurrido y no atribuyen causas (sección 8) |
 | Rechazo de filas inválidas con su motivo y auditoría de cada cifra | Un precio cero o una fecha imposible no se usan, pero nunca se borran en silencio (RN-11); cada cifra se reconstruye desde las filas crudas (RNF-02) | Recomendaciones de compra para el consumidor | El panel describe lo que pasó con los precios; recomendar qué comprar exige un juicio sobre cada persona que los datos públicos no dan |
 | Panel de solo lectura con su documentación | Un panel público, sin cuenta ni costo (ADR-02); los documentos dejan cada decisión y cada cifra a la vista (RNF-02) | Modificación de datos por parte de los usuarios | Los datos vienen solo de las fuentes oficiales y la base se abre en solo lectura: nadie puede cambiar una cifra (RF-06, RNF-03) |
-| Publicación hasta la última semana completa en ambas fuentes | El Dashboard compara mayorista y consumidor en la misma semana; una semana a medias daría cifras incompletas (D-356) | Rellenar una semana que una fuente aún no publica | Una cifra inventada no se puede recalcular desde la fuente; se espera a que la fuente publique (D-356) |
+| Publicación hasta la última semana completa en ambas fuentes | El dashboard Semanal compara mayorista y consumidor en la misma semana; una semana a medias daría cifras incompletas (D-356) | Rellenar una semana que una fuente aún no publica | Una cifra inventada no se puede recalcular desde la fuente; se espera a que la fuente publique (D-356) |
 
 Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 semanas (de la 3–9 ene 2022 a la 26 oct–1 nov 2026), 9 regiones, 8 canales, 1.613 claves de producto y 202 meses del IPC. Esa carga leyó 2.541.374 filas: 2.541.173 cargadas y 201 rechazadas con su motivo. La base crece cada martes; las cifras del día están en el panel.
 
 ## 7. Pantallas
 
-Estas son seis capturas reales, del 02-11-2026, de cinco páginas principales y en los cuatro temas de color. El Dashboard aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
+Estas son seis capturas reales, del 02-11-2026, de cinco páginas principales y en los cuatro temas de color. El dashboard Semanal aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
 
-- **Menú:** cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera son tres recuadros con ícono de dashboard, que siguen a la vista aunque la sección se pliegue: el Dashboard, Último dato por canal y Análisis BA y BI (D-442, D-452, D-453, D-456).
-- **Dashboard:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Los tres pasos quedan siempre juntos en una sola pantalla; la tabla de productos llena el panel 3, se desplaza sola y se amplía con su propio botón (D-446, D-447).
-- **Último dato por canal:** una tarjeta por canal, con su ícono 3D en sus propios colores (D-453), su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del Dashboard y se comporta igual que él, aunque la otra fuente todavía no publique esa semana (D-404 a D-406, D-452).
+- **Menú:** cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera reúne, bajo el título «Dashboards», tres recuadros con ícono de dashboard, que siguen a la vista aunque la sección se pliegue: Semanal, Último dato por canal y Análisis BA y BI (D-442, D-452, D-453, D-456, D-459).
+- **Semanal:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Los tres pasos quedan siempre juntos en una sola pantalla; la tabla de productos llena el panel 3, se desplaza sola y se amplía con su propio botón (D-446, D-447).
+- **Último dato por canal:** una tarjeta por canal, con su ícono 3D en sus propios colores (D-453), su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del dashboard Semanal y se comporta igual que él, aunque la otra fuente todavía no publique esa semana (D-404 a D-406, D-452).
 - **Análisis BA y BI:** seis pestañas (D-456, D-457). «Mensual» es un período, los últimos 12 meses o un año, mes a mes: cinco cifras clave (cambio de precios, frente al IPC, brecha consumidor–mayorista, alertas de precio y mayor alza mensual), tres gráficos (precio mes a mes, cambio de cada mes y alertas de precio por mes) y la tabla por familia. «Histórico» es toda la historia, de enero 2022 al último mes que publicó el INE: cinco cifras clave (cambio desde enero 2022, frente al IPC, año de mayor alza, mes más barato y alertas de precio), tres gráficos (precio desde enero 2022, cambio de cada año y temporada) y la tabla por familia. Cada gráfico dice qué meses muestra; al pasar el cursor se agranda y dice qué mide y qué se deduce, y cada cifra explica cómo se calcula. Las otras cuatro son Precios e inflación, Insights, Interesados y Método. Sobre las pestañas, un recuadro verde dice qué se está viendo, de qué mes a qué mes y por qué empieza y termina ahí; cambia con la pestaña y el período (D-458).
 - **Stack y evidencia:** dos vistas. «Herramientas» explica cada herramienta; «Flujo del sistema en vivo» muestra las piezas reales, lo que se dicen y la carga en curso (D-412).
 
@@ -244,3 +244,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.22 | 02-11-2026 | «Análisis BA y BI» reúne en pestañas la historia de los precios, Precios e inflación, Insights, Interesados y el método; P-4 se ve en su pestaña (3.1, 3.2, 3.4, 4, 7, D-456) |
 | 3.23 | 02-11-2026 | «Análisis BA y BI» separa la historia de los precios en «Mensual», un período mes a mes, e «Histórico», de enero 2022 al último mes por año y temporada; cada gráfico dice sus meses y, al pasar el cursor, qué mide y qué se deduce (3.2, 7, D-457) |
 | 3.24 | 02-11-2026 | Un recuadro verde sobre las pestañas de «Análisis BA y BI» dice qué se ve, de qué mes a qué mes y por qué, según la pestaña y el período (7, D-458) |
+| 3.25 | 02-11-2026 | Los tres dashboards de «Negocio · BA y BI» van bajo el título «Dashboards», y el primero, el de la semana, se llama «Semanal» (3.1 a 3.4, 4, 6, 7, D-459) |

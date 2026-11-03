@@ -1152,7 +1152,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Step 4 of the refonte: «Ingeniería de datos», four pages; DevOps joined «Ejecuciones».
     assert 'DevOps y seguridad' not in labels
     for child in [
-        'Dashboard',
+        'Semanal',
         'Pipeline y linaje',
         'Modelo de datos',
         'Calidad y auditoría',
@@ -1259,7 +1259,11 @@ def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio')
     assert not toggle.disabled
     assert toggle.label == 'Negocio · BA y BI'
-    tiles = ['Dashboard', 'Último dato por canal', 'Análisis BA y BI']  # D-456: the section is its three dashboards
+    tiles = [
+        'Semanal',
+        'Último dato por canal',
+        'Análisis BA y BI',
+    ]  # D-456, D-459: the section is its three dashboards
     assert [link.proto.label for link in app.sidebar.get('page_link')][:3] == tiles
     toggle.click().run()
     assert not app.exception
@@ -1460,7 +1464,7 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
     labels = [link.proto.label for link in app.sidebar.get('page_link')]
     # D-286: the documents folder closes the menu as a larger tile in the footer, always in sight; D-442: the
     # Dashboard opens it, a tile of its own over the sections; D-452: «Último dato por canal» is the tile under it.
-    assert labels == ['Dashboard', 'Último dato por canal', 'Análisis BA y BI'] + [
+    assert labels == ['Semanal', 'Último dato por canal', 'Análisis BA y BI'] + [
         page for pages in MENU_BLOCKS.values() for page in pages
     ] + ['Documentos']
     assert all(link.proto.icon for link in app.sidebar.get('page_link')[:-1])
@@ -1517,7 +1521,7 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
     # the bar replaces the shared header on this page: one path, one Volver
     assert 'class="app-brand"' not in markup
     # D-453: the Dashboard is a page of «Negocio · BA y BI» again, so its path names the section (D-375)
-    assert '<span class="home-bar-section">Negocio · BA y BI › </span><b>Dashboard</b>' in markup
+    assert '<span class="home-bar-section">Negocio · BA y BI › </span><b>Semanal</b>' in markup  # D-459
     assert app.button(key="return_to_previous").label == "Volver"
     assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
     # each chip says in full what it counts, and the alerts are the week's national ones

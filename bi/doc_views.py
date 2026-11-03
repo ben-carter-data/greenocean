@@ -212,7 +212,7 @@ CONTEXT_NODES = [
         PEOPLE_Y,
         "Usuario",
         "Quien quiere saber cómo se mueven los precios: analista, compras, gerencia o público.",
-        "Ve el negocio: el Dashboard, Insights y los precios frente a la inflación. No necesita cuenta ni clave.",
+        "Ve el negocio: sus tres dashboards, Semanal, Último dato por canal y Análisis BA y BI. No necesita cuenta ni clave.",
     ),
     (
         "person",
@@ -615,8 +615,8 @@ svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 # (file, title, theme, view). D-392: the Dashboard twice, as the Usuario and as the Profesional see it.
 MOCKUPS = [
-    ("m1-dashboard-corporativo.jpg", "M-1 · Dashboard", "Corporativo", "Usuario"),
-    ("m2-resumen-vantablack.jpg", "M-2 · Dashboard", "Vantablack", "Profesional"),
+    ("m1-dashboard-corporativo.jpg", "M-1 · Semanal", "Corporativo", "Usuario"),
+    ("m2-resumen-vantablack.jpg", "M-2 · Semanal", "Vantablack", "Profesional"),
     ("m3-analisis-darkgrey.jpg", "M-3 · Análisis BA y BI", "Dark Grey", "Profesional"),  # D-456
     ("m4-pipeline-bluelight.jpg", "M-4 · Pipeline y linaje", "Blue Light", "Profesional"),
     ("m5-sql-corporativo.jpg", "M-5 · Consultas SQL", "Corporativo", "Profesional"),
