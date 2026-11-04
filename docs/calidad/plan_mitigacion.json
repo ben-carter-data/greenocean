@@ -1906,7 +1906,7 @@
         "Las pruebas de la serie de construcción la piden de forma explícita",
         "The tests of the construction series ask for it explicitly"
       ],
-      "estacion": 9,
+      "estacion": 8,
       "caso_real": "D-431",
       "ocurrencias": [
         {
@@ -1927,9 +1927,61 @@
             "El informe N° 1 salió bien: sus 5 indicadores cumplen.",
             "Report No. 1 came out well: its 5 indicators are met."
           ],
-          "estacion": 9,
+          "estacion": 8,
           "estado": "resuelta",
           "referencia": "D-431"
+        }
+      ]
+    },
+    {
+      "id": "F-34",
+      "categoria": "código",
+      "falla": [
+        "Una vista que no es del Autor muestra un enlace al repositorio",
+        "A view that is not the Author's shows a link to the repository"
+      ],
+      "deteccion": [
+        "La revisión del autor en el panel",
+        "The author's review of the panel"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Los enlaces se pensaron para el visitante, sin mirar el perfil",
+        "The links were made for the visitor, without looking at the profile"
+      ],
+      "severidad": "alta",
+      "contencion": [
+        "Ninguna hasta publicar el cambio: el repositorio es público",
+        "None until the change is published: the repository is public"
+      ],
+      "correctiva": [
+        "El servidor dibuja esos enlaces solo para el Autor, y una prueba recorre cada página",
+        "The server draws those links only for the Author, and a test goes through every page"
+      ],
+      "estacion": 9,
+      "caso_real": "D-500",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "Usuario y Profesional veían el botón de GitHub y enlaces en documentos y páginas.",
+            "Usuario and Profesional saw the GitHub button and links in documents and pages."
+          ],
+          "diagnostico": [
+            "Cada enlace se dibujaba para todos: nada preguntaba por el perfil.",
+            "Each link was drawn for everyone: nothing asked for the profile."
+          ],
+          "solucion": [
+            "Solo el Autor recibe esos enlaces; para los demás, el documento los deja como texto.",
+            "Only the Author gets those links; for the others, the document leaves them as text."
+          ],
+          "comentario": [
+            "Sigue el nombre de la tecnología, sin enlace, en diagramas y documentos.",
+            "The name of the technology stays, with no link, in diagrams and documents."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-500"
         }
       ]
     }

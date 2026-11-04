@@ -123,14 +123,18 @@ def build_actions(file):
             size="compact",
             note=tr("Abre el documento y lo imprime o guarda como PDF"),
         )
-        + buttons.build_link_html(
-            "GitHub",
-            file["github"],
-            icon="github",
-            variant="text",
-            size="compact",
-            external=True,
-            note=tr("El archivo en GitHub"),
+        + (  # D-500: only the Autor gets this address
+            buttons.build_link_html(
+                "GitHub",
+                file["github"],
+                icon="github",
+                variant="text",
+                size="compact",
+                external=True,
+                note=tr("El archivo en GitHub"),
+            )
+            if file["github"]
+            else ""
         )
         + "</span>"
     )

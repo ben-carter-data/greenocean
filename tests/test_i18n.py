@@ -167,6 +167,7 @@ def test_d283_the_language_follows_the_address_and_spanish_keeps_addresses_as_th
 def test_d283_a_document_and_the_folder_open_in_english(page):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params.update({"lang": "en", "vista": page})
+    app.session_state["admin_unlocked"] = True  # D-500: the Autor reads the file's path, on its link to GitHub
     app.run()
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)

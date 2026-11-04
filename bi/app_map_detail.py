@@ -1424,7 +1424,7 @@ def inside_pypi(facts):
 def inside_stcloud(facts):
     return {
         "columns": [
-            ("Origen", [piece("main", "brand:git", "main", "ben-carter-data/greenocean", "")]),
+            ("Origen", [piece("main", "brand:git", "main", "repositorio del proyecto", "")]),
             ("Construye", [piece("req", "icon:box", "requirements.txt", "con topes", "")]),
             ("Corre", [piece("app", "brand:streamlit", "bi/dashboard.py", "Panel web", "")]),
             (

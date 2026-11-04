@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.42 |
+| Versión | 3.43 |
 | Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -68,7 +68,7 @@ El panel tiene tres perfiles, los mismos de la ventana «Elige tu vista». Los i
 |---|---|
 | Usuario | El negocio, sin cuenta: la sección «Negocio · BA y BI», con sus dos dashboards: Semanal, guiado en cuatro pasos, y Análisis BA y BI, con sus pestañas Mensual, Histórico, Precios e inflación, Insights, Interesados y Método |
 | Profesional | Todo el proyecto, sin cuenta, ordenado según su rol (Data Eng, BA, BI, DevOps o Seguridad), con las Consultas SQL de solo lectura |
-| Autor | Lo mismo que Profesional, más «Centro de operación», «GitHub Actions» y «Configuración», la alerta «Acción requerida» y la carga manual; pide la clave de control, que nunca está en el repositorio |
+| Autor | Lo mismo que Profesional, más «Centro de operación», «GitHub Actions» y «Configuración», la alerta «Acción requerida», la carga manual y los enlaces al repositorio en GitHub (D-500); pide la clave de control, que nunca está en el repositorio |
 
 La ventana «Elige tu vista» pregunta una vez por pestaña, y la vista se conserva aunque la pestaña se recargue o el servidor olvide la sesión (D-430, D-454). «Vista: … · Cambiar», debajo del logo, cambia de vista; un clic en el logo hace lo mismo (D-373). Salir de Autor cierra su sesión, y la vista Autor se cierra sola tras 30 minutos sin actividad (D-395). El autor mantiene el código y los secretos y responde consultas SQL puntuales.
 
@@ -262,3 +262,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.40 | 03-11-2026 | Una tablet horizontal ve Semanal en columnas; «Orden» recupera «Subidas» y «Bajadas» (D-496) |
 | 3.41 | 03-11-2026 | «Orden» se reemplaza por un filtro junto a la búsqueda: «Todo», «Subidas» y «Bajadas» (D-497) |
 | 3.42 | 03-11-2026 | Con una región elegida en Semanal, los canales, las líneas de cada familia y las alertas son de esa región (RF-05, D-499) |
+| 3.43 | 03-11-2026 | Solo el Autor ve los enlaces al repositorio en GitHub (D-500) |

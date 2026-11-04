@@ -223,7 +223,10 @@ def test_d189_model_page_opens_on_the_star_model_and_the_storage_map_comes_third
 
 @needs_database
 def test_d097_model_page_is_one_panoramic_diagram():
-    app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: "Modelo estrella"})
+    # D-500: read as the Autor, the only one who gets the link to etl/schema.sql
+    app = draw_page(
+        dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: "Modelo estrella", dashboard.ADMIN_UNLOCKED: True}
+    )
     assert not app.exception and not app.tabs and not app.expander
     joined = " ".join(block.value for block in app.markdown)
     assert joined.count('aria-label="Modelo estrella de datos.duckdb"') == 1
@@ -544,7 +547,7 @@ def test_d396_only_the_author_reloads_the_data_of_every_reader():
 
 @needs_database
 def test_project_links_are_grouped_as_a_tree_with_descriptions():
-    app = draw_page(dashboard.PAGE_LINKS)
+    app = draw_page(dashboard.PAGE_LINKS, state={dashboard.ADMIN_UNLOCKED: True})  # D-500: the Autor's page
     assert not app.exception
     # The GitHub page is one hero and a tree of three uses (bi/github_page.py), drawn in
     # its own frame because st.html sanitises its SVG; the frame holds this markup.
@@ -1166,7 +1169,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     for document in ['Plan de pruebas y seguridad', 'PRD · Requisitos del producto', 'SAD · Arquitectura']:
         assert document not in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
-    assert 'class="sidebar-github' in sidebar_markup and 'aria-label="GitHub del proyecto"' in sidebar_markup
+    assert 'class="sidebar-github' not in sidebar_markup  # D-500: the mark is only for the Autor
     for retired in ['Archivos del proyecto', 'Descripción general', 'Manual', 'Glosario', 'Fuentes y enlaces']:
         assert retired not in labels
     folder_buttons = [button for button in app.sidebar.button if str(button.key).startswith('nav_toggle_')]
@@ -1227,8 +1230,10 @@ def test_d118_sources_is_its_own_folder_with_two_external_children():
 
 @needs_database
 def test_d117_the_sidebar_github_entry_is_a_logo_not_a_word():
-    # Since D-124 the mark sits in the sidebar footer on a light pill, not in the list.
-    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    # Since D-124 the mark sits in the sidebar footer on a light pill, not in the list; D-500: only for the Autor.
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.session_state[dashboard.ADMIN_UNLOCKED] = True
+    app.run()
     markup = " ".join(block.value for block in app.sidebar.markdown)
     assert markup.count('class="sidebar-github') == 1
     assert 'nav_toggle_enlaces' not in [str(button.key) for button in app.sidebar.button]
@@ -1241,7 +1246,7 @@ def test_d117_the_sidebar_github_entry_is_a_logo_not_a_word():
 def test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab():
     """Every PROJECT_LINKS entry points at GitHub and opens a new tab; the real
     GitHub mark crowns the page. ODEPA moved to «Fuentes» (D-118)."""
-    app = draw_page(dashboard.PAGE_LINKS)
+    app = draw_page(dashboard.PAGE_LINKS, state={dashboard.ADMIN_UNLOCKED: True})  # D-500: the Autor's page
     assert not app.exception and app.get('iframe')
     markup = github_page.build_github_page_html(dashboard.get_mode())
     github_links = [
@@ -1341,8 +1346,8 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
     assert alert not in app.sidebar.button
     css = " ".join(block.value for block in app.sidebar.markdown)
     assert ".st-key-home_alert_trigger button" in css
-    # The footer keeps only Apariencia and the GitHub mark.
-    assert 'class="sidebar-github' in css
+    # D-500: the footer keeps Apariencia; the GitHub mark is only for the Autor.
+    assert 'class="sidebar-github' not in css
 
 
 @needs_database
@@ -1560,7 +1565,8 @@ def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_f
         header = documents_folder.read_header(text)
         assert f"<span>v{header['Versión']}</span><span>{header['Fecha']}</span>" in markup, filename
         assert documents_folder.read_title(text) in markup, filename
-        assert project.build_github_url(f"docs/{i18n.DOCUMENT_FOLDERS[filename]}/{filename}") in markup, filename
+        # D-500: its file on GitHub is only for the Autor
+        assert project.build_github_url(f"docs/{i18n.DOCUMENT_FOLDERS[filename]}/{filename}") not in markup, filename
     assert markup.count('class="go-icon go-icon-print"') == 8 and markup.count('class="df-preview"') == 8
 
 

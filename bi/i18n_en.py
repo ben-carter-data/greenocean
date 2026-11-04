@@ -496,6 +496,7 @@ PAGES = {
     "Dentro del umbral": "Within the threshold",
     # D-391: the quality pipeline's kickers, legend and «Volver a medir»
     "Origen": "Source",
+    "repositorio del proyecto": "the project's repository",
     "Archivos": "Files",
     "Base": "Database",
     "Mide": "Measures",
@@ -1263,7 +1264,8 @@ PAGES = {
     "**{n} semanas**: {} → {}.": "**{} weeks**: {} → {}.",
     "Ninguna semana falta entre la primera y la última.": "No week is missing between the first and the last.",
     "Cada regla del PRD con las pruebas de dbt que la comprueban en cada carga.": "Each rule of the PRD with the dbt tests that check it on each load.",
-    "Esta auditoría corre con las pruebas automáticas en cada cambio del repositorio y en cada carga semanal. Su código y su último resultado:": "This audit runs with the automated tests on each change of the repository and on each weekly load. Its code and its last result:",
+    "Esta auditoría corre con las pruebas automáticas en cada cambio del repositorio y en cada carga semanal.": "This audit runs with the automated tests on each change of the repository and on each weekly load.",
+    "Su código y su último resultado:": "Its code and its last result:",
     "Resultado en GitHub Actions (pruebas)": "Result in GitHub Actions (tests)",
     "Resultado en GitHub Actions (pruebas) ↗": "Result in GitHub Actions (tests) ↗",
     "Sin evidencia que mostrar: es un límite declarado, no una comprobación.": "No evidence to show: it is a declared limit, not a check.",

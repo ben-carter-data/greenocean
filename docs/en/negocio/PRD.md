@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.42 |
+| Version | 3.43 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -68,7 +68,7 @@ The panel has three profiles, the same as the window that asks for the view on e
 |---|---|
 | User | The business, with no account: the section «Business · BA and BI», with its two dashboards: Weekly, guided in four steps, and BA and BI analysis, with its tabs Monthly, Historical, Prices and inflation, Insights, Stakeholders and Method |
 | Professional | The whole project, with no account, ordered by its role (Data Eng, BA, BI, DevOps or Security), with the read-only SQL queries |
-| Author | The same as Professional, plus «Operations center», «GitHub Actions» and «Settings», the «Action required» alert and the manual load; it asks for the control code, which is never in the repository |
+| Author | The same as Professional, plus «Operations center», «GitHub Actions» and «Settings», the «Action required» alert, the manual load and the links to the GitHub repository (D-500); it asks for the control code, which is never in the repository |
 
 That window asks once per tab, and the view stays even if the tab reloads or the server forgets the session (D-430, D-454). «View: … · Change», under the logo, changes the view; a click on the logo does the same (D-373). Leaving Author closes its session, and the Author view closes by itself after 30 minutes without activity (D-395). The author maintains the code and the secrets and answers ad hoc SQL queries.
 
@@ -262,3 +262,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.40 | 2026-11-03 | A landscape tablet sees Weekly in columns; «Orden» gets «Subidas» and «Bajadas» back (D-496) |
 | 3.41 | 2026-11-03 | «Orden» is replaced by a filter beside the search: «Todo», «Subidas» and «Bajadas» (D-497) |
 | 3.42 | 2026-11-03 | With a region chosen in Weekly, the channels, the small line of each family and the alerts are of that region (RF-05, D-499) |
+| 3.43 | 2026-11-03 | Only the Author sees the links to the GitHub repository (D-500) |

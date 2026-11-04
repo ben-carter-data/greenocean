@@ -3097,7 +3097,7 @@ def show_architecture_page(mode):
             '<div class="arch-legend"><span><b>PK</b> clave primaria</span>'
             '<span><b>FK</b> clave foránea</span><span><b>cian</b> medida</span>'
             '<span>'
-            + build_external_link_html("etl/schema.sql en GitHub", project.build_github_url("etl/schema.sql"))
+            + build_repository_link_html("etl/schema.sql en GitHub", project.build_github_url("etl/schema.sql"))
             + '</span></div>',
             unsafe_allow_html=True,
         )
@@ -3455,7 +3455,7 @@ def show_kpi_query_dialog(name):
     st.caption(f"{name} · solo lectura, tal como está en el repositorio.")
     st.code(read_catalog_sql(name), language="sql", wrap_lines=True)
     st.markdown(
-        build_external_link_html("Ver la consulta en GitHub", build_query_address(name)), unsafe_allow_html=True
+        build_repository_link_html("Ver la consulta en GitHub", build_query_address(name)), unsafe_allow_html=True
     )
 
 
@@ -3605,7 +3605,7 @@ def show_kpi_tab(mode):
                 if st.button("Desplegar SQL", key="kpi_query_open", icon=":material/code:", use_container_width=True):
                     show_kpi_query_dialog(query_name)
                 st.markdown(
-                    build_external_link_html("Ver en GitHub", build_query_address(query_name)), unsafe_allow_html=True
+                    build_repository_link_html("Ver en GitHub", build_query_address(query_name)), unsafe_allow_html=True
                 )
 
 
@@ -3662,6 +3662,12 @@ def build_external_link_html(text, address, variant="text"):
     return buttons.build_link_html(
         text, address, icon="github" if "GitHub" in text else "external", variant=variant, external=True
     )
+
+
+def build_repository_link_html(text, address, variant="text"):
+    """D-500: a link to the author's repository exists only for the Autor (D-420): anyone else gets nothing, from the
+    server, whatever the page."""
+    return build_external_link_html(text, address, variant) if is_author() else ""
 
 
 def show_compact_page_header(title, description):
@@ -7308,11 +7314,12 @@ def show_quality_evidence_dialog(key, mode, context):
         show_evidence_method(quality.PARITY_SQL + "  -- en SQLite y en DuckDB")
     elif key in quality_evidence.TEST_LINKS:
         st.markdown(
-            "Esta auditoría corre con las pruebas automáticas en cada cambio del repositorio y en cada "
-            "carga semanal. Su código y su último resultado:"
+            "Esta auditoría corre con las pruebas automáticas en cada cambio del repositorio y en cada carga semanal."
         )
-        for label, address in quality_evidence.test_links(key):
-            st.markdown(build_external_link_html(label, address), unsafe_allow_html=True)
+        if is_author():  # D-500: its code and result live in the author's repository
+            st.markdown("Su código y su último resultado:")
+            for label, address in quality_evidence.test_links(key):
+                st.markdown(build_external_link_html(label, address), unsafe_allow_html=True)
     else:
         st.info("Sin evidencia que mostrar: es un límite declarado, no una comprobación.")
     with st.container(horizontal=True, vertical_alignment="center", gap="small"):
@@ -7348,7 +7355,10 @@ def show_links_page(mode):
     """The repository is the single destination for commits, executions and full
     documents (D-106): one hero with the repository, then its three uses —
     automatización, trazabilidad, documentación — each item opening GitHub in a new
-    tab (D-116) with its own copy button. ODEPA and the INE live in «Fuentes» (D-118)."""
+    tab (D-116) with its own copy button. ODEPA and the INE live in «Fuentes» (D-118). D-500: only for the Autor."""
+    if not is_author():
+        st.info(tr(NO_ACCESS), icon=":material/lock:")
+        return
     # Our own trusted markup, in its own frame: st.html sanitises the SVG gradients,
     # filters and buttons the page is made of.
     st.iframe(
@@ -7435,7 +7445,10 @@ def read_folder_files():
                 "family": family,
                 "open": build_page_address(page),
                 "pdf": build_print_address(page),
-                "github": project.build_github_url(path.relative_to(project.PROJECT_DIR).as_posix()),
+                # D-500: only the Autor gets the link to the file in the repository
+                "github": project.build_github_url(path.relative_to(project.PROJECT_DIR).as_posix())
+                if is_author()
+                else "",
             }
         )
     return files
@@ -7481,6 +7494,9 @@ def heading_anchor(text):
     return re.sub(r"[^\w\- ]", "", text.strip().lower()).replace(" ", "-")
 
 
+REPOSITORY_LINK = re.compile(r"\[([^\]]+)\]\(https://github\.com/[^)]*\)")
+
+
 def link_document_views(text):
     """Each [[vista:…]] of a document as a link to its page in the panel; each link to another document of docs/
     to that document's page, or to GitHub when it has none; each heading with the anchor its index points to."""
@@ -7506,6 +7522,8 @@ def link_document_views(text):
         return f"]({address}{anchor})"
 
     text = DOCUMENT_LINK.sub(document_address, text)
+    if not is_author():  # D-500: for anyone else, a link to GitHub reads as plain text, in every document
+        text = REPOSITORY_LINK.sub(r"\1", text)
     return HEADING.sub(
         lambda match: f'<a id="{heading_anchor(match.group(2))}"></a>\n\n{match.group(1)} {match.group(2)}', text
     )
@@ -7605,7 +7623,7 @@ def show_document_actions(mode, source_label, source_url):
         key="doc_actions", horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"
     ):
         st.markdown(
-            '<div class="doc-source">' + build_external_link_html(source_label, source_url, "secondary") + '</div>',
+            '<div class="doc-source">' + build_repository_link_html(source_label, source_url, "secondary") + '</div>',
             unsafe_allow_html=True,
         )
         st.html(build_print_button_html(mode), unsafe_allow_javascript=True)
@@ -7683,7 +7701,10 @@ def read_flow_model():
     if runs and runs[0]["state"] == control.RUN_IN_PROGRESS:
         runs, steps, error = read_flow_live(read_token, language)
     facts = read_flow_facts(get_database_version(), i18n.get_language())
-    return live_flow.build_model(runs, steps, facts), error
+    model = live_flow.build_model(runs, steps, facts)
+    if not is_author():  # D-500: the link to the run opens the author's repository
+        model["run_url"] = None
+    return model, error
 
 
 def show_live_flow(mode):
@@ -7763,7 +7784,9 @@ def show_quality_report_dialog(ref):
             i18n.is_english(),
             project.build_github_url(
                 i18n.document_path("PLAN_DE_CALIDAD.md").relative_to(project.PROJECT_DIR).as_posix()
-            ),
+            )
+            if is_author()  # D-500
+            else "",
         ),
         height=700,
     )
@@ -9414,14 +9437,16 @@ def show_profile_indicator():
 
 
 def show_sidebar_footer(current_window=None, folder=None):
-    """The documents folder, then appearance, the GitHub mark and the language, always at the bottom, on every page."""
+    """The documents folder, then appearance, the GitHub mark (only for the Autor, D-500) and the language, always at
+    the bottom, on every page."""
     with st.sidebar.container(key="sidebar_footer"):
         if folder:
             folder()
         with st.container(key="sidebar_tools", horizontal=True, vertical_alignment="center"):
             with st.container(key="sidebar_appearance"):
                 show_theme_field()
-            st.markdown(build_sidebar_github_html(current_window == SECTION_RESOURCES), unsafe_allow_html=True)
+            if is_author():
+                st.markdown(build_sidebar_github_html(current_window == SECTION_RESOURCES), unsafe_allow_html=True)
             show_language_switch()
 
 
