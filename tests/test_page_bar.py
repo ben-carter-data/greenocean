@@ -125,7 +125,7 @@ def test_d398_nothing_overlaps_the_path_gives_way_and_the_content_row_wraps():
     assert "flex-wrap:nowrap !important" in css and "text-overflow:ellipsis" in css
     assert "display:none" not in css  # the path never disappears
     # the row of the content wraps instead of overlapping
-    assert ".stApp .st-key-page_info { gap:6px 10px !important; flex-wrap:wrap !important;" in css
+    assert ".stApp .st-key-page_info { gap:4px 8px !important; flex-wrap:wrap !important;" in css
 
 
 def test_d268_the_sql_filters_and_status_bar_fit_a_narrow_window():

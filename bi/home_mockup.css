@@ -403,18 +403,19 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 
 /* The Resumen's header (D-264): one thin bar. Volver, the path, the question (cut with «…», whole on hover), the
    week's figures as chips, the price alerts in red and the time of the load. */
-.stApp .st-key-home_bar {background:__PANEL__;border:1px solid __BORDER__;border-radius:14px;padding:5px 14px 5px 6px!important;
-  margin:4px 0 10px!important;gap:10px!important;flex-wrap:nowrap!important;align-items:center!important;min-height:44px;}
+.stApp .st-key-home_bar {background:__PANEL__;border:1px solid __BORDER__;border-radius:10px;padding:2px 12px 2px 4px!important;
+  margin:2px 0 6px!important;gap:8px!important;flex-wrap:nowrap!important;align-items:center!important;min-height:36px;}
 .stApp .st-key-home_bar > * {flex:0 0 auto;min-width:0;width:auto!important;}
 .stApp .st-key-home_bar > :has(.home-bar-main) {flex:1 1 0!important;container-type:inline-size;}
 .stApp .st-key-home_bar [data-testid="stMarkdownContainer"] {margin-bottom:0!important;}
+.stApp .st-key-home_bar p {margin:0!important;}  /* D-513: the time's paragraph gave the bar 12 px it never showed */
 .stApp .st-key-home_bar .st-key-return_to_previous button {border:0!important;background:transparent!important;box-shadow:none!important;
-  min-height:32px;width:32px;padding:0!important;color:__INK__;}
+  min-height:28px;width:28px;padding:0!important;color:__INK__;}
 .stApp .st-key-home_bar .st-key-return_to_previous button:hover {background:var(--home-bar-hover,__SOFT__)!important;}
 .stApp .st-key-home_bar .st-key-return_to_previous button [data-testid="stMarkdownContainer"] {position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
-.home-bar-main {display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;font-size:13px;}
+.home-bar-main {display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;font-size:12.5px;}
 .home-bar-path {flex:0 1 auto;display:inline-flex;flex-direction:column;align-items:flex-end;color:var(--mock-muted);
-  font-size:13.5px;padding-right:12px;border-right:1px solid var(--mock-border);}
+  font-size:12.5px;padding-right:10px;border-right:1px solid var(--mock-border);}
 /* D-375: when the bar is short of room, the section's name gives way («Negocio · BA…», then nothing) and so does the
    region in the week's chip; the page's name, the next week and the week's range stay whole. */
 .home-bar-where {display:grid;grid-template-columns:minmax(0,auto) auto;max-width:100%;}
@@ -424,17 +425,17 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .home-chip-place {overflow:hidden;text-overflow:ellipsis;white-space:pre;}
 @container (max-width:400px) {.home-bar-section {display:none;}}
 .home-bar-path b {color:var(--mock-ink);font-weight:500;}
-.home-bar-title {flex:1 1 0;min-width:2.2em;margin:0 4px 0 2px;font-size:14.5px;
+.home-bar-title {flex:1 1 0;min-width:2.2em;margin:0 4px 0 2px;font-size:13px;
   font-weight:500;line-height:1.3;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.home-chip {flex:none;display:inline-flex;align-items:baseline;gap:7px;padding:3px 9px;border-radius:8px;background:__SOFT__;
-  color:var(--mock-ink);font-size:13.5px;line-height:1.35;font-variant-numeric:tabular-nums;cursor:default;}
-.home-chip b {font-weight:500;}.home-chip small {margin-left:-5px;font-size:12px;color:var(--mock-muted);}
-.home-chip em {font-style:normal;font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--mock-muted);}
+.home-chip {flex:none;display:inline-flex;align-items:baseline;gap:6px;padding:2px 8px;border-radius:7px;background:__SOFT__;
+  color:var(--mock-ink);font-size:12px;line-height:1.4;font-variant-numeric:tabular-nums;cursor:default;}
+.home-chip b {font-weight:500;}.home-chip small {margin-left:-4px;font-size:11px;color:var(--mock-muted);}
+.home-chip em {font-style:normal;font-size:9.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--mock-muted);}
 .home-chip b.rise {color:var(--mock-rise);}.home-chip b.fall {color:var(--mock-fall);}
 /* D-374, D-375: the next week, a quiet line under the page's name that ends right beside the range of the week shown;
    it never widens the bar. */
-.home-next-week {font-size:10.5px;line-height:1.2;color:var(--mock-muted);white-space:nowrap;}
-.home-bar-updated {display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:12.5px;color:var(--mock-muted);}
+.home-next-week {font-size:10px;line-height:1.2;color:var(--mock-muted);white-space:nowrap;}
+.home-bar-updated {display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:11.5px;color:var(--mock-muted);}
 .home-bar-updated i {width:7px;height:7px;border-radius:50%;background:#529e57;flex:none;}
 .home-bar-updated i.failed {background:#e62035;}
 /* D-407: the bar holds only the path, the week and the time (D-398): it keeps one line at any width; the section of

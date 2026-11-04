@@ -4165,3 +4165,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** cada fila mide 28 px (antes 24) y entre filas quedan unos 8 px de aire; cada sección deja 8 px arriba y abajo, y 4 px bajo su título. Las letras no cambian. Medido con Playwright a 1440 × 900 y 1024 × 768 como Profesional: once filas, el menú termina a 575 px, el pie queda a la vista y nada se desplaza.
 - **Pruebas:** `tests/test_sidebar_scroll.py`, `tests/test_dashboard.py` y `tests/test_menu_order.py` siguen en verde.
 
+## D-513 · La barra de cada página con la medida de la de Apple
+- **Pedido del autor:** el encabezado de «Consultas SQL» ocupaba mucho alto y sus componentes eran grandes; toda la app debe tener la letra elegante y fina de la barra de Apple.
+- **Decisión:** la barra de toda página (D-267, D-398) mide 36 px (antes 44), con la ruta a 12,5 px en peso normal y el nombre de la página un escalón más pesado (500, antes 600); la hora de los datos a 11,5 px; el botón «Volver» de 28 px. Los chips de cifras miden 22 px (antes 27), con letra de 12 px y la cifra en peso medio, nunca negrita; la fila bajo la barra queda a 4 px de ella y sus botones miden 26 px. La barra de «Semanal» (D-264) sigue la misma medida: 38 px por su segunda línea «Próxima semana». Un párrafo invisible le daba 12 px de más a la hora de esa barra; se quitó.
+- **Medido:** a 1440 × 900, «Consultas SQL» y «Modelo de datos» terminan su cabecera a 127 y 114 px desde el borde (antes 140 y 127); la barra de «Semanal» pasa de 48 a 38 px.
+- **Pruebas:** `tests/test_page_bar.py` (la fila bajo la barra con su nuevo aire), `tests/test_panorama_steps.py`, `tests/test_home_mockup.py` y `tests/test_sql_explorer.py` en verde.
+
