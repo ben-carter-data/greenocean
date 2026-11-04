@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.55 |
+| Version | 3.56 |
 | Date | 2026-11-04 |
 | Status | Current |
 | Owner | The author |
@@ -275,3 +275,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.53 | 2026-11-04 | In SQL queries, the filters are thin pills on the tab line and the editor shows up to 12 lines (RF-06, D-511) |
 | 3.54 | 2026-11-04 | «Relaciones» in SQL queries: the entity-relationship diagram of the views and each JOIN ready to copy (RF-06, D-515) |
 | 3.55 | 2026-11-04 | SQL queries: the diagram in one view, the grid with all the height of the window, the menu folded and all its texts in English (RF-06, D-516) |
+| 3.56 | 2026-11-04 | «Relaciones» in SQL queries: each group of connected views with its colour: data, load log and dbt Core (RF-06, D-517) |

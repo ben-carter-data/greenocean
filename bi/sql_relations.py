@@ -60,6 +60,18 @@ LOGICAL = (
     "ipc_semanal toma el IPC del mes de su lunes (anio_ipc, mes_ipc) de ipc_mensual (anio, mes)",
 )
 FOREIGN = {(child, column) for child, column, *_ in RELATIONS}
+# D-517: the views that join among themselves, each group with its colour and what it holds. All eight live in the same
+# Base DuckDB and the same load writes them: the colour says what they record, not where they are.
+GROUP_COLORS = {"amber": ("#f5b84b", "#a16207"), "pink": ("#ff7ab8", "#c2337a")}  # (on a dark card, on a light one)
+GROUPS = (
+    (
+        "accent",
+        ("productos", "precios", "semanas", "ipc_semanal", "ipc_mensual"),
+        "Datos: los precios de ODEPA y el IPC de alimentos del INE",
+    ),
+    ("amber", ("cargas", "rechazos"), "Registro de cargas: cada carga de etl_run y las filas que rechazó"),
+    ("pink", ("modelos_dbt",), "dbt Core: los modelos y las pruebas que construyen la Base DuckDB"),
+)
 # The joins, as they are written, each with its comment in the language of the visit (D-443); the reader copies the
 # line that serves. A blank line separates the statements.
 JOIN_LINES = [
@@ -115,6 +127,13 @@ def key_label(view, column):
     primary = column in KEYS[view]
     foreign = (view, column) in FOREIGN
     return "PK, FK" if primary and foreign else "PK" if primary else "FK" if foreign else ""
+
+
+def group_color(name, mode):
+    palette = er_diagram.charts.get_palette(mode)
+    if name == "accent":
+        return palette["accent"]
+    return GROUP_COLORS[name][0 if palette["base"] == er_diagram.charts.BASE_DARK else 1]
 
 
 def layout(schema):
@@ -203,13 +222,15 @@ def build_relation(places, schema, relation, shade):
 
 
 def build_svg(schema, counts, mode, descriptions=None):
-    """The whole drawing: the eight views, the four joins, the logical link of the IPC and the legend."""
+    """The whole drawing: the eight views in the colour of their group, the four joins, the logical link of the IPC and
+    the legend."""
     shade = er_diagram.colors(mode)
     places = layout(schema)
     descriptions = descriptions or {}
     width = max(x + w for x, _, w, _ in places.values()) + MARGIN
     bottom = max(y + h for _, y, _, h in places.values()) + MARGIN
-    links = "".join(build_relation(places, schema, relation, shade) for relation in RELATIONS)
+    shades = {view: {**shade, "accent": group_color(name, mode)} for name, views, _ in GROUPS for view in views}
+    links = "".join(build_relation(places, schema, relation, shades[relation[0]]) for relation in RELATIONS)
     child, child_column, parent, parent_column, label, meaning = LOGICAL
     y_a, y_b = row_y(places, child, child_column, schema), row_y(places, parent, parent_column, schema)
     path, _, _ = route(places, child, parent, y_a, y_b)
@@ -221,8 +242,10 @@ def build_svg(schema, counts, mode, descriptions=None):
         f'<text x="{label_x}" y="{y_a - 5}" text-anchor="middle" font-size="11" fill="{shade["muted"]}">'
         f"{html.escape(label)}</text></g>"
     )
-    tables = "".join(build_view(view, schema, places, counts, shade, descriptions) for view in VIEWS)
+    tables = "".join(build_view(view, schema, places, counts, shades[view], descriptions) for view in VIEWS)
     lines = (
+        *(text for _, _, text in GROUPS),
+        "Las ocho vistas están en la misma Base DuckDB · etl/datos.duckdb; el color dice qué guarda cada grupo.",
         "PK: las columnas que identifican una fila · FK: una columna que apunta a otra vista",
         "Pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · línea punteada: mismo mes, sin clave",
         "precios no tiene clave: una fila es una semana, un producto, una región, un canal y una unidad juntos.",
@@ -230,8 +253,15 @@ def build_svg(schema, counts, mode, descriptions=None):
     # in the free corner at the bottom left, the last line level with the end of the tallest column
     legend_y = bottom - MARGIN - 18 * (len(lines) - 1)
     legend = "".join(
-        f'<text x="{MARGIN}" y="{legend_y + 18 * index}" font-size="12" fill="{shade["muted"]}">{html.escape(line)}</text>'
+        f'<text x="{MARGIN + 16 if index < len(GROUPS) else MARGIN}" y="{legend_y + 18 * index}" font-size="12" '
+        f'fill="{shade["muted"]}">{html.escape(line)}</text>'
         for index, line in enumerate(lines)
+    )
+    # the colour of each group beside its words, never the colour alone
+    legend += "".join(
+        f'<rect class="er-group" x="{MARGIN}" y="{legend_y + 18 * index - 9}" width="10" height="10" rx="2" '
+        f'fill="{group_color(name, mode)}"/>'
+        for index, (name, _, _) in enumerate(GROUPS)
     )
     height = bottom
     return (

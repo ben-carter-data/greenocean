@@ -98,6 +98,57 @@ def test_d516_the_menu_folds_on_entering_the_sql_page_and_the_svg_never_passes_t
     assert ".sqlx-relations svg" in css and "max-height:calc(100vh - 230px)" in css
 
 
+def contrast(first, second):
+    def luminance(color):
+        red, green, blue = (int(color[index : index + 2], 16) / 255 for index in (1, 3, 5))
+        linear = [part / 12.92 if part <= 0.03928 else ((part + 0.055) / 1.055) ** 2.4 for part in (red, green, blue)]
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+    high, low = sorted((luminance(first), luminance(second)), reverse=True)
+    return (high + 0.05) / (low + 0.05)
+
+
+def test_d517_a_colour_is_a_group_of_views_that_join_among_themselves():
+    """The colours say something true: the groups are exactly the islands of the drawing."""
+    joined = {view: {view} for view in sql_relations.VIEWS}
+    links = [(child, parent) for child, _, parent, *_ in sql_relations.RELATIONS]
+    links.append((sql_relations.LOGICAL[0], sql_relations.LOGICAL[2]))
+    for first, second in links:
+        merged = joined[first] | joined[second]
+        for view in merged:
+            joined[view] = merged
+    islands = {frozenset(group) for group in joined.values()}
+    assert islands == {frozenset(views) for _, views, _ in sql_relations.GROUPS}
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [charts.MODE_DARK, charts.MODE_CORPORATE, charts.MODE_BLUE_LIGHT, charts.MODE_GRAPHITE, charts.MODE_LIGHT],
+)
+def test_d517_each_colour_reads_on_its_card_and_differs_from_the_others(mode):
+    card = charts.get_palette(mode)["card"]
+    colors = [sql_relations.group_color(name, mode) for name, _, _ in sql_relations.GROUPS]
+    assert len(set(colors)) == len(sql_relations.GROUPS)
+    for color in colors:
+        assert contrast(color, card) >= 4.5, (mode, color)
+    assert charts.get_palette(mode)["rise"] not in colors  # red already means a price going up
+
+
+@needs_database
+def test_d517_the_drawing_paints_each_group_and_names_it_in_both_languages(monkeypatch):
+    schema, counts = sql_relations.read_schema()
+    svg = sql_relations.build_svg(schema, counts, charts.MODE_DARK)
+    assert svg.count('class="er-group"') == len(sql_relations.GROUPS)
+    assert sql_relations.GROUP_COLORS["amber"][0] in svg and sql_relations.GROUP_COLORS["pink"][0] in svg
+    for _, _, text in sql_relations.GROUPS:
+        assert f">{text}</text>" in svg
+    monkeypatch.setattr(i18n, "is_english", lambda: True)
+    english = i18n.translate_html(svg)
+    for text in ("Data: the ODEPA prices", "Load log: each load of etl_run", "dbt Core: the models and tests"):
+        assert text in english, text
+    assert "The eight views are in the same DuckDB database" in english and "Las ocho vistas" not in english
+
+
 def test_d515_the_joins_name_every_relation_and_every_text_has_its_english():
     for child, _, parent, *_ in sql_relations.RELATIONS:
         joins = sql_relations.build_joins()
