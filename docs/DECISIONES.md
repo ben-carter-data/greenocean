@@ -4160,3 +4160,8 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **El editor crece lo que la fila dejó:** de 172 a 264 px a 1440 × 900 (de 6 a 12 líneas a la vista); la fila de resultados empieza a la misma altura que antes, así la página sigue sin desplazamiento a 1440 × 900 y a 1280 × 800. La nota de la consulta «Tabla completa» ya no dice «Todas» no filtra, sino «un filtro sin elegir no filtra».
 - **Pruebas:** `tests/test_page_bar.py` (la fila de la pestaña envuelve y la píldora «Año» mide 84 px), `tests/test_sql_explorer.py` (el alto del editor y de los resultados suman el alto del estudio). Medido con Playwright a 1440 × 900 y 1280 × 800: ninguna píldora corta su texto; a 1440 las cinco caben en la línea de la pestaña.
 
+## D-512 · Las filas del menú, con el aire del explorador de VS Code
+- **Pedido del autor:** las opciones del menú quedaron demasiado pegadas (D-501): un clic puede caer en la vecina. Quiere un milímetro de aire, como en VS Code.
+- **Decisión:** cada fila mide 28 px (antes 24) y entre filas quedan unos 8 px de aire; cada sección deja 8 px arriba y abajo, y 4 px bajo su título. Las letras no cambian. Medido con Playwright a 1440 × 900 y 1024 × 768 como Profesional: once filas, el menú termina a 575 px, el pie queda a la vista y nada se desplaza.
+- **Pruebas:** `tests/test_sidebar_scroll.py`, `tests/test_dashboard.py` y `tests/test_menu_order.py` siguen en verde.
+

@@ -9066,13 +9066,13 @@ def build_section_colors_css(dark):
     and a blue bar on its left. D-501: the sizes of a side panel like those of VS Code or Apple: rows of 13 px and thin,
     grey section headings of 11 px in plain case, and a menu of 232 px."""
     text, heading, icon, hover, current, accent, line = MENU_INK[dark]
-    return f"""[class*="st-key-nav_block_"] {{margin:0 !important; padding:6px 0 !important; gap:0 !important;
+    return f"""[class*="st-key-nav_block_"] {{margin:0 !important; padding:8px 0 !important; gap:2px !important;
         background:transparent !important; border:0; border-bottom:1px solid {line}; border-radius:0; box-shadow:none;}}
     .st-key-nav_block_documentos {{border-bottom:0;}}
     [class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div,
     [class*="st-key-nav_group_"] button {{width:100% !important; box-sizing:border-box;}}
     [class*="st-key-nav_group_"] button {{justify-content:flex-start !important; padding:1px 8px !important;
-        min-height:22px !important; background:transparent !important; border:0 !important; margin:0 0 2px;}}
+        min-height:22px !important; background:transparent !important; border:0 !important; margin:0 0 4px;}}
     [class*="st-key-nav_group_"] button:hover:not(:disabled) {{background:transparent !important;}}
     [class*="st-key-nav_group_"] button > div {{justify-content:flex-start !important;}}
     [class*="st-key-nav_group_"] button p {{color:{heading} !important; -webkit-text-fill-color:{heading} !important;
@@ -9086,8 +9086,10 @@ def build_section_colors_css(dark):
     /* Its block keeps the -1rem of a markdown block (D-173), so the paragraph keeps 1rem under it. */
     [data-testid="stSidebar"] p.nav-subtitle {{margin:0 0 calc(1rem + 3px) !important; padding:0 8px; color:{heading} !important;
         opacity:.8; font-size:.6875rem !important; font-weight:400; letter-spacing:0;}}
-    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a {{position:relative; padding:2px 8px !important;
-        min-height:24px !important; border-radius:5px !important; border:0 !important;
+    /* D-512: rows of 28 px with 2 px between them, the air of VS Code's explorer, so a click never lands on the
+       neighbour. */
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a {{position:relative; padding:3px 8px !important;
+        min-height:28px !important; border-radius:6px !important; border:0 !important;
         background:transparent !important; box-shadow:none !important; gap:0 !important;}}
     [class*="st-key-nav_block_"] [data-testid="stPageLink"] a:hover {{background:{hover} !important;}}
     [class*="st-key-nav_block_"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
@@ -9100,7 +9102,7 @@ def build_section_colors_css(dark):
         left:0; top:7px; bottom:7px; width:3px; border-radius:3px; background:{accent};}}
     [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] p {{font-weight:500 !important;}}
     [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stIconMaterial"] {{color:{accent} !important;}}
-    [data-testid="stSidebar"] a.nav-source-link {{display:flex; align-items:center; padding:4px 8px !important; margin:0 !important;
+    [data-testid="stSidebar"] a.nav-source-link {{display:flex; align-items:center; padding:5px 8px !important; margin:0 !important;
         font-size:.8125rem; color:{text} !important; -webkit-text-fill-color:{text} !important; text-decoration:none !important;
         border-radius:6px; line-height:1.3;}}
     [data-testid="stSidebar"] a.nav-source-link:hover {{background:{hover};}}
