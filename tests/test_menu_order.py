@@ -129,9 +129,12 @@ def test_d420_no_page_of_devops_is_reached_by_the_user_or_the_professional(profi
         app.query_params.update({"vista": view})
         app.run()
         assert not app.exception
-        assert [item.value for item in app.info] == [dashboard.NO_ACCESS], view
         markup = " ".join(block.value for block in app.main.markdown)
-        assert 'class="page-bar-main"' not in markup and 'class="cf-card' not in markup, view  # no page of its own
+        if profile == "consulta":  # D-502: the Usuario view stays in «Semanal», without even naming the page
+            assert [item.value for item in app.info] == [] and 'class="mock-chile-map"' in markup, view
+        else:
+            assert [item.value for item in app.info] == [dashboard.NO_ACCESS], view
+            assert 'class="page-bar-main"' not in markup and 'class="cf-card' not in markup, view  # no page of its own
         assert not {"runs_run_now", "runs_reload", "author_access_close"} & {str(b.key) for b in app.button}, view
         labels = [link.proto.label for link in app.sidebar.get("page_link")]  # and the menu has no DevOps
         assert not set(DEVOPS_LABELS) & set(labels) and "DevOps y seguridad" not in [

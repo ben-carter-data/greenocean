@@ -938,7 +938,7 @@ def sad_scenarios(mode):
                     "P-4 · RF-04",
                 ),
             ],
-            f'<p class="sc-warn">{esc(say("«Ver todo el proyecto»: pasa a Profesional, sin clave", "«See the whole project»: switches to Professional, no key"))}</p>',
+            f'<p class="sc-warn">{esc(say("Sin puerta a otra vista: «Vista: Usuario · Cambiar» reabre «Elige tu vista»", "No door to another view: «Vista: Usuario · Cambiar» reopens «Elige tu vista»"))}</p>',
             layout="flow",
         )
     )

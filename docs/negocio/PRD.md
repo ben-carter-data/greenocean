@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.43 |
-| Fecha | 03-11-2026 |
+| Versión | 3.47 |
+| Fecha | 04-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar qué problema resuelve GreenOcean, para quién, qué preguntas responde y qué debe cumplir para que sus cifras sean confiables. |
@@ -263,3 +263,7 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.41 | 03-11-2026 | «Orden» se reemplaza por un filtro junto a la búsqueda: «Todo», «Subidas» y «Bajadas» (D-497) |
 | 3.42 | 03-11-2026 | Con una región elegida en Semanal, los canales, las líneas de cada familia y las alertas son de esa región (RF-05, D-499) |
 | 3.43 | 03-11-2026 | Solo el Autor ve los enlaces al repositorio en GitHub (D-500) |
+| 3.44 | 04-11-2026 | La vista Usuario ve solo sus dos dashboards y las fuentes: ningún enlace ni dirección lleva a otra vista (D-502) |
+| 3.45 | 04-11-2026 | El modelo estrella de «Modelo de datos» es apaisado y usa su panel: dos dimensiones a cada lado de weekly_price, el IPC a la izquierda y la auditoría a la derecha (D-503) |
+| 3.46 | 04-11-2026 | El menú lateral ya no se desplaza hacia un vacío: el logo, el botón de plegar y el pie quedan siempre a la vista, y se desplaza solo si el contenido no cabe (RNF-06, D-504) |
+| 3.47 | 04-11-2026 | Los estilos viajan en el primer elemento de cada página, así nada se ve sin estilo al cambiar de página (RNF-06, D-505) |

@@ -1984,6 +1984,58 @@
           "referencia": "D-500"
         }
       ]
+    },
+    {
+      "id": "F-35",
+      "categoria": "código",
+      "falla": [
+        "Al cambiar de página, el contenido anterior se ve un instante sin estilo",
+        "When the page changes, the previous content shows unstyled for an instant"
+      ],
+      "deteccion": [
+        "El autor lo vio en el panel; se grabó el cambio de página a 25 cuadros por segundo",
+        "The author saw it in the panel; the page change was recorded at 25 frames per second"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Los estilos de «Semanal» se dibujaban dentro de la página, no en su cabecera",
+        "The «Semanal» styles were drawn inside the page, not in its header"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: dura un cuadro y no afecta a los datos",
+        "None: it lasts one frame and does not affect the data"
+      ],
+      "correctiva": [
+        "Los estilos pasan al primer elemento de toda página (D-505)",
+        "The styles move to the first element of every page (D-505)"
+      ],
+      "estacion": 9,
+      "caso_real": "D-505",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-04",
+          "ocurrencia": [
+            "Al abrir «Análisis BA y BI» desde el menú se leían un instante los textos de «Semanal» sin estilo.",
+            "Opening «Análisis BA y BI» from the menu showed the «Semanal» texts unstyled for an instant."
+          ],
+          "diagnostico": [
+            "Streamlit reemplaza los elementos en orden y quitaba la hoja de estilos antes que el contenido.",
+            "Streamlit replaces the elements in order and removed the stylesheet before the content."
+          ],
+          "solucion": [
+            "La hoja de estilos de «Semanal» se dibuja en «apply_style», lo primero de cada página.",
+            "The «Semanal» stylesheet is drawn in «apply_style», the first thing on every page."
+          ],
+          "comentario": [
+            "Se grabó con Chromium para ver el cuadro exacto.",
+            "It was recorded with Chromium to see the exact frame."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-505"
+        }
+      ]
     }
   ]
 }

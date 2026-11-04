@@ -361,7 +361,6 @@ EN = {
     "Todas las familias": "All families",
     "Vista de usuario": "User view",
     "Vista profesional": "Professional view",
-    "Ver todo el proyecto": "See the whole project",
     "Atrasado": "Behind",
     "Al día": "Up to date",
     "Semana {}": "Week {}",

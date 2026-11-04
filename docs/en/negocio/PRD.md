@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.43 |
-| Date | 2026-11-03 |
+| Version | 3.47 |
+| Date | 2026-11-04 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain which problem GreenOcean solves, for whom, which questions it answers and what it must meet for its figures to be reliable. |
@@ -263,3 +263,7 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.41 | 2026-11-03 | «Orden» is replaced by a filter beside the search: «Todo», «Subidas» and «Bajadas» (D-497) |
 | 3.42 | 2026-11-03 | With a region chosen in Weekly, the channels, the small line of each family and the alerts are of that region (RF-05, D-499) |
 | 3.43 | 2026-11-03 | Only the Author sees the links to the GitHub repository (D-500) |
+| 3.44 | 2026-11-04 | The Usuario view sees only its two dashboards and the sources: no link or address leads to another view (D-502) |
+| 3.45 | 2026-11-04 | The star schema of «Data model» is landscape and fills its panel: two dimensions on each side of weekly_price, the IPC on the left and the audit trail on the right (D-503) |
+| 3.46 | 2026-11-04 | The side menu no longer scrolls towards a void: the logo, the fold button and the footer stay in sight, and it scrolls only when its content does not fit (RNF-06, D-504) |
+| 3.47 | 2026-11-04 | The stylesheets travel in the first element of every page, so nothing shows unstyled when the page changes (RNF-06, D-505) |

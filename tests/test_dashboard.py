@@ -185,12 +185,14 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
 @needs_database
 def test_d136_devops_shows_the_whole_platform_architecture_and_pipeline_only_the_journey():
     pipeline = draw_page(dashboard.PAGE_DIAGRAMS)
-    texts = " ".join(block.value for block in pipeline.markdown)
+    # D-505: every page carries the stylesheets first; what the page draws is the rest.
+    texts = " ".join(block.value for block in pipeline.markdown if not block.value.startswith("<style>"))
     assert not pipeline.exception
     assert 'aria-label="Recorrido de los datos de ODEPA al panel"' in texts
     assert 'aria-label="Arquitectura del proyecto por plataforma"' not in texts
     assert 'aria-label="Estado real del pipeline, de ODEPA al panel"' not in texts
     assert "Ampliar" not in texts and "diagrama=" not in texts
+    assert "Ampliar" not in [button.label for button in pipeline.button]
 
 
 @needs_database
@@ -1639,28 +1641,24 @@ def test_d282_every_preview_shows_the_index_of_its_document():
 
 
 @needs_database
-def test_d394_the_user_view_sees_the_business_pages_and_opens_the_rest_as_the_professional_with_no_key():
+def test_d502_the_user_view_sees_its_two_dashboards_and_has_no_door_to_the_rest():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    app.secrets["CONTROL_CODE"] = "clave-larga"
     app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
     app.run()
     assert not app.exception and not app.get("dialog")
     labels = {link.proto.label for link in app.sidebar.get("page_link")}
     business = next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
-    assert {dashboard.SIDEBAR_LABELS.get(view, view) for view in business} <= labels
-    assert dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_DIAGRAMS, dashboard.PAGE_DIAGRAMS) not in labels
+    assert labels == {dashboard.SIDEBAR_LABELS.get(view, view) for view in business}  # only its two dashboards
     assert "Documentos" not in labels  # the folder tile is for the professional view
     app.query_params["perfil"] = dashboard.PROFILE_PROFESSIONAL  # the address cannot change a chosen view
     app.run()
     assert app.query_params["perfil"] == dashboard.PROFILE_PUBLIC
-    # D-394: «Ver todo el proyecto» opens the Profesional view with no key, and never the Autor.
-    assert not [field for field in app.text_input if str(field.key) == "profile_unlock_code"]
-    app.button(key="profile_unlock").click().run()
-    assert app.query_params["perfil"] == dashboard.PROFILE_PROFESSIONAL
-    assert dashboard.ADMIN_UNLOCKED not in app.session_state or not app.session_state[dashboard.ADMIN_UNLOCKED]
-    labels = {link.proto.label for link in app.sidebar.get("page_link")}
-    assert dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_DIAGRAMS, dashboard.PAGE_DIAGRAMS) in labels
-    assert not [button for button in app.button if str(button.key) == "profile_change"]  # no going back
+    # D-502: «Ver todo el proyecto» is gone; «Vista: Usuario · Cambiar» is the only door, and it asks again.
+    keys = {str(button.key) for button in app.button}
+    assert "profile_unlock" not in keys and "profile_indicator" in keys
+    assert "Ver todo el proyecto" not in " ".join(block.value for block in app.sidebar.markdown)
+    app.button(key="profile_indicator").click().run()
+    assert app.session_state[dashboard.CHANGE_VIEW] and app.query_params["perfil"] == dashboard.PROFILE_PUBLIC
 
 
 def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkeypatch):

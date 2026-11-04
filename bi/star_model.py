@@ -1,13 +1,15 @@
-"""Star model of datos.duckdb drawn as a real star (T-59, redesigned for D-097, D-190).
+"""Star model of datos.duckdb drawn as a real star (T-59, redesigned for D-097, D-190, D-503).
 
 A soft four-pointed star behind the cards, the fact table weekly_price in the
-middle and one dimension on each point: dim_date on top, dim_product on the
-left, dim_region on the right and dim_channel at the bottom. Each card lists
-every real column of etl/schema.sql, with primary and foreign keys in cyan;
-the measures of the fact table sit apart at its foot. Below and to the right,
-separated from the star, a small group shows the audit trail of a load:
-etl_run → rejection. At the top left, a second group shows the food IPC of the INE
-(ine_ipc_source → ipc_monthly → ipc_weekly), joined to dim_date by week_start (D-190).
+middle and two dimensions on each side (D-503, landscape, so the drawing fills
+its panel): dim_date and dim_product stacked on the left, dim_region and
+dim_channel on the right, each joined to the fact table by a right-angled
+connector. Each card lists every real column of etl/schema.sql, with primary
+and foreign keys in cyan; the measures of the fact table sit apart at its foot.
+Closing the right column, separated from the star, a small group shows the audit
+trail of a load: etl_run → rejection. In the leftmost column, beside dim_date, a
+second group shows the food IPC of the INE (ine_ipc_source → ipc_monthly →
+ipc_weekly), joined to dim_date by week_start (D-190).
 
 Positions are computed from the real column counts of each table, so the
 diagram never overlaps even if a table gains or loses a column. The result is
@@ -27,10 +29,10 @@ VANTABLACK_CARD = "#000000"
 VANTABLACK_FRAME = "#0b0b0d"
 MONO_FONT = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
 
-WIDTH = 1000
 MARGIN = 20
-# Vertical gap between the fact table and each dimension; horizontal gap on the sides.
-GAP = 46
+# Horizontal gap between the fact table and each dimension column; vertical gap between the
+# cards stacked in a column (D-503).
+GAP = 40
 # The measures of the fact table: what the indicators analyze.
 MEASURES = ["price", "volume", "observation_count"]
 ROW_HEIGHT = 27
@@ -39,23 +41,36 @@ TITLE_HEIGHT_SUBTITLE = 66  # same, when the title also carries a subtitle
 FIRST_ROW_GAP = 28  # from the divider line to the first content row
 
 STAR_TABLE = "weekly_price"
-TOP_DIMENSION = "dim_date"
-SIDE_DIMENSIONS = ("dim_product", "dim_region")
-BOTTOM_DIMENSION = "dim_channel"
-DIMENSION_WIDTHS = {"dim_date": 300, "dim_product": 250, "dim_region": 250, "dim_channel": 300}
-FACT_WIDTH = 340
+# D-503: two dimensions on each side of the fact table, each column top to bottom.
+LEFT_DIMENSIONS = ("dim_date", "dim_product")
+RIGHT_DIMENSIONS = ("dim_region", "dim_channel")
+IPC_DIMENSION = "dim_date"  # the dimension the IPC group hangs from (D-190)
+DIMENSION_WIDTH = 250
+FACT_WIDTH = 300
 AUDIT_TABLES = ("etl_run", "rejection")
 AUDIT_WIDTH = 230
 AUDIT_HEIGHT = 56
 AUDIT_GAP = 34
-# The food IPC, top left: source rows → monthly series → weekly deflator (D-190).
+GROUP_LABEL_HEIGHT = 22  # the small heading above the audit and IPC groups
+# The food IPC, leftmost column: source rows → monthly series → weekly deflator (D-190).
 IPC_TABLES = ("ine_ipc_source", "ipc_monthly", "ipc_weekly")
 IPC_GAP = 26
+IPC_COLUMN_GAP = 30  # between the IPC column and dim_date
 IPC_NOTES = {
     "ine_ipc_source": "tal como las publica",
     "ipc_monthly": "base 2023 = 100",
     "ipc_weekly": "week_start → dim_date",
 }
+
+# The columns, left to right: the IPC group, two dimensions, the fact table, two dimensions
+# (D-503). The drawing is about twice as wide as tall, the proportion of its panel.
+IPC_X = MARGIN
+LEFT_X = IPC_X + AUDIT_WIDTH + IPC_COLUMN_GAP
+FACT_X = LEFT_X + DIMENSION_WIDTH + GAP
+RIGHT_X = FACT_X + FACT_WIDTH + GAP
+WIDTH = RIGHT_X + DIMENSION_WIDTH + MARGIN
+AUDIT_GROUP_HEIGHT = GROUP_LABEL_HEIGHT + 2 * AUDIT_HEIGHT + AUDIT_GAP
+IPC_GROUP_HEIGHT = GROUP_LABEL_HEIGHT + 3 * AUDIT_HEIGHT + 2 * IPC_GAP
 # endregion
 
 
@@ -106,54 +121,43 @@ def fact_card_height(attribute_count, measure_count):
 
 
 def compute_layout(columns_by_table):
-    """{table: (x, y, width, height)} for the five star cards, never overlapping.
+    """{table: (x, y, width, height)} for the five star cards, never overlapping (D-503).
 
-    dim_date sits above weekly_price, dim_channel below, dim_product and
-    dim_region beside it (vertically centred on the fact card). Heights come
-    straight from each table's real column count.
+    weekly_price sits in the middle; dim_date and dim_product are stacked on its
+    left, dim_region and dim_channel on its right, with the audit group closing
+    the right column. Every column is centred on the tallest one, and heights
+    come straight from each table's real column count.
     """
     attributes, measures = list_fact_lines(columns_by_table[STAR_TABLE])
-    fact_width = FACT_WIDTH
     fact_height = fact_card_height(len(attributes), len(measures))
-    fact_x = (WIDTH - fact_width) / 2
+    left_heights = [dimension_card_height(len(columns_by_table[table])) for table in LEFT_DIMENSIONS]
+    right_heights = [dimension_card_height(len(columns_by_table[table])) for table in RIGHT_DIMENSIONS]
+    left_total = sum(left_heights) + GAP * (len(LEFT_DIMENSIONS) - 1)
+    right_total = sum(right_heights) + GAP * len(RIGHT_DIMENSIONS) + AUDIT_GROUP_HEIGHT
+    content = max(left_total, right_total, fact_height, IPC_GROUP_HEIGHT)
 
-    top_height = dimension_card_height(len(columns_by_table[TOP_DIMENSION]))
-    top_y = MARGIN
-    fact_y = top_y + top_height + GAP
+    layout = {STAR_TABLE: (FACT_X, MARGIN + (content - fact_height) / 2, FACT_WIDTH, fact_height)}
+    for x, tables, heights, total in (
+        (LEFT_X, LEFT_DIMENSIONS, left_heights, left_total),
+        (RIGHT_X, RIGHT_DIMENSIONS, right_heights, right_total),
+    ):
+        y = MARGIN + (content - total) / 2
+        for table, card_height in zip(tables, heights):
+            layout[table] = (x, y, DIMENSION_WIDTH, card_height)
+            y += card_height + GAP
+    return layout, MARGIN + content + MARGIN
 
-    bottom_height = dimension_card_height(len(columns_by_table[BOTTOM_DIMENSION]))
-    bottom_y = fact_y + fact_height + GAP
 
-    left_table, right_table = SIDE_DIMENSIONS
-    left_height = dimension_card_height(len(columns_by_table[left_table]))
-    right_height = dimension_card_height(len(columns_by_table[right_table]))
-    left_width = DIMENSION_WIDTHS[left_table]
-    right_width = DIMENSION_WIDTHS[right_table]
+def audit_rect(layout):
+    """Where the audit group sits: closing the right column, under its last dimension (D-503)."""
+    x, y, _, card_height = layout[RIGHT_DIMENSIONS[-1]]
+    return (x, y + card_height + GAP, AUDIT_WIDTH, AUDIT_GROUP_HEIGHT)
 
-    layout = {
-        TOP_DIMENSION: (
-            fact_x + (fact_width - DIMENSION_WIDTHS[TOP_DIMENSION]) / 2,
-            top_y,
-            DIMENSION_WIDTHS[TOP_DIMENSION],
-            top_height,
-        ),
-        STAR_TABLE: (fact_x, fact_y, fact_width, fact_height),
-        left_table: (MARGIN, fact_y + (fact_height - left_height) / 2, left_width, left_height),
-        right_table: (
-            WIDTH - MARGIN - right_width,
-            fact_y + (fact_height - right_height) / 2,
-            right_width,
-            right_height,
-        ),
-        BOTTOM_DIMENSION: (
-            fact_x + (fact_width - DIMENSION_WIDTHS[BOTTOM_DIMENSION]) / 2,
-            bottom_y,
-            DIMENSION_WIDTHS[BOTTOM_DIMENSION],
-            bottom_height,
-        ),
-    }
-    height = bottom_y + bottom_height + MARGIN
-    return layout, height
+
+def ipc_rect(layout):
+    """Where the IPC group sits: the leftmost column, centred on dim_date, never above the margin."""
+    _, date_y, _, date_height = layout[IPC_DIMENSION]
+    return (IPC_X, max(MARGIN, date_y + (date_height - IPC_GROUP_HEIGHT) / 2), AUDIT_WIDTH, IPC_GROUP_HEIGHT)
 
 
 # endregion
@@ -246,13 +250,14 @@ def build_fact_card(rect, columns, row_count, colors, selected=False, tooltip=No
 
 
 # region Star
-def build_star_background(colors, center_x, center_y, spread):
-    """A soft four-pointed star behind the cards, purely decorative."""
+def build_star_background(colors, center_x, center_y, spread_x, spread_y):
+    """A soft four-pointed star behind the cards, purely decorative; its side points reach
+    the dimension columns (D-503: wider than tall, like the drawing)."""
     points = [
-        (center_x, center_y - spread),
-        (center_x + spread * 0.32, center_y),
-        (center_x, center_y + spread),
-        (center_x - spread * 0.32, center_y),
+        (center_x, center_y - spread_y),
+        (center_x + spread_x, center_y),
+        (center_x, center_y + spread_y),
+        (center_x - spread_x, center_y),
     ]
     path = "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in points) + "Z"
     return (
@@ -261,27 +266,30 @@ def build_star_background(colors, center_x, center_y, spread):
     )
 
 
-def build_connector(colors, fact_rect, card_rect, side):
-    """A dashed cyan line from one edge of the fact table to the facing dimension."""
-    fx, fy, fw, fh = fact_rect
-    cx, cy, cw, ch = card_rect
-    if side == "top":
-        x1, y1, x2, y2 = fx + fw / 2, fy, cx + cw / 2, cy + ch
-    elif side == "bottom":
-        x1, y1, x2, y2 = fx + fw / 2, fy + fh, cx + cw / 2, cy
-    elif side == "left":
-        x1, y1, x2, y2 = fx, fy + fh / 2, cx + cw, cy + ch / 2
-    else:
-        x1, y1, x2, y2 = fx + fw, fy + fh / 2, cx, cy + ch / 2
+def build_dashed_elbow(colors, x1, y1, x2, y2):
+    """A dashed cyan link with right angles: across to the middle of the gap, up or down,
+    then across again (D-503). On one level it is a straight line."""
+    middle_x = (x1 + x2) / 2
     return (
-        f'<path d="M{x1:.1f} {y1:.1f} L{x2:.1f} {y2:.1f}" stroke="{colors["cyan"]}" '
-        f'stroke-width="1.4" stroke-dasharray="5 5"/>'
+        f'<path d="M{x1:.1f} {y1:.1f} H{middle_x:.1f} V{y2:.1f} H{x2:.1f}" fill="none" '
+        f'stroke="{colors["cyan"]}" stroke-width="1.4" stroke-dasharray="5 5"/>'
     )
 
 
-def build_audit_group(row_counts, colors, top, bottom, tooltips=None):
+def build_connector(colors, fact_rect, card_rect, side, position):
+    """The link from a dimension to the fact table: from the middle of the dimension's facing
+    edge to the fact's edge at `position` (a fraction of its height), with right angles."""
+    fx, fy, fw, fh = fact_rect
+    cx, cy, cw, ch = card_rect
+    fact_y = fy + fh * position
+    if side == "left":
+        return build_dashed_elbow(colors, cx + cw, cy + ch / 2, fx, fact_y)
+    return build_dashed_elbow(colors, fx + fw, fact_y, cx, cy + ch / 2)
+
+
+def build_audit_group(row_counts, colors, rect, tooltips=None):
     """weekly_price's load trail, apart from the star: etl_run → rejection."""
-    x = WIDTH - MARGIN - AUDIT_WIDTH
+    x, top = rect[0], rect[1] + GROUP_LABEL_HEIGHT
     label = (
         f'<text x="{x:.1f}" y="{top - 10:.1f}" font-size="13" font-weight="700" '
         f'letter-spacing=".04em" fill="{colors["text"]}">AUDITORÍA DE CARGAS</text>'
@@ -310,16 +318,15 @@ def build_audit_group(row_counts, colors, top, bottom, tooltips=None):
                 f'font-size="11" fill="{colors["text"]}">run_id (FK)</text>'
             )
         y += AUDIT_HEIGHT + AUDIT_GAP
-    assert y - AUDIT_GAP <= bottom, "Audit group must fit beside the star"
     return label + "".join(boxes)
 
 
-def build_ipc_group(row_counts, colors, date_rect, tooltips=None):
+def build_ipc_group(row_counts, colors, rect, date_rect, tooltips=None):
     """The food IPC beside dim_date: three dashed boxes in a chain and a dashed link from
     ipc_weekly to dim_date (D-190). Drawn only when the counts of its tables are known."""
     if not all(table in row_counts for table in IPC_TABLES):
         return ""
-    x, top = MARGIN, MARGIN + 34
+    x, top = rect[0], rect[1] + GROUP_LABEL_HEIGHT
     parts = [
         f'<text x="{x:.1f}" y="{top - 12:.1f}" font-size="13" font-weight="700" letter-spacing=".04em" '
         f'fill="{colors["text"]}">IPC DE ALIMENTOS (INE)</text>'
@@ -346,10 +353,10 @@ def build_ipc_group(row_counts, colors, date_rect, tooltips=None):
         y += AUDIT_HEIGHT + IPC_GAP
     weekly_y = top + 2 * (AUDIT_HEIGHT + IPC_GAP) + AUDIT_HEIGHT / 2
     dx, dy, _, dh = date_rect
-    parts.append(
-        f'<path d="M{x + AUDIT_WIDTH:.1f} {weekly_y:.1f} L{dx:.1f} {dy + dh / 2:.1f}" stroke="{colors["cyan"]}" '
-        f'stroke-width="1.4" stroke-dasharray="5 5"/>'
-    )
+    # The link meets dim_date on the level of ipc_weekly when that level is on the card; if not
+    # (a short dim_date), it bends to the middle of the card.
+    date_y = weekly_y if dy + 12 <= weekly_y <= dy + dh - 12 else dy + dh / 2
+    parts.append(build_dashed_elbow(colors, x + AUDIT_WIDTH, weekly_y, dx, date_y))
     return "".join(parts)
 
 
@@ -361,29 +368,20 @@ def build_star_svg(columns_by_table, row_counts, mode, selected=None, tooltips=N
     layout, height = compute_layout(columns_by_table)
     fact_rect = layout[STAR_TABLE]
     center_x, center_y = fact_rect[0] + fact_rect[2] / 2, fact_rect[1] + fact_rect[3] / 2
-    spread = max(fact_rect[3], 280) / 2 + GAP + 40
+    spread_x = FACT_WIDTH / 2 + GAP + DIMENSION_WIDTH / 2
+    spread_y = fact_rect[3] / 2 + 36
 
     cards = [
         build_dimension_card(
-            TOP_DIMENSION,
-            layout[TOP_DIMENSION],
-            columns_by_table[TOP_DIMENSION],
+            table,
+            layout[table],
+            columns_by_table[table],
             colors,
-            selected=selected == TOP_DIMENSION,
-            tooltip=tooltips.get(TOP_DIMENSION),
+            selected=selected == table,
+            tooltip=tooltips.get(table),
         )
+        for table in LEFT_DIMENSIONS + RIGHT_DIMENSIONS
     ]
-    for table in SIDE_DIMENSIONS + (BOTTOM_DIMENSION,):
-        cards.append(
-            build_dimension_card(
-                table,
-                layout[table],
-                columns_by_table[table],
-                colors,
-                selected=selected == table,
-                tooltip=tooltips.get(table),
-            )
-        )
     cards.append(
         build_fact_card(
             fact_rect,
@@ -394,22 +392,15 @@ def build_star_svg(columns_by_table, row_counts, mode, selected=None, tooltips=N
             tooltip=tooltips.get(STAR_TABLE),
         )
     )
+    # D-503: the upper dimension of each column meets the fact table at a third of its height,
+    # the lower one at two thirds, so the two links of a side never share a segment.
     connectors = "".join(
-        [
-            build_connector(colors, fact_rect, layout[TOP_DIMENSION], "top"),
-            build_connector(colors, fact_rect, layout[SIDE_DIMENSIONS[0]], "left"),
-            build_connector(colors, fact_rect, layout[SIDE_DIMENSIONS[1]], "right"),
-            build_connector(colors, fact_rect, layout[BOTTOM_DIMENSION], "bottom"),
-        ]
+        build_connector(colors, fact_rect, layout[table], side, (index + 1) / (len(tables) + 1))
+        for side, tables in (("left", LEFT_DIMENSIONS), ("right", RIGHT_DIMENSIONS))
+        for index, table in enumerate(tables)
     )
-    audit = build_audit_group(
-        row_counts,
-        colors,
-        layout[SIDE_DIMENSIONS[1]][1] + layout[SIDE_DIMENSIONS[1]][3] + GAP,
-        height - MARGIN,
-        tooltips,
-    )
-    ipc = build_ipc_group(row_counts, colors, layout[TOP_DIMENSION], tooltips)
+    audit = build_audit_group(row_counts, colors, audit_rect(layout), tooltips)
+    ipc = build_ipc_group(row_counts, colors, ipc_rect(layout), layout[IPC_DIMENSION], tooltips)
     defs = (
         f'<defs><marker id="audit-arrow" viewBox="0 0 10 10" refX="8" refY="5" '
         f'markerWidth="6" markerHeight="6" orient="auto-start-reverse">'
@@ -421,7 +412,7 @@ def build_star_svg(columns_by_table, row_counts, mode, selected=None, tooltips=N
             f'width="100%" role="img" aria-label="Modelo estrella de datos.duckdb" '
             f'font-family="{charts.CHART_FONT}">',
             defs,
-            build_star_background(colors, center_x, center_y, spread),
+            build_star_background(colors, center_x, center_y, spread_x, spread_y),
             connectors,
             audit,
             ipc,

@@ -984,10 +984,13 @@ def products_table(
 def coverage_note(model, quality_link, methodology_link, family=None):
     """What the figures cover, in one line under the table, with its two references.
     The first figures are those of the family the table shows, so «288 precios» above
-    and the note below count the same rows; the whole week follows for scale."""
+    and the note below count the same rows; the whole week follows for scale.
+    D-502: without the two addresses (the Usuario view), the note closes without them."""
     links = (
         f'<a href="{esc(quality_link)}" target="_self">Calidad</a> · '
         f'<a href="{esc(methodology_link)}" target="_self">Metodología</a>'
+        if quality_link and methodology_link
+        else ''
     )
     total_missing = number(model["missing"])
     week = (

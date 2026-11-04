@@ -471,7 +471,7 @@ ROLE_ORDER = {
 }
 DEFAULT_ROLE = "bi"  # a user view unlocked with the key reads the business first
 LANDING_STATE = "profile_landing"
-# What the public profile sees in the menu; the rest is one click away («Ver todo el proyecto»).
+# D-502: all the Usuario view has: its two dashboards and the sources. Nothing else, and no door to the rest.
 PUBLIC_BLOCKS = {"negocio", "fuentes"}
 
 DEFAULT_CHANNEL = "Feria libre"
@@ -1037,15 +1037,10 @@ def show_load_alert(windows_by_title):
         )
 
 
-def show_profile_switch():
-    """Under the menu, only in the user view: the whole project, as the Profesional view, with no key (D-394). The
-    Profesional view is free in «Elige tu vista» too; only the Autor asks for the key."""
-    if not is_public_profile():
-        return
-    with st.sidebar.container(key="profile_switch"):
-        if st.button(tr("Ver todo el proyecto"), icon=":material/open_in_full:", key="profile_unlock", width="stretch"):
-            choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
-            st.rerun()
+def user_view_page(view):
+    """D-502: the Usuario view holds only its two dashboards and the sources. Whatever view an address asks for, if
+    this menu does not lead to it the visit stays in «Semanal»; checked on the server, never read from the address."""
+    return PAGE_HOME if view and is_public_profile() and not can_open(view) else view
 
 
 def open_profile_landing(windows_by_title):
@@ -2159,8 +2154,6 @@ def build_style_css(mode):
     .st-key-profile_roles button p {{ font-size:.72rem; color:{palette["reference"]}; white-space:nowrap; }}
     .st-key-profile_roles > div + div button p::before {{ content:"·"; margin-right:4px; color:{palette["reference"]}; }}
     .st-key-profile_roles button:hover p {{ color:{palette["accent"]}; }}
-    .st-key-profile_switch {{ padding:6px 12px 0; }}
-    .st-key-profile_switch button p {{ font-size:.82rem; }}
     @media(max-width:900px) {{
         .cover-statements {{ grid-template-columns:1fr; padding:6px 0; }}
         .cover-statements .cover-statement {{ padding:14px 0; }}
@@ -2198,6 +2191,9 @@ def apply_style(mode):
     }.items():
         finish = finish.replace("__" + token + "__", palette[key])
     st.markdown(f"<style>{build_style_css(mode)}{finish}{buttons.build_icon_css()}</style>", unsafe_allow_html=True)
+    # D-505: the styles of «Semanal» travel here, in the first element of every page. Drawn inside the page, the
+    # browser lost them for one frame while Streamlit swapped the pages, and the old content flashed as plain text.
+    st.markdown(home_mockup.style(mode, palette), unsafe_allow_html=True)
 
 
 OVERVIEW_CLASS_BY_VIEW = {
@@ -2996,7 +2992,14 @@ def build_architecture_css(mode):
     .st-key-architecture_diagram {{border:1px solid {palette['card_border']}; border-radius:14px;
         background:{palette['card']}; padding:14px 20px 18px;}}
     .st-key-architecture_diagram svg {{display:block; width:100%; height:auto;}}
-    .st-key-architecture_diagram svg:not(.zoom-frame svg) {{max-height:calc(100vh - 340px);}}
+    /* D-503: the star takes the height the window leaves. 331 px is what sits above and below it, measured:
+       the header, the chips, the tabs and a one-line phrase (219 px), the legend and the panel's padding
+       (60 px), the frame's two empty blocks and the page's padding (40 px), plus 12 px of margin. Under
+       1320 px of window the phrase takes two lines (19 px more). */
+    .st-key-architecture_diagram svg:not(.zoom-frame svg) {{max-height:calc(100vh - 331px);}}
+    @media (max-width:1320px) {{
+        .st-key-architecture_diagram svg:not(.zoom-frame svg) {{max-height:calc(100vh - 350px);}}
+    }}
     /* The diagram always fits the window (D-232): the viewport is as wide as the height left
        allows, by the drawing's own proportion; the zoom buttons bring it closer inside the panel. */
     .fit-modelo {{position:relative;}}
@@ -4436,7 +4439,6 @@ def show_market_overview(mode, prefix):
     # Streamlit reruns this file without reimporting helpers; keep the live page
     # in sync when the dashboard markup changes during development.
     importlib.reload(home_mockup)
-    st.markdown(home_mockup.style(mode, charts.get_palette(mode)), unsafe_allow_html=True)
     options = read_cached_filter_options(get_database_version())
     apply_home_focus(options)
     if read_filter('week') not in options['week']:
@@ -4722,7 +4724,11 @@ def show_market_overview(mode, prefix):
     st.markdown(
         '<div class="greenocean-mockup">'
         + home_mockup.coverage_note(
-            model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION), family
+            model,
+            # D-502: the Usuario view has no «Calidad y auditoría» nor «Método y calidad»: no link to them
+            None if is_public_profile() else build_page_address(PAGE_OPERATIONS),
+            None if is_public_profile() else build_page_address(PAGE_DOCUMENTATION),
+            family,
         )
         + '</div>',
         unsafe_allow_html=True,
@@ -5760,9 +5766,10 @@ def show_analysis_lead(text):
 
 
 def show_analysis_link(view, label, parameters=None):
-    """A link to the page that holds the rest; absent when a test draws the page alone."""
+    """A link to the page that holds the rest; absent when a test draws the page alone, and in the Usuario view,
+    whose menu does not lead there (D-502)."""
     window = WINDOW_PAGES.get(WINDOW_OF_VIEW.get(view))
-    if window:
+    if window and can_open(view):
         st.page_link(
             window,
             label=label,
@@ -8287,7 +8294,7 @@ def synchronize_window_view(window):
     """Apply a deep-linked view before its header widget is instantiated."""
     views = read_window_views(window)
     key = window_view_key(window)
-    requested = st.query_params.get(VIEW_PARAMETER)
+    requested = user_view_page(st.query_params.get(VIEW_PARAMETER))  # D-502
     if requested in RETIRED_VIEWS:
         requested = RETIRED_VIEWS[requested]
         st.query_params[VIEW_PARAMETER] = requested
@@ -8300,10 +8307,11 @@ def synchronize_window_view(window):
 
 def choose_window_view(window):
     """The view of a window: from the address when a link asks for one, then from the
-    selector; ◀ ▶ step through them without leaving the window (D-065)."""
+    selector; ◀ ▶ step through them without leaving the window (D-065). D-502: never a view
+    the Usuario's menu does not lead to."""
     views = read_window_views(window)
     key = window_view_key(window)
-    requested = st.query_params.get(VIEW_PARAMETER)
+    requested = user_view_page(st.query_params.get(VIEW_PARAMETER))
     if requested in RETIRED_VIEWS:
         requested = RETIRED_VIEWS[requested]
         st.query_params[VIEW_PARAMETER] = requested
@@ -8438,6 +8446,8 @@ PHONE_LAYOUT_HTML = """<style>
   .stApp {transform:scale(.62); transform-origin:0 0; width:161.3vw !important; height:161.3vh !important;}
   /* Streamlit sizes its scrolling area to the screen height: it must grow with the scale. */
   [data-testid="stAppViewContainer"] > div, [data-testid="stMain"], [data-testid="stSidebar"] {height:161.3vh !important; max-height:none !important;}
+  /* D-504: the menu's column grows with its sidebar, so its footer still ends at the bottom of the screen. */
+  [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {min-height:calc(161.3vh - 72px) !important;}
   [data-testid="stHeader"] {display:none !important;}
   [data-testid="stMainBlockContainer"] {padding-top:.4rem !important;}
 }
@@ -8586,6 +8596,7 @@ def show_page(view, mode):
     if view in AUTHOR_ONLY_PAGES and not is_author():
         st.info(tr(NO_ACCESS), icon=":material/lock:")
         return
+    view = user_view_page(view)  # D-502: the Usuario view never draws a page of another view
     SHOW_PAGE_BY_TITLE[view](mode)
 
 
@@ -8997,11 +9008,6 @@ def build_section_colors_css(dark):
         color:{text} !important;}}
     .st-key-load_alert [data-testid="stPageLink"] a {{padding:0 !important; min-height:0 !important;}}
     .st-key-load_alert [data-testid="stPageLink"] p {{font-size:.76rem !important; color:{text} !important; text-decoration:underline;}}
-    /* D-295: «Ver todo el proyecto», without a background, in the ink of the menu, in every theme. */
-    .st-key-profile_switch button {{background:transparent !important; border:1px solid {line} !important; box-shadow:none !important;}}
-    .st-key-profile_switch button:hover {{border-color:{accent} !important; background:{hover} !important;}}
-    .st-key-profile_switch button p, .st-key-profile_switch button span,
-    .st-key-profile_switch button [data-testid="stIconMaterial"] {{color:{text} !important;}}
 """
 
 
@@ -9022,7 +9028,10 @@ def build_sidebar_css(mode):
     [data-testid="stSidebar"][data-collapsed="false"] {{min-width:232px !important; max-width:232px !important;}}
     /* D-501: the menu keeps its width for its words: Streamlit's 20 px of margin leave. */
     [data-testid="stSidebarContent"] {{background:transparent; padding-left:0 !important; padding-right:0 !important;}}
-    [data-testid="stSidebarHeader"] {{height:52px; padding:12px 10px 6px 16px !important; border-bottom:0;}}
+    /* D-504: the logo and the fold button stay in sight, stuck to the top of the menu, when it scrolls. The header
+       owns the 20 px of air under the logo (Streamlit's 16 px margin plus 4 px), so its surface paints that band. */
+    [data-testid="stSidebarHeader"] {{height:72px; padding:12px 10px 26px 16px !important; margin-bottom:0 !important;
+        border-bottom:0; position:sticky; top:0; z-index:6; background:{palette['sidebar']};}}
     [data-testid="stSidebarHeader"] img {{max-width:148px !important; height:28px !important;}}
     [data-testid="stSidebarCollapseButton"] button {{width:32px; height:32px; min-height:32px;
         border:0 !important; border-radius:8px !important; background:transparent !important; box-shadow:none;}}
@@ -9032,11 +9041,15 @@ def build_sidebar_css(mode):
     [data-testid="stSidebarContent"]::-webkit-scrollbar {{width:0;}}
     [data-testid="stSidebarContent"]:hover::-webkit-scrollbar {{width:6px;}}
     [data-testid="stSidebarContent"]:hover::-webkit-scrollbar-thumb {{background:{hairline}; border-radius:3px;}}
-    [data-testid="stSidebarUserContent"] {{padding:4px 8px 0 !important;}}
-    /* D-286: the menu scrolls above the pinned footer, so nothing it holds stays hidden behind it. */
-    [data-testid="stSidebarUserContent"] {{padding-bottom:140px !important;}}
+    [data-testid="stSidebarUserContent"] {{padding:0 8px !important;}}
+    /* D-504: the menu's column is as tall as the window under the 72 px header, no more: the footer, last in the
+       flow, is pushed to its end, so nothing scrolls towards a void when the menu fits. When it does not fit, the
+       footer stays stuck to the bottom and the menu scrolls under it (D-286). */
     [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important;
-        min-height:calc(100vh - 86px); padding-bottom:116px;}}
+        min-height:calc(100vh - 72px); padding-bottom:0;}}
+    [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"]
+        > [data-testid="stLayoutWrapper"]:has(> .st-key-sidebar_footer) {{margin:auto -8px 0;
+        width:calc(100% + 16px); max-width:none; position:sticky; bottom:0; z-index:5;}}
     [data-testid="stSidebarNav"] {{display:none;}}
     {build_section_colors_css(dark)}
     /* GitHub's mark on a light pill in the footer (D-124): a near-black logo on a
@@ -9059,8 +9072,9 @@ def build_sidebar_css(mode):
     [data-testid="stSidebar"] .st-key-profile_indicator_top button [data-testid="stIconMaterial"] {{
         color:{view_ink} !important; font-weight:400; font-size:.71875rem; }}
     [data-testid="stSidebar"] .st-key-profile_indicator_top button:hover {{ border-color:{view_ink} !important; }}
-    .st-key-sidebar_footer {{position:fixed; left:0; bottom:0; width:232px; padding:10px 12px 10px;
-        background:{palette['sidebar']}; gap:7px !important; z-index:5; border-top:1px solid {hairline};}}
+    /* D-504: the footer lives in the flow of the menu (its wrapper is stuck above); its surface hides what scrolls under. */
+    .st-key-sidebar_footer {{padding:10px 12px 10px; background:{palette['sidebar']}; gap:7px !important;
+        border-top:1px solid {hairline};}}
     /* The price alerts, a red chip in the Resumen's bar (D-169, D-264). */
     .st-key-home_alert_trigger button, .st-key-dialog_alert_trigger button {{border:0 !important; background:color-mix(in srgb,{alert_text} 14%,transparent) !important;
         color:{alert_text} !important; border-radius:8px; padding:3px 10px !important; min-height:28px; box-shadow:none !important;}}
@@ -9232,7 +9246,6 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
         is_open = st.session_state.get(open_key, True)
         with st.sidebar.container(key=f"nav_block_{key}"):
             show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open)
-    show_profile_switch()
     show_sidebar_footer(current_window, lambda: show_footer_tiles(windows_by_title, current_window, current_view))
 
 
@@ -9550,7 +9563,9 @@ def main():
     if st.query_params.get(VIEW_PARAMETER) in BA_TAB_OF_VIEW:  # D-456: the page is now a tab of «Análisis BA y BI»
         st.query_params[BA_TAB_PARAMETER] = BA_TAB_OF_VIEW[st.query_params[VIEW_PARAMETER]]
         st.query_params[VIEW_PARAMETER] = PAGE_BA
-    requested_view = st.query_params.get(VIEW_PARAMETER)
+    requested_view = user_view_page(st.query_params.get(VIEW_PARAMETER))  # D-502
+    if requested_view != st.query_params.get(VIEW_PARAMETER):
+        st.query_params[VIEW_PARAMETER] = requested_view
     requested_window = WINDOW_OF_VIEW.get(requested_view)
     if requested_window and requested_window != window_of_page(current_page):
         st.switch_page(windows_by_title[requested_window], query_params=st.query_params.to_dict())
