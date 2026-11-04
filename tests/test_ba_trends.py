@@ -436,3 +436,83 @@ def test_d478_mensual_shows_a_family_over_its_products():
     assert (
         table.index(">Frutas<") < table.index(">Plátano<") < table.index(">Aceituna")
     )  # the chosen one under its family
+
+
+def food_cpi(decembers, tail=None):
+    """A monthly food CPI with only its Decembers, plus the months in «tail»: (year, month, index)."""
+    rows = [(year, 12, value) for year, value in decembers.items()] + list(tail or [])
+    return pd.DataFrame(rows, columns=["year", "month", "food_index"])
+
+
+def test_d518_the_insight_says_the_largest_jump_and_what_came_after():
+    ipc = food_cpi({2009: 100.0, 2010: 105.0, 2011: 131.25, 2012: 136.5, 2013: 139.23}, [(2014, 3, 141.0)])
+    lead, detail, hover = ba_trends.food_cpi_insight(ipc)
+    assert lead == "Los alimentos subieron +25,0 % en 2011 según el IPC del INE, el mayor salto desde 2010."
+    assert (
+        detail == "Desde 2012 suben entre 2,0 % y 4,0 % al año: el alza se moderó, pero los precios no volvieron atrás."
+    )
+    assert hover == "IPC de alimentos del INE, de diciembre a diciembre, en años completos."  # a year with its December
+
+
+def test_d518_the_sentence_only_says_what_the_data_holds():
+    # the prices went back below the December of the jump: that clause goes
+    fell = food_cpi({2009: 100.0, 2010: 130.0, 2011: 120.0})
+    assert ba_trends.food_cpi_insight(fell)[1] == "Desde 2011 cambian -7,7 % al año: el alza se moderó."
+    # the largest jump is the last whole year: nothing came after it yet
+    assert ba_trends.food_cpi_insight(food_cpi({2009: 100.0, 2010: 103.0, 2011: 120.0}))[1] == ""
+    # too little history says nothing
+    assert ba_trends.food_cpi_insight(food_cpi({2009: 100.0})) is None
+    assert ba_trends.food_cpi_insight(food_cpi({})) is None
+    # a year without its December is never compared across the gap
+    gap = ba_trends.food_cpi_insight(food_cpi({2009: 100.0, 2010: 101.0, 2012: 150.0, 2013: 153.0}))
+    assert gap[0].startswith("Los alimentos subieron +2,0 % en 2013")
+
+
+def test_d518_the_year_the_prices_start_explains_why_its_line_reads_lower():
+    ipc = food_cpi({2021: 100.0, 2022: 125.0, 2023: 130.0}, [(2022, 1, 101.0)])
+    _, _, hover = ba_trends.food_cpi_insight(ipc)
+    assert "En «Cambio de cada año», 2022 parte en enero" in hover and "su raya marca +23,8 %" in hover
+
+
+def test_d518_the_insight_reads_in_english(monkeypatch):
+    monkeypatch.setattr(ba_trends.i18n, "is_english", lambda: True)
+    ipc = food_cpi({2021: 100.0, 2022: 125.0, 2023: 130.0, 2024: 136.5}, [(2022, 1, 101.0)])
+    lead, detail, hover = ba_trends.food_cpi_insight(ipc)
+    assert lead == "Food prices rose +25.0 % in 2022 according to the INE CPI, the largest jump since 2022."
+    assert (
+        detail
+        == "Since 2023 they rise between 4.0 % and 5.0 % a year: the rise has slowed, but prices did not go back."
+    )
+    assert "In «Change of each year», 2022 starts in January" in hover and "+23.8 %" in hover
+
+
+@needs_database
+def test_d518_the_box_shows_only_in_historico_with_figures_recomputed_from_the_base():
+    ipc = queries.run_sql("SELECT year, month, food_index FROM ipc_monthly")
+    december = ipc[ipc["month"] == 12].set_index("year")["food_index"].sort_index()
+    changes = (december / december.shift() - 1).dropna() * 100
+    lead, detail, hover = ba_trends.food_cpi_insight(ipc)
+    assert charts.format_signed_percent(changes.max()) in lead and f" en {changes.idxmax()} " in lead
+    assert f"desde {changes.index[0]}." in lead
+    after = changes[changes.index > changes.idxmax()]
+    assert charts.format_percent(after.min()) in detail and charts.format_percent(after.max()) in detail
+
+    def draw(state):
+        app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=120)
+        app.session_state["visitor_profile"] = "profesional"
+        for key, value in state.items():
+            app.session_state[key] = value
+        app.query_params.update({"vista": dashboard.PAGE_BA})
+        app.run()
+        assert not app.exception
+        return " ".join(block.value for block in app.markdown)
+
+    history = draw({dashboard.BA_TAB_KEY: dashboard.BA_HISTORY_TAB})
+    box = ba_trends.insight_html(lead, detail, hover)
+    assert box in history and history.index('class="ba-card"') < history.index(box) < history.index('class="ba-table"')
+    assert 'ba-insight"' not in draw({dashboard.BA_TAB_KEY: dashboard.BA_MONTHLY_TAB})
+    # the line of the chart and the sentence on hover give the same figure
+    rows, last, *_ = dashboard.read_ba_history(dashboard.get_database_version())
+    years = ba_trends.yearly_changes(rows, ba_trends.IPC, last).set_index("year")
+    if changes.idxmax() == ba_trends.BASE[0]:
+        assert ba_trends.percent(years.loc[str(ba_trends.BASE[0]), "ipc"]) in hover

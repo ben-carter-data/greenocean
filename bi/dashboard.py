@@ -5635,6 +5635,12 @@ def read_ba_products(database_version):
     )
 
 
+@st.cache_data(show_spinner=False)
+def read_ba_food_cpi(database_version):
+    """D-518: the INE food CPI of every month published, for the insight of «Histórico»."""
+    return queries.run_sql("SELECT year, month, food_index FROM ipc_monthly")
+
+
 def show_ba_context(tab, mode):
     """D-458: the green panel above the tabs says what the reader is looking at, from which month to which, and why
     each chart starts and ends where it does; it follows the tab and the period chosen."""
@@ -5784,6 +5790,9 @@ def show_ba_history(mode):
     figures = ba_trends.history(*frames, subject, last)
     st.markdown(ba_trends.history_cards(figures, last), unsafe_allow_html=True)
     show_ba_tiles(ba_trends.history_tiles(frames[0], figures, last, mode))
+    insight = ba_trends.food_cpi_insight(read_ba_food_cpi(get_database_version()))
+    if insight:  # D-518
+        st.markdown(ba_trends.insight_html(*insight), unsafe_allow_html=True)
     summaries = [ba_trends.history(*item_frames, name, last) for item_frames, name in table]
     st.markdown(ba_trends.history_table(summaries, subject), unsafe_allow_html=True)
 

@@ -32,6 +32,7 @@ ZOOM_HEIGHT = 300  # the enlarged chart, in the window its green magnifier opens
 TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 603, 230, 210
 # D-461: on a low window the charts keep their floor and the table scrolls inside its own box, under the charts.
 TABLE_RESERVED, TABLE_FLOOR = 588, 140
+INSIGHT_ROOM = 43  # D-518: the height of the green box of «Histórico», taken from the table so the page still fits
 
 # One chart of a tab: its title, the months it shows, what it measures, what follows from it, and how to draw it at a
 # width and a height.
@@ -1182,6 +1183,61 @@ def history_context(last: tuple[int, int]) -> tuple[str, str]:
     )
 
 
+def food_cpi_insight(ipc: pd.DataFrame) -> tuple[str, str, str] | None:
+    """D-518: the largest yearly jump of the INE food CPI and what came after it. Every figure is recomputed from
+    ipc_monthly, December to December over whole years, so the sentence follows the data: it says the prices did not go
+    back only while that holds. The third text, on hover, says why the line of the base year reads lower in «Cambio de
+    cada año», which starts that year in January."""
+    december = ipc[ipc["month"] == 12].set_index("year")["food_index"].sort_index()
+    if december.empty:
+        return None
+    december = december.reindex(range(int(december.index[0]), int(december.index[-1]) + 1))
+    changes = december.pct_change(fill_method=None).dropna().mul(100)
+    if changes.empty:
+        return None
+    first, peak = int(changes.index[0]), int(changes.idxmax())
+    lead = say(
+        f"Los alimentos subieron {percent(changes[peak])} en {peak} según el IPC del INE, el mayor salto desde {first}.",
+        f"Food prices rose {percent(changes[peak])} in {peak} according to the INE CPI, the largest jump since {first}.",
+    )
+    after = changes[changes.index > peak]
+    detail = ""
+    if not after.empty:
+        low, high = charts.format_percent(after.min()), charts.format_percent(after.max())
+        spread_es = f"entre {low} y {high}" if len(after) > 1 else low
+        spread_en = f"between {low} and {high}" if len(after) > 1 else low
+        latest = ipc.sort_values(["year", "month"])["food_index"].iloc[-1]
+        held = latest >= december[peak]
+        detail = say(
+            f"Desde {peak + 1} {'suben' if after.min() >= 0 else 'cambian'} {spread_es} al año: el alza se moderó"
+            + (", pero los precios no volvieron atrás." if held else "."),
+            f"Since {peak + 1} they {'rise' if after.min() >= 0 else 'change'} {spread_en} a year: the rise has slowed"
+            + (", but prices did not go back." if held else "."),
+        )
+    hover = say(
+        "IPC de alimentos del INE, de diciembre a diciembre, en años completos.",
+        "INE food CPI, from December to December, in whole years.",
+    )
+    start = ipc[(ipc["year"] == BASE[0]) & (ipc["month"] == BASE[1])]["food_index"]
+    if peak == BASE[0] and not start.empty:
+        shorter = percent((december[peak] / start.iloc[0] - 1) * 100)
+        hover += " " + say(
+            f"En «Cambio de cada año», {peak} parte en enero, el primer mes de los precios, y su raya marca {shorter}.",
+            f"In «Change of each year», {peak} starts in January, the first month of the prices, and its line reads "
+            f"{shorter}.",
+        )
+    return lead, detail, hover
+
+
+def insight_html(lead: str, detail: str, hover: str) -> str:
+    """D-518: a fact of the history in a green box, in the style of the panel above the tabs."""
+    return (
+        f'<div class="ba-context ba-insight" title="{html.escape(hover, quote=True)}">'
+        '<span class="ba-context-icon" aria-hidden="true">lightbulb</span>'
+        f"<p><b>{html.escape(lead)}</b> {html.escape(detail)}</p></div>"
+    )
+
+
 def inflation_context(last: tuple[int, int]) -> tuple[str, str]:
     """«Precios e inflación»: its months and what rising with the CPI does not prove (the note under its cards)."""
     return (
@@ -1244,6 +1300,9 @@ def build_context_css(palette: dict[str, str], green: str) -> str:
 .ba-context p {{ margin:0 !important; font-size:13px !important; line-height:1.45 !important;
   color:{palette["text"]} !important; }}
 .ba-context b {{ color:{palette["strong_text"]}; }}
+.ba-insight {{ min-height:0; padding:5px 14px; margin:0 0 20px; cursor:help; }}
+[data-testid="stMain"]:has(.ba-insight) .ba-table {{ max-height:max(calc(100vh - {TABLE_RESERVED + INSIGHT_ROOM}px),
+  {TABLE_FLOOR}px); }}
 </style>"""
 
 
