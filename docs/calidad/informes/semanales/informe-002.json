@@ -1,0 +1,406 @@
+{
+  "numero": 2,
+  "titulo": "Informe semanal de calidad N° 2",
+  "serie": "semanal",
+  "sqap": "1.13",
+  "fecha": "2026-11-04 06:06 UTC",
+  "semana": "2026-10-26",
+  "codigo_evaluado": "01bfbe7",
+  "anterior": 1,
+  "aceptables": {
+    "pruebas_dbt_pct": {
+      "min": 100,
+      "meta": 100,
+      "margen_critico": 0,
+      "tipo": "datos",
+      "medida": "cumplimiento"
+    },
+    "comparables_pct": {
+      "min": 97,
+      "meta": 97,
+      "margen_critico": 10,
+      "tipo": "datos",
+      "medida": "cumplimiento"
+    },
+    "rechazadas_pct": {
+      "max": 1,
+      "meta": 1,
+      "margen_critico": 4,
+      "tipo": "datos",
+      "medida": "falla"
+    },
+    "ausencias_region_canal": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 2,
+      "tipo": "datos",
+      "medida": "conteo"
+    },
+    "atipicos_pct": {
+      "max": 0.25,
+      "meta": 0.25,
+      "margen_critico": 0.25,
+      "tipo": "datos",
+      "medida": "falla"
+    }
+  },
+  "modo_datos": "aviso",
+  "indicadores": [
+    {
+      "clave": "pruebas_dbt_pct",
+      "nombre": [
+        "Pruebas de datos dbt superadas",
+        "dbt data tests passed"
+      ],
+      "tipo": "datos",
+      "valor": 100.0,
+      "unidad": "%",
+      "falla": 0.0,
+      "falla_aceptable": 0,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0.0
+    },
+    {
+      "clave": "comparables_pct",
+      "nombre": [
+        "Precios con comparación válida",
+        "Prices with a valid comparison"
+      ],
+      "tipo": "datos",
+      "valor": 98.1,
+      "unidad": "%",
+      "falla": 1.9,
+      "falla_aceptable": 3,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0.0
+    },
+    {
+      "clave": "rechazadas_pct",
+      "nombre": [
+        "Filas rechazadas",
+        "Rejected rows"
+      ],
+      "tipo": "datos",
+      "valor": 0.008,
+      "unidad": "%",
+      "falla": 0.008,
+      "falla_aceptable": 1,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0.0
+    },
+    {
+      "clave": "ausencias_region_canal",
+      "nombre": [
+        "Regiones o canales ausentes",
+        "Missing regions or channels"
+      ],
+      "tipo": "datos",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0
+    },
+    {
+      "clave": "atipicos_pct",
+      "nombre": [
+        "Precios atípicos de la semana",
+        "Atypical prices of the week"
+      ],
+      "tipo": "datos",
+      "valor": 0.03,
+      "unidad": "%",
+      "falla": 0.03,
+      "falla_aceptable": 0.25,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0.0
+    }
+  ],
+  "medicion": {
+    "generado": "2026-11-04 06:06 UTC",
+    "commit": "01bfbe7",
+    "python": "3.11.17",
+    "ruff": {
+      "orden": "/tmp/tools/bin/ruff check bi etl agent tests --select E,F,W",
+      "version": "ruff 0.17.2",
+      "errores": 1830,
+      "por_codigo": {
+        "E501": 1830
+      },
+      "errores_sin_largo_de_linea": 0,
+      "formato": {
+        "orden": "ruff format --check bi etl agent tests",
+        "por_reformatear": 0,
+        "ya_formateados": 156
+      }
+    },
+    "mypy": {
+      "orden": "mypy etl/etl.py etl/bronze.py etl/ine.py etl/pipeline.py bi/queries.py bi/alerts.py bi/overview.py bi/inflation_view.py bi/control.py bi/served_database.py --ignore-missing-imports --follow-imports=silent",
+      "version": "mypy 2.4.0 (compiled: yes)",
+      "modulos": 10,
+      "errores": 0,
+      "errores_revisando_cuerpos_sin_tipos": 0,
+      "por_modulo": {},
+      "funciones": 135,
+      "con_tipo_de_retorno": 135
+    },
+    "cobertura": {
+      "orden": "pytest -q -m \"not rendimiento\" --cov=bi --cov=etl --cov=agent",
+      "pruebas_ok": 1363,
+      "pruebas_omitidas": 10,
+      "salida": 0,
+      "total": 95.4,
+      "logica_critica": 93.5,
+      "modulos_criticos": {
+        "etl/etl.py": 95.8,
+        "etl/bronze.py": 97.1,
+        "etl/ine.py": 98.1,
+        "etl/pipeline.py": 91.3,
+        "bi/queries.py": 100.0,
+        "bi/alerts.py": 100.0,
+        "bi/overview.py": 73.9,
+        "bi/inflation_view.py": 98.6,
+        "bi/control.py": 96.9,
+        "bi/served_database.py": 95.3,
+        "bi/quality.py": 87.2
+      },
+      "modulos": {
+        "agent/agent.py": 87.3,
+        "bi/actions_view.py": 94.1,
+        "bi/alerts.py": 100.0,
+        "bi/app_diagrams.py": 96.5,
+        "bi/app_map.py": 100.0,
+        "bi/app_map_detail.py": 99.1,
+        "bi/architecture.py": 99.4,
+        "bi/ba_trends.py": 97.8,
+        "bi/brand_icons.py": 100.0,
+        "bi/business_analysis.py": 98.0,
+        "bi/buttons.py": 100.0,
+        "bi/channel_icons.py": 100.0,
+        "bi/channel_latest.py": 87.3,
+        "bi/charts.py": 94.1,
+        "bi/compact_table.py": 93.2,
+        "bi/configuration.py": 98.9,
+        "bi/control.py": 96.9,
+        "bi/dashboard.py": 92.8,
+        "bi/data_terms.py": 100.0,
+        "bi/database_crossings.py": 98.6,
+        "bi/database_map.py": 100.0,
+        "bi/deployment.py": 100.0,
+        "bi/devops.py": 98.4,
+        "bi/doc_diagrams.py": 100.0,
+        "bi/doc_figures.py": 99.3,
+        "bi/doc_views.py": 100.0,
+        "bi/documents_folder.py": 98.7,
+        "bi/er_diagram.py": 100.0,
+        "bi/git_workflow.py": 100.0,
+        "bi/github_actions.py": 95.5,
+        "bi/github_page.py": 98.5,
+        "bi/home_mockup.py": 90.7,
+        "bi/i18n.py": 97.9,
+        "bi/i18n_en.py": 100.0,
+        "bi/inflation_view.py": 98.6,
+        "bi/interest_map.py": 100.0,
+        "bi/lag.py": 100.0,
+        "bi/lineage.py": 98.4,
+        "bi/live_flow.py": 99.2,
+        "bi/monitoring.py": 100.0,
+        "bi/operation_center.py": 98.9,
+        "bi/overview.py": 73.9,
+        "bi/page_bar.py": 100.0,
+        "bi/project.py": 95.8,
+        "bi/quality.py": 87.2,
+        "bi/quality_evidence.py": 100.0,
+        "bi/quality_live.py": 98.1,
+        "bi/quality_method.py": 98.6,
+        "bi/quality_metrics.py": 95.0,
+        "bi/quality_view.py": 94.0,
+        "bi/quality_viewer.py": 98.9,
+        "bi/queries.py": 100.0,
+        "bi/report.py": 92.2,
+        "bi/run_monitor.py": 95.1,
+        "bi/security_map.py": 100.0,
+        "bi/security_plan.py": 86.7,
+        "bi/served_database.py": 95.3,
+        "bi/sql_explorer.py": 93.2,
+        "bi/stack_page.py": 100.0,
+        "bi/star_model.py": 100.0,
+        "bi/storage_map.py": 98.7,
+        "bi/tech_glossary.py": 100.0,
+        "bi/weeks.py": 100.0,
+        "bi/zoom.py": 100.0,
+        "etl/bronze.py": 97.1,
+        "etl/etl.py": 95.8,
+        "etl/ine.py": 98.1,
+        "etl/pipeline.py": 91.3,
+        "etl/points_of_sale.py": 88.9,
+        "etl/profile_years.py": 98.1
+      }
+    },
+    "bandit": {
+      "orden": "bandit -r bi etl agent",
+      "version": "bandit 1.9.4",
+      "alta": 0,
+      "media": 28,
+      "baja": 17,
+      "por_regla": {
+        "B105": 9,
+        "B608": 27,
+        "B405": 1,
+        "B314": 1,
+        "B101": 4,
+        "B112": 1,
+        "B404": 1,
+        "B603": 1
+      }
+    },
+    "pip_audit": {
+      "orden": "pip-audit -r <requirements>",
+      "version": "pip-audit 2.10.1",
+      "archivos": {
+        "requirements.txt": {
+          "vulnerabilidades": 0
+        },
+        "requirements-pipeline.txt": {
+          "vulnerabilidades": 0
+        }
+      }
+    },
+    "secretos": {
+      "orden": "detect-secrets scan $(git ls-files)",
+      "version": "1.5.0",
+      "archivos_revisados": 277,
+      "candidatos": 30,
+      "por_archivo": {
+        "agent/downloads/manifest.json": [
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String"
+        ],
+        "bi/app_map.py": [
+          "Secret Keyword",
+          "Secret Keyword"
+        ],
+        "bi/architecture.py": [
+          "Secret Keyword",
+          "Secret Keyword"
+        ],
+        "bi/dashboard.py": [
+          "Secret Keyword",
+          "Secret Keyword",
+          "Secret Keyword"
+        ],
+        "bi/i18n_en.py": [
+          "Secret Keyword",
+          "Secret Keyword",
+          "Secret Keyword",
+          "Secret Keyword",
+          "Secret Keyword"
+        ],
+        "bi/tech_glossary.py": [
+          "Secret Keyword"
+        ],
+        "docs/DECISIONES.md": [
+          "Secret Keyword"
+        ],
+        "etl/datos.version": [
+          "Hex High Entropy String"
+        ],
+        "tests/test_control.py": [
+          "Secret Keyword"
+        ],
+        "tests/test_github_actions.py": [
+          "Base64 High Entropy String",
+          "Base64 High Entropy String",
+          "Hex High Entropy String"
+        ],
+        "tests/test_run_monitor.py": [
+          "Base64 High Entropy String"
+        ]
+      },
+      "falsos_positivos": 30,
+      "sin_clasificar": 0,
+      "historial_con_patrones_de_claves": 0,
+      "nota": "gitleaks no está instalado en este equipo; se usó detect-secrets y una búsqueda de patrones en el historial"
+    },
+    "dbt": {
+      "modelos_por_capa": {
+        "staging": 3,
+        "intermediate": 4,
+        "marts": 10
+      },
+      "pruebas_sql_propias": 5,
+      "ultima_construccion": {
+        "modelos_ok": 17,
+        "pruebas_ok": 31,
+        "pruebas_total": 31
+      }
+    },
+    "pruebas": {
+      "pruebas": 1373,
+      "archivos_de_prueba": 76
+    },
+    "datos": {
+      "orden": "python scripts/medir_calidad.py (función measure_data)",
+      "semana": "2026-10-26",
+      "precios_semana": 868,
+      "con_semana_anterior": 737,
+      "con_comparacion": 723,
+      "pct_comparacion": 98.1,
+      "reapariciones": 131,
+      "regiones_ausentes": [],
+      "canales_ausentes": [],
+      "regiones_canales_ausentes": 0,
+      "precios_atipicos": 1,
+      "precios_semana_base": 3300,
+      "pct_atipicos": 0.03,
+      "series_activas": 1182,
+      "series_con_dato": 868,
+      "pct_series_con_dato": 73.4,
+      "dias_desde_ultima_semana": 3,
+      "dias_desde_ultima_carga": 1,
+      "filas_leidas": 2541374,
+      "filas_rechazadas": 201,
+      "pct_rechazadas": 0.008,
+      "medido": "2026-11-04"
+    }
+  }
+}
