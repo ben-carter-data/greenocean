@@ -87,6 +87,10 @@ UNIT_EACH = "unidad"
 UNIT_LITER = "litro"
 # Units whose price is already expressed per kilo, per unit or per liter.
 NORMALIZED_UNIT_BY_PREFIX = {"$/kilo": UNIT_KILO, "$/unidad": UNIT_EACH, "$/litro": UNIT_LITER}
+# D-520: ODEPA writes a hundred as a word: "$/cien unidades" is the price of 100 units.
+HUNDRED_PREFIX = "$/cien"
+# D-520: a tray of small baskets: "12 canastillos 125 gramos" is 12 x 125 grams, 1.5 kilos.
+UNIT_BASKETS_PATTERN = re.compile(r"(\d+) canastillos (\d+(?:,\d+)?) ?(?:gramos|grs)\b")
 UNIT_NUMBER_PATTERN = re.compile(r"\d+(?:,\d+)?")
 # A quantity followed by its measure: "18 kilos", "15 unidades", "900 ml".
 UNIT_QUANTITY_PATTERN = re.compile(r"(\d+(?:,\d+)?) ?(kilos?|unidades|gramos|grs|litros?|ml)\b")
@@ -366,12 +370,20 @@ def convert_unit(unit_text: str) -> tuple[str | None, float | None]:
     for prefix, normalized_unit in NORMALIZED_UNIT_BY_PREFIX.items():
         if text.startswith(prefix):
             return normalized_unit, 1.0
-    # Two numbers mean a range ("1,5 a 2 kilos") or a pack of packs
-    # ("12 canastillos 125 gramos"): there is no single quantity to divide by.
+    if text.startswith(HUNDRED_PREFIX):
+        return UNIT_EACH, 100.0
+    baskets_match = UNIT_BASKETS_PATTERN.search(text)
+    if baskets_match:
+        return UNIT_KILO, int(baskets_match.group(1)) * float(baskets_match.group(2).replace(",", ".")) * 0.001
+    # Two numbers mean a range ("1,5 a 2 kilos"): there is no single quantity to divide by.
     if len(UNIT_NUMBER_PATTERN.findall(text)) != 1:
         return None, None
     quantity_match = UNIT_QUANTITY_PATTERN.search(text)
     if quantity_match is None:
+        return None, None
+    # D-520: a dozen of packs of units: its five rows of 2022 are 12 x 5 units, its row of 2024 fits a single pack.
+    # The source does not use it one way only, so it has no safe reading and no price.
+    if "docena" in text and quantity_match.group(2) == "unidades":
         return None, None
     normalized_unit, measure_size = NORMALIZED_UNIT_BY_MEASURE[quantity_match.group(2)]
     quantity = float(quantity_match.group(1).replace(",", ".")) * measure_size

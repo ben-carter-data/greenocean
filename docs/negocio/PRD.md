@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.58 |
+| Versión | 3.59 |
 | Fecha | 04-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -278,3 +278,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.56 | 04-11-2026 | «Relaciones» en Consultas SQL: cada grupo de vistas conectadas con su color: datos, registro de cargas y dbt Core (RF-06, D-517) |
 | 3.57 | 04-11-2026 | «Análisis (Histórico)»: un cuadro verde con el mayor salto anual del IPC de alimentos y lo que vino después, calculado desde la Base DuckDB (D-518) |
 | 3.58 | 04-11-2026 | «Relaciones» en Consultas SQL dice lo mismo que «Modelo de datos»: las mismas relaciones y claves (RF-06, D-519) |
+| 3.59 | 04-11-2026 | Cada unidad de venta de ODEPA se lee como se revisó a mano: «cien» y «canastillos» reciben precio, y una docena sin lectura segura queda sin él (D-520) |

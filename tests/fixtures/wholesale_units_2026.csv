@@ -9,7 +9,7 @@ $/atado 7 kilos,kilo,7
 $/bandeja 10 kilos,kilo,10
 $/bandeja 10 kilos empedrada,kilo,10
 $/bandeja 10 kilos granel,kilo,10
-$/bandeja 12 canastillos 125 gramos,,
+$/bandeja 12 canastillos 125 gramos,kilo,1.5
 $/bandeja 12 kilos,kilo,12
 $/bandeja 13 kilos,kilo,13
 $/bandeja 15 kilos,kilo,15
@@ -87,7 +87,7 @@ $/caja 70 unidades,unidad,70
 $/caja 8 kilos,kilo,8
 $/caja 8 unidades,unidad,8
 $/caja 80 unidades,unidad,80
-$/cien unidades (volumen en unidades),,
+$/cien unidades (volumen en unidades),unidad,100
 $/cuna 10 kilos,kilo,10
 $/docena de 3 kilos,kilo,3
 $/docena de atados,,

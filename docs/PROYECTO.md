@@ -65,9 +65,9 @@ El data warehouse (`etl/datos.duckdb`, la base servida) es un modelo estrella: u
 |---|---|---|---|
 | RN-01 | La convierte; si el texto no se puede leer, la rechaza con motivo `UNREADABLE_VALUE`. | ODEPA escribe los precios con coma decimal; sin convertirlos no se puede calcular. | El tomate Semiduro Extra del 20-04-2026 en Lo Valledor viene como `12000,0000` y se carga como 12.000. |
 | RN-02 | La conserva y separa su producto en tres partes. | Así el consumidor y el mayorista usan la misma clave. | — |
-| RN-03 | La conserva con su precio por kilo. | Comparar una caja de 18 kilos con un kilo exige llevar ambos al kilo. | `$/bandeja 18 kilos` a $12.000 son $666,67 por kilo. |
-| RN-04 | La conserva con su precio por unidad. | Igual que RN-03, para lo que se vende por unidad. | — |
-| RN-05 | La conserva sin precio comparable y la marca `UNIDAD_NO_CONVERTIBLE`. | Un atado no tiene peso declarado; inventarlo daría márgenes falsos (D-008). | — |
+| RN-03 | La conserva con su precio por kilo. | Comparar una caja de 18 kilos con un kilo exige llevar ambos al kilo. | `$/bandeja 18 kilos` a $12.000 son $666,67 por kilo. `$/bandeja 12 canastillos 125 gramos` son 1,5 kilos (D-520). |
+| RN-04 | La conserva con su precio por unidad. | Igual que RN-03, para lo que se vende por unidad. | `$/cien unidades` son 100 unidades (D-520). |
+| RN-05 | La conserva sin precio comparable y la marca `UNIDAD_NO_CONVERTIBLE`. | Un atado no tiene peso declarado; inventarlo daría márgenes falsos (D-008). | `$/docena de paquetes 5 unidades`: la fuente no la usa siempre igual (D-520). |
 | RN-06 | No calcula margen si las unidades no coinciden. | Un precio por unidad no se compara con uno por kilo. | — |
 | RN-07 | Junta los días de la semana en un precio, pesando más los días con más volumen. | Un día con poca venta no debe pesar lo mismo que uno con mucha. | Las 4 filas de esa semana dan (666,67 × 940 + 694,44 × 160) / 1.100 = 670,71 por kilo. |
 | RN-08 | Asigna cada día a su lunes. | Es la semana del consumidor; sin ella no hay cruce. | — |

@@ -29,6 +29,7 @@ DATA_FILES = {
     "test_report",
     "test_schema",
     "test_served_database",
+    "test_unit_review",
 }
 
 

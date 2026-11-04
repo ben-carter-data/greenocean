@@ -2140,6 +2140,58 @@
           "referencia": "D-519"
         }
       ]
+    },
+    {
+      "id": "F-38",
+      "categoria": "datos",
+      "falla": [
+        "La lectura de las unidades de ODEPA daba una cifra falsa y dejaba sin precio unidades exactas",
+        "Reading ODEPA's units gave a false figure and left exact units without a price"
+      ],
+      "deteccion": [
+        "El autor pidió revisar las filas sin unidad; cada unidad se comparó con los precios crudos",
+        "The author asked to review the rows without a unit; each unit was compared with the raw prices"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La regla leía una cantidad sin ver la docena, y no entendía «cien» ni «canastillos»",
+        "The rule read a quantity without seeing the dozen, and did not understand «cien» or «canastillos»"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "La fila falsa estaba marcada ATIPICO y no entraba a los indicadores",
+        "The false row was flagged ATIPICO and did not enter the indicators"
+      ],
+      "correctiva": [
+        "Regla corregida en la ETL y en dbt; las 199 unidades, revisadas a mano en una lista con su prueba (D-520)",
+        "Rule fixed in the ETL and in dbt; the 199 units reviewed by hand in a list with its test (D-520)"
+      ],
+      "estacion": 14,
+      "caso_real": "D-520",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-04",
+          "ocurrencia": [
+            "Betarraga en La Araucanía, semana del 4 abr 2022, publicaba $1.870 por unidad; la semana anterior, $158.",
+            "Betarraga in La Araucanía, week of 4 Apr 2022, published $1,870 per unit; the week before, $158."
+          ],
+          "diagnostico": [
+            "`$/docena de paquetes 5 unidades` se dividía por 5; «cien» y «canastillos» quedaban sin precio.",
+            "`$/docena de paquetes 5 unidades` was divided by 5; «cien» and «canastillos» had no price."
+          ],
+          "solucion": [
+            "Esa docena queda sin precio; «cien» son 100 unidades y «12 canastillos 125 gramos», 1,5 kilos.",
+            "That dozen has no price; «cien» is 100 units and «12 canastillos 125 gramos» is 1.5 kilos."
+          ],
+          "comentario": [
+            "Antes → después: sin unidad 12.626 → 12.185; con precio 807.611 → 807.945; alertas 4.057 → 4.071.",
+            "Before → after: without a unit 12,626 → 12,185; priced 807,611 → 807,945; alerts 4,057 → 4,071."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-520"
+        }
+      ]
     }
   ]
 }

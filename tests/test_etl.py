@@ -197,9 +197,19 @@ def test_rn05_unit_with_range_or_without_quantity_is_not_convertible():
         "$/docena de atados",
         "$/caja 36 atados",
         "$/atado 300 a 500 gramos",
-        "$/bandeja 12 canastillos 125 gramos",
+        "$/docena de paquetes 5 unidades",  # D-520: the source does not use it one way only
     ]:
         assert etl.convert_unit(unit) == (None, None)
+
+
+def test_d520_a_hundred_and_a_tray_of_baskets_have_an_exact_reading():
+    assert etl.convert_unit("$/cien") == (etl.UNIT_EACH, 100)
+    assert etl.convert_unit("$/cien unidades (volumen en unidades)") == (etl.UNIT_EACH, 100)
+    assert etl.convert_unit("$/cien en rama (volumen en unidades)") == (etl.UNIT_EACH, 100)
+    assert etl.convert_unit("$/bandeja 12 canastillos 125 gramos") == (etl.UNIT_KILO, pytest.approx(1.5))
+    assert etl.convert_unit("$/bandeja 12 canastillos 170 gramos") == (etl.UNIT_KILO, pytest.approx(2.04))
+    # the total weight of a dozen keeps its reading: only a dozen of units has none
+    assert etl.convert_unit("$/docena de atados (3 kilos)") == (etl.UNIT_KILO, 3)
 
 
 def test_rn03_grams_become_kilos_and_milliliters_become_liters():
