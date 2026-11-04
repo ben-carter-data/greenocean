@@ -101,7 +101,7 @@ def test_d372_each_step_opens_with_its_number_in_a_big_circle_and_a_readable_tex
 
     assert home_mockup.step_chip(3) == '<span class="mock-step"><b>3</b><span>Elige una familia</span></span>'
     css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
-    assert "width:30px;height:30px;border-radius:50%" in css and "font-size:13px;font-weight:600" in css
+    assert "width:30px;height:30px;border-radius:50%" in css and "font-size:13px;font-weight:500" in css
     for text in home_mockup.STEP_TEXTS.values():
         assert text in i18n_en.PAGES, text
 

@@ -30,7 +30,7 @@
 .st-key-home_scope_bar [data-testid="stButton"] {flex:none!important;}
 .st-key-home_scope_bar button {min-height:32px!important;padding:4px 12px!important;font-size:12px!important;}
 .mock-active-scope {display:flex;align-items:center;gap:7px 13px;min-width:0;color:var(--mock-muted);font-size:11px;line-height:1.35;}
-.mock-active-scope .mock-scope-label {color:var(--mock-fall);font-size:9px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;}
+.mock-active-scope .mock-scope-label {color:var(--mock-fall);font-size:9px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;}
 .mock-active-scope span {display:flex;gap:5px;min-width:0;overflow-wrap:anywhere;}
 .mock-active-scope b {color:var(--mock-ink);font-weight:500;white-space:nowrap;}
 .mock-active-scope i {width:3px;height:3px;flex:none;border-radius:50%;background:var(--mock-border);}
@@ -42,7 +42,7 @@
 .st-key-home_product_scope > div:first-child {flex:1 1 520px;min-width:0;}
 .st-key-home_product_scope [data-testid="stButton"] {flex:none;}
 .mock-product-scope {display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;color:var(--mock-ink);font-size:12px;line-height:1.45;}
-.mock-product-scope-kicker {color:var(--mock-fall);font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;}
+.mock-product-scope-kicker {color:var(--mock-fall);font-size:10px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;}
 .mock-product-scope strong {font-size:14px;overflow-wrap:anywhere;}
 .mock-product-scope > span:last-child {color:var(--mock-muted);}
 .mock-comparison-context {padding:8px 13px;margin:4px 0 6px;background:__PANEL__;border:1px solid var(--mock-border);border-radius:9px;}
@@ -53,9 +53,9 @@
 .mock-comparison-facts strong,.mock-comparison-facts span {display:block;font-size:12px;line-height:1.4;}
 .mock-comparison-facts span {color:var(--mock-muted);margin-top:3px;}
 .mock-comparison-facts .mock-fact-icon {display:grid;place-items:center;position:relative;width:23px;height:23px;margin:0 0 3px;color:var(--mock-fall);background:var(--mock-soft);border:1px solid var(--mock-border);border-radius:7px;}
-.mock-kicker {display:block;margin-bottom:5px;color:var(--mock-fall);font-size:10px;line-height:1.2;font-weight:600;letter-spacing:.13em;text-transform:uppercase;}
+.mock-kicker {display:block;margin-bottom:5px;color:var(--mock-fall);font-size:10px;line-height:1.2;font-weight:500;letter-spacing:.13em;text-transform:uppercase;}
 .greenocean-mockup p.mock-map-help {margin:-7px 0 0!important;text-align:center;color:var(--mock-muted);font-size:10px!important;line-height:1.35!important;}
-.mock-fact-icon.what {font-size:16px;font-weight:600;line-height:1;}
+.mock-fact-icon.what {font-size:16px;font-weight:500;line-height:1;}
 .mock-fact-icon.when::before {content:"";width:13px;height:13px;border:1.6px solid currentColor;border-radius:50%;}
 .mock-fact-icon.when::after {content:"";position:absolute;width:4px;height:5px;top:6px;left:11px;border-left:1.5px solid currentColor;border-bottom:1.5px solid currentColor;}
 .mock-fact-icon.where::before {content:"";width:11px;height:11px;border:1.7px solid currentColor;border-radius:50% 50% 50% 0;transform:rotate(-45deg) translate(1px,-1px);}
@@ -63,7 +63,7 @@
 .mock-fact-icon.source::before {content:"";width:12px;height:14px;border:1.5px solid currentColor;border-radius:2px;background:linear-gradient(currentColor,currentColor) 3px 5px/6px 1px no-repeat,linear-gradient(currentColor,currentColor) 3px 8px/6px 1px no-repeat,linear-gradient(currentColor,currentColor) 3px 11px/4px 1px no-repeat;}
 .mock-top-n-guide {display:flex;align-items:center;gap:10px;min-height:34px;padding:4px 2px 0;color:var(--mock-muted);font-size:11px;line-height:1.35;}
 .mock-top-n-guide strong {color:var(--mock-ink);}
-.mock-row-limit {display:grid;place-items:center;min-width:34px;height:28px;padding:0 8px;border:1px solid var(--mock-fall);border-radius:7px;color:var(--mock-fall);background:color-mix(in srgb,var(--mock-fall) 10%,__PANEL__);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;animation:mock-row-count 850ms ease-out both;}
+.mock-row-limit {display:grid;place-items:center;min-width:34px;height:28px;padding:0 8px;border:1px solid var(--mock-fall);border-radius:7px;color:var(--mock-fall);background:color-mix(in srgb,var(--mock-fall) 10%,__PANEL__);font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;animation:mock-row-count 850ms ease-out both;}
 @keyframes mock-row-count {0% {transform:scale(.82);box-shadow:0 0 0 0 color-mix(in srgb,var(--mock-fall) 48%,transparent);}45% {transform:scale(1.08);box-shadow:0 0 0 8px color-mix(in srgb,var(--mock-fall) 16%,transparent);}100% {transform:scale(1);box-shadow:0 0 0 0 transparent;}}
 .greenocean-mockup .mock-comparison-context p {font-size:11px!important;line-height:1.35!important;color:var(--mock-muted);margin:6px 0 0!important;}
 .mock-metrics {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--mock-border);border-bottom:1px solid var(--mock-border);padding:12px 0;}
@@ -100,14 +100,14 @@ a.mock-family-tile:hover:after,a.mock-family-tile:focus-visible:after {transform
 .mock-family-product-image {display:block;width:auto;max-width:108%;height:61px;object-fit:contain;filter:drop-shadow(0 8px 7px #07162c66);transform:translateY(-4px) scale(1.02);transition:transform .32s cubic-bezier(.2,.8,.2,1),filter .32s ease;}
 .mock-family-product-image.fallback {font-size:29px;line-height:1;}
 a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-visible .mock-family-product-image {transform:translateY(-7px) scale(1.09);filter:drop-shadow(0 12px 9px #07162c88);}
-.mock-family-tile-name {position:relative;z-index:1;display:flex;align-items:center;justify-content:center;flex:1;max-width:100%;font-size:12px;line-height:1.15;font-weight:680;overflow-wrap:anywhere;}
+.mock-family-tile-name {position:relative;z-index:1;display:flex;align-items:center;justify-content:center;flex:1;max-width:100%;font-size:12px;line-height:1.15;font-weight:600;overflow-wrap:anywhere;}
 .mock-family-tile-family {font-size:10px;line-height:1.25;color:var(--mock-muted);overflow-wrap:anywhere;}
 .mock-family-tile-change {display:block;margin-top:4px;font-size:11px;line-height:1.15;color:var(--tile-accent);white-space:nowrap;}
 .mock-family-tile-change b {font-size:15px;font-variant-numeric:tabular-nums;}
 .mock-family-tile-action {display:block;margin-top:3px;font-size:10px;line-height:1.15;color:var(--mock-muted);}
 .mock-family-chart {background:__PANEL__;border:1px solid var(--mock-border);border-radius:10px;padding:11px 14px;min-width:0;}
 .mock-family-heading {display:flex;justify-content:space-between;align-items:start;gap:16px;padding-bottom:9px;}
-.greenocean-mockup .mock-family-heading h2 {font-size:19px!important;line-height:1.2!important;font-weight:600;color:var(--mock-ink);}
+.greenocean-mockup .mock-family-heading h2 {font-size:19px!important;line-height:1.2!important;font-weight:500;color:var(--mock-ink);}
 .greenocean-mockup .mock-family-heading p {font-size:12px!important;line-height:1.45!important;color:var(--mock-muted);margin-top:4px!important;}
 .mock-family-legend {font-size:11px;color:var(--mock-muted);white-space:nowrap;}
 .mock-family-legend i {display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--mock-rise);margin:0 4px 0 10px;}
@@ -118,13 +118,13 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-family-name {display:flex;align-items:center;gap:10px;min-width:0;font-size:13px;line-height:1.25;}
 .mock-family-row-image {display:block;width:28px;height:25px;flex:none;object-fit:contain;filter:drop-shadow(0 3px 3px #07162c55);}
 .mock-family-row-image.fallback {font-size:18px;line-height:25px;text-align:center;}
-.mock-family-name strong {font-weight:600;overflow-wrap:anywhere;}
+.mock-family-name strong {font-weight:500;overflow-wrap:anywhere;}
 .mock-family-track {display:block;height:20px;position:relative;background:linear-gradient(to right,var(--mock-soft) 0 49.75%,var(--mock-border) 49.75% 50.25%,var(--mock-soft) 50.25% 100%);border-radius:10px;overflow:hidden;}
 .mock-family-bar {position:absolute;top:3px;height:14px;border-radius:7px;}
 .mock-family-bar.rise {left:50%;background:var(--mock-rise);}
 .mock-family-bar.fall {right:50%;background:var(--mock-fall);}
 .mock-family-zero {position:absolute;left:calc(50% - 5px);top:5px;width:10px;height:10px;border-radius:50%;background:var(--mock-muted);}
-.mock-family-value {font-size:16px;font-weight:600;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.mock-family-value {font-size:16px;font-weight:500;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
 .mock-family-state {display:flex;align-items:center;gap:7px;font-size:12px;white-space:nowrap;}
 .mock-movement-icon {display:block;position:relative;width:28px;height:28px;flex:none;filter:drop-shadow(0 2px 2px #07172b55);transform:scale(.83);transform-origin:center;}
 .mock-movement-icon i {display:block;position:absolute;bottom:4px;width:7px;border-radius:1px;background:linear-gradient(105deg,#a9b2bf,#657080 62%,#394453);box-shadow:2px -1px 0 #c3cbd4,2px 1px 0 #273342;}
@@ -157,7 +157,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-family-detail summary:hover {background:color-mix(in srgb,var(--mock-soft) 80%,var(--mock-fall));}
 .mock-family-table-scroll {max-height:455px;overflow:auto;scrollbar-width:thin;}
 .mock-family-table-scroll table {width:100%;min-width:940px;border-collapse:collapse;font-size:12px;line-height:1.4;}
-.mock-family-table-scroll th {position:sticky;top:0;z-index:1;background:__PANEL__;color:var(--mock-muted);font-weight:600;text-align:left;white-space:nowrap;padding:9px 10px;border-bottom:1px solid var(--mock-border);}
+.mock-family-table-scroll th {position:sticky;top:0;z-index:1;background:__PANEL__;color:var(--mock-muted);font-weight:500;text-align:left;white-space:nowrap;padding:9px 10px;border-bottom:1px solid var(--mock-border);}
 .mock-family-table-scroll td {padding:9px 10px;border-bottom:1px solid var(--mock-border);vertical-align:top;overflow-wrap:anywhere;}
 .mock-family-table-scroll tr:last-child td {border-bottom:0;}
 .mock-family-table-scroll th:nth-child(n+7):nth-child(-n+9),.mock-family-table-scroll td:nth-child(n+7):nth-child(-n+9) {text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
@@ -167,16 +167,16 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 @keyframes mock-summary-count {0% {color:var(--mock-fall);text-shadow:0 0 9px var(--mock-fall);}100% {color:var(--mock-muted);text-shadow:none;}}
 .mock-family-table-scroll td.rise {color:var(--mock-rise);}.mock-family-table-scroll td.fall {color:var(--mock-fall);}.mock-family-table-scroll td.neutral {color:var(--mock-muted);}
 .greenocean-mockup .mock-panel h2 {font-family:inherit;font-size:20px!important;font-weight:500;line-height:1.3;letter-spacing:-.35px;color:var(--mock-ink);}
-.greenocean-mockup .mock-panel h3 {font-family:inherit;font-size:15px!important;font-weight:600;line-height:1.4;margin-bottom:4px;}
+.greenocean-mockup .mock-panel h3 {font-family:inherit;font-size:15px!important;font-weight:500;line-height:1.4;margin-bottom:4px;}
 .greenocean-mockup p.mock-panel-subtitle,.greenocean-mockup p.mock-table-instruction {font-size:12px!important;line-height:1.5!important;color:var(--mock-muted);margin:5px 0 0!important;}
 .mock-table-scroll {overflow:auto;max-width:100%;max-height:540px;margin-top:12px;scrollbar-width:thin;}
 .mock-price-table table {width:100%;border-collapse:collapse;font-size:12px;line-height:1.45;min-width:710px;}
-.mock-price-table th {background:var(--mock-soft);font-weight:600;text-align:left;padding:9px 8px;border-bottom:1px solid var(--mock-border);white-space:nowrap;position:sticky;top:0;z-index:1;}
+.mock-price-table th {background:var(--mock-soft);font-weight:500;text-align:left;padding:9px 8px;border-bottom:1px solid var(--mock-border);white-space:nowrap;position:sticky;top:0;z-index:1;}
 .mock-price-table td {padding:10px 8px;border-bottom:1px solid var(--mock-border);font-variant-numeric:tabular-nums;vertical-align:top;}
 .mock-price-table td:nth-child(n+3):nth-child(-n+6),.mock-price-table th:nth-child(n+3):nth-child(-n+6) {text-align:right;white-space:nowrap;}
 .mock-price-table td:first-child {min-width:150px;max-width:230px;white-space:normal;overflow-wrap:break-word;}
 .mock-price-table td:nth-child(2) {min-width:130px;max-width:190px;white-space:normal;}
-.mock-product-link {color:var(--mock-ink)!important;text-decoration:none!important;font-weight:600;}
+.mock-product-link {color:var(--mock-ink)!important;text-decoration:none!important;font-weight:500;}
 .mock-product-link:hover {text-decoration:underline!important;}
 .mock-price-table tr.selected {background:var(--mock-soft);}
 .mock-price-table tr.selected td:first-child {box-shadow:inset 3px 0 #0783ff;}
@@ -184,15 +184,15 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-signal {min-width:100px;font-size:11px;white-space:normal;}
 .mock-signal a {display:block;margin-top:5px;color:var(--mock-fall)!important;text-decoration:none!important;}
 .greenocean-mockup .rise {color:var(--mock-rise);}.greenocean-mockup .fall {color:var(--mock-fall);}.greenocean-mockup .neutral {color:var(--mock-muted);}
-.mock-change-value {display:block;font-weight:600;}
+.mock-change-value {display:block;font-weight:500;}
 .mock-change-track {display:block;width:100%;height:3px;margin-top:7px;background:var(--mock-soft);}
 .mock-change-track>span {display:block;height:100%;background:currentColor;opacity:.7;}
 .mock-coverage-change {display:block;font-size:11px;line-height:1.45;color:var(--mock-muted);margin-top:4px!important;}
 .greenocean-mockup p.mock-coverage-change {font-size:11px!important;line-height:1.45!important;}
-.greenocean-mockup p.mock-selected-name {font-size:17px!important;font-weight:600;line-height:1.4!important;margin:12px 0 5px!important;}
+.greenocean-mockup p.mock-selected-name {font-size:17px!important;font-weight:500;line-height:1.4!important;margin:12px 0 5px!important;}
 .mock-price-pair {display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 8px;}
 .mock-price-pair dt {font-size:11px;line-height:1.5;color:var(--mock-muted);}
-.mock-price-pair dd {font-size:23px;font-weight:600;line-height:1.4;margin:2px 0;font-variant-numeric:tabular-nums;}
+.mock-price-pair dd {font-size:23px;font-weight:500;line-height:1.4;margin:2px 0;font-variant-numeric:tabular-nums;}
 .greenocean-mockup p.mock-selected-change {font-size:13px!important;line-height:1.5!important;margin-bottom:10px!important;}
 .mock-history {border-top:1px solid var(--mock-border);margin-top:16px;padding-top:14px;}
 .mock-history-title {color:var(--mock-muted);}
@@ -292,18 +292,18 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 
 /* Overview of the Dashboard (D-092): header with summaries, map, families and products. */
 .greenocean-mockup .mock-intro {display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:6px 0 8px;}
-.greenocean-mockup .mock-intro h1 {font-size:24px!important;font-weight:680;letter-spacing:-.5px;line-height:1.2;}
+.greenocean-mockup .mock-intro h1 {font-size:24px!important;font-weight:600;letter-spacing:-.5px;line-height:1.2;}
 .greenocean-mockup .mock-intro p {font-size:12px!important;color:var(--mock-muted);margin-top:3px!important;}
 .mock-head-side {display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
 .mock-head-chips {display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
 .mock-head-chip {border:1px solid var(--mock-border);border-radius:8px;background:__PANEL__;padding:5px 11px;min-width:120px;}
 .mock-head-chip span {display:block;font-size:10px;color:var(--mock-muted);line-height:1.3;}
 .mock-head-chip div {font-size:12.5px;line-height:1.35;white-space:nowrap;}
-.mock-head-chip b {font-weight:600;}.mock-head-chip b.rise {color:var(--mock-rise);}.mock-head-chip b.fall {color:var(--mock-fall);}
+.mock-head-chip b {font-weight:500;}.mock-head-chip b.rise {color:var(--mock-rise);}.mock-head-chip b.fall {color:var(--mock-fall);}
 .st-key-home_overview [data-testid="stHorizontalBlock"] {align-items:stretch;gap:12px;}
 .st-key-home_overview [data-testid="stColumn"] > div {height:100%;gap:12px;}
 .mock-regional {height:100%;border:1px solid var(--mock-border);border-radius:12px;background:__PANEL__;padding:12px 14px 8px;}
-.greenocean-mockup .mock-regional h2,.greenocean-mockup .mock-movement h2,.greenocean-mockup .mock-products-heading h2 {font-size:15px!important;font-weight:600;line-height:1.3;color:var(--mock-ink);}
+.greenocean-mockup .mock-regional h2,.greenocean-mockup .mock-movement h2,.greenocean-mockup .mock-products-heading h2 {font-size:15px!important;font-weight:500;line-height:1.3;color:var(--mock-ink);}
 .greenocean-mockup .mock-regional p,.greenocean-mockup .mock-movement-heading p {font-size:11px!important;line-height:1.4!important;color:var(--mock-muted);margin-top:2px!important;}
 .mock-regional-legend {display:flex;gap:12px;margin:5px 0 2px;font-size:10px;color:var(--mock-muted);}
 .mock-regional-legend span {display:inline-flex;align-items:center;gap:4px;}
@@ -324,7 +324,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-region-row.missing .mock-region-name {font-weight:450;fill:var(--mock-muted);}
 .mock-region-empty {font-family:inherit;font-size:9.5px;fill:var(--mock-muted);}
 .mock-region-pill {fill:#8d949e;}.mock-region-pill.rise {fill:var(--mock-rise);}.mock-region-pill.fall {fill:var(--mock-fall);}
-.mock-region-pill-text {font-family:inherit;font-size:10.5px;font-weight:600;fill:#fff;font-variant-numeric:tabular-nums;}
+.mock-region-pill-text {font-family:inherit;font-size:10.5px;font-weight:500;fill:#fff;font-variant-numeric:tabular-nums;}
 .mock-movement {border:1px solid var(--mock-border);border-radius:12px;background:__PANEL__;padding:12px 14px 10px;}
 .mock-movement-heading {margin-bottom:2px;}
 .mock-movement-row.mock-movement-axis {min-height:16px;font-size:10px;color:var(--mock-muted);}
@@ -333,7 +333,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-movement-row {display:grid;grid-template-columns:12px minmax(138px,1.3fr) minmax(160px,2.2fr) 70px 64px 60px 14px;gap:0 8px;align-items:center;min-height:31px;padding:2px 8px;border:1px solid transparent;border-radius:7px;color:var(--mock-ink)!important;text-decoration:none!important;font-size:12.5px;}
 .mock-movement-row:hover {background:var(--mock-soft);}
 .mock-movement-row.selected {background:color-mix(in srgb,var(--mock-fall) 8%,__PANEL__);border-color:var(--mock-fall);}
-.mock-movement-row strong {font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mock-movement-row strong {font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mock-movement-dot {width:8px;height:8px;border-radius:50%;background:#8d949e;}
 .mock-movement-row.rise .mock-movement-dot,.mock-movement-row.rise .mock-movement-bar {background:var(--mock-rise);}
 .mock-movement-row.fall .mock-movement-dot,.mock-movement-row.fall .mock-movement-bar {background:var(--mock-fall);}
@@ -346,10 +346,10 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-movement-state {font-size:11px;}.mock-movement-chevron {color:var(--mock-muted);font-size:16px;}
 /* D-492: in step 3, the price the alerts use sits at the right edge; each level is a tint of its alert's colour. */
 .mock-alert-scope {margin-left:auto;font-size:11.5px;color:var(--mock-muted);white-space:nowrap;}
-.mock-level {display:inline-block;padding:2px 8px;border-radius:6px;font-weight:600;white-space:nowrap;color:var(--mock-ink);}
+.mock-level {display:inline-block;padding:2px 8px;border-radius:6px;font-weight:500;white-space:nowrap;color:var(--mock-ink);}
 .mock-level.rise-3 {background:color-mix(in srgb,__ALERT_RISE__ 48%,transparent);}.mock-level.rise-2 {background:color-mix(in srgb,__ALERT_RISE__ 30%,transparent);}.mock-level.rise-1 {background:color-mix(in srgb,__ALERT_RISE__ 15%,transparent);}
 .mock-level.drop-3 {background:color-mix(in srgb,__ALERT_DROP__ 48%,transparent);}.mock-level.drop-2 {background:color-mix(in srgb,__ALERT_DROP__ 30%,transparent);}.mock-level.drop-1 {background:color-mix(in srgb,__ALERT_DROP__ 15%,transparent);}
-.mock-alert-mark {display:inline-flex;align-items:center;padding:2px 6px;border-radius:999px;font-size:11px;font-weight:600;line-height:1.2;text-decoration:none!important;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.mock-alert-mark {display:inline-flex;align-items:center;padding:2px 6px;border-radius:999px;font-size:11px;font-weight:500;line-height:1.2;text-decoration:none!important;font-variant-numeric:tabular-nums;white-space:nowrap;}
 .mock-alert-mark.rise {color:__ALERT_RISE__!important;background:color-mix(in srgb,__ALERT_RISE__ 16%,transparent);}
 .mock-alert-mark.fall {color:__ALERT_DROP__!important;background:color-mix(in srgb,__ALERT_DROP__ 16%,transparent);}
 .mock-alert-mark.on {box-shadow:inset 0 0 0 1px currentColor;}
@@ -361,11 +361,11 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-home_products_direction [data-testid="stSelectbox"] > div:last-child {flex:1;min-width:0;}
 .st-key-home_products_direction [data-baseweb="select"] > div {min-height:32px;font-size:12.5px;}
 .mock-products-heading {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.mock-products-chip {font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--mock-soft);}
+.mock-products-chip {font-size:11px;font-weight:500;padding:2px 7px;border-radius:5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--mock-soft);}
 .mock-products-chip.rise {color:var(--mock-rise);background:color-mix(in srgb,var(--mock-rise) 11%,__PANEL__);}
 .mock-products-chip.fall {color:var(--mock-fall);background:color-mix(in srgb,var(--mock-fall) 11%,__PANEL__);}
 .mock-products-scope {font-size:11px;color:var(--mock-muted);}
-.mock-history-button {display:flex;justify-content:center;align-items:center;height:32px;border:1px solid var(--mock-fall);border-radius:7px;color:var(--mock-fall)!important;font-size:12.5px;font-weight:600;text-decoration:none!important;white-space:nowrap;}
+.mock-history-button {display:flex;justify-content:center;align-items:center;height:32px;border:1px solid var(--mock-fall);border-radius:7px;color:var(--mock-fall)!important;font-size:12.5px;font-weight:500;text-decoration:none!important;white-space:nowrap;}
 .mock-history-button:hover {background:color-mix(in srgb,var(--mock-fall) 10%,transparent);}
 .mock-products-table {max-height:calc(100vh - 610px);min-height:120px;overflow:auto;border:1px solid var(--mock-border);border-radius:8px;}
 .mock-products-table table {width:100%;border-collapse:collapse;font-size:12px;}
@@ -379,10 +379,10 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
   background:var(--mock-soft);border:1px solid var(--mock-border);border-radius:8px;box-shadow:0 12px 28px -12px #0007;font-size:12px;}
 .mock-regions:hover .mock-regions-tip,.mock-regions:focus .mock-regions-tip {display:block;}
 .mock-regions-tip li {display:flex;justify-content:space-between;gap:12px;padding:2px 4px;border-radius:4px;color:var(--mock-ink);}
-.mock-regions-tip li b {font-variant-numeric:tabular-nums;font-weight:600;}
+.mock-regions-tip li b {font-variant-numeric:tabular-nums;font-weight:500;}
 .mock-regions-tip li.rise b {color:var(--mock-rise);}.mock-regions-tip li.fall b {color:var(--mock-fall);}
-.mock-regions-tip li.chosen {background:color-mix(in srgb,var(--mock-fall) 16%,transparent);font-weight:600;}
-.mock-products-table td.link a {text-decoration:none!important;color:var(--mock-fall)!important;font-weight:600;}
+.mock-regions-tip li.chosen {background:color-mix(in srgb,var(--mock-fall) 16%,transparent);font-weight:500;}
+.mock-products-table td.link a {text-decoration:none!important;color:var(--mock-fall)!important;font-weight:500;}
 /* D-496: the panels stack only under 900 px (a phone); a tablet keeps the columns, as its width allows with the menu folded */
 @media(max-width:900px) {
  .greenocean-mockup .mock-intro {flex-direction:column;}.mock-head-side {align-items:flex-start;}.mock-head-chips {justify-content:flex-start;}
@@ -423,12 +423,12 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .home-bar-main .home-week-chip {display:inline-grid;grid-template-columns:auto minmax(0,auto);column-gap:0;flex:0 1 auto;}
 .home-chip-place {overflow:hidden;text-overflow:ellipsis;white-space:pre;}
 @container (max-width:400px) {.home-bar-section {display:none;}}
-.home-bar-path b {color:var(--mock-ink);font-weight:600;}
+.home-bar-path b {color:var(--mock-ink);font-weight:500;}
 .home-bar-title {flex:1 1 0;min-width:2.2em;margin:0 4px 0 2px;font-size:14.5px;
-  font-weight:600;line-height:1.3;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  font-weight:500;line-height:1.3;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .home-chip {flex:none;display:inline-flex;align-items:baseline;gap:7px;padding:3px 9px;border-radius:8px;background:__SOFT__;
   color:var(--mock-ink);font-size:13.5px;line-height:1.35;font-variant-numeric:tabular-nums;cursor:default;}
-.home-chip b {font-weight:600;}.home-chip small {margin-left:-5px;font-size:12px;color:var(--mock-muted);}
+.home-chip b {font-weight:500;}.home-chip small {margin-left:-5px;font-size:12px;color:var(--mock-muted);}
 .home-chip em {font-style:normal;font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--mock-muted);}
 .home-chip b.rise {color:var(--mock-rise);}.home-chip b.fall {color:var(--mock-fall);}
 /* D-374, D-375: the next week, a quiet line under the page's name that ends right beside the range of the week shown;
@@ -499,10 +499,10 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 /* D-313: the three panels share one heading: a small label in capitals and a question. */
 .mock-products-top {flex:0 0 100%;display:flex;align-items:center;gap:8px;}
 .mock-products-top .mock-kicker {margin:0;}
-.mock-products-family {padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;color:var(--mock-ink);background:var(--mock-soft);}
+.mock-products-family {padding:1px 8px;border-radius:999px;font-size:11px;font-weight:500;color:var(--mock-ink);background:var(--mock-soft);}
 .mock-products-heading {row-gap:2px;}
 
-.mock-regional .mock-scope a {color:var(--mock-fall)!important;font-weight:600;text-decoration:underline!important;}
+.mock-regional .mock-scope a {color:var(--mock-fall)!important;font-weight:500;text-decoration:underline!important;}
 
 /* D-315: the regions without data weigh less; the legend tells «sin cambio claro» from «sin dato»; a row lights its region. */
 .mock-region-shape.missing {fill:url(#mock-nodata);stroke:var(--mock-border);}
@@ -579,20 +579,20 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-calc {margin-top:3px;font-size:11px;}
 .mock-calc summary {display:inline-block;cursor:pointer;color:var(--mock-fall);text-decoration:underline;text-underline-offset:2px;list-style:none;}
 .mock-calc summary::-webkit-details-marker {display:none;}
-.mock-calc[open] summary {font-weight:600;}
+.mock-calc[open] summary {font-weight:500;}
 .mock-products-table {position:relative;}
 .mock-calc-body {position:absolute;left:8px;right:8px;z-index:6;margin:5px 0 3px;padding:7px 10px;border:1px solid var(--mock-border);border-radius:8px;background:var(--mock-soft);color:var(--mock-ink);white-space:normal;box-shadow:0 8px 24px -10px rgba(0,0,0,.45);}
 .mock-calc-head {margin:0 0 4px!important;font-size:10.5px!important;color:var(--mock-muted);}
 .mock-calc-body ul {margin:0;padding:0;list-style:none;}
 .mock-calc-body li {display:flex;flex-wrap:wrap;gap:0 8px;justify-content:space-between;padding:1px 0;font-size:11px;line-height:1.35;}
 .mock-calc-prices {font-variant-numeric:tabular-nums;color:var(--mock-muted);}
-.mock-calc-body li b {font-variant-numeric:tabular-nums;font-weight:600;}
-.mock-calc-average {margin-top:3px;padding-top:3px!important;border-top:1px solid var(--mock-border);font-weight:600;}
+.mock-calc-body li b {font-variant-numeric:tabular-nums;font-weight:500;}
+.mock-calc-average {margin-top:3px;padding-top:3px!important;border-top:1px solid var(--mock-border);font-weight:500;}
 .mock-calc-out {margin:5px 0 0!important;padding:0!important;font-size:10.5px!important;line-height:1.4!important;color:var(--mock-muted);}
 ul.mock-calc-out li {display:flex;gap:8px;justify-content:flex-start;padding:0;}
 ul.mock-calc-out li span {color:var(--mock-ink);}
 ul.mock-calc-out li em {font-style:normal;}
-.mock-calc-out b {color:var(--mock-ink);font-weight:600;}
+.mock-calc-out b {color:var(--mock-ink);font-weight:500;}
 
 /* D-329: the families and the map say what they are calculated from. */
 .greenocean-mockup .mock-movement-heading p.mock-movement-note {margin:2px 0 0!important;font-size:10.5px!important;line-height:1.35!important;color:var(--mock-muted);}
@@ -600,18 +600,18 @@ ul.mock-calc-out li em {font-style:normal;}
 
 /* D-352: reading order of the Dashboard. Numbered panels, «Todo Chile», trends, the whole basket, locks and the search in the accent colour. */
 /* D-372: the step number big, in a circle of colour, at the start of each panel; its text clearly legible. */
-.mock-step {display:inline-flex;align-self:flex-start;width:fit-content;align-items:center;gap:9px;margin:0 10px 6px 0;font-size:13px;font-weight:600;color:__INK__;letter-spacing:-.005em;}
-.mock-step b {display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border-radius:50%;background:__ACCENT__;color:#ffffff;font-size:16px;font-weight:800;box-shadow:0 0 0 4px color-mix(in srgb,__ACCENT__ 22%,transparent);}
+.mock-step {display:inline-flex;align-self:flex-start;width:fit-content;align-items:center;gap:9px;margin:0 10px 6px 0;font-size:13px;font-weight:500;color:__INK__;letter-spacing:-.005em;}
+.mock-step b {display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border-radius:50%;background:__ACCENT__;color:#ffffff;font-size:16px;font-weight:700;box-shadow:0 0 0 4px color-mix(in srgb,__ACCENT__ 22%,transparent);}
 .mock-scope-row {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-.mock-all-chile {display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 20px;border-radius:999px;border:1.5px solid __ACCENT__;color:__ACCENT__!important;font-size:13px;font-weight:700;text-decoration:none!important;background:transparent;}
+.mock-all-chile {display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 20px;border-radius:999px;border:1.5px solid __ACCENT__;color:__ACCENT__!important;font-size:13px;font-weight:600;text-decoration:none!important;background:transparent;}
 .mock-all-chile:hover,.mock-all-chile.selected {background:__ACCENT__;color:#04121c!important;}
 .mock-spark {display:flex;align-items:center;justify-content:center;color:var(--mock-muted);}
 .mock-spark.rise {color:var(--mock-rise);}.mock-spark.fall {color:var(--mock-fall);}
 .mock-basket {background:color-mix(in srgb,__ACCENT__ 9%,__PANEL__);border:1px solid color-mix(in srgb,__ACCENT__ 45%,transparent)!important;margin-bottom:4px;cursor:default;}
 .mock-basket:hover {background:color-mix(in srgb,__ACCENT__ 9%,__PANEL__);}
-.mock-basket strong {font-weight:700;}
+.mock-basket strong {font-weight:600;}
 .mock-basket-art {width:14px;height:14px;border-radius:4px;background:__ACCENT__;justify-self:center;}
-.mock-lock {position:static;z-index:5;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:__INK__;background:__PANEL__;border:1px solid __BORDER__;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+.mock-lock {position:static;z-index:5;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:500;color:__INK__;background:__PANEL__;border:1px solid __BORDER__;box-shadow:0 4px 14px rgba(0,0,0,.25);}
 .st-key-home_channels,.st-key-home_families,.st-key-home_products {position:relative;}
 /* D-372: the search in a luminous light blue, a little bigger, with a soft glow that pulses while nobody has typed;
    it stops on a click or a letter, and never moves when the system asks for reduced motion. */
@@ -694,8 +694,8 @@ ul.mock-calc-out li em {font-style:normal;}
  border:1px solid __BORDER__;box-shadow:0 10px 28px -10px rgba(0,0,0,.55);color:__INK__;font-size:12px;line-height:1.45;font-weight:400;
  text-align:left;white-space:normal;letter-spacing:0;text-transform:none;}
 .mock-hint:hover .mock-hint-body,.mock-hint:focus .mock-hint-body {display:block;}
-.mock-hint-title {display:block;margin-bottom:4px;color:var(--mock-fall);font-size:10px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;}
-.mock-hint-body strong {display:block;margin-bottom:3px;font-size:13px;font-weight:600;}
+.mock-hint-title {display:block;margin-bottom:4px;color:var(--mock-fall);font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;}
+.mock-hint-body strong {display:block;margin-bottom:3px;font-size:13px;font-weight:500;}
 .mock-hint-body > span:not(.mock-hint-title),.mock-hint-body .mock-movement-note {display:block;color:var(--mock-muted);font-size:11.5px;}
 .st-key-home_overview .mock-movement {overflow:visible;}
 .mock-products-table td.mock-family-cell {width:84px;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mock-muted);}

@@ -4074,11 +4074,12 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Falla registrada:** F-34.
 - **Pruebas:** `tests/test_repository_links.py` recorre cada pantalla de `tests/i18n_audit.py` como Usuario y como Profesional, y falla si aparece una dirección del repositorio; también comprueba lo que conserva el Autor y el acceso directo a «Enlaces». `tests/test_dashboard.py` lee como Autor lo que es del Autor.
 
-## D-501 · Los títulos y las secciones, con la medida de un panel lateral
-- **Pedido del autor:** las letras del panel no se ven elegantes. Los títulos y las secciones deben tener el tamaño y la apariencia del panel lateral de VS Code, Apple o Claude.
-- **Medido antes:** la letra ya era la del sistema (D-175); lo que pesaba era la medida. En el menú, «Semanal» iba a 16 px en negrita, las opciones a 15 px y las secciones en mayúsculas con letras separadas.
-- **Decisión (corrige D-231):** en el menú, las secciones van a 12 px, en gris, sin mayúsculas ni separación; «Dashboards», a 11 px; las opciones, a 13 px y con ícono de 16 px; los recuadros «Semanal» y «Análisis BA y BI», a 13 px; y «Documentos», «Fuentes» y la vista elegida, a 12 y 12,5 px. Nada pasa de seminegrita liviana (500), y las filas y recuadros se achican con su letra. Fuera del menú, los títulos de los pasos de «Semanal» van a 13 px en seminegrita (600) y el título de cada página, a 17 px.
+## D-501 · Letras finas y chicas, y un menú más angosto, como un panel lateral
+- **Pedido del autor:** las letras del panel deben ser más finas y chicas, no gruesas, con el tamaño del menú lateral de VS Code y la inspiración de Apple; y el menú debe ocupar menos ancho.
+- **Medido antes:** la letra ya era la del sistema (D-175); lo que pesaba era la medida y el grosor. En el menú, «Semanal» iba a 16 px en negrita, las opciones a 15 px, las secciones en mayúsculas con letras separadas, y el menú medía 300 px.
+- **Decisión (corrige D-231):** el menú mide 232 px. Las secciones y «Dashboards» van a 11 px, en gris, sin mayúsculas ni separación; las opciones y los recuadros «Semanal» y «Análisis BA y BI», a 13 px en peso normal, con filas de 24 px; «Documentos», «Fuentes», la vista elegida y «Apariencia», a 11,5 px. Las filas y los recuadros se achican con su letra.
+- **Más fina:** toda la app usa el suavizado fino de la letra (`antialiased`), porque sin él un Mac engrosa el texto claro sobre fondo oscuro. En «Semanal», todos los pesos bajan un escalón (la negrita pasa a seminegrita, y esta a peso medio); los títulos de los pasos van a 13 px en peso medio y el título de cada página, a 17 px.
 - **«Fuentes» a la altura de «Documentos»:** la flecha oculta de su botón seguía ocupando espacio y lo subía unos 11 px.
-- **Qué no cambia:** las cifras, las tablas, los diagramas y el círculo de color de cada paso (D-372).
-- **Pruebas:** `tests/test_dashboard.py` y `tests/test_panorama_steps.py` (las medidas). Medido con Playwright a 1024, 1280 y 1440 px en español, y a 1024 y 1440 px en inglés: ningún texto del menú ni de los pasos se corta o se sale.
-
+- **Qué no cambia:** las cifras, los diagramas y el círculo de color de cada paso (D-372).
+- **Para verlo:** hay que reiniciar `streamlit run`, porque un cambio en `bi/dashboard.py` no siempre se ve al recargar (trampa ya conocida del panel).
+- **Pruebas:** `tests/test_dashboard.py` y `tests/test_panorama_steps.py` (las medidas). Medido con Playwright en español y en inglés, también como Autor con el botón de GitHub: ningún texto del menú ni de los pasos se corta o se sale.

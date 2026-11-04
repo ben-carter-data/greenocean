@@ -1132,6 +1132,8 @@ def build_theme_css(palette):
     restyles what it can do without fighting them.
     """
     return f"""
+    /* D-501: without this, a Mac thickens light text on a dark background. */
+    html, body, .stApp {{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }}
     .stApp {{ background: {palette["background"]}; color:{palette["text"]};
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }}
     [data-testid="stMain"] p, [data-testid="stMain"] h1, [data-testid="stMain"] h2,
@@ -8943,20 +8945,20 @@ def read_current_view(window):
 
 def build_section_colors_css(dark):
     """The flat menu (D-231): sections divided by a hairline, rows with a thin icon; the current page has a faint fill
-    and a blue bar on its left. D-501: the sizes of a side panel like those of VS Code, Apple or Claude: rows of 13 px,
-    grey section headings of 12 px in plain case, and nothing bolder than medium."""
+    and a blue bar on its left. D-501: the sizes of a side panel like those of VS Code or Apple: rows of 13 px and thin,
+    grey section headings of 11 px in plain case, and a menu of 232 px."""
     text, heading, icon, hover, current, accent, line = MENU_INK[dark]
-    return f"""[class*="st-key-nav_block_"] {{margin:0 !important; padding:8px 0 !important; gap:1px !important;
+    return f"""[class*="st-key-nav_block_"] {{margin:0 !important; padding:6px 0 !important; gap:0 !important;
         background:transparent !important; border:0; border-bottom:1px solid {line}; border-radius:0; box-shadow:none;}}
     .st-key-nav_block_documentos {{border-bottom:0;}}
     [class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div,
     [class*="st-key-nav_group_"] button {{width:100% !important; box-sizing:border-box;}}
-    [class*="st-key-nav_group_"] button {{justify-content:flex-start !important; padding:2px 8px !important;
-        min-height:24px !important; background:transparent !important; border:0 !important; margin:0 0 2px;}}
+    [class*="st-key-nav_group_"] button {{justify-content:flex-start !important; padding:1px 8px !important;
+        min-height:22px !important; background:transparent !important; border:0 !important; margin:0 0 2px;}}
     [class*="st-key-nav_group_"] button:hover:not(:disabled) {{background:transparent !important;}}
     [class*="st-key-nav_group_"] button > div {{justify-content:flex-start !important;}}
     [class*="st-key-nav_group_"] button p {{color:{heading} !important; -webkit-text-fill-color:{heading} !important;
-        font-size:.75rem !important; font-weight:500 !important; letter-spacing:0 !important; white-space:nowrap;
+        font-size:.6875rem !important; font-weight:500 !important; letter-spacing:0 !important; white-space:nowrap;
         text-align:left !important;}}
     [class*="st-key-nav_group_"] button:hover p {{color:{text} !important; -webkit-text-fill-color:{text} !important;}}
     [class*="st-key-nav_group_"] button p::after {{content:"⌄"; margin-left:8px; opacity:0; transition:opacity .12s ease;}}
@@ -8965,9 +8967,9 @@ def build_section_colors_css(dark):
     /* D-459: «Dashboards», the title of the three tiles under «Negocio · BA y BI»: smaller than a section, set in. */
     /* Its block keeps the -1rem of a markdown block (D-173), so the paragraph keeps 1rem under it. */
     [data-testid="stSidebar"] p.nav-subtitle {{margin:0 0 calc(1rem + 3px) !important; padding:0 8px; color:{heading} !important;
-        opacity:.8; font-size:.6875rem !important; font-weight:500; letter-spacing:0;}}
-    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a {{position:relative; padding:3px 8px !important;
-        min-height:28px !important; border-radius:6px !important; border:0 !important;
+        opacity:.8; font-size:.6875rem !important; font-weight:400; letter-spacing:0;}}
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a {{position:relative; padding:2px 8px !important;
+        min-height:24px !important; border-radius:5px !important; border:0 !important;
         background:transparent !important; box-shadow:none !important; gap:0 !important;}}
     [class*="st-key-nav_block_"] [data-testid="stPageLink"] a:hover {{background:{hover} !important;}}
     [class*="st-key-nav_block_"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
@@ -9017,10 +9019,11 @@ def build_sidebar_css(mode):
     view_ink = "#7dd3fc" if dark else palette["accent"]  # D-373: the view button reads on the sidebar's surface
     return f"""<style>
     [data-testid="stSidebar"] {{background:{palette['sidebar']}; border-right:0; box-shadow:none;}}
-    [data-testid="stSidebar"][data-collapsed="false"] {{min-width:300px !important; max-width:300px !important;}}
-    [data-testid="stSidebarContent"] {{background:transparent;}}
-    [data-testid="stSidebarHeader"] {{height:66px; padding:14px 14px 8px 20px !important; border-bottom:0;}}
-    [data-testid="stSidebarHeader"] img {{max-width:190px !important; height:34px !important;}}
+    [data-testid="stSidebar"][data-collapsed="false"] {{min-width:232px !important; max-width:232px !important;}}
+    /* D-501: the menu keeps its width for its words: Streamlit's 20 px of margin leave. */
+    [data-testid="stSidebarContent"] {{background:transparent; padding-left:0 !important; padding-right:0 !important;}}
+    [data-testid="stSidebarHeader"] {{height:52px; padding:12px 10px 6px 16px !important; border-bottom:0;}}
+    [data-testid="stSidebarHeader"] img {{max-width:148px !important; height:28px !important;}}
     [data-testid="stSidebarCollapseButton"] button {{width:32px; height:32px; min-height:32px;
         border:0 !important; border-radius:8px !important; background:transparent !important; box-shadow:none;}}
     /* The menu is the only thing that scrolls when it does not fit; its bar shows on hover. */
@@ -9029,34 +9032,34 @@ def build_sidebar_css(mode):
     [data-testid="stSidebarContent"]::-webkit-scrollbar {{width:0;}}
     [data-testid="stSidebarContent"]:hover::-webkit-scrollbar {{width:6px;}}
     [data-testid="stSidebarContent"]:hover::-webkit-scrollbar-thumb {{background:{hairline}; border-radius:3px;}}
-    [data-testid="stSidebarUserContent"] {{padding:4px 10px 0 !important;}}
+    [data-testid="stSidebarUserContent"] {{padding:4px 8px 0 !important;}}
     /* D-286: the menu scrolls above the pinned footer, so nothing it holds stays hidden behind it. */
-    [data-testid="stSidebarUserContent"] {{padding-bottom:180px !important;}}
+    [data-testid="stSidebarUserContent"] {{padding-bottom:140px !important;}}
     [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important;
         min-height:calc(100vh - 86px); padding-bottom:116px;}}
     [data-testid="stSidebarNav"] {{display:none;}}
     {build_section_colors_css(dark)}
     /* GitHub's mark on a light pill in the footer (D-124): a near-black logo on a
        near-white background reads on every sidebar, where the blue mark almost vanished. */
-    .st-key-sidebar_tools {{gap:8px !important; justify-content:flex-start !important;}}
+    .st-key-sidebar_tools {{gap:3px !important; justify-content:flex-start !important;}}
     .st-key-sidebar_tools > div {{flex:0 0 auto !important; width:auto !important;}}
     .sidebar-github {{display:inline-flex; align-items:center; justify-content:center;
-        width:38px; height:38px; border-radius:11px; background:#f6f8fa;
+        width:28px; height:28px; border-radius:7px; background:#f6f8fa;
         border:1px solid rgba(255,255,255,.55); color:#1f2328 !important; transition:transform .12s ease;}}
-    .sidebar-github svg {{fill:#1f2328;}}
+    .sidebar-github svg {{fill:#1f2328; width:16px; height:16px;}}
     .sidebar-github:hover {{transform:translateY(-1px);}}
     .sidebar-github-current {{outline:2px solid {palette['accent']}; outline-offset:2px;}}
     /* D-373: the view button, under the logo, before the menu: visible, with its profile icon. */
     .st-key-profile_indicator_top {{ padding:0 0 10px; }}
     [data-testid="stSidebarLogo"], [data-testid="stHeaderLogo"] {{ cursor:pointer; }}
-    [data-testid="stSidebar"] .st-key-profile_indicator_top button {{ min-height:30px; justify-content:flex-start;
+    [data-testid="stSidebar"] .st-key-profile_indicator_top button {{ min-height:28px; justify-content:flex-start;
         border-radius:10px !important; border:1px solid color-mix(in srgb, {view_ink} 55%, transparent) !important;
         background:color-mix(in srgb, {view_ink} 12%, transparent) !important; }}
     [data-testid="stSidebar"] .st-key-profile_indicator_top button p,
     [data-testid="stSidebar"] .st-key-profile_indicator_top button [data-testid="stIconMaterial"] {{
-        color:{view_ink} !important; font-weight:500; font-size:.78125rem; }}
+        color:{view_ink} !important; font-weight:400; font-size:.71875rem; }}
     [data-testid="stSidebar"] .st-key-profile_indicator_top button:hover {{ border-color:{view_ink} !important; }}
-    .st-key-sidebar_footer {{position:fixed; left:0; bottom:0; width:300px; padding:12px 22px 12px;
+    .st-key-sidebar_footer {{position:fixed; left:0; bottom:0; width:232px; padding:10px 12px 10px;
         background:{palette['sidebar']}; gap:7px !important; z-index:5; border-top:1px solid {hairline};}}
     /* The price alerts, a red chip in the Resumen's bar (D-169, D-264). */
     .st-key-home_alert_trigger button, .st-key-dialog_alert_trigger button {{border:0 !important; background:color-mix(in srgb,{alert_text} 14%,transparent) !important;
@@ -9078,37 +9081,39 @@ def build_sidebar_css(mode):
     .st-key-home_alert_trigger button:disabled, .st-key-home_drop_trigger button:disabled, .st-key-dialog_alert_trigger button:disabled, .st-key-dialog_drop_trigger button:disabled {{opacity:.45;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button {{background:transparent !important;
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
-    .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.71875rem !important;}}
     [data-testid="stSidebar"] .st-key-language_switch button p {{color:{text} !important; -webkit-text-fill-color:{text} !important;}}
-    .st-key-sidebar_tools {{flex-wrap:nowrap !important; gap:8px !important;}}
-    .st-key-sidebar_appearance [data-testid="stPopover"] button {{padding:6px 6px !important;}}
+    .st-key-language_switch {{gap:3px !important;}}
+    .st-key-profile_indicator_top button p {{white-space:nowrap !important;}}
+    .st-key-sidebar_tools {{flex-wrap:nowrap !important; gap:3px !important;}}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button {{padding:4px 5px !important;}}
     .st-key-sidebar_tiles {{margin:0 0 6px !important;}}
     .st-key-sidebar_tiles > div {{flex:1 1 0 !important; min-width:0 !important;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button {{
         display:flex !important; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-        width:100% !important; height:60px; min-height:60px !important; padding:6px 4px !important; gap:3px !important;
-        border-radius:8px; background:transparent !important;
+        width:100% !important; height:50px; min-height:50px !important; padding:4px !important; gap:2px !important;
+        border-radius:6px; background:transparent !important;
         border:1px solid {MENU_INK[dark][6]} !important; box-shadow:none !important;}}
     .st-key-sources_tile, .st-key-sources_tile [data-testid="stLayoutWrapper"], .st-key-sources_tile [data-testid="stPopover"],
     .st-key-sources_tile [data-testid="stPopover"] > div {{width:100% !important;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] {{margin:4px 0 0 !important;}}
-    .st-key-sources_tile button::before {{content:""; flex:none; width:30px; height:22px;
+    .st-key-sources_tile button::before {{content:""; flex:none; width:26px; height:19px;
         background:url("data:image/svg+xml;base64,{base64.b64encode(SOURCES_TILE_SVG.encode()).decode()}") center / contain no-repeat;
         transition:transform .18s ease;}}
     .st-key-sources_tile button:hover {{background:{MENU_INK[dark][3]} !important;}}
     .st-key-sources_tile button:hover::before {{transform:translateY(-2px);}}
     .st-key-sources_tile button p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:.75rem !important; font-weight:500 !important; line-height:1.15 !important; white-space:nowrap; margin:0 !important;}}
+        font-size:.71875rem !important; font-weight:400 !important; line-height:1.15 !important; white-space:nowrap; margin:0 !important;}}
     .st-key-sources_tile button [data-testid="stIconMaterial"], .st-key-sources_tile button svg {{display:none !important;}}
     .st-key-sources_tile button > div > div:has([data-testid="stIconMaterial"]) {{display:none !important;}}
     .st-key-sources_tile button > div {{display:contents;}}
-    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:30px; height:22px;
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:26px; height:19px;
         background:url("data:image/svg+xml;base64,{base64.b64encode(FOLDER_TILE_SVG.encode()).decode()}") center / contain no-repeat;
         transition:transform .18s ease;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover {{background:{MENU_INK[dark][3]} !important;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover::before {{transform:translateY(-2px);}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:.75rem !important; font-weight:500 !important; line-height:1.15 !important; margin:0 !important;}}
+        font-size:.71875rem !important; font-weight:400 !important; line-height:1.15 !important; margin:0 !important;}}
     .st-key-nav_folder_tile_nav_current [data-testid="stPageLink"] a {{background:{MENU_INK[dark][4]} !important;
         border-color:{MENU_INK[dark][5]};}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
@@ -9121,16 +9126,16 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_dashboard_tile_2"] [data-testid="stPageLink"] a::before {{
         background-image:url("data:image/svg+xml;base64,{base64.b64encode(BA_TILE_SVG.encode()).decode()}") !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a {{display:flex !important; flex-direction:row;
-        align-items:center; gap:10px !important; width:100% !important; min-height:44px !important; padding:6px 10px !important;
-        border-radius:8px; background:{MENU_INK[dark][3]} !important; border:1px solid {MENU_INK[dark][6]} !important;
+        align-items:center; gap:8px !important; width:100% !important; min-height:36px !important; padding:4px 8px !important;
+        border-radius:6px; background:{MENU_INK[dark][3]} !important; border:1px solid {MENU_INK[dark][6]} !important;
         box-shadow:none !important;}}
-    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:36px; height:26px;
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:30px; height:22px;
         background:url("data:image/svg+xml;base64,{base64.b64encode(DASHBOARD_TILE_SVG.encode()).decode()}") center / contain no-repeat;
         transition:transform .18s ease;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a:hover {{background:{MENU_INK[dark][4]} !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a:hover::before {{transform:translateY(-2px);}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:.8125rem !important; font-weight:500 !important; margin:0 !important;}}
+        font-size:.8125rem !important; font-weight:400 !important; margin:0 !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a span:has(> div > p),
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a span:has(> div > p) *,
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] p {{white-space:normal !important;
