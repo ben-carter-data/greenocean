@@ -955,8 +955,8 @@ def sad_scenarios(mode):
                 tile(
                     say("Ingeniería de datos", "Data engineering"),
                     say(
-                        "Pipeline y linaje · Modelo de datos · Consultas SQL sobre la Base DuckDB, solo lectura",
-                        "Pipeline and lineage · Data model · SQL queries on the DuckDB database, read-only",
+                        "Pipeline y linaje · Reglas de transformación · Modelo de datos · Consultas SQL sobre la Base DuckDB, solo lectura",
+                        "Pipeline and lineage · Transformation rules · Data model · SQL queries on the DuckDB database, read-only",
                     ),
                     "P-2 · P-3 · RF-06",
                 ),

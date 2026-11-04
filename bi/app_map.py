@@ -191,7 +191,7 @@ NODES = {
             (
                 "Páginas",
                 "Semanal, Análisis (Mensual, Histórico, Precios e inflación, "
-                "Insights, Interesados y Método), Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, "
+                "Insights, Interesados y Método), Pipeline y linaje, Reglas de transformación, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, "
                 "Arquitectura de seguridad, Plan de calidad, Controles de datos, Cambios e incidentes y la carpeta de "
                 "documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.",
             ),

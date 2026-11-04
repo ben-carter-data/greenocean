@@ -294,6 +294,7 @@ EN = {
     "Modelo de datos": "Data model",
     "Controles de datos": "Data controls",
     "Consultas SQL": "SQL queries",
+    "Reglas de transformación": "Transformation rules",
     "Centro de operación": "Operations center",
     "Arquitectura de seguridad": "Security architecture",
     "Carpeta de documentos": "Documents folder",

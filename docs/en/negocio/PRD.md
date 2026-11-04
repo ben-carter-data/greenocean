@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.61 |
+| Version | 3.62 |
 | Date | 2026-11-04 |
 | Status | Current |
 | Owner | The author |
@@ -281,3 +281,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.59 | 2026-11-04 | Each ODEPA sale unit is read as it was reviewed by hand: «cien» and «canastillos» get a price, and a dozen without a safe reading gets none (D-520) |
 | 3.60 | 2026-11-04 | The weekly wholesale price weighs the kilos or units the volume brings, not the packages counted (D-521) |
 | 3.61 | 2026-11-04 | Every weekly variation compares only the same package, and step 4 and the Excel say which (D-522) |
+| 3.62 | 2026-11-04 | «Reglas de transformación»: what is done to the data and why, with a diagram of where each rule acts (D-523) |

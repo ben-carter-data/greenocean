@@ -1460,7 +1460,7 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 MENU_BLOCKS = {
     'Negocio · BA y BI': [],  # D-456: only its three dashboard tiles
-    'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Consultas SQL'],
+    'Ingeniería de datos': ['Pipeline y linaje', 'Reglas de transformación', 'Modelo de datos', 'Consultas SQL'],
     # D-420: «DevOps y seguridad» is the Autor's; security reads in «Stack y evidencia»
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app', 'Arquitectura de seguridad'],
     'Calidad': ['Plan de calidad', 'Controles de datos', 'Cambios e incidentes'],  # D-507

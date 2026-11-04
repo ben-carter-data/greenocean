@@ -18,6 +18,7 @@ MAIN_PAGES = [
     dashboard.PAGE_ARCHITECTURE,
     dashboard.PAGE_OPERATIONS,
     dashboard.PAGE_SQL,
+    dashboard.PAGE_RULES,
     dashboard.PAGE_RUNS,
     dashboard.PAGE_SECURITY,
     dashboard.PAGE_STACK,

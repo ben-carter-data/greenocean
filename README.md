@@ -22,7 +22,7 @@ Cada martes el pipeline descarga las fuentes oficiales, las deja en una misma un
 | ![Pipeline y linaje](docs/img/readme/pipeline.png) | ![Controles de datos](docs/img/readme/calidad.png) |
 | **Pipeline y linaje**: el recorrido de los datos y el estado de sus pruebas | **Controles de datos**: las tres puertas de calidad de cada carga, con las filas que pasan y las que se rechazan |
 
-Páginas del panel, en el orden del menú: los dos dashboards, Semanal y Análisis (con las pestañas Mensual, Histórico, Precios e inflación, Insights, Interesados y Método); Pipeline y linaje, Modelo de datos y Consultas SQL; Centro de operación, GitHub Actions y Configuración (solo el Autor); Stack y evidencia, Mapa de la app y Arquitectura de seguridad; Plan de calidad, Controles de datos y Cambios e incidentes; y la carpeta de documentos. La vista Usuario muestra la primera sección; la Profesional, todas menos «DevOps y seguridad», que es solo del Autor. Está en español y en inglés.
+Páginas del panel, en el orden del menú: los dos dashboards, Semanal y Análisis (con las pestañas Mensual, Histórico, Precios e inflación, Insights, Interesados y Método); Pipeline y linaje, Reglas de transformación, Modelo de datos y Consultas SQL; Centro de operación, GitHub Actions y Configuración (solo el Autor); Stack y evidencia, Mapa de la app y Arquitectura de seguridad; Plan de calidad, Controles de datos y Cambios e incidentes; y la carpeta de documentos. La vista Usuario muestra la primera sección; la Profesional, todas menos «DevOps y seguridad», que es solo del Autor. Está en español y en inglés.
 
 ## Qué responde
 

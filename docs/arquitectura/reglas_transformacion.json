@@ -1,0 +1,1968 @@
+{
+ "nota": "Reglas de transformación (D-523): qué le hace el pipeline a los datos y por qué. Cada regla dice qué problema de la fuente resuelve y qué pasaría sin ella; RN, D y código son el respaldo. El ancla es un texto del archivo: la línea se calcula al dibujar la página, y tests/test_transformation_rules.py comprueba que exista.",
+ "reglas": [
+  {
+   "n": 1,
+   "capa": "ingesta",
+   "titulo": [
+    "Acepta el archivo de ODEPA solo si está sano",
+    "Accepts the ODEPA file only if it is sound"
+   ],
+   "problema": [
+    "ODEPA publica archivos CSV que pueden llegar vacíos, cortados o con otras columnas.",
+    "ODEPA publishes CSV files that can arrive empty, cut off or with other columns."
+   ],
+   "sin_ella": [
+    "Un archivo roto reemplazaría al bueno y la carga leería basura o nada.",
+    "A broken file would replace the good one, and the load would read rubbish or nothing."
+   ],
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "agent/agent.py",
+     "ancla": "def validate_downloaded_file"
+    }
+   ]
+  },
+  {
+   "n": 2,
+   "capa": "ingesta",
+   "titulo": [
+    "Guarda cada fila tal como vino",
+    "Keeps every row as it came"
+   ],
+   "problema": [
+    "Limpiar sobre el original borraría la evidencia de qué publicó la fuente.",
+    "Cleaning over the original would erase the evidence of what the source published."
+   ],
+   "sin_ella": [
+    "Ante una cifra rara no se podría comprobar si el error es de ODEPA o nuestro.",
+    "Faced with an odd figure, nobody could check whether the error is ODEPA's or ours."
+   ],
+   "ejemplo": [
+    "Todo entra como texto a `etl/raw.db`, con el año y la huella del archivo. Si un año cambia, se reemplaza entero.",
+    "Everything enters `etl/raw.db` as text, with the year and fingerprint of the file. If a year changes, it is replaced whole."
+   ],
+   "respaldo": [
+    "D-020"
+   ],
+   "codigo": [
+    {
+     "archivo": "etl/etl.py",
+     "ancla": "def load_raw_files"
+    }
+   ]
+  },
+  {
+   "n": 3,
+   "capa": "ingesta",
+   "titulo": [
+    "Copia lo crudo a bronce, sin tocarlo",
+    "Copies the raw data to bronze, untouched"
+   ],
+   "problema": [
+    "dbt necesita leer los datos en un formato estándar, y `etl/raw.db` es SQLite.",
+    "dbt needs to read the data in a standard format, and `etl/raw.db` is SQLite."
+   ],
+   "sin_ella": [
+    "dbt quedaría atado a un archivo local de 665 MB que no está en el repositorio.",
+    "dbt would be tied to a 665 MB local file that is not in the repository."
+   ],
+   "respaldo": [
+    "D-154"
+   ],
+   "codigo": [
+    {
+     "archivo": "etl/bronze.py",
+     "ancla": "def export_source"
+    }
+   ]
+  },
+  {
+   "n": 4,
+   "capa": "ingesta",
+   "titulo": [
+    "Del INE toma solo los alimentos",
+    "Takes only food from the INE"
+   ],
+   "problema": [
+    "El IPC del INE trae todas las divisiones de la canasta, y sus grupos.",
+    "The INE CPI brings every division of the basket, and their groups."
+   ],
+   "sin_ella": [
+    "Compararíamos precios de alimentos con la inflación de arriendos o transporte.",
+    "We would compare food prices with the inflation of rents or transport."
+   ],
+   "ejemplo": [
+    "Solo queda la división «Alimentos y bebidas no alcohólicas», sin sus grupos.",
+    "Only the division «Alimentos y bebidas no alcohólicas» stays, without its groups."
+   ],
+   "respaldo": [
+    "D-155"
+   ],
+   "codigo": [
+    {
+     "archivo": "etl/ine.py",
+     "ancla": "def parse_rows"
+    }
+   ]
+  },
+  {
+   "n": 5,
+   "capa": "ingesta",
+   "titulo": [
+    "Sobrevive a un día sin INE",
+    "Survives a day without the INE"
+   ],
+   "problema": [
+    "El sitio del INE puede no responder justo el martes de la carga.",
+    "The INE site may not answer just on the Tuesday of the load."
+   ],
+   "sin_ella": [
+    "Una caída de otro organismo dejaría a toda la app sin datos nuevos.",
+    "An outage at another agency would leave the whole app without new data."
+   ],
+   "ejemplo": [
+    "Rehace el bronce del IPC con las filas que la Base DuckDB publicada ya guarda.",
+    "It rebuilds the CPI bronze from the rows the published DuckDB database already keeps."
+   ],
+   "respaldo": [
+    "D-155"
+   ],
+   "codigo": [
+    {
+     "archivo": "etl/pipeline.py",
+     "ancla": "def prepare_ipc"
+    }
+   ]
+  },
+  {
+   "n": 6,
+   "capa": "staging",
+   "titulo": [
+    "Limpia los espacios invisibles",
+    "Cleans invisible spaces"
+   ],
+   "problema": [
+    "ODEPA escribe a veces espacios no separables o repetidos, que no se ven.",
+    "ODEPA sometimes writes non-breaking or repeated spaces, which cannot be seen."
+   ],
+   "sin_ella": [
+    "Un mismo producto aparecería como dos, con su precio partido.",
+    "One product would appear as two, with its price split."
+   ],
+   "ejemplo": [
+    "En 2026, «Pavo Pechuga s/hueso» trae un espacio no separable en 546 filas.",
+    "In 2026, «Pavo Pechuga s/hueso» carries a non-breaking space in 546 rows."
+   ],
+   "respaldo": [
+    "RN-13"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/macros/cleaning.sql",
+     "ancla": "macro normalize_text"
+    }
+   ]
+  },
+  {
+   "n": 7,
+   "capa": "staging",
+   "titulo": [
+    "Convierte la coma decimal en número",
+    "Turns the decimal comma into a number"
+   ],
+   "problema": [
+    "ODEPA publica los precios como texto con coma decimal.",
+    "ODEPA publishes prices as text with a decimal comma."
+   ],
+   "sin_ella": [
+    "Ningún precio se podría sumar, promediar ni comparar.",
+    "No price could be added, averaged or compared."
+   ],
+   "ejemplo": [
+    "El tomate Semiduro Extra del 20-04-2026 en Lo Valledor viene como `12000,0000` y se carga como 12.000.",
+    "The tomato Semiduro Extra of 2026-04-20 in Lo Valledor comes as `12000,0000` and loads as 12,000."
+   ],
+   "respaldo": [
+    "RN-01"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/macros/cleaning.sql",
+     "ancla": "macro decimal_text"
+    }
+   ]
+  },
+  {
+   "n": 8,
+   "capa": "staging",
+   "titulo": [
+    "Da a cada columna su tipo y un nombre común",
+    "Gives each column its type and a common name"
+   ],
+   "problema": [
+    "Las dos fuentes de ODEPA llaman distinto a las mismas cosas, y todo llega como texto.",
+    "The two ODEPA sources name the same things differently, and everything arrives as text."
+   ],
+   "sin_ella": [
+    "No se podría unir el precio mayorista con el del consumidor.",
+    "The wholesale price could not be joined with the consumer price."
+   ],
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "dbt/models/staging/stg_odepa__wholesale.sql",
+     "ancla": "try_cast(price_date as date)"
+    }
+   ]
+  },
+  {
+   "n": 9,
+   "capa": "staging",
+   "titulo": [
+    "Trata lo mayorista como un canal más",
+    "Treats wholesale as one more channel"
+   ],
+   "problema": [
+    "El archivo mayorista no trae canal, y el del consumidor sí.",
+    "The wholesale file has no channel, and the consumer one does."
+   ],
+   "sin_ella": [
+    "El margen tendría que tratar al mayorista como un caso aparte en cada cálculo.",
+    "The margin would have to treat wholesale as a special case in every calculation."
+   ],
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "dbt/models/staging/stg_odepa__wholesale.sql",
+     "ancla": "'Mayorista'"
+    }
+   ]
+  },
+  {
+   "n": 10,
+   "capa": "staging",
+   "titulo": [
+    "Usa un solo nombre de familia",
+    "Uses one family name"
+   ],
+   "problema": [
+    "El mayorista dice «Hortalizas y tubérculos» y el consumidor, «Hortalizas».",
+    "Wholesale says «Hortalizas y tubérculos» and consumer says «Hortalizas»."
+   ],
+   "sin_ella": [
+    "Una misma familia aparecería dos veces y no cruzaría entre fuentes.",
+    "One family would appear twice and would not cross between sources."
+   ],
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "dbt/models/staging/stg_odepa__wholesale.sql",
+     "ancla": "Hortalizas y tubérculos"
+    }
+   ]
+  },
+  {
+   "n": 11,
+   "capa": "staging",
+   "titulo": [
+    "Guarda la fila original junto a la limpia",
+    "Keeps the original row beside the clean one"
+   ],
+   "problema": [
+    "Una fila rechazada debe poder mostrarse tal como la publicó ODEPA.",
+    "A rejected row must be shown as ODEPA published it."
+   ],
+   "sin_ella": [
+    "Solo se vería la versión limpia, sin saber qué decía de verdad la fuente.",
+    "Only the clean version would be seen, without knowing what the source really said."
+   ],
+   "respaldo": [
+    "RN-11"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/staging/stg_odepa__wholesale.sql",
+     "ancla": "to_json({"
+    }
+   ]
+  },
+  {
+   "n": 12,
+   "capa": "staging",
+   "titulo": [
+    "Separa producto, variedad y calidad",
+    "Splits product, variety and quality"
+   ],
+   "problema": [
+    "El consumidor los trae juntos en un texto, y el mayorista en tres columnas.",
+    "Consumer brings them together in one text, and wholesale in three columns."
+   ],
+   "sin_ella": [
+    "Los productos de las dos fuentes no cruzarían, y no habría margen.",
+    "Products of the two sources would not cross, and there would be no margin."
+   ],
+   "ejemplo": [
+    "`Producto|Variedad|Calidad` se separa en tres; sin tres partes, variedad y calidad quedan «Sin especificar».",
+    "`Producto|Variedad|Calidad` splits into three; without three parts, variety and quality stay «Sin especificar»."
+   ],
+   "respaldo": [
+    "RN-02"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/staging/stg_odepa__consumer.sql",
+     "ancla": "string_split(clean_product, '|')"
+    }
+   ]
+  },
+  {
+   "n": 13,
+   "capa": "staging",
+   "titulo": [
+    "Deja vacío el volumen del consumidor",
+    "Leaves the consumer volume empty"
+   ],
+   "problema": [
+    "ODEPA no publica volumen para los precios al consumidor.",
+    "ODEPA publishes no volume for consumer prices."
+   ],
+   "sin_ella": [
+    "Habría que inventar un volumen para que las dos fuentes tuvieran la misma forma.",
+    "A volume would have to be invented so both sources had the same shape."
+   ],
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "dbt/models/staging/stg_odepa__consumer.sql",
+     "ancla": "cast(null as double)"
+    }
+   ]
+  },
+  {
+   "n": 14,
+   "capa": "staging",
+   "titulo": [
+    "Da su tipo al IPC del INE",
+    "Gives the INE CPI its type"
+   ],
+   "problema": [
+    "El INE publica año, mes e índice como texto.",
+    "The INE publishes year, month and index as text."
+   ],
+   "sin_ella": [
+    "El IPC no se podría ordenar por mes ni usar en una cuenta.",
+    "The CPI could not be sorted by month or used in a calculation."
+   ],
+   "respaldo": [
+    "D-155"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/staging/stg_ine__ipc_monthly.sql",
+     "ancla": "cast(year as integer)"
+    }
+   ]
+  },
+  {
+   "n": 15,
+   "capa": "intermedio",
+   "titulo": [
+    "Rechaza lo imposible, sin borrarlo",
+    "Rejects the impossible, without deleting it"
+   ],
+   "problema": [
+    "La fuente trae a veces precios en cero, fechas fuera del año o un mínimo mayor que el máximo.",
+    "The source sometimes brings zero prices, dates outside the year or a minimum above the maximum."
+   ],
+   "sin_ella": [
+    "Esos valores entrarían a los promedios, o se perderían sin dejar rastro.",
+    "Those values would enter the averages, or get lost without a trace."
+   ],
+   "ejemplo": [
+    "Las 201 filas rechazadas hasta el 26 oct 2026 son mayoristas con precio no positivo, y se guardan con su motivo.",
+    "The 201 rows rejected up to 26 Oct 2026 are wholesale rows with a non-positive price, kept with their reason."
+   ],
+   "respaldo": [
+    "RN-11"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__validated.sql",
+     "ancla": "'UNREADABLE_VALUE'"
+    }
+   ]
+  },
+  {
+   "n": 16,
+   "capa": "intermedio",
+   "titulo": [
+    "Respeta el precio que ya viene por kilo o unidad",
+    "Respects a price already per kilo or unit"
+   ],
+   "problema": [
+    "Hay unidades como `$/kilo (en caja de 17 kilos)` que traen otro número, pero ya están por kilo.",
+    "Units such as `$/kilo (en caja de 17 kilos)` carry another number, but are already per kilo."
+   ],
+   "sin_ella": [
+    "Se dividiría por 17 un precio que no hay que dividir.",
+    "A price that must not be divided would be divided by 17."
+   ],
+   "respaldo": [
+    "RN-03",
+    "RN-04"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__units_normalized.sql",
+     "ancla": "starts_with(text, '$/kilo')"
+    }
+   ]
+  },
+  {
+   "n": 17,
+   "capa": "intermedio",
+   "titulo": [
+    "Lleva cada envase a kilo, unidad o litro",
+    "Takes each package to kilo, unit or liter"
+   ],
+   "problema": [
+    "Un mismo producto se vende en cajas, bandejas y mallas de distinto tamaño.",
+    "One product is sold in boxes, trays and mesh bags of different sizes."
+   ],
+   "sin_ella": [
+    "Una bandeja de 18 kilos parecería mucho más cara que una de 10.",
+    "A tray of 18 kilos would look far dearer than one of 10."
+   ],
+   "ejemplo": [
+    "`$/bandeja 18 kilos` a $12.000 son $666,67 por kilo.",
+    "`$/bandeja 18 kilos` at $12,000 is $666.67 per kilo."
+   ],
+   "inferencia": [
+    "`$/docena de atados (3 kilos)` se lee como 3 kilos para toda la docena. Calza con los precios (la acelga da unos $580 a $800 el kilo en sus tres tamaños), pero ODEPA no lo declara.",
+    "`$/docena de atados (3 kilos)` is read as 3 kilos for the whole dozen. It fits the prices (acelga gives about $580 to $800 per kilo in its three sizes), but ODEPA does not state it."
+   ],
+   "respaldo": [
+    "RN-03",
+    "RN-04"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__units_normalized.sql",
+     "ancla": "when number_count = 1 and measure_unit is not null"
+    }
+   ]
+  },
+  {
+   "n": 18,
+   "capa": "intermedio",
+   "titulo": [
+    "Entiende «cien» como 100 unidades",
+    "Reads «cien» as 100 units"
+   ],
+   "problema": [
+    "ODEPA escribe a veces la cantidad con palabras, no con números.",
+    "ODEPA sometimes writes the quantity in words, not numbers."
+   ],
+   "sin_ella": [
+    "Esos precios quedarían sin lectura, aunque la cuenta es exacta.",
+    "Those prices would have no reading, although the arithmetic is exact."
+   ],
+   "ejemplo": [
+    "Rabanito a `$/cien unidades` y $3.000 son $30 por unidad, su primer precio mayorista en el panel.",
+    "Rabanito at `$/cien unidades` and $3,000 is $30 per unit, its first wholesale price in the panel."
+   ],
+   "inferencia": [
+    "`$/cien en rama` se lee como 100 unidades. Da $140 en cebolla, cerca de los $100 a $150 de sus paquetes, pero ODEPA no lo declara.",
+    "`$/cien en rama` is read as 100 units. It gives $140 for cebolla, close to the $100 to $150 of its packs, but ODEPA does not state it."
+   ],
+   "respaldo": [
+    "D-520"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__units_normalized.sql",
+     "ancla": "when per_hundred then 100.0"
+    }
+   ]
+  },
+  {
+   "n": 19,
+   "capa": "intermedio",
+   "titulo": [
+    "Suma los canastillos de una bandeja",
+    "Adds up the small baskets of a tray"
+   ],
+   "problema": [
+    "`12 canastillos 125 gramos` trae dos números, y la regla general solo acepta uno.",
+    "`12 canastillos 125 gramos` carries two numbers, and the general rule accepts only one."
+   ],
+   "sin_ella": [
+    "Arándanos y frambuesas perderían ese precio, aunque 12 × 125 gramos es exacto.",
+    "Blueberries and raspberries would lose that price, although 12 × 125 grams is exact."
+   ],
+   "ejemplo": [
+    "`$/bandeja 12 canastillos 125 gramos` son 1,5 kilos.",
+    "`$/bandeja 12 canastillos 125 gramos` is 1.5 kilos."
+   ],
+   "respaldo": [
+    "D-520"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__units_normalized.sql",
+     "ancla": "when basket_kilos > 0 then basket_kilos"
+    }
+   ]
+  },
+  {
+   "n": 20,
+   "capa": "intermedio",
+   "titulo": [
+    "No inventa un precio cuando no hay lectura segura",
+    "Invents no price when there is no safe reading"
+   ],
+   "problema": [
+    "Un atado no declara su peso, y `0,5 a 1 kilo` es un rango, no una cantidad.",
+    "A bunch declares no weight, and `0,5 a 1 kilo` is a range, not a quantity."
+   ],
+   "sin_ella": [
+    "Habría que suponer un peso, y eso daría márgenes falsos.",
+    "A weight would have to be assumed, and that would give false margins."
+   ],
+   "ejemplo": [
+    "La betarraga en `$/docena de paquetes 5 unidades` se dividía por 5 y publicaba $1.870 por unidad. Esa unidad no se usa siempre igual, así que ahora queda sin precio.",
+    "Betarraga in `$/docena de paquetes 5 unidades` was divided by 5 and published $1,870 per unit. That unit is not always used the same way, so it now has no price."
+   ],
+   "respaldo": [
+    "RN-05",
+    "D-008",
+    "D-520"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__units_normalized.sql",
+     "ancla": "and not dozen_of_units"
+    }
+   ]
+  },
+  {
+   "n": 21,
+   "capa": "intermedio",
+   "titulo": [
+    "Calcula cuánto trae cada unidad de volumen",
+    "Works out how much each unit of volume brings"
+   ],
+   "problema": [
+    "ODEPA cuenta el volumen en envases: un bins de 400 kilos cuenta 1, igual que una caja de 15.",
+    "ODEPA counts volume in packages: a bin of 400 kilos counts 1, the same as a box of 15."
+   ],
+   "sin_ella": [
+    "Al promediar, un bins pesaría lo mismo que una caja, aunque trae unas 26 veces más.",
+    "When averaging, a bin would weigh the same as a box, although it brings about 26 times more."
+   ],
+   "ejemplo": [
+    "El boletín de ODEPA lo expresa por envase («Malla 18 kilos»), salvo cuando la unidad dice «(volumen en unidades)».",
+    "ODEPA's bulletin expresses it per package («Malla 18 kilos»), except when the unit says «(volumen en unidades)»."
+   ],
+   "inferencia": [
+    "`$/kilo (en caja de 17 kilos)` se lee como cajas, no kilos. Con cajas, una fila típica de palta da 2.550 kilos, igual que los 2.400 de sus bandejas; con kilos serían 150. ODEPA no lo declara: si contara kilos, 1.357 precios semanales cambiarían más de 5 %.",
+    "`$/kilo (en caja de 17 kilos)` is read as boxes, not kilos. As boxes, a typical avocado row gives 2,550 kilos, like the 2,400 of its trays; as kilos it would be 150. ODEPA does not state it: if it counted kilos, 1,357 weekly prices would change more than 5 %."
+   ],
+   "respaldo": [
+    "D-521"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__units_normalized.sql",
+     "ancla": "as volume_quantity"
+    }
+   ]
+  },
+  {
+   "n": 22,
+   "capa": "intermedio",
+   "titulo": [
+    "Divide el precio por lo que trae el envase",
+    "Divides the price by what the package brings"
+   ],
+   "problema": [
+    "El precio publicado es el del envase completo.",
+    "The published price is that of the whole package."
+   ],
+   "sin_ella": [
+    "Se compararía el precio de un saco con el de un kilo.",
+    "The price of a sack would be compared with that of a kilo."
+   ],
+   "respaldo": [
+    "RN-03",
+    "RN-04"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__units_normalized.sql",
+     "ancla": "as normalized_price"
+    }
+   ]
+  },
+  {
+   "n": 23,
+   "capa": "intermedio",
+   "titulo": [
+    "Asigna cada día a su semana",
+    "Assigns each day to its week"
+   ],
+   "problema": [
+    "El mayorista es diario y el consumidor es semanal.",
+    "Wholesale is daily and consumer is weekly."
+   ],
+   "sin_ella": [
+    "Las dos fuentes nunca coincidirían en una misma fecha.",
+    "The two sources would never meet on one date."
+   ],
+   "respaldo": [
+    "RN-08"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__weekly.sql",
+     "ancla": "isodow(first_date)"
+    }
+   ]
+  },
+  {
+   "n": 24,
+   "capa": "intermedio",
+   "titulo": [
+    "Promedia la semana mayorista por lo que se movió",
+    "Averages the wholesale week by what moved"
+   ],
+   "problema": [
+    "Un día con poco volumen no vale lo mismo que uno con mucho, ni un bins lo mismo que una caja.",
+    "A day with little volume is not worth the same as one with a lot, nor a bin the same as a box."
+   ],
+   "sin_ella": [
+    "Un envase chico y caro movería el precio de toda la semana.",
+    "A small, dear package would move the price of the whole week."
+   ],
+   "ejemplo": [
+    "Naranja en la Región Metropolitana, semana del 4 jul 2022: contar envases dejaba el kilo de Fukumoto Tercera en $711. Pesando lo que trae cada uno (bins de 400 kilos frente a mallas de 18), queda en $216.",
+    "Oranges in the Metropolitan Region, week of 4 Jul 2022: counting packages left the kilo of Fukumoto Tercera at $711. Weighing what each brings (bins of 400 kilos against mesh bags of 18), it is $216."
+   ],
+   "respaldo": [
+    "RN-07",
+    "D-521"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__weekly.sql",
+     "ancla": "price_times_quantity / quantity"
+    }
+   ]
+  },
+  {
+   "n": 25,
+   "capa": "intermedio",
+   "titulo": [
+    "Promedia la semana del consumidor",
+    "Averages the consumer week"
+   ],
+   "problema": [
+    "ODEPA publica varios puntos de venta por región, sin volumen.",
+    "ODEPA publishes several points of sale per region, without volume."
+   ],
+   "sin_ella": [
+    "Habría un precio por local, y no uno comparable por región y canal.",
+    "There would be one price per shop, not one comparable by region and channel."
+   ],
+   "respaldo": [
+    "RN-09",
+    "RN-10"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__weekly.sql",
+     "ancla": "avg(normalized_price) as price"
+    }
+   ]
+  },
+  {
+   "n": 26,
+   "capa": "intermedio",
+   "titulo": [
+    "Marca el precio atípico, sin borrarlo",
+    "Flags the outlier, without deleting it"
+   ],
+   "problema": [
+    "Un precio 5 veces mayor o menor que el resto esa semana suele ser un error de digitación.",
+    "A price 5 times above or below the rest that week is usually a typing error."
+   ],
+   "sin_ella": [
+    "Un solo error movería promedios, alertas y márgenes.",
+    "A single error would move averages, alerts and margins."
+   ],
+   "ejemplo": [
+    "Choclo en La Araucanía, semana del 7 abr 2025: una fila a $200 la `$/malla 50 unidades` deja el precio en $8. Queda marcado y fuera de los indicadores.",
+    "Choclo in La Araucanía, week of 7 Apr 2025: a row at $200 per `$/malla 50 unidades` leaves the price at $8. It stays flagged and out of the indicators."
+   ],
+   "respaldo": [
+    "RN-12"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__outlier_flagged.sql",
+     "ancla": "median_price * 5"
+    }
+   ]
+  },
+  {
+   "n": 27,
+   "capa": "intermedio",
+   "titulo": [
+    "Publica hasta la semana completa en ambas fuentes",
+    "Publishes up to the week complete in both sources"
+   ],
+   "problema": [
+    "ODEPA publica el mayorista y el consumidor en fechas distintas.",
+    "ODEPA publishes wholesale and consumer on different dates."
+   ],
+   "sin_ella": [
+    "Se compararía una semana completa con otra a medias, o el margen quedaría vacío.",
+    "A complete week would be compared with a partial one, or the margin would be empty."
+   ],
+   "respaldo": [
+    "D-356"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__outlier_flagged.sql",
+     "ancla": "where week_start <= ("
+    }
+   ]
+  },
+  {
+   "n": 28,
+   "capa": "intermedio",
+   "titulo": [
+    "Compara cada semana solo en el mismo envase",
+    "Compares each week only in the same package"
+   ],
+   "problema": [
+    "Una región puede vender esta semana otro envase que la semana pasada, y cada envase tiene su precio por kilo.",
+    "A region may sell a different package this week than last week, and each package has its price per kilo."
+   ],
+   "sin_ella": [
+    "Un cambio de envase parecería una subida o una bajada, y podría crear una alerta falsa.",
+    "A change of package would look like a rise or a fall, and could raise a false alert."
+   ],
+   "ejemplo": [
+    "Kiwi Hayward Especial, semana del 26 oct 2026: el Maule pasó de bandeja de 18 kilos a bandeja de 10, y la alerta decía +25,6 %. En el mismo envase subió +8,8 %. Los precios que solo cambiaron de envase quedan fuera de la comparación.",
+    "Kiwi Hayward Especial, week of 26 Oct 2026: Maule went from a tray of 18 kilos to a tray of 10, and the alert said +25.6 %. In the same package it rose +8.8 %. Prices that only changed package are left out of the comparison."
+   ],
+   "respaldo": [
+    "RN-15",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/intermediate/int_prices__same_package.sql",
+     "ancla": "before.unit = now.unit"
+    }
+   ]
+  },
+  {
+   "n": 29,
+   "capa": "marts",
+   "titulo": [
+    "Crea el catálogo de productos y de canales",
+    "Creates the catalogue of products and channels"
+   ],
+   "problema": [
+    "Repetir nombres largos en cada precio es lento y deja que se escriban distinto.",
+    "Repeating long names on each price is slow and lets them be written differently."
+   ],
+   "sin_ella": [
+    "Un producto podría tener dos nombres, y la base pesaría mucho más.",
+    "A product could have two names, and the database would weigh far more."
+   ],
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "dbt/models/marts/dim_product.sql",
+     "ancla": "row_number() over"
+    },
+    {
+     "archivo": "dbt/models/marts/dim_channel.sql",
+     "ancla": "row_number() over"
+    }
+   ]
+  },
+  {
+   "n": 30,
+   "capa": "marts",
+   "titulo": [
+    "Crea la lista de regiones",
+    "Creates the list of regions"
+   ],
+   "problema": [
+    "Cada región debe tener un solo nombre, con su número oficial.",
+    "Each region must have one name, with its official number."
+   ],
+   "sin_ella": [
+    "El mapa y los filtros no sabrían qué regiones tienen datos.",
+    "The map and the filters would not know which regions have data."
+   ],
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "dbt/models/marts/dim_region.sql",
+     "ancla": "select distinct"
+    }
+   ]
+  },
+  {
+   "n": 31,
+   "capa": "marts",
+   "titulo": [
+    "Crea un calendario sin huecos",
+    "Creates a calendar without gaps"
+   ],
+   "problema": [
+    "Una semana sin precios no aparecería en los datos, y parecería que no existió.",
+    "A week without prices would not appear in the data, as if it had not existed."
+   ],
+   "sin_ella": [
+    "No se notaría una semana faltante, ni se sabría su mes, su semana ISO o su estación.",
+    "A missing week would go unnoticed, with no month, ISO week or season."
+   ],
+   "respaldo": [
+    "D-095"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/marts/dim_date.sql",
+     "ancla": "generate_series"
+    }
+   ]
+  },
+  {
+   "n": 32,
+   "capa": "marts",
+   "titulo": [
+    "Arma la tabla central de precios",
+    "Builds the central price table"
+   ],
+   "problema": [
+    "El panel necesita un precio por semana, producto, región, canal y unidad.",
+    "The panel needs one price per week, product, region, channel and unit."
+   ],
+   "sin_ella": [
+    "Cada página tendría que rehacer el cálculo desde cero, y podrían contradecirse.",
+    "Each page would have to redo the calculation, and they could contradict each other."
+   ],
+   "respaldo": [
+    "RN-14"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/marts/weekly_price.sql",
+     "ancla": "strftime(prices.week_start"
+    }
+   ]
+  },
+  {
+   "n": 33,
+   "capa": "marts",
+   "titulo": [
+    "Guarda el cambio de cada precio en el mismo envase",
+    "Keeps each price's change in the same package"
+   ],
+   "problema": [
+    "Las alertas, el mapa y el Excel deben decir lo mismo.",
+    "The alerts, the map and the Excel must say the same thing."
+   ],
+   "sin_ella": [
+    "Cada pantalla calcularía su propia variación, y podrían no coincidir.",
+    "Each screen would work out its own variation, and they might not match."
+   ],
+   "respaldo": [
+    "RN-15",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/marts/weekly_same_package.sql",
+     "ancla": "change.price_now, change.price_before"
+    }
+   ]
+  },
+  {
+   "n": 34,
+   "capa": "marts",
+   "titulo": [
+    "Guarda lo rechazado con su motivo",
+    "Keeps what was rejected, with its reason"
+   ],
+   "problema": [
+    "Una fila rechazada no debe desaparecer en silencio.",
+    "A rejected row must not disappear silently."
+   ],
+   "sin_ella": [
+    "Nadie podría revisar qué se dejó fuera, ni por qué.",
+    "Nobody could review what was left out, or why."
+   ],
+   "respaldo": [
+    "RN-11"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/marts/rejection.sql",
+     "ancla": "where reason is not null"
+    }
+   ]
+  },
+  {
+   "n": 35,
+   "capa": "marts",
+   "titulo": [
+    "Une dos series del INE en una",
+    "Joins two INE series into one"
+   ],
+   "problema": [
+    "El INE cambió de base en 2024: antes y después los índices no son comparables.",
+    "The INE changed its base in 2024: indexes before and after are not comparable."
+   ],
+   "sin_ella": [
+    "El IPC daría un salto falso en enero de 2024.",
+    "The CPI would show a false jump in January 2024."
+   ],
+   "ejemplo": [
+    "La serie anterior se escala para que enero de 2024 suba exactamente lo que publicó el INE.",
+    "The earlier series is scaled so that January 2024 rises exactly what the INE published."
+   ],
+   "respaldo": [
+    "D-155"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/marts/ipc_monthly.sql",
+     "ancla": "as factor"
+    }
+   ]
+  },
+  {
+   "n": 36,
+   "capa": "marts",
+   "titulo": [
+    "Lleva el IPC a cada semana",
+    "Takes the CPI to each week"
+   ],
+   "problema": [
+    "El IPC es mensual y los precios son semanales.",
+    "The CPI is monthly and prices are weekly."
+   ],
+   "sin_ella": [
+    "No se podría pasar un precio a pesos reales. Una semana de un mes sin publicar queda marcada como provisional.",
+    "A price could not be taken to real pesos. A week of a month not yet published stays marked as provisional."
+   ],
+   "respaldo": [
+    "D-155"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/marts/ipc_weekly.sql",
+     "ancla": "as real_factor"
+    }
+   ]
+  },
+  {
+   "n": 37,
+   "capa": "marts",
+   "titulo": [
+    "Guarda lo último de cada fuente",
+    "Keeps the latest of each source"
+   ],
+   "problema": [
+    "El corte a la semana común esconde la semana que una sola fuente ya publicó.",
+    "The cut to the common week hides the week only one source has published."
+   ],
+   "sin_ella": [
+    "El paso 2 de «Semanal» no podría mostrar el dato más reciente de un canal.",
+    "Step 2 of «Semanal» could not show a channel's most recent data."
+   ],
+   "respaldo": [
+    "D-365",
+    "D-494",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/marts/latest_by_source.sql",
+     "ancla": "row_number() over (partition by source"
+    }
+   ]
+  },
+  {
+   "n": 38,
+   "capa": "marts",
+   "titulo": [
+    "Guarda el IPC tal como se leyó",
+    "Keeps the CPI as it was read"
+   ],
+   "problema": [
+    "El INE puede no responder la semana siguiente.",
+    "The INE may not answer the following week."
+   ],
+   "sin_ella": [
+    "Sin esta copia, una caída del INE detendría la carga.",
+    "Without this copy, an INE outage would stop the load."
+   ],
+   "respaldo": [
+    "D-155"
+   ],
+   "codigo": [
+    {
+     "archivo": "dbt/models/marts/ine_ipc_source.sql",
+     "ancla": "raw_index_value"
+    }
+   ]
+  },
+  {
+   "n": 39,
+   "capa": "publicacion",
+   "titulo": [
+    "No publica una carga dudosa",
+    "Does not publish a doubtful load"
+   ],
+   "problema": [
+    "Un archivo cortado o una fuente muy atrasada pueden pasar sin error técnico.",
+    "A cut-off file or a very late source can pass without a technical error."
+   ],
+   "sin_ella": [
+    "La app mostraría menos datos o datos viejos sin avisar.",
+    "The app would show less data or old data without warning."
+   ],
+   "ejemplo": [
+    "Se detiene si se lee menos del 90 % de las filas de la carga anterior, o si una fuente lleva más de 2 semanas sin publicar.",
+    "It stops if it reads less than 90 % of the rows of the previous load, or if a source has not published for more than 2 weeks."
+   ],
+   "respaldo": [
+    "RN-14",
+    "D-029",
+    "D-356"
+   ],
+   "codigo": [
+    {
+     "archivo": "etl/pipeline.py",
+     "ancla": "etl.late_source_problems(last_weeks"
+    },
+    {
+     "archivo": "etl/pipeline.py",
+     "ancla": "etl.MINIMUM_ROWS_RATIO"
+    }
+   ]
+  },
+  {
+   "n": 40,
+   "capa": "publicacion",
+   "titulo": [
+    "Reemplaza la base solo al final",
+    "Replaces the database only at the end"
+   ],
+   "problema": [
+    "Una carga puede fallar a medio camino.",
+    "A load can fail halfway."
+   ],
+   "sin_ella": [
+    "La app podría leer una base a medio escribir.",
+    "The app could read a half-written database."
+   ],
+   "respaldo": [
+    "D-270"
+   ],
+   "codigo": [
+    {
+     "archivo": "etl/pipeline.py",
+     "ancla": "def write_serving_database"
+    }
+   ]
+  },
+  {
+   "n": 41,
+   "capa": "publicacion",
+   "titulo": [
+    "Recalcula todo por otro camino",
+    "Recalculates everything another way"
+   ],
+   "problema": [
+    "Una regla mal escrita en un solo lugar no tendría con qué compararse.",
+    "A rule miswritten in one place would have nothing to be compared with."
+   ],
+   "sin_ella": [
+    "Un error de cálculo pasaría sin que nadie lo note.",
+    "A calculation error would pass unnoticed."
+   ],
+   "ejemplo": [
+    "La ETL de respaldo en SQLite repite las reglas en Python, y las pruebas exigen que dé los mismos precios que dbt.",
+    "The SQLite backup ETL repeats the rules in Python, and the tests demand the same prices as dbt."
+   ],
+   "respaldo": [
+    "RN-14",
+    "D-046"
+   ],
+   "codigo": [
+    {
+     "archivo": "etl/etl.py",
+     "ancla": "def apply_business_rules"
+    },
+    {
+     "archivo": "etl/etl.py",
+     "ancla": "def check_quality"
+    }
+   ]
+  },
+  {
+   "n": 42,
+   "capa": "sql",
+   "titulo": [
+    "K1: margen entre mayorista y consumidor",
+    "K1: margin between wholesale and consumer"
+   ],
+   "problema": [
+    "El consumidor quiere saber cuánto se agrega al precio entre el mercado mayorista y la tienda.",
+    "The consumer wants to know how much is added between the wholesale market and the shop."
+   ],
+   "sin_ella": [
+    "No se vería la diferencia entre lo que cobra el mercado y lo que paga la gente.",
+    "The gap between what the market charges and what people pay would not be seen."
+   ],
+   "por_que_no": [
+    "Compara precios de la misma semana: no hay una semana anterior que comparar.",
+    "It compares prices of the same week: there is no week before to compare."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [
+    "RN-06"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/queries.sql",
+     "ancla": "name: k1_margin"
+    }
+   ]
+  },
+  {
+   "n": 43,
+   "capa": "sql",
+   "titulo": [
+    "K2: brecha entre canales",
+    "K2: gap between channels"
+   ],
+   "problema": [
+    "El mismo producto cuesta distinto en un supermercado y en una feria.",
+    "The same product costs differently in a supermarket and a street market."
+   ],
+   "sin_ella": [
+    "No se podría decir dónde conviene comprar.",
+    "Nobody could say where it is best to buy."
+   ],
+   "por_que_no": [
+    "Compara precios de la misma semana: no hay una semana anterior que comparar.",
+    "It compares prices of the same week: there is no week before to compare."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "bi/queries.sql",
+     "ancla": "name: k2_channel_gap"
+    }
+   ]
+  },
+  {
+   "n": 44,
+   "capa": "sql",
+   "titulo": [
+    "K3: cada región frente al promedio nacional",
+    "K3: each region against the national average"
+   ],
+   "problema": [
+    "Un mismo precio nacional esconde regiones más caras y más baratas.",
+    "One national price hides dearer and cheaper regions."
+   ],
+   "sin_ella": [
+    "No se vería qué región paga más por lo mismo.",
+    "It would not show which region pays more for the same thing."
+   ],
+   "por_que_no": [
+    "Compara precios de la misma semana: no hay una semana anterior que comparar.",
+    "It compares prices of the same week: there is no week before to compare."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "bi/queries.sql",
+     "ancla": "name: k3_regional_index"
+    }
+   ]
+  },
+  {
+   "n": 45,
+   "capa": "sql",
+   "titulo": [
+    "K4: cada semana frente al promedio de su año",
+    "K4: each week against its year's average"
+   ],
+   "problema": [
+    "Muchos alimentos suben y bajan según la temporada.",
+    "Many foods rise and fall with the season."
+   ],
+   "sin_ella": [
+    "No se sabría en qué mes suele estar más barato un producto.",
+    "Nobody would know which month a product is usually cheapest."
+   ],
+   "por_que_no": [
+    "Compara una semana con el promedio de su año, no con la semana anterior.",
+    "It compares a week with its year's average, not with the week before."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "bi/queries.sql",
+     "ancla": "name: k4_seasonal_index"
+    }
+   ]
+  },
+  {
+   "n": 46,
+   "capa": "sql",
+   "titulo": [
+    "K5: si el mayorista se adelanta al consumidor",
+    "K5: whether wholesale leads consumer"
+   ],
+   "problema": [
+    "Una subida mayorista puede tardar semanas en llegar a la tienda.",
+    "A wholesale rise can take weeks to reach the shop."
+   ],
+   "sin_ella": [
+    "No se podría ver esa demora.",
+    "That delay could not be seen."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-048",
+    "D-049",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/queries.sql",
+     "ancla": "name: k5_weekly_variations_sql"
+    },
+    {
+     "archivo": "bi/lag.py",
+     "ancla": "def attach_same_package_changes"
+    }
+   ]
+  },
+  {
+   "n": 47,
+   "capa": "sql",
+   "titulo": [
+    "K6: precio nacional y su cambio",
+    "K6: national price and its change"
+   ],
+   "problema": [
+    "Una región que deja de informar cambia el promedio nacional, aunque ningún precio se mueva.",
+    "A region that stops reporting changes the national average, although no price moves."
+   ],
+   "sin_ella": [
+    "Se confundiría un cambio de cobertura con un cambio de precio.",
+    "A change of coverage would be mistaken for a change of price."
+   ],
+   "ejemplo": [
+    "El cambio usa solo las regiones con precio las dos semanas, y en ellas solo el mismo envase.",
+    "The change uses only the regions with a price both weeks, and in them only the same package."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-144",
+    "D-158",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/queries.sql",
+     "ancla": "name: k6_national_weekly_price"
+    }
+   ]
+  },
+  {
+   "n": 48,
+   "capa": "sql",
+   "titulo": [
+    "K6 dentro de una región",
+    "K6 inside a region"
+   ],
+   "problema": [
+    "Al elegir una región, las alertas nacionales ya no dicen lo que pasa ahí.",
+    "When a region is chosen, the national alerts no longer say what happens there."
+   ],
+   "sin_ella": [
+    "Las alertas seguirían siendo de todo Chile aunque hayas elegido una región.",
+    "The alerts would stay those of all Chile although you chose a region."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-499",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/queries.sql",
+     "ancla": "name: k6_regional_weekly_price"
+    }
+   ]
+  },
+  {
+   "n": 49,
+   "capa": "sql",
+   "titulo": [
+    "K6 escrito por segunda vez, en SQL",
+    "K6 written a second time, in SQL"
+   ],
+   "problema": [
+    "Una alerta mal calculada no tendría con qué compararse.",
+    "A miscalculated alert would have nothing to be compared with."
+   ],
+   "sin_ella": [
+    "Un error en la regla de las alertas pasaría sin que nadie lo note.",
+    "An error in the alert rule would pass unnoticed."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-049",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/queries.sql",
+     "ancla": "name: k6_usual_range_sql"
+    }
+   ]
+  },
+  {
+   "n": 50,
+   "capa": "sql",
+   "titulo": [
+    "K7: productos que tienen margen",
+    "K7: products that have a margin"
+   ],
+   "problema": [
+    "No todos los productos del consumidor se venden también en el mayorista.",
+    "Not every consumer product is also sold wholesale."
+   ],
+   "sin_ella": [
+    "No se sabría qué parte de la canasta tiene un margen calculable.",
+    "Nobody would know which part of the basket has a calculable margin."
+   ],
+   "por_que_no": [
+    "Cuenta filas o productos: no muestra un cambio de precio.",
+    "It counts rows or products: it shows no price change."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "etl/etl.py",
+     "ancla": "MATCH_COVERAGE_QUERY ="
+    }
+   ]
+  },
+  {
+   "n": 51,
+   "capa": "sql",
+   "titulo": [
+    "K8: cuánto se rechazó y por qué",
+    "K8: how much was rejected and why"
+   ],
+   "problema": [
+    "Una carga puede rechazar filas sin que se note.",
+    "A load can reject rows without anyone noticing."
+   ],
+   "sin_ella": [
+    "«Controles de datos» no podría mostrar la calidad de cada carga.",
+    "«Controles de datos» could not show the quality of each load."
+   ],
+   "por_que_no": [
+    "Cuenta filas o productos: no muestra un cambio de precio.",
+    "It counts rows or products: it shows no price change."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [
+    "RN-11"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/queries.sql",
+     "ancla": "name: k8_rejected_rows"
+    },
+    {
+     "archivo": "bi/queries.sql",
+     "ancla": "name: quality_flag_counts"
+    }
+   ]
+  },
+  {
+   "n": 52,
+   "capa": "panel",
+   "titulo": [
+    "Calcula el cambio semanal y su rango habitual",
+    "Works out the weekly change and its usual range"
+   ],
+   "problema": [
+    "Un producto que siempre se mueve mucho no es noticia si se mueve mucho otra vez.",
+    "A product that always moves a lot is no news if it moves a lot again."
+   ],
+   "sin_ella": [
+    "Solo se podría avisar por el tamaño del cambio, sin saber si es raro para ese producto.",
+    "It could only warn by the size of the change, without knowing if it is unusual for that product."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-144",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/alerts.py",
+     "ancla": "def add_weekly_variation"
+    },
+    {
+     "archivo": "bi/alerts.py",
+     "ancla": "def add_usual_range"
+    }
+   ]
+  },
+  {
+   "n": 53,
+   "capa": "panel",
+   "titulo": [
+    "Decide qué es una alerta",
+    "Decides what an alert is"
+   ],
+   "problema": [
+    "Con miles de precios, siempre hay algo que se mueve.",
+    "With thousands of prices, something always moves."
+   ],
+   "sin_ella": [
+    "Habría cientos de avisos por semana, y nadie los leería.",
+    "There would be hundreds of warnings a week, and nobody would read them."
+   ],
+   "ejemplo": [
+    "Fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con 2 cotizaciones en cada semana.",
+    "Outside the average ± 2 deviations of its 12 previous weeks, of at least 10 % and with 2 quotes each week."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-146",
+    "D-158"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/alerts.py",
+     "ancla": "def is_price_alert"
+    }
+   ]
+  },
+  {
+   "n": 54,
+   "capa": "panel",
+   "titulo": [
+    "Calcula el precio nacional de un canal",
+    "Works out a channel's national price"
+   ],
+   "problema": [
+    "Cada fuente publica en fechas distintas, y un canal puede ir una semana adelante.",
+    "Each source publishes on different dates, and a channel may be a week ahead."
+   ],
+   "sin_ella": [
+    "El paso 2 de «Semanal» mostraría el dato de un canal con una semana de atraso.",
+    "Step 2 of «Semanal» would show a channel's data a week late."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-365",
+    "D-405",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/dashboard.py",
+     "ancla": "def read_channel_national_prices"
+    }
+   ]
+  },
+  {
+   "n": 55,
+   "capa": "panel",
+   "titulo": [
+    "Arma la tabla de productos del paso 4",
+    "Builds the products table of step 4"
+   ],
+   "problema": [
+    "El precio nacional de cada semana no siempre cubre las mismas regiones ni los mismos envases.",
+    "Each week's national price does not always cover the same regions or packages."
+   ],
+   "sin_ella": [
+    "El precio de la tabla y su variación no calzarían entre sí.",
+    "The price in the table and its variation would not match."
+   ],
+   "ejemplo": [
+    "Kiwi Hayward Especial mayorista, semana del 26 oct 2026: la tabla compara $1.877 con $2.043 (+8,8 %) y dice qué envases usó. Por eso puede diferir del `precio` de Consultas SQL.",
+    "Kiwi Hayward Especial wholesale, week of 26 Oct 2026: the table compares $1,877 with $2,043 (+8.8 %) and says which packages it used. That is why it can differ from the `precio` in SQL queries."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-144",
+    "D-327",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/dashboard.py",
+     "ancla": "def compare_same_regions"
+    },
+    {
+     "archivo": "bi/home_mockup.py",
+     "ancla": "def same_package_pair"
+    }
+   ]
+  },
+  {
+   "n": 56,
+   "capa": "panel",
+   "titulo": [
+    "Resume cada familia con su mediana",
+    "Sums up each family with its median"
+   ],
+   "problema": [
+    "Un solo producto con una subida enorme arrastra el promedio de toda su familia.",
+    "A single product with a huge rise drags the average of its whole family."
+   ],
+   "sin_ella": [
+    "Frutas podría parecer que subió mucho cuando casi todas siguieron igual.",
+    "Fruit could look as if it rose a lot when almost all stayed the same."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/home_mockup.py",
+     "ancla": "def family_averages"
+    },
+    {
+     "archivo": "bi/overview.py",
+     "ancla": "def family_moves"
+    }
+   ]
+  },
+  {
+   "n": 57,
+   "capa": "panel",
+   "titulo": [
+    "Cuenta cuántos subieron y cuántos bajaron",
+    "Counts how many rose and how many fell"
+   ],
+   "problema": [
+    "La mediana sola no dice si la mayoría se movió hacia un mismo lado.",
+    "The median alone does not say whether most moved the same way."
+   ],
+   "sin_ella": [
+    "No se vería si una subida es general o de unos pocos.",
+    "It would not show whether a rise is general or of a few."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-146",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/overview.py",
+     "ancla": "def directions"
+    },
+    {
+     "archivo": "bi/overview.py",
+     "ancla": "def family_heat"
+    }
+   ]
+  },
+  {
+   "n": 58,
+   "capa": "panel",
+   "titulo": [
+    "Pinta cada región en el mapa",
+    "Paints each region on the map"
+   ],
+   "problema": [
+    "Una región con pocos productos comparables puede parecer que subió por azar.",
+    "A region with few comparable products can look as if it rose by chance."
+   ],
+   "sin_ella": [
+    "El color de una región diría más de lo que los datos permiten.",
+    "A region's color would say more than the data allow."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-146",
+    "D-329",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/dashboard.py",
+     "ancla": "def build_regional_movement_model"
+    }
+   ]
+  },
+  {
+   "n": 59,
+   "capa": "panel",
+   "titulo": [
+    "Cuenta las regiones que suben y bajan por producto",
+    "Counts the regions rising and falling per product"
+   ],
+   "problema": [
+    "Un promedio nacional puede esconder regiones que van en sentido contrario.",
+    "A national average can hide regions going the opposite way."
+   ],
+   "sin_ella": [
+    "No se vería si un producto sube en todo Chile o en una sola región.",
+    "It would not show whether a product rises across Chile or in one region."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-304",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/dashboard.py",
+     "ancla": "def read_cached_region_directions_in"
+    }
+   ]
+  },
+  {
+   "n": 60,
+   "capa": "panel",
+   "titulo": [
+    "Dibuja las líneas de tendencia de cada familia",
+    "Draws each family's trend lines"
+   ],
+   "problema": [
+    "Una semana sola no dice si un cambio es parte de una tendencia.",
+    "One week alone does not say whether a change is part of a trend."
+   ],
+   "sin_ella": [
+    "No se vería cómo viene moviéndose cada familia.",
+    "It would not show how each family has been moving."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/dashboard.py",
+     "ancla": "def read_home_trends_in"
+    }
+   ]
+  },
+  {
+   "n": 61,
+   "capa": "panel",
+   "titulo": [
+    "Muestra el último dato de cada canal",
+    "Shows the latest data of each channel"
+   ],
+   "problema": [
+    "Cada canal llega con su propia última semana.",
+    "Each channel arrives with its own latest week."
+   ],
+   "sin_ella": [
+    "Las tarjetas del paso 2 mezclarían semanas distintas.",
+    "The cards of step 2 would mix different weeks."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-404",
+    "D-494",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/channel_latest.py",
+     "ancla": "def build_rows"
+    }
+   ]
+  },
+  {
+   "n": 62,
+   "capa": "panel",
+   "titulo": [
+    "Arma el Excel y el CSV de «Descargar»",
+    "Builds the Excel and CSV of «Descargar»"
+   ],
+   "problema": [
+    "Quien analiza los datos en otra herramienta debe ver las mismas cifras que la tabla.",
+    "Whoever analyzes the data in another tool must see the same figures as the table."
+   ],
+   "sin_ella": [
+    "El archivo podría contradecir a la pantalla.",
+    "The file could contradict the screen."
+   ],
+   "ejemplo": [
+    "Trae la columna «Envase comparado», y sus notas explican la regla.",
+    "It carries the «Envase comparado» column, and its notes explain the rule."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-509",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/price_export.py",
+     "ancla": "def build_rows"
+    }
+   ]
+  },
+  {
+   "n": 63,
+   "capa": "panel",
+   "titulo": [
+    "Escribe el «Informe semanal»",
+    "Writes the «Informe semanal»"
+   ],
+   "problema": [
+    "El autor debe enterarse de lo que pasó sin abrir la app.",
+    "The author must learn what happened without opening the app."
+   ],
+   "sin_ella": [
+    "Una carga con alertas fuertes podría pasar sin que nadie la mire.",
+    "A load with strong alerts could pass without anyone looking at it."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [],
+   "codigo": [
+    {
+     "archivo": "bi/report.py",
+     "ancla": "alerts.find_price_alerts(prices)"
+    }
+   ]
+  },
+  {
+   "n": 64,
+   "capa": "panel",
+   "titulo": [
+    "Calcula el índice por familia y de toda la canasta",
+    "Works out the index per family and for the whole basket"
+   ],
+   "problema": [
+    "Los precios de una familia parten de niveles muy distintos: un kilo de carne y un pan.",
+    "A family's prices start at very different levels: a kilo of beef and a loaf."
+   ],
+   "sin_ella": [
+    "Los productos caros mandarían sobre los baratos, y no se podría comparar con el IPC.",
+    "Dear products would rule over cheap ones, and it could not be compared with the CPI."
+   ],
+   "por_que_no": [
+    "Compara cada mes con enero de 2022, en la mediana de muchas series, y no semanas seguidas. Exigir el mismo envase sacaría 16 de 1.868 series regionales.",
+    "It compares each month with January 2022, in the median of many series, not consecutive weeks. Demanding the same package would remove 16 of 1,868 regional series."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [
+    "D-163",
+    "D-456"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/inflation_view.py",
+     "ancla": "SERIES_SQL ="
+    },
+    {
+     "archivo": "bi/inflation_view.py",
+     "ancla": "def build_family_index"
+    }
+   ]
+  },
+  {
+   "n": 65,
+   "capa": "panel",
+   "titulo": [
+    "Calcula el cambio de cada mes y de cada año",
+    "Works out the change of each month and year"
+   ],
+   "problema": [
+    "Una subida anual se entiende mejor de diciembre a diciembre, como la mide el INE.",
+    "A yearly rise reads better from December to December, as the INE measures it."
+   ],
+   "sin_ella": [
+    "No se podría comparar con el IPC del mismo período.",
+    "It could not be compared with the CPI of the same period."
+   ],
+   "por_que_no": [
+    "Se calcula sobre el índice anterior, que compara meses y no semanas seguidas.",
+    "It is worked out on the index above, which compares months, not consecutive weeks."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [
+    "D-456",
+    "D-457"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/inflation_view.py",
+     "ancla": "def change"
+    },
+    {
+     "archivo": "bi/ba_trends.py",
+     "ancla": "def yearly_changes"
+    }
+   ]
+  },
+  {
+   "n": 66,
+   "capa": "panel",
+   "titulo": [
+    "Resume la temporada de cada mes",
+    "Sums up each month's season"
+   ],
+   "problema": [
+    "Cada año tiene su propio nivel de precios.",
+    "Each year has its own price level."
+   ],
+   "sin_ella": [
+    "Los últimos años, más caros, parecerían los meses más caros.",
+    "The latest, dearer years would look like the dearest months."
+   ],
+   "por_que_no": [
+    "Parte de K4, que compara cada semana con el promedio de su año.",
+    "It comes from K4, which compares each week with its year's average."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [
+    "D-457"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/ba_trends.py",
+     "ancla": "grouped[\"seasonal_index\"].median()"
+    }
+   ]
+  },
+  {
+   "n": 67,
+   "capa": "panel",
+   "titulo": [
+    "Escribe el cuadro verde del IPC",
+    "Writes the green CPI box"
+   ],
+   "problema": [
+    "Una frase escrita a mano queda vieja con el próximo dato.",
+    "A sentence written by hand goes stale with the next data."
+   ],
+   "sin_ella": [
+    "La frase podría contradecir las cifras nuevas del INE.",
+    "The sentence could contradict the new INE figures."
+   ],
+   "por_que_no": [
+    "Son datos del INE, que no tienen envases.",
+    "These are INE data, which have no packages."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [
+    "D-518"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/ba_trends.py",
+     "ancla": "def food_cpi_insight"
+    }
+   ]
+  },
+  {
+   "n": 68,
+   "capa": "panel",
+   "titulo": [
+    "Traduce las tablas a vistas legibles",
+    "Turns the tables into readable views"
+   ],
+   "problema": [
+    "Los nombres internos y los ids no se entienden en una consulta.",
+    "Internal names and ids cannot be understood in a query."
+   ],
+   "sin_ella": [
+    "Consultar los precios exigiría conocer cada clave de la base.",
+    "Querying prices would demand knowing every key of the database."
+   ],
+   "por_que_no": [
+    "Muestra el `precio` real y el SQL que cada persona escribe. La tabla `weekly_same_package` también se puede consultar.",
+    "It shows the real `precio` and the SQL each person writes. The `weekly_same_package` table can be queried too."
+   ],
+   "usa_mismo_envase": false,
+   "respaldo": [
+    "D-173",
+    "D-515"
+   ],
+   "codigo": [
+    {
+     "archivo": "bi/sql_explorer.py",
+     "ancla": "VIEWS = ["
+    }
+   ]
+  },
+  {
+   "n": 69,
+   "capa": "panel",
+   "titulo": [
+    "Mide la calidad de lo publicado",
+    "Measures the quality of what is published"
+   ],
+   "problema": [
+    "Sin medir, nadie sabe cuántos precios se pudieron comparar cada semana.",
+    "Without measuring, nobody knows how many prices could be compared each week."
+   ],
+   "sin_ella": [
+    "La cobertura podría caer sin que nadie se entere.",
+    "Coverage could fall without anyone finding out."
+   ],
+   "ejemplo": [
+    "Un precio que solo cambió de envase cuenta como «sin comparación válida».",
+    "A price that only changed package counts as «no valid comparison»."
+   ],
+   "usa_mismo_envase": true,
+   "respaldo": [
+    "D-418",
+    "D-434",
+    "D-522"
+   ],
+   "codigo": [
+    {
+     "archivo": "scripts/medir_calidad.py",
+     "ancla": "variations = alerts.add_weekly_variation(prices.copy())"
+    },
+    {
+     "archivo": "scripts/semanas_sin_precio.py",
+     "ancla": "def count_gaps"
+    }
+   ]
+  }
+ ]
+}

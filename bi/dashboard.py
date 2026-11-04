@@ -86,6 +86,7 @@ from bi import (
     quality_view,
     security_map,
     sql_explorer,
+    transformation_rules,
     stack_page,
     project,
     quality,
@@ -116,6 +117,7 @@ PAGE_ARCHITECTURE = "Modelo de datos"
 PAGE_SEASONALITY = "Contexto del precio"
 # D-162: read-only SQL on the gold layer, the destination of «Consultas SQL» in the pipeline.
 PAGE_SQL = "Consultas SQL"
+PAGE_RULES = "Reglas de transformación"  # D-523: what the pipeline does to the data and why
 # D-456: the Analysis in one page, in tabs, like a report of Power BI: the history of the prices first, then
 # the four pages it gathers. Their old addresses open their tab. D-457: the history is read two ways that never mix,
 # one period month by month and the whole history year by year; the old «Tendencias» opens «Mensual».
@@ -228,7 +230,15 @@ WINDOWS = {
         PAGE_ANALYSIS,
         PAGE_BA,
     ],
-    SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG],
+    SECTION_TECHNICAL: [
+        PAGE_DIAGRAMS,
+        PAGE_RULES,
+        PAGE_ARCHITECTURE,
+        PAGE_OPERATIONS,
+        PAGE_RUNS,
+        PAGE_ACTIONS,
+        PAGE_CONFIG,
+    ],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
     SECTION_LINKS: [
         PAGE_FOLDER,
@@ -302,6 +312,7 @@ PAGE_ICONS = {
     PAGE_SAD: ":material/account_tree:",
     PAGE_ADR: ":material/gavel:",
     PAGE_SQL: ":material/terminal:",
+    PAGE_RULES: ":material/rule:",
     PAGE_SECURITY: ":material/lock:",
     PAGE_STACK: ":material/stacks:",
     PAGE_INSIGHTS: ":material/lightbulb:",
@@ -336,6 +347,7 @@ PAGE_PATHS = {
     PAGE_SAD: "sad",
     PAGE_ADR: "adr",
     PAGE_SQL: "consultas-sql",
+    PAGE_RULES: "reglas-de-transformacion",
     PAGE_HOME: "dashboard",
     PAGE_INSIGHTS: "insights",
     PAGE_STAKEHOLDERS: "interesados",
@@ -2333,6 +2345,7 @@ BAR_VIEWS = {
     PAGE_ARCHITECTURE,
     PAGE_OPERATIONS,
     PAGE_SQL,
+    PAGE_RULES,
     PAGE_RUNS,
     PAGE_ACTIONS,
     PAGE_CONFIG,
@@ -8027,6 +8040,28 @@ def show_git_page(mode):
         )
 
 
+def show_rules_page(mode):
+    """«Reglas de transformación» (D-523): what the pipeline does to the data and why, each rule with the problem of the
+    source it solves and what would happen without it. It runs in the browser, in its own frame, as «Cambios e
+    incidentes»; only the Autor gets the code as links to the repository (D-500)."""
+    show_page_bar(
+        PAGE_RULES,
+        PAGE_RULES,
+        "Qué le hacemos a los datos de ODEPA y del INE, y por qué: cada regla con el problema que resuelve y lo que "
+        "pasaría sin ella.",
+    )
+    st.markdown(
+        '<style>.st-key-rules_frame, .st-key-rules_frame [data-testid="stElementContainer"], .st-key-rules_frame iframe '
+        '{ height:max(calc(100vh - 218px), 480px) !important; }</style>',
+        unsafe_allow_html=True,
+    )
+    with st.container(key="rules_frame"):
+        st.iframe(
+            transformation_rules.build_page_html(charts.get_palette(mode), i18n.get_language(), is_author()),
+            height=480,
+        )
+
+
 def show_method_page(mode):
     """«Plan de calidad» (D-320, D-323, D-330, D-332, D-333): how the quality of the published data and of the code is
     managed. Two tabs: «Resumen» (each indicator against its acceptable) and «Informes» (the numbered reports)."""
@@ -8320,6 +8355,7 @@ SHOW_PAGE_BY_TITLE = {
         # D-514: no row of chips under the bar; the studio's limits sit beside «Ejecutar», and the editor is taller
         header=lambda: show_page_bar(PAGE_SQL, "Consultas SQL", sql_explorer.DESCRIPTION),
     ),
+    PAGE_RULES: lambda mode: show_rules_page(mode),
     PAGE_HOME: show_home_page,
     PAGE_DIAGRAMS: show_diagrams_page,
     PAGE_INSIGHTS: lambda mode: show_insights_page(mode),
@@ -8720,6 +8756,7 @@ def show_route_footer(window, pages, view=None):
 # D-233: the pages that fit the window close with one short footer instead of the two long ones.
 COMPACT_FOOTER_VIEWS = {
     PAGE_SQL,
+    PAGE_RULES,
     PAGE_OPERATIONS,
     PAGE_RUNS,
     PAGE_ACTIONS,
@@ -9029,7 +9066,7 @@ MENU_BLOCKS = [
         # D-494: «Último dato por canal» became step 2 of «Semanal»: the section is two dashboards.
         [PAGE_HOME, PAGE_BA],
     ),
-    ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
+    ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_RULES, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG]),  # D-420: the Autor's only
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP, PAGE_SECURITY]),  # D-420: security, for the Profesional
     (
@@ -9053,6 +9090,7 @@ SIDEBAR_ICONS = {
     PAGE_ARCHITECTURE: ":material/database:",
     PAGE_OPERATIONS: ":material/verified_user:",
     PAGE_SQL: ":material/terminal:",
+    PAGE_RULES: ":material/rule:",
     PAGE_RUNS: ":material/radio_button_checked:",
     PAGE_ACTIONS: ":material/fact_check:",
     PAGE_CONFIG: ":material/settings:",
@@ -9345,6 +9383,7 @@ DASHBOARD_TILES = [PAGE_HOME, PAGE_BA]  # D-494
 FOLD_MENU_VIEWS = [
     *DASHBOARD_TILES,
     PAGE_SQL,
+    PAGE_RULES,
     PAGE_DIAGRAMS,
     PAGE_ARCHITECTURE,
     PAGE_STACK,
