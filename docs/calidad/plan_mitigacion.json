@@ -1880,6 +1880,58 @@
           "referencia": "D-483"
         }
       ]
+    },
+    {
+      "id": "F-33",
+      "categoria": "código",
+      "falla": [
+        "Una prueba fija un dato que el proyecto cambia solo",
+        "A test pins a fact that the project changes by itself"
+      ],
+      "deteccion": [
+        "La suite completa antes de un push y el rojo de pruebas.yml",
+        "The full suite before a push and the red of pruebas.yml"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Las pruebas suponían que el último informe era C-7",
+        "The tests assumed that the latest report was C-7"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: la app y la carga semanal siguieron bien",
+        "None: the app and the weekly load kept working"
+      ],
+      "correctiva": [
+        "Las pruebas de la serie de construcción la piden de forma explícita",
+        "The tests of the construction series ask for it explicitly"
+      ],
+      "estacion": 9,
+      "caso_real": "D-431",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "Llegó el informe semanal N° 1 y fallaron 8 pruebas de «Método y calidad» en el CI.",
+            "Weekly report No. 1 arrived and 8 «Método y calidad» tests failed in the CI."
+          ],
+          "diagnostico": [
+            "La app pasa sola a la serie semanal, y las pruebas seguían leyendo la actual como si fuera C-7.",
+            "The app moves to the weekly series by itself, and the tests still read the current one as C-7."
+          ],
+          "solucion": [
+            "Esas 8 pruebas piden la serie de construcción, y otra comprueba que la página lea la semanal.",
+            "Those 8 tests ask for the construction series, and another checks that the page reads the weekly one."
+          ],
+          "comentario": [
+            "El informe N° 1 salió bien: sus 5 indicadores cumplen.",
+            "Report No. 1 came out well: its 5 indicators are met."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-431"
+        }
+      ]
     }
   ]
 }

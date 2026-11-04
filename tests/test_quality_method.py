@@ -115,7 +115,21 @@ def test_d323_a_candidate_the_author_marked_as_not_secret_counts_as_reviewed():
     assert medir_calidad.classify_secret_candidates(found) == {"falsos_positivos": 1, "sin_clasificar": 0}
 
 
-def test_d332_the_reports_tab_lists_every_report_newest_first(monkeypatch):
+@pytest.fixture
+def construction_series(monkeypatch):
+    """D-431: these checks read the closed history of C-1 to C-7; the page itself reads the current series (F-33)."""
+    monkeypatch.setattr(quality_metrics, "current_series", lambda: quality_metrics.SERIES_BUILD)
+
+
+def test_f33_the_page_reads_the_weekly_series_once_it_has_a_report():
+    assert any(quality_metrics.WEEKLY_FOLDER.glob("informe-*.json"))
+    reports = quality_method.read_page()[0]
+    assert reports and all(report["serie"] == quality_metrics.SERIES_WEEKLY for report in reports)
+    assert quality_metrics.report_code(reports[0]) == "N° 1"
+    assert quality_metrics.read_reports(quality_metrics.SERIES_BUILD)[-1]["numero"] == 7  # the closed series stays
+
+
+def test_d332_the_reports_tab_lists_every_report_newest_first(construction_series, monkeypatch):
     monkeypatch.setattr(i18n, "is_english", lambda: False)
     reports, _, policy = quality_method.read_page()
     for report in reports:  # one line each: number, date and how many indicators are within the acceptable
@@ -201,7 +215,9 @@ def test_d331_a_report_is_never_rewritten_and_the_pull_request_compares_with_the
             pass
 
 
-def test_d332_the_summary_reads_the_latest_report_and_never_claims_an_external_attestation(monkeypatch):
+def test_d332_the_summary_reads_the_latest_report_and_never_claims_an_external_attestation(
+    construction_series, monkeypatch
+):
     reports, goals, policy = quality_method.read_page()
     latest = reports[-1]
     for english in (False, True):
@@ -358,7 +374,7 @@ def test_d333_the_viewer_has_four_slides_read_from_the_report_and_compares_with_
     assert "Qué falló" not in english and "Comparación" not in english and "La fuente se atrasó." not in english
 
 
-def test_d333_the_reports_tab_filters_by_year_month_week_and_search_and_links_each_report():
+def test_d333_the_reports_tab_filters_by_year_month_week_and_search_and_links_each_report(construction_series):
     from bi import dashboard
 
     reports, _, _ = quality_method.read_page()
@@ -382,7 +398,9 @@ def test_d333_the_reports_tab_filters_by_year_month_week_and_search_and_links_ea
 
 
 # region Non-conformities, mitigation and external incidents (D-334)
-def test_d334_every_nonconformity_of_the_reports_is_registered_and_the_author_writes_action_and_state():
+def test_d334_every_nonconformity_of_the_reports_is_registered_and_the_author_writes_action_and_state(
+    construction_series,
+):
     folder = quality_metrics.FOLDER
     records = quality_metrics.read(folder / "no_conformidades.json")["registros"]
     found = {
@@ -424,7 +442,7 @@ def test_d334_every_nonconformity_of_the_reports_is_registered_and_the_author_wr
 
 
 # region The author's alert and the automatic diagnosis (D-335)
-def test_d335_the_diagnosis_says_what_failed_where_since_when_and_whose_cause_without_a_secret():
+def test_d335_the_diagnosis_says_what_failed_where_since_when_and_whose_cause_without_a_secret(construction_series):
     every, goals, policy = quality_method.read_page()
     # The history these checks read: N° 1 to 4, when the failing tests were out of their acceptable in a row.
     reports = [report for report in every if report["numero"] <= 4]
@@ -446,7 +464,9 @@ def test_d335_the_diagnosis_says_what_failed_where_since_when_and_whose_cause_wi
     assert not any(word in text for word in ("token", "password", "/users/", "secret"))
 
 
-def test_d335_the_alert_lists_the_critical_first_with_everything_the_author_needs_and_nothing_else(monkeypatch):
+def test_d335_the_alert_lists_the_critical_first_with_everything_the_author_needs_and_nothing_else(
+    construction_series, monkeypatch
+):
     monkeypatch.setattr(i18n, "is_english", lambda: False)
     reports, goals, policy = quality_method.read_page()
     two = next(report for report in reports if report["numero"] == 2)
@@ -644,7 +664,7 @@ def test_d354_each_occurrence_is_one_short_line_per_field_and_the_policy_says_so
     assert "una línea por campo" in (quality_metrics.FOLDER / "README.md").read_text(encoding="utf-8")
 
 
-def test_d361_an_alert_from_an_old_report_says_it_is_old_and_is_not_shown_as_todays_critical():
+def test_d361_an_alert_from_an_old_report_says_it_is_old_and_is_not_shown_as_todays_critical(construction_series):
     from datetime import date
 
     reports, goals, policy = quality_method.read_page()
@@ -702,7 +722,9 @@ def test_d401_creating_a_report_registers_its_nonconformities_once(tmp_path):
     assert "docs/calidad/no_conformidades.json" in workflow  # the pull request carries them
 
 
-def test_d419_the_alert_hides_what_is_resolved_reads_the_external_incident_and_writes_each_language(monkeypatch):
+def test_d419_the_alert_hides_what_is_resolved_reads_the_external_incident_and_writes_each_language(
+    construction_series, monkeypatch
+):
     reports, goals, policy = quality_method.read_page()
     register = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json")["registros"]
     incidents = quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json")["registros"]
