@@ -3199,6 +3199,35 @@ def describe_price_filters(region, channel, family, direction, query, alert):
     return chosen
 
 
+def alert_download_rows(week, family, alert, query, region, family_rows):
+    """D-525: with an alert chosen, «Descargar» carries the rows of the alerts table, not the family's: the same rows,
+    in the same order and with the two prices the table shows (D-482); the search looks only among them, as the
+    table does. The regions up and down come from the same count as the products table, and the package compared
+    from the family row of the same product, when it has one (D-522)."""
+    key = queries.KEY_COLUMNS + ['channel']
+    directions = read_cached_region_directions(get_database_version(), week)
+    packages = {tuple(row[field] for field in key): row.get('_packages') for row in family_rows}
+    rows = []
+    for row in home_alert_rows(week, family or ALL_VALUES, direction=alert, region=region).to_dict('records'):
+        if query and not matches_product_search(row, query):
+            continue
+        before, now = alert_prices(row)
+        product = tuple(row[field] for field in key)
+        rows.append(
+            {
+                **{field: row[field] for field in key},
+                'national_price': row['national_price'],
+                '_same_before': before,
+                '_same_now': now,
+                'variation': row['variation'],
+                '_regions': directions.get(product),
+                '_packages': packages.get(product),
+                '_single_quote': False,  # an alert rests on at least two quotes in each week (K6)
+            }
+        )
+    return rows
+
+
 @st.cache_data(show_spinner=False)
 def read_crossing_checks(database_version):
     """The live checks of the «Cruces entre bases» view (D-197)."""
@@ -4753,7 +4782,8 @@ def show_market_overview(mode, prefix):
                 )
                 with st.container(key='home_products_tools'):
                     show_price_download(
-                        rows,
+                        # D-525: with an alert chosen, the file carries the alerts table, the one in sight
+                        alert_download_rows(week, family, alert, query, place, family_rows) if alert else rows,
                         model,
                         scope,
                         week,
@@ -4810,7 +4840,6 @@ def show_market_overview(mode, prefix):
                     published,
                     note,
                     updated,
-                    describe_price_filters(region, current_channel(), products_family, direction, query, alert),
                 )
 
     # D-494: the map gives a little room to the right side: steps 2 (the channels) and 3 (the families) side by side, of
@@ -4904,13 +4933,12 @@ def show_products_dialog(channel, *window):  # noqa: D417
         PRICE_SCOPE.reset(token)
 
 
-def draw_products_window(
-    family, average, scope, family_rows, week, model, region, published=None, note="", updated="", filters=()
-):
+def draw_products_window(family, average, scope, family_rows, week, model, region, published=None, note="", updated=""):
     """The products table at the size of the window (D-317) with the same filters as the panel (D-322): it opens with the
     panel's search and direction (D-497), and filters on its own without closing. D-498: the same line as the panel,
     with the alert buttons; the window remembers its alert, since a press in it reruns only the window. D-509: and the
-    same «Descargar», beside the count of prices."""
+    same «Descargar», beside the count of prices. D-525: its notes say the window's own choices, not the panel's when
+    it opened, and with an alert it carries the alerts table, as the panel does."""
     week_label, previous_label = model["week_label"], model["previous_label"]
     alert = st.session_state.get("dialog_products_alert")
     if alert:
@@ -4936,14 +4964,25 @@ def draw_products_window(
             label_visibility='collapsed',
             disabled=bool(alert),
         )
+    filters = describe_price_filters(region, current_channel(), family, direction, query.strip(), alert)
     if alert:
-        st.markdown(
-            '<div class="greenocean-mockup products-large">'
-            + home_mockup.alert_heading(region=region)
-            + '</div>'
-            + family_alerts_table(week, family, alert, query.strip(), region),
-            unsafe_allow_html=True,
-        )
+        with st.container(key='dialog_products_head', horizontal=True, vertical_alignment='center'):
+            st.markdown(
+                '<div class="greenocean-mockup products-large">' + home_mockup.alert_heading(region=region) + '</div>',
+                unsafe_allow_html=True,
+                width='stretch',
+            )
+            show_price_download(
+                alert_download_rows(week, family, alert, query.strip(), region, family_rows),
+                model,
+                scope,
+                week,
+                updated,
+                published,
+                filters,
+                'dialog',
+            )
+        st.markdown(family_alerts_table(week, family, alert, query.strip(), region), unsafe_allow_html=True)
         return
     rows = keep_direction(list(family_rows), direction)
     if query.strip():
@@ -4957,7 +4996,7 @@ def draw_products_window(
             unsafe_allow_html=True,
             width='stretch',
         )
-        show_price_download(rows, model, scope, week, updated, published, list(filters), 'dialog')
+        show_price_download(rows, model, scope, week, updated, published, filters, 'dialog')
     st.markdown(
         '<div class="greenocean-mockup">'
         + home_mockup.products_table(

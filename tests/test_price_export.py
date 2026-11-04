@@ -157,3 +157,96 @@ def test_d509_the_panel_and_the_window_offer_the_download_with_every_filtered_pr
     assert not app.exception
     keys = {str(button.key) for button in app.get("download_button")}
     assert {"dialog_download_xlsx", "dialog_download_csv"} <= keys
+
+
+def counted(app):
+    """The counts of the captions «n precios, con los filtros de esta pantalla», in drawing order."""
+    return [int(c.value.split(" ")[0].replace(".", "")) for c in app.caption if "precios, con los filtros" in c.value]
+
+
+def record_notes(monkeypatch, seen):
+    """Keep the filters of every file built, so a test can read what its notes say."""
+    original = price_export.build_notes
+    monkeypatch.setattr(
+        price_export, "build_notes", lambda *args, **kwargs: seen.append(list(args[1])) or original(*args, **kwargs)
+    )
+
+
+def alert_family(week):
+    """The family with the most sharp rises in the week, so the test never depends on one family's luck."""
+    sharp = dashboard.home_alert_rows(week, dashboard.ALL_VALUES, direction=dashboard.RISE)
+    if sharp.empty:
+        pytest.skip("no sharp rise this week")
+    return sharp["product_group"].value_counts().index[0]
+
+
+@needs_database
+def test_d525_with_an_alert_chosen_the_file_carries_the_rows_of_the_alerts_table():
+    week = dashboard.read_cached_filter_options(dashboard.get_database_version())["week"][0]
+    family = alert_family(week)
+    sharp = dashboard.home_alert_rows(week, family, direction=dashboard.RISE)
+    rows = dashboard.alert_download_rows(week, family, dashboard.RISE, "", None, [])
+    assert len(rows) == len(sharp) > 0
+    for row, (_, alert) in zip(rows, sharp.iterrows()):
+        assert [row[f] for f in ("product", "variety", "channel")] == [
+            alert[f] for f in ("product", "variety", "channel")
+        ]
+        assert (row["_same_before"], row["_same_now"]) == dashboard.alert_prices(alert)  # the table's two prices
+        assert row["variation"] == alert["variation"] and not row["_single_quote"]
+    built = price_export.build_rows(rows, "26 oct – 1 nov", "19–25 oct", "todo Chile")
+    assert [values[11] for values in built] == [row["_same_now"] for row in rows]
+    # the search looks only among the alerts, as the table does
+    name = rows[0]["product"]
+    searched = dashboard.alert_download_rows(week, family, dashboard.RISE, name, None, [])
+    assert searched and all(dashboard.matches_product_search(row, name) for row in searched)
+    # the package compared travels from the family row of the same product (D-522)
+    key = queries.KEY_COLUMNS + ["channel"]
+    family_row = {**{field: rows[0][field] for field in key}, "_packages": "$/caja 10 kilos"}
+    with_package = dashboard.alert_download_rows(week, family, dashboard.RISE, "", None, [family_row])
+    assert with_package[0]["_packages"] == "$/caja 10 kilos"
+
+
+@needs_database
+def test_d525_the_panel_and_the_window_download_the_alerts_when_one_is_chosen(monkeypatch):
+    seen = []
+    record_notes(monkeypatch, seen)
+    week = dashboard.read_cached_filter_options(dashboard.get_database_version())["week"][0]
+    family = alert_family(week)
+    sharp = len(dashboard.home_alert_rows(week, family, direction=dashboard.RISE))
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
+    app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
+    app.query_params.update({"_home_region": dashboard.ALL_VALUES, "familia": family, "alerta": dashboard.RISE})
+    app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.run()
+    assert not app.exception
+    assert counted(app) == [sharp]  # the alerts, not the whole family
+    assert ("Alertas", "Solo alzas fuertes") in seen[-1]
+    app.button(key="home_products_enlarge").click().run()
+    assert not app.exception and app.get("dialog")
+    keys = {str(button.key) for button in app.get("download_button")}
+    assert {"dialog_download_xlsx", "dialog_download_csv"} <= keys  # the window offers it with an alert too
+    assert counted(app) == [sharp, sharp]
+    assert ("Alertas", "Solo alzas fuertes") in seen[-1]
+
+
+WINDOW_SCRIPT = (
+    "import streamlit as st\n"
+    "from bi import dashboard\n"
+    "st.session_state['dialog_products_search'] = 'lechuga'\n"
+    "week = dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]\n"
+    f"rows = {ROWS!r}\n"
+    "model = {'week_label': '26 oct – 1 nov', 'previous_label': '19–25 oct'}\n"
+    "dashboard.draw_products_window('Frutas', 0.005, 'todo Chile', rows, week, model, None, None, '', '3 nov · 16:19')\n"
+)
+
+
+@needs_database
+def test_d525_the_window_writes_its_own_choices_in_the_notes(monkeypatch):
+    seen = []
+    record_notes(monkeypatch, seen)
+    app = AppTest.from_string(WINDOW_SCRIPT, default_timeout=90)
+    app.run()
+    assert not app.exception
+    assert app.text_input(key="dialog_products_search").value == "lechuga"
+    assert ("Búsqueda", "lechuga") in seen[-1] and ("Familia", "Frutas") in seen[-1]
+    assert counted(app) == [1]  # only the lettuce, as the table shows

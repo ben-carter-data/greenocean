@@ -2296,6 +2296,58 @@
           "referencia": "D-522"
         }
       ]
+    },
+    {
+      "id": "F-41",
+      "categoria": "código",
+      "falla": [
+        "«Descargar» no bajaba lo que la pantalla mostraba: con una alerta elegida, la familia entera; en la ventana, con los filtros de cuando se abrió",
+        "«Descargar» did not download what the screen showed: with an alert chosen, the whole family; in the window, with the filters from when it opened"
+      ],
+      "deteccion": [
+        "Revisión del código de D-509 en la sesión; ninguna prueba bajaba el archivo con una alerta elegida",
+        "Review of the D-509 code in the session; no test downloaded the file with an alert chosen"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La descarga recibía las filas de la familia y los filtros del panel, no los de la tabla a la vista",
+        "The download received the family's rows and the panel's filters, not those of the table in sight"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: el cambio no se había publicado",
+        "None: the change had not been published"
+      ],
+      "correctiva": [
+        "Con una alerta, el archivo lleva las filas de la tabla de alertas; la ventana escribe sus propias elecciones (D-525)",
+        "With an alert, the file carries the rows of the alerts table; the window writes its own choices (D-525)"
+      ],
+      "estacion": 9,
+      "caso_real": "D-525",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-04",
+          "ocurrencia": [
+            "Con «▲ 4 alzas fuertes» en Frutas, el archivo traía 224 precios y sus notas decían «Solo alzas fuertes».",
+            "With «▲ 4 sharp rises» in Frutas, the file carried 224 prices and its notes said «Only sharp rises»."
+          ],
+          "diagnostico": [
+            "La descarga recibía las filas de la familia y los filtros del panel, no los de la tabla a la vista.",
+            "The download received the family's rows and the panel's filters, not those of the table in sight."
+          ],
+          "solucion": [
+            "El archivo lleva las filas de la tabla de alertas y la ventana calcula sus notas con sus propias elecciones.",
+            "The file carries the rows of the alerts table and the window works out its notes from its own choices."
+          ],
+          "comentario": [
+            "La ventana con una alerta no ofrecía «Descargar»; ahora sí, junto al encabezado.",
+            "The window with an alert did not offer «Descargar»; now it does, beside the heading."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-525"
+        }
+      ]
     }
   ]
 }
