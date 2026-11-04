@@ -334,9 +334,8 @@ def test_d279_the_data_dictionary_describes_every_table_and_column_of_the_served
         ).fetchall()
     tables = {table for table, *_ in columns}
     documented = set(re.findall(r"^#### (\w+)$", text, re.MULTILINE))  # D-448: the dictionary is 6.5
-    # A table the pipeline already serves but the downloaded base does not hold yet arrives with the next load.
-    # D-527: source_unit is written in Python after dbt (PYTHON_TABLES); the published base gets it with the next
-    # load, and this tolerance can go once it has it.
+    # A table the pipeline already serves but the downloaded base does not hold yet arrives with the next load; the
+    # tables it writes in Python after dbt (PYTHON_TABLES) count as served too (D-528).
     from etl import pipeline
 
     served = set(pipeline.SERVING_TABLES) | set(pipeline.PYTHON_TABLES)
