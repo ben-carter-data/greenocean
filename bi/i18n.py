@@ -361,6 +361,7 @@ EN = {
     "Todas las familias": "All families",
     "Vista de usuario": "User view",
     "Vista profesional": "Professional view",
+    "{}: elige uno o déjalo en todos": "{}: choose one or leave it at all",
     # D-509: the file of «Descargar»: its headings, its notes and what the reader chose
     "Fuente": "Source",
     "Todo Chile": "All of Chile",

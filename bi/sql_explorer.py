@@ -144,7 +144,7 @@ TEMPLATES = [
         'Todos los precios semanales con cada dimensión (familia, producto, variedad, calidad, canal, región) y el precio real según el IPC de alimentos; los filtros de arriba acotan la tabla.',
         """-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y región,
 -- cruzado con el IPC de alimentos del INE. precio_real = precio × factor_real
--- (pesos del último mes publicado). Filtros elegidos arriba del editor; «Todas» no filtra.
+-- (pesos del último mes publicado). Filtros elegidos sobre el editor; un filtro sin elegir no filtra.
 SELECT p.semana, p.familia, p.producto, p.variedad, p.calidad, p.canal, p.fuente, p.region,
        p.unidad, p.precio,
        round(p.precio * i.factor_real) AS precio_real,
@@ -875,16 +875,28 @@ def build_css(palette):
 .st-key-sqlx_explorer [data-testid="stPopover"]>button {{ width:100%; min-height:28px !important; box-shadow:{raised} !important; }}
 .st-key-sqlx_explorer [data-testid="stPopover"]>button p {{ font-size:.76rem !important; }}
 .st-key-sqlx_main {{ gap:6px !important; padding:8px 12px 10px 10px; }}
-.st-key-sqlx_params {{ flex-wrap:wrap !important; gap:6px 8px !important; padding:2px 0 4px; }}
-.st-key-sqlx_params .sqlx-bar-label {{ margin-right:6px; }}
-.st-key-sqlx_params [data-testid="stSelectbox"] {{ flex:0 0 168px !important; width:168px !important; }}
-/* The row wraps the Streamlit containers, not the selects inside them: they take the fixed width, so on a narrow
-   window a filter goes to the next line instead of leaving the editor's frame. */
-.st-key-sqlx_params > [data-testid="stElementContainer"]:has([data-testid="stSelectbox"]) {{ flex:0 0 168px !important;
-  width:168px !important; max-width:168px; }}
-.st-key-sqlx_params [data-testid="stSelectbox"] [data-baseweb="select"] div {{ font-size:.78rem; }}
-.st-key-sqlx_params [data-baseweb="select"] > div {{ min-height:28px !important; border-radius:999px !important;
-  background:{field} !important; border:1px solid {border} !important; box-shadow:{raised}; font-size:.78rem; }}
+/* D-511: the script's tab and the filters share one line: the tab at the left, thin pills at the right, each as
+   wide as its filter needs. Under 1300 px the pills take a second line, whole, never cut. */
+.st-key-sqlx_tabrow {{ flex-wrap:wrap !important; align-items:flex-end !important; gap:4px 6px !important; padding:0; }}
+.st-key-sqlx_tabrow > [data-testid="stElementContainer"]:has(.sqlx-tabstrip) {{ flex:1 1 180px !important; min-width:0; }}
+.st-key-sqlx_tabrow > [data-testid="stLayoutWrapper"], .st-key-sqlx_tabrow > [data-testid="stLayoutWrapper"] > div
+  {{ flex:0 0 auto !important; width:auto !important; }}
+[class*="st-key-sqlx_pill_"] {{ margin-bottom:3px; }}
+[class*="st-key-sqlx_pill_"] [data-testid="stSelectbox"], [class*="st-key-sqlx_pill_"] [data-testid="stElementContainer"]
+  {{ width:auto !important; min-width:0 !important; }}
+.st-key-sqlx_pill_familia [data-testid="stSelectbox"] {{ width:132px !important; }}
+.st-key-sqlx_pill_producto_filtro [data-testid="stSelectbox"] {{ width:132px !important; }}
+.st-key-sqlx_pill_canal_filtro [data-testid="stSelectbox"] {{ width:108px !important; }}
+.st-key-sqlx_pill_region [data-testid="stSelectbox"] {{ width:108px !important; }}
+.st-key-sqlx_pill_anio_filtro [data-testid="stSelectbox"] {{ width:84px !important; }}
+.st-key-sqlx_pill_periodo [data-testid="stSelectbox"] {{ width:150px !important; }}
+[class*="st-key-sqlx_pill_"] [data-baseweb="select"] > div, [class*="st-key-sqlx_pill_"] .react-aria-ComboBox > div
+  {{ min-height:24px !important; height:24px !important; border-radius:999px !important; background:{field} !important;
+  border:1px solid {border} !important; box-shadow:none !important; font-size:.72rem; }}
+[class*="st-key-sqlx_pill_"] .react-aria-ComboBox input {{ height:22px !important; padding:0 2px 0 10px !important;
+  font-size:.72rem !important; text-overflow:ellipsis; }}
+[class*="st-key-sqlx_pill_"] .react-aria-ComboBox button {{ height:22px !important; width:22px !important; }}
+[class*="st-key-sqlx_pill_"] [data-baseweb="select"] div {{ font-size:.72rem; }}
 .sqlx-tabstrip {{ display:flex; align-items:flex-end; gap:8px; margin:0; }}
 .sqlx-tab {{ display:inline-flex; align-items:center; gap:7px; padding:5px 14px 5px 11px; border-radius:9px 9px 0 0;
   background:{editor}; border:1px solid {border}; border-bottom:0; font-size:.76rem; color:{ink}; font-family:{mono};
@@ -1014,15 +1026,12 @@ def build_tab_html(example):
     """The editor's tab strip: the script's file name and an «i» that tells, on hover,
     which question it answers (D-182)."""
     if example is None:
-        return (
-            f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>consulta.sql · '
-            f'{DATABASE_LABEL}</span></div>'
-        )
+        return '<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>consulta.sql</span></div>'
     title, question, _ = EXAMPLES[example]
     script = SCRIPT_NAMES.get(title, "consulta.sql")
     return (
-        f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>{html.escape(script)} · '
-        f'{DATABASE_LABEL}</span><span class="sqlx-info" tabindex="0" title="{html.escape(question, quote=True)}">'
+        f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>{html.escape(script)}</span>'
+        f'<span class="sqlx-info" tabindex="0" title="{html.escape(question, quote=True)}">'
         f'i<span class="sqlx-info-tip" role="tooltip"><b>{html.escape(title)}</b>{html.escape(question)}</span></span></div>'
     )
 
@@ -1030,8 +1039,9 @@ def build_tab_html(example):
 def editor_height(sql):
     """Enough lines to show the query without an inner scroll, within one screen."""
     lines = (sql or "").count("\n") + 1
-    # D-233: six to eight lines; a longer query scrolls inside the editor.
-    return max(130, min(170, 21 * lines + 24))
+    # D-233: six to eight lines; a longer query scrolls inside the editor. D-511: the room the filters' own line
+    # gave back (92 px) goes to the editor, so ten to twelve lines show without a scroll.
+    return max(222, min(262, 21 * lines + 24))
 
 
 def format_elapsed(seconds):
@@ -1255,25 +1265,22 @@ def show_parameters(st, index):
         options = parameter_choices(load_parameter_options(), st.session_state)
     except Exception:  # the defaults still work without the lists
         return
-    label = "Filtros" if "familia" in names else "Parámetros"
-    with st.container(key="sqlx_params", horizontal=True, vertical_alignment="center", gap="small"):
-        st.markdown(f'<span class="sqlx-bar-label">{label}</span>', unsafe_allow_html=True)
-        for name in names:
-            key = PARAMETER_KEYS[name]
-            choices = options[name]
-            if st.session_state.get(key) not in choices:
-                default = PARAMETER_DEFAULTS[name]
-                st.session_state[key] = default if default in choices else choices[0]
+    # D-511: thin pills on the line of the script's tab; a pill says its filter («Producto») until a value is chosen
+    for name in names:
+        key = PARAMETER_KEYS[name]
+        choices = options[name]
+        if st.session_state.get(key) not in choices:
+            default = PARAMETER_DEFAULTS[name]
+            st.session_state[key] = default if default in choices else choices[0]
+        with st.container(key=f"sqlx_pill_{name}"):
             st.selectbox(
                 PARAMETER_LABELS[name],
                 choices,
                 key=key,
                 on_change=apply_parameters,
                 label_visibility="collapsed",
-                help=PARAMETER_LABELS[name],
-                format_func=lambda value, name=name: (
-                    tr("{}: todas").format(tr(PARAMETER_LABELS[name])) if value == ALL_VALUES else str(value)
-                ),
+                help=tr("{}: elige uno o déjalo en todos").format(tr(PARAMETER_LABELS[name])),
+                format_func=lambda value, name=name: tr(PARAMETER_LABELS[name]) if value == ALL_VALUES else str(value),
             )
 
 
@@ -1461,9 +1468,11 @@ def show_sql_explorer_page(mode, header=None):
                 written = st.session_state.get("sqlx_rendered", EXAMPLES[0][2])
                 if example is not None and st.session_state["sqlx_editor"] not in (written, EXAMPLES[example][2]):
                     example = None
-                st.markdown(build_tab_html(example), unsafe_allow_html=True)
-                if example is not None:
-                    show_parameters(st, example)
+                # D-511: one line holds the script's tab and, to its right, the filters
+                with st.container(key="sqlx_tabrow", horizontal=True, vertical_alignment="center", gap="small"):
+                    st.markdown(build_tab_html(example), unsafe_allow_html=True, width="stretch")
+                    if example is not None:
+                        show_parameters(st, example)
                 with st.container(key="sqlx_editor_box"):
                     st.html(EDITOR_HTML, unsafe_allow_javascript=True)
                     sql = st.text_area(

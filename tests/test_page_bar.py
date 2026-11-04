@@ -132,7 +132,9 @@ def test_d268_the_sql_filters_and_status_bar_fit_a_narrow_window():
     from bi import sql_explorer
 
     css = sql_explorer.build_css(charts.get_palette(charts.MODE_DARK))
-    assert '.st-key-sqlx_params > [data-testid="stElementContainer"]:has([data-testid="stSelectbox"])' in css
+    # D-511: the filters are pills on the tab's line; under 1300 px they take a second line, whole
+    assert ".st-key-sqlx_tabrow {{ flex-wrap:wrap !important".replace("{{", "{") in css
+    assert ".st-key-sqlx_pill_anio_filtro [data-testid=\"stSelectbox\"] { width:84px !important; }" in css
     assert ".sqlx-status span:nth-child(4) { display:none; }" in css
 
 
