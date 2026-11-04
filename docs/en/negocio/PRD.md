@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.53 |
+| Version | 3.54 |
 | Date | 2026-11-04 |
 | Status | Current |
 | Owner | The author |
@@ -273,3 +273,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.51 | 2026-11-04 | «Descargar» in step 4 of Weekly: every filtered price in Excel (a table with filter, formats and notes) or CSV, in the language of the visit (RF-01, D-509) |
 | 3.52 | 2026-11-04 | The figures read from the database when a page opens carry the «en vivo» mark, a green dot that beats (RNF-06, D-510) |
 | 3.53 | 2026-11-04 | In SQL queries, the filters are thin pills on the tab line and the editor shows up to 12 lines (RF-06, D-511) |
+| 3.54 | 2026-11-04 | «Relaciones» in SQL queries: the entity-relationship diagram of the views and each JOIN ready to copy (RF-06, D-515) |

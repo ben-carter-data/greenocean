@@ -872,7 +872,12 @@ def build_css(palette):
 :is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button span[data-testid="stIconMaterial"] {{ color:{accent}; font-size:15px; }}
 :is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button p {{ font-family:{mono}; font-size:.78rem !important; color:{ink} !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
 .sqlx-rows {{ font-size:.66rem; color:{muted}; margin:-6px 0 2px 52px; line-height:1.2; }}
-.st-key-sqlx_explorer [data-testid="stPopover"] {{ margin-top:8px; }}
+.st-key-sqlx_explorer .st-key-sqlx_relations {{ margin-top:8px; }}
+.st-key-sqlx_explorer .st-key-sqlx_relations button {{ width:100%; min-height:28px !important; box-shadow:{raised} !important; }}
+.st-key-sqlx_explorer .st-key-sqlx_relations button p {{ font-size:.76rem !important; }}
+/* D-515: the drawing of the relationships takes the width of its window; its joins keep the editor's letter. */
+.sqlx-relations svg {{ display:block; width:100%; height:auto; }}
+.st-key-sqlx_explorer [data-testid="stPopover"] {{ margin-top:6px; }}
 .st-key-sqlx_explorer [data-testid="stPopover"]>button {{ width:100%; min-height:28px !important; box-shadow:{raised} !important; }}
 .st-key-sqlx_explorer [data-testid="stPopover"]>button p {{ font-size:.76rem !important; }}
 .st-key-sqlx_main {{ gap:6px !important; padding:8px 12px 10px 10px; }}
@@ -1368,6 +1373,27 @@ def show_result(st, outcome, sql=""):
     )
 
 
+def show_relations_dialog(st, mode, descriptions):
+    """D-515: the relationships between the views, as a SQL client draws them, and the joins ready to copy."""
+    from bi import sql_relations  # here, not at the top: sql_relations reads the views of this module
+
+    @st.dialog("Relaciones entre las vistas", width="large")
+    def relations():
+        schema, counts = sql_relations.read_schema()
+        st.markdown(
+            '<p class="sqlx-note">Cada línea une dos vistas por la columna que señala; la columna PK identifica una '
+            "fila. Abajo, cada unión escrita, lista para copiar en el editor.</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div class="sqlx-relations">' + sql_relations.build_svg(schema, counts, mode, descriptions) + "</div>",
+            unsafe_allow_html=True,
+        )
+        st.code(sql_relations.build_joins(), language="sql", wrap_lines=False)
+
+    relations()
+
+
 def show_exports(st):
     """The main gold tables as CSV, behind one small button (D-168)."""
     with st.popover(
@@ -1461,6 +1487,15 @@ def show_sql_explorer_page(mode, header=None):
                         help=f"{description} Columnas: " + ", ".join(column for column, _ in columns),
                     )
                     st.markdown(build_view_html(name, description, count, columns), unsafe_allow_html=True)
+                # D-515: how the views join, before the exports; a SQL client shows its keys the same way
+                if st.button(
+                    "Relaciones",
+                    icon=":material/schema:",
+                    key="sqlx_relations",
+                    help="Cómo se unen las vistas: el diagrama entidad-relación y cada JOIN listo para copiar.",
+                    width="stretch",
+                ):
+                    show_relations_dialog(st, mode, {name: description for name, description, _ in VIEWS})
                 show_exports(st)
             with main, st.container(key="sqlx_main"):
                 example = st.session_state.get("sqlx_example")

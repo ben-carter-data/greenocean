@@ -2518,6 +2518,16 @@ PAGES = {
     'Subidas': 'Rises',
     'Bajadas': 'Falls',
     'Nombre': 'Name',
+    # D-515: the relationships between the views of «Consultas SQL»
+    'Cada línea une dos vistas por la columna que señala; la columna PK identifica una fila. Abajo, cada unión escrita, lista para copiar en el editor.': 'Each line joins two views by the column it points at; the PK column identifies a row. Below, each join written out, ready to copy into the editor.',
+    '{} · cada precio es de una semana del calendario': '{} · each price belongs to a week of the calendar',
+    '{} · cada semana tiene a lo más un factor real': '{} · each week has at most one real factor',
+    '{} · cada precio es de un producto del catálogo: se une por familia, producto, variedad y calidad': '{} · each price belongs to a product of the catalogue: joined by family, product, variety and quality',
+    'ipc_semanal toma el IPC del mes de su lunes (anio_ipc, mes_ipc) de ipc_mensual (anio, mes)': 'ipc_semanal takes the IPC of the month of its Monday (anio_ipc, mes_ipc) from ipc_mensual (anio, mes)',
+    'PK: las columnas que identifican una fila · FK: una columna que apunta a otra vista': 'PK: the columns that identify a row · FK: a column that points at another view',
+    'Pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · línea punteada: mismo mes, sin clave': 'Crow\'s foot: many rows · double bar: one · circle: may be none · dotted line: same month, no key',
+    'precios no tiene clave: una fila es una semana, un producto, una región, un canal y una unidad juntos.': 'precios has no key: a row is a week, a product, a region, a channel and a unit together.',
+    'Relaciones entre las vistas de Consultas SQL': 'Relationships between the views of SQL queries',
     # D-514: the studio's limits beside «Ejecutar»
     'máx. {n} filas · {n} s': 'max. {} rows · {} s',
     'Muestra como máximo {n} filas por consulta; una consulta se detiene a los {n} segundos.': 'Shows at most {} rows per query; a query stops after {} seconds.',

@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.53 |
+| Versión | 3.54 |
 | Fecha | 04-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -273,3 +273,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.51 | 04-11-2026 | «Descargar» en el paso 4 de Semanal: todos los precios filtrados en Excel (tabla con filtro, formatos y notas) o CSV, en el idioma de la visita (RF-01, D-509) |
 | 3.52 | 04-11-2026 | Las cifras que se leen de la base al abrir una página llevan la marca «en vivo», un punto verde que late (RNF-06, D-510) |
 | 3.53 | 04-11-2026 | En Consultas SQL, los filtros son píldoras finas en la línea de la pestaña y el editor muestra hasta 12 líneas (RF-06, D-511) |
+| 3.54 | 04-11-2026 | «Relaciones» en Consultas SQL: el diagrama entidad-relación de las vistas y cada JOIN listo para copiar (RF-06, D-515) |
