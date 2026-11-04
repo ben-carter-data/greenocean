@@ -355,11 +355,11 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-alert-mark.on {box-shadow:inset 0 0 0 1px currentColor;}
 .st-key-home_products {border:1px solid var(--mock-border, #e0e6ee);border-radius:12px;background:__PANEL__;padding:8px 14px 10px;gap:6px!important;flex:1;}
 .st-key-home_products [data-testid="stHorizontalBlock"] {gap:8px!important;}
-.st-key-home_products [data-testid="stSelectbox"] {display:flex;align-items:center;gap:6px;}
-.st-key-home_products [data-testid="stSelectbox"] label {margin:0!important;min-height:0;}
-.st-key-home_products [data-testid="stSelectbox"] label p {font-size:12px!important;color:__MUTED__;}
-.st-key-home_products [data-testid="stSelectbox"] > div:last-child {flex:1;min-width:0;}
-.st-key-home_products [data-baseweb="select"] > div {min-height:32px;font-size:12.5px;}
+.st-key-home_products_direction [data-testid="stSelectbox"] {display:flex;align-items:center;gap:6px;}
+.st-key-home_products_direction [data-testid="stSelectbox"] label {margin:0!important;min-height:0;}
+.st-key-home_products_direction [data-testid="stSelectbox"] label p {font-size:12px!important;color:__MUTED__;}
+.st-key-home_products_direction [data-testid="stSelectbox"] > div:last-child {flex:1;min-width:0;}
+.st-key-home_products_direction [data-baseweb="select"] > div {min-height:32px;font-size:12.5px;}
 .mock-products-heading {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .mock-products-chip {font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--mock-soft);}
 .mock-products-chip.rise {color:var(--mock-rise);background:color-mix(in srgb,var(--mock-rise) 11%,__PANEL__);}
@@ -463,7 +463,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-family-row-image {width:22px!important;height:20px!important;}
 .mock-family-track {height:14px!important;}
 .mock-family-bar {top:2px!important;height:10px!important;}
-.st-key-home_products [data-baseweb="select"] > div {min-height:28px!important;font-size:12px!important;}
+.st-key-home_products_direction [data-baseweb="select"] > div {min-height:28px!important;font-size:12px!important;}
 .st-key-home_products_search input {font-size:12px!important;min-height:28px!important;}
 .st-key-home_products_search > div {min-height:28px!important;}
 .st-key-home_products {padding:6px 12px 8px!important;gap:4px!important;}
@@ -486,9 +486,9 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-regional .mock-scope b {color:var(--mock-fall);}
 
 /* D-311: thinner filters over the product table (Streamlit draws the selectbox as a react-aria combo box). */
-.st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox > div {height:28px!important;min-height:28px!important;}
-.st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox input {height:26px!important;padding:0 8px!important;font-size:12.5px!important;}
-.st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox button {height:26px!important;}
+.st-key-home_products_direction [data-testid="stSelectbox"] .react-aria-ComboBox > div {height:28px!important;min-height:28px!important;}
+.st-key-home_products_direction [data-testid="stSelectbox"] .react-aria-ComboBox input {height:26px!important;padding:0 8px!important;font-size:12.5px!important;}
+.st-key-home_products_direction [data-testid="stSelectbox"] .react-aria-ComboBox button {height:26px!important;}
 .st-key-home_products_search input {height:26px!important;}
 
 /* D-312: the region the families are read for, above them, also when it is all of Chile. */
@@ -564,7 +564,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
    (WCAG 1.4.11: the edge of a field must be told apart from the background). Streamlit draws a field as a text-input root
    or a combo box whose own border is white. */
 .st-key-home_products [data-testid="stTextInputRootElement"],
-.st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox > div,
+.st-key-home_products_direction [data-testid="stSelectbox"] .react-aria-ComboBox > div,
 .st-key-dialog_products_filters [data-testid="stTextInputRootElement"],
 .st-key-dialog_products_filters [data-testid="stSelectbox"] .react-aria-ComboBox > div {border:1px solid color-mix(in srgb, __INK__ 45%, __PANEL__)!important;border-radius:6px!important;background:__PANEL__!important;}
 
@@ -670,8 +670,8 @@ ul.mock-calc-out li em {font-style:normal;}
 .mock-basket-art {background:transparent!important;border:2px solid __ACCENT__;box-sizing:border-box;position:relative;}
 .mock-basket-art.checked {background:__ACCENT__!important;}
 .mock-basket-art.checked::after {content:"";position:absolute;left:3px;top:0;width:4px;height:8px;border:solid #ffffff;border-width:0 2px 2px 0;transform:rotate(45deg);}
-/* D-450: the head of the products panel is one thin line (the step, the family, the median, the place and the count)
-   and the filters another, 28 px high, so the table keeps the height. */
+/* D-450, D-497: the head of the products panel is one thin line (the step, the family, the median, the place, the count
+   and «Ampliar»), so the table keeps the height. */
 .st-key-home_overview .mock-products-slim {flex-wrap:nowrap!important;gap:0 8px!important;}
 .st-key-home_overview .mock-products-slim .mock-kicker,.st-key-home_overview .mock-products-slim h2 {display:none!important;}
 .st-key-home_overview .mock-products-slim .mock-step {margin:0!important;font-size:13.5px;}
@@ -680,7 +680,6 @@ ul.mock-calc-out li em {font-style:normal;}
 .st-key-home_overview .st-key-home_products_search [data-testid="stTextInputRootElement"] {min-height:28px!important;height:28px;border-width:1.5px!important;border-radius:8px;}
 .st-key-home_overview .st-key-home_products_search input {font-size:12.5px!important;min-height:0!important;padding-top:0;padding-bottom:0;}
 .st-key-home_overview .st-key-home_products_search [data-testid="stIconMaterial"] {font-size:17px!important;}
-.st-key-home_overview .st-key-home_products [data-testid="stWidgetLabel"] p {font-size:12px!important;}
 
 /* D-451: the panels' explanations live behind a small «i» next to their step, opened on hover or with the keyboard,
    so the families and the table keep the height. */
@@ -703,6 +702,21 @@ ul.mock-calc-out li em {font-style:normal;}
 /* D-492: the alerts and the search, on one line between steps 2 and 3. */
 .st-key-home_alert_line {align-items:center!important;gap:8px!important;}
 .st-key-home_alert_line .st-key-home_products_search {flex:1 1 220px!important;max-width:380px;}
+/* D-497: beside the search, the filter by direction, as wide as its words. Under 640 px of line (a tablet with the menu
+   open) the buttons tighten and the search gives up width, so the four stay on one line. */
+.st-key-home_alert_line {container:alert-line / inline-size;width:100%;}
+.st-key-home_alert_line .st-key-home_products_direction {flex:0 0 104px!important;width:104px!important;}
+.st-key-home_alert_line button p {white-space:nowrap;}
+@container alert-line (max-width:640px) {
+ .st-key-home_alert_line .st-key-home_products_search {flex:1 1 120px!important;}
+ .st-key-home_alert_line .st-key-home_alert_trigger button,.st-key-home_alert_line .st-key-home_drop_trigger button {padding:3px 6px!important;}
+ .st-key-home_alert_line .st-key-home_alert_trigger button p,.st-key-home_alert_line .st-key-home_drop_trigger button p {font-size:12px!important;}
+}
+/* D-497: «Ampliar» on the heading's line, which wraps before it cuts a word when the panel is narrow. */
+.stApp .st-key-home_products_head {flex-wrap:nowrap!important;gap:6px!important;}
+.stApp .st-key-home_products_head > * {flex:0 0 auto;min-width:0;width:auto!important;}
+.stApp .st-key-home_products_head > :has(.mock-products-slim) {flex:1 1 0!important;}
+@container products (max-width:600px) {.st-key-home_overview .mock-products-slim {flex-wrap:wrap!important;}}
 
 /* D-494: step 2, the channels, beside step 3 and of its height. Optional, and it says so; each channel in a box of
    its own, in the thin and small letter of the region list of step 1. */

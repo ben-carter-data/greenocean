@@ -93,6 +93,56 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
     assert 'Ningún producto empieza por «zz» en estas alertas.' in home_mockup.alert_table([], 'zz')
 
 
+def test_d497_the_filter_keeps_one_direction_with_the_sharp_ones_and_says_when_nothing_moved():
+    assert dashboard.PRODUCT_DIRECTIONS == ('Todo', 'Subidas', 'Bajadas')
+    rows = [{'variation': value} for value in (0.50, 0.02, 0.0004, 0.0, -0.0004, -0.02, -0.50)]
+
+    def kept(direction):
+        return [row['variation'] for row in dashboard.keep_direction(rows, direction)]
+
+    assert kept('Todo') == [row['variation'] for row in rows]
+    assert kept('Subidas') == [0.50, 0.02]  # the sharp rise is included; what rounds to 0.0 % is neither
+    assert kept('Bajadas') == [-0.02, -0.50]
+    note = dashboard.NOTHING_MOVED['Subidas']
+    assert note in home_mockup.products_table([], 'a', 'b', 'kiw', empty_note=note)
+    assert 'Ningún producto empieza por «kiw»' in home_mockup.products_table([], 'a', 'b', 'kiw')
+
+
+@pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
+def test_d497_the_filter_sits_beside_the_search_and_rests_while_an_alert_is_chosen():
+    app = AppTest.from_file(ROOT / 'bi/dashboard.py', default_timeout=60)
+    app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
+    app.run()
+    assert app.selectbox(key='home_products_direction').disabled  # no family chosen yet (D-352)
+    app.query_params.update({'_home_region': dashboard.ALL_VALUES, 'familia': 'Frutas'})
+    app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.run()
+    box = app.selectbox(key='home_products_direction')
+    assert not box.disabled and box.value == 'Todo'
+    # «Subidas» shows every sharp rise of the alert button, and the normal ones with them
+    week = dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]
+    sharp = dashboard.home_alert_rows(week, 'Frutas', direction=dashboard.RISE)
+    assert len(sharp)
+    box.set_value('Subidas').run()
+    assert not app.exception
+    markup = ' '.join(block.value for block in app.markdown)
+    table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
+    assert {str(name) for name in sharp['product']} <= {
+        name.split(' · ')[0] for name in re.findall(r'<td><strong>([^<]+)</strong>', table)
+    }
+    # with an alert chosen the filter rests at «Todo», so it never contradicts the table
+    app.button(key='home_alert_trigger').click().run()
+    assert not app.exception
+    box = app.selectbox(key='home_products_direction')
+    assert box.disabled and box.value == 'Todo'
+    app.button(key='home_alert_trigger').click().run()
+    assert not app.selectbox(key='home_products_direction').disabled
+    # it is drawn in the alert line, right after the search
+    source = (ROOT / 'bi/dashboard.py').read_text(encoding='utf-8')
+    line = source[source.index('def show_alert_line') : source.index('def show_profile_indicator')]
+    assert line.index('key="home_products_search"') < line.index('key="home_products_direction"')
+
+
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
 def test_d491_the_alert_line_waits_for_a_family_then_filters_step_three_and_comes_back():
     app = AppTest.from_file(ROOT / 'bi/dashboard.py', default_timeout=60)
@@ -301,12 +351,11 @@ def test_d092_region_and_family_clicks_fill_the_products_table():
     assert 'class="mock-chile-map"' in markup and 'class="mock-chosen"' not in markup  # D-446: the map stays
     table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
     assert table.count('<tr>') > 1 and 'Regiones ↑ / ↓' in table
-    # The order sorts the same rows; prices stay real (D-495: by name, the only order besides the largest change).
-    app.selectbox(key='home_products_order').set_value('Nombre').run()
+    # D-497: the filter keeps one direction of the same rows, in the chosen region
+    app.selectbox(key='home_products_direction').set_value('Bajadas').run()
     markup = ' '.join(block.value for block in app.markdown)
     table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
-    products = [name.split(' · ')[0] for name in re.findall(r'<td><strong>([^<]+)</strong>', table)]
-    assert products == sorted(products) and len(products) > 1
+    assert '<td class="num rise">' not in table and '<td class="num neutral">' not in table
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
@@ -433,13 +482,13 @@ def test_d327_the_fixed_note_says_what_the_prices_are_and_what_is_not_shown():
     assert '19 precios' not in home_mockup.products_note(9, 0)
 
 
-def test_d327_a_change_resting_on_one_region_sorts_last_in_every_order():
+def test_d327_a_change_resting_on_one_region_sorts_last():
     from bi import dashboard
 
     wide = dict(ZAPALLO, product='Acelga', variation=0.30, _same_regions=7, _single_quote=False)
     narrow = dict(ZAPALLO, product='Ají', variation=0.50, _same_regions=1)
     quote = dict(ZAPALLO, product='Apio', variation=0.40, _single_quote=True)
-    names = [row['product'] for row in dashboard.sort_family_products([narrow, quote, wide], 'Mayor cambio')]
+    names = [row['product'] for row in dashboard.sort_family_products([narrow, quote, wide])]
     assert names == ['Acelga', 'Ají', 'Apio'] or names[0] == 'Acelga', names
 
 

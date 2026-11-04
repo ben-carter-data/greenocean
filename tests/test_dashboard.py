@@ -848,8 +848,8 @@ def test_d069_map_scope_replaces_permanent_selectors_and_context_holds_across_vi
     dashboard_bar.query_params["perfil"] = "Analista BI"
     dashboard_bar.run()
     assert not dashboard_bar.exception
-    # Only the order of the products table: no permanent selectors (D-092); the channel is step 2 (D-494, D-495).
-    assert {box.key for box in dashboard_bar.main.selectbox} == {'home_products_order'}
+    # Only the filter by direction: no permanent selectors (D-092); the channel is step 2 (D-494, D-497).
+    assert {box.key for box in dashboard_bar.main.selectbox} == {'home_products_direction'}
     # The page has one text field; the profile door's key field (D-335) is not a selector of the page.
     assert [box.key for box in dashboard_bar.text_input if not box.key.startswith('profile_')] == [
         'home_products_search'
@@ -870,7 +870,7 @@ def test_d069_a_click_filter_reaches_the_bar_and_the_map_starts_with_two_regions
     app.session_state["dashboard_group"] = "Frutas"
     app.run()
     assert not app.exception
-    assert {box.key for box in app.main.selectbox} == {'home_products_order'}
+    assert {box.key for box in app.main.selectbox} == {'home_products_direction'}
     assert app.session_state['dashboard_group'] == 'Frutas'
     texts = " ".join(block.value for block in app.markdown)
     assert "tiene precio en una sola región" not in texts
@@ -1050,7 +1050,7 @@ def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
     app.session_state["home_region_done"] = app.session_state["home_family_done"] = True  # D-372: steps 1 and 2 done
     app.run()
     assert not app.exception
-    assert app.selectbox(key='home_products_order').options == list(dashboard.PRODUCT_ORDERS)
+    assert app.selectbox(key='home_products_direction').options == ['Todo', 'Subidas', 'Bajadas']
 
     def rows():
         markup = ' '.join(block.value for block in app.markdown)
@@ -1074,19 +1074,20 @@ def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
         values = [abs(value) for thin, value in shown if thin == group]
         assert values == sorted(values, reverse=True)
     largest = changes()
-    # D-496: «Bajadas» sorts every product by its plain change, lowest first (the sharp ones are the alert buttons)
-    app.selectbox(key='home_products_order').set_value('Bajadas').run()
-    assert not app.exception
-    for group in (True, False):
-        values = [value for thin, value in rows() if thin == group]
-        assert values == sorted(values)
-    app.selectbox(key='home_products_order').set_value('Nombre').run()
-    assert not app.exception
-    markup = ' '.join(block.value for block in app.markdown)
-    table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
-    products = [name.split(' · ')[0] for name in re.findall(r'<td><strong>([^<]+)</strong>', table)]
-    assert products == sorted(products) and len(products) == len(largest)
-    assert app.selectbox(key='home_products_order').options == ['Mayor cambio', 'Subidas', 'Bajadas', 'Nombre']
+    # D-497: «Subidas» and «Bajadas» keep only that way, the largest first, and the heading counts what stayed
+    kept = {}
+    for direction, sign in (('Subidas', 1), ('Bajadas', -1)):
+        app.selectbox(key='home_products_direction').set_value(direction).run()
+        assert not app.exception
+        kept[direction] = changes()
+        assert all(value * sign > 0 for value in kept[direction])
+        for group in (True, False):
+            values = [abs(value) for thin, value in rows() if thin == group]
+            assert values == sorted(values, reverse=True)
+        markup = ' '.join(block.value for block in app.markdown)
+        assert f'{len(kept[direction])} de {len(largest)} precios' in markup
+    unchanged = sum(value == 0 for value in largest)
+    assert len(kept['Subidas']) + len(kept['Bajadas']) + unchanged == len(largest)  # nothing is lost between them
 
 
 @needs_database

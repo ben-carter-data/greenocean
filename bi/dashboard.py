@@ -4232,8 +4232,13 @@ def alert_items(rows):
     return items
 
 
-# D-496: the order of every product by its plain change; the sharp rises and drops (K6) are the alert buttons (D-491)
-PRODUCT_ORDERS = ('Mayor cambio', 'Subidas', 'Bajadas', 'Nombre')
+# D-497: the way every product moved, the sharp ones included; the sharp ones alone are the alert buttons (K6, D-491)
+# and a name is typed in the search (D-492)
+PRODUCT_DIRECTIONS = ('Todo', 'Subidas', 'Bajadas')
+NOTHING_MOVED = {
+    'Subidas': 'Ninguno de estos productos subió esta semana.',
+    'Bajadas': 'Ninguno de estos productos bajó esta semana.',
+}
 
 
 normalize_search = overview.normalize_search
@@ -4312,8 +4317,15 @@ def read_cached_region_calculation_in(database_version, week, channel):
     return calculation, len(published)
 
 
-def sort_family_products(rows, order):
-    """The family table under the chosen order; ties stay in a stable, readable order.
+def keep_direction(rows, direction):
+    """D-497: «Subidas» or «Bajadas» keep every product that moved that way, sharp or not; a change that rounds to
+    0.0 % is neither, as the table paints it (change_state)."""
+    state = {'Subidas': 'rise', 'Bajadas': 'fall'}.get(direction)
+    return rows if state is None else [row for row in rows if home_mockup.change_state(row['variation']) == state]
+
+
+def sort_family_products(rows):
+    """The family table, the largest change first; ties stay in a stable, readable order.
     A change resting on a single quote or a single region sorts after the others (D-146, D-327)."""
 
     def names(row):
@@ -4323,12 +4335,6 @@ def sort_family_products(rows, order):
         # D-327: a change that rests on one quote, or on one region, is the least solid and goes last.
         return bool(row.get('_single_quote')) or row.get('_same_regions') == 1
 
-    if order == 'Nombre':
-        return sorted(rows, key=names)
-    if order == 'Subidas':
-        return sorted(rows, key=lambda row: (thin(row), -row['variation'], names(row)))
-    if order == 'Bajadas':
-        return sorted(rows, key=lambda row: (thin(row), row['variation'], names(row)))
     return sorted(rows, key=lambda row: (thin(row), -abs(row['variation']), names(row)))
 
 
@@ -4541,17 +4547,12 @@ def show_market_overview(mode, prefix):
                 if products_family == ALL_VALUES
                 else next((value for name, value, _ in averages if name == products_family), None)
             )
-            heading = st.empty()
-            # D-495, D-496: only the order; the channel is step 2 and the sharp rises and drops are the alert buttons
-            order_column, _, enlarge_column = st.columns([1.1, 1.65, 0.3], vertical_alignment='center')
-            orders = PRODUCT_ORDERS
-            if st.session_state.get('home_products_order') not in orders:
-                st.session_state['home_products_order'] = orders[0]
-            order = order_column.selectbox('Orden', orders, key='home_products_order', disabled=not family_open)
+            direction = st.session_state.get('home_products_direction', PRODUCT_DIRECTIONS[0])  # D-497: alert line
             total = len(rows)
+            rows = keep_direction(rows, direction)
             if query:
                 rows = [row for row in rows if matches_product_search(row, query)]
-            rows = sort_family_products(rows, order)
+            rows = sort_family_products(rows)
             published = None
             note = ''
             if region == ALL_VALUES:
@@ -4566,14 +4567,23 @@ def show_market_overview(mode, prefix):
                 note = home_mockup.products_note(published, stats.get('available', 0) - stats.get('comparable', 0))
                 for row in family_rows:
                     row['_calc'] = calculation.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
-            heading.markdown(
-                '<div class="greenocean-mockup">'
-                + home_mockup.products_heading(
-                    products_family or 'Sin familia', average, scope, len(rows), total, note, step=4
+            # D-497: with the filter in the alert line, «Ampliar» shares the heading's line and the table keeps the height
+            with st.container(key='home_products_head', horizontal=True, vertical_alignment='center'):
+                st.markdown(
+                    '<div class="greenocean-mockup">'
+                    + home_mockup.products_heading(
+                        products_family or 'Sin familia', average, scope, len(rows), total, note, step=4
+                    )
+                    + '</div>',
+                    unsafe_allow_html=True,
+                    width='stretch',
                 )
-                + '</div>',
-                unsafe_allow_html=True,
-            )
+                enlarge = st.button(
+                    tr('Ampliar'),
+                    icon=':material/open_in_full:',
+                    key='home_products_enlarge',
+                    help=tr('Ampliar la tabla de productos'),
+                )
             directions = read_cached_region_directions(get_database_version(), week)
             for row in rows:
                 row['_regions'] = directions.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
@@ -4587,22 +4597,18 @@ def show_market_overview(mode, prefix):
                     None if region == ALL_VALUES else region,
                     published,
                     show_family=products_family == ALL_VALUES,
+                    empty_note=NOTHING_MOVED.get(direction, ''),
                 )
                 + '</div>'
             )
             st.markdown(table_html, unsafe_allow_html=True)
-            if enlarge_column.button(
-                tr('Ampliar'),
-                icon=':material/open_in_full:',
-                key='home_products_enlarge',
-                help=tr('Ampliar la tabla de productos'),
-            ):
+            if enlarge:
                 for row in family_rows:
                     row['_regions'] = directions.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
                 st.session_state.update(
                     {
                         'dialog_products_search': query,
-                        'dialog_products_order': order,
+                        'dialog_products_direction': direction,
                     }
                 )
                 show_products_dialog(
@@ -4610,7 +4616,6 @@ def show_market_overview(mode, prefix):
                     average,
                     scope,
                     family_rows,
-                    orders,
                     model['week_label'],
                     model['previous_label'],
                     None if region == ALL_VALUES else region,
@@ -4693,10 +4698,10 @@ def show_market_overview(mode, prefix):
 
 @st.dialog("Productos", width="large")
 def show_products_dialog(
-    family, average, scope, family_rows, orders, week_label, previous_label, region, published=None, note=""
+    family, average, scope, family_rows, week_label, previous_label, region, published=None, note=""
 ):
     """The products table at the size of the window (D-317) with the same filters as the panel (D-322): it opens with the
-    panel's search and order, and filters on its own without closing."""
+    panel's search and direction (D-497), and filters on its own without closing."""
     with st.container(horizontal=True, vertical_alignment="center", key="dialog_products_filters"):
         query = st.text_input(
             'Buscar',
@@ -4707,18 +4712,27 @@ def show_products_dialog(
             type='search',
             live=True,
         )
-        order = st.selectbox('Orden', orders, key='dialog_products_order')
-    rows = list(family_rows)
+        direction = st.selectbox(
+            'Mostrar', PRODUCT_DIRECTIONS, key='dialog_products_direction', label_visibility='collapsed'
+        )
+    rows = keep_direction(list(family_rows), direction)
     if query.strip():
         rows = [row for row in rows if matches_product_search(row, query)]
-    rows = sort_family_products(rows, order)
+    rows = sort_family_products(rows)
     st.markdown(
         '<div class="greenocean-mockup products-large">'
         + home_mockup.products_heading(family, average, scope, len(rows), len(family_rows), note)
         + '</div>'
         + '<div class="greenocean-mockup">'
         + home_mockup.products_table(
-            rows, week_label, previous_label, query.strip(), region, published, show_family=family == ALL_VALUES
+            rows,
+            week_label,
+            previous_label,
+            query.strip(),
+            region,
+            published,
+            show_family=family == ALL_VALUES,
+            empty_note=NOTHING_MOVED.get(direction, ''),
         )
         + '</div>',
         unsafe_allow_html=True,
@@ -9247,7 +9261,9 @@ def show_alert_line(week, family, family_open, alert):
     """D-491: between steps 2 and 3, a thin line with the sharp rises (red) and the sharp drops (green) of the chosen
     family, or of the whole basket; they wake up once a family is chosen (D-352). One shows only those products in step
     3, and pressing it again brings back every product. The count is national, like K6 (D-477, D-489). D-492: the
-    search sits on the same line and never leaves: with a kind of alert chosen it looks only among those alerts."""
+    search sits on the same line and never leaves: with a kind of alert chosen it looks only among those alerts.
+    D-497: beside it, the filter by direction; an alert already shows one direction, so the filter rests at «Todo»
+    while it is chosen and the two never contradict each other."""
     now = read_price_alerts()
     now = now[now["week_start"] == pd.Timestamp(week)] if not now.empty else now
     if family_open and family not in (None, ALL_VALUES) and not now.empty:
@@ -9299,6 +9315,15 @@ def show_alert_line(week, family, family_open, alert):
             type="search",
             live=True,
             disabled=not family_open,
+        )
+        if alert:
+            st.session_state["home_products_direction"] = PRODUCT_DIRECTIONS[0]
+        st.selectbox(
+            "Mostrar",
+            PRODUCT_DIRECTIONS,
+            key="home_products_direction",
+            label_visibility="collapsed",
+            disabled=not family_open or bool(alert),
         )
 
 

@@ -898,7 +898,9 @@ def calculation_detail(row, week_label, previous_label, published):
     )
 
 
-def products_table(rows, week_label, previous_label, query='', selected=None, published=None, show_family=False):
+def products_table(
+    rows, week_label, previous_label, query='', selected=None, published=None, show_family=False, empty_note=''
+):
     """The comparable prices of one family; the last column counts regions up and down. The prices are the average of
     the regions with a price in both weeks, the same ones the variation uses (D-327). D-478: a list of the whole basket
     names each product's family, so any figure is found under its family."""
@@ -945,7 +947,9 @@ def products_table(rows, week_label, previous_label, query='', selected=None, pu
         )
     if not body:
         empty = (
-            f'Ningún producto empieza por «{esc(query)}» en la canasta.'
+            empty_note  # D-497: the filter by direction left nothing
+            if empty_note
+            else f'Ningún producto empieza por «{esc(query)}» en la canasta.'
             if query and show_family
             else f'Ningún producto empieza por «{esc(query)}» en esta familia.'
             if query
