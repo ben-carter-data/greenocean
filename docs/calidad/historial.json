@@ -155,6 +155,26 @@
         "atipicos_pct": 0.03,
         "vigencia_dias": 1
       }
+    },
+    {
+      "generado": "2026-11-04 06:06 UTC",
+      "commit": "01bfbe7",
+      "valores": {
+        "ruff_avisos": 0,
+        "cobertura_total": 95.4,
+        "cobertura_por_modulo": 73.9,
+        "mypy_errores": 0,
+        "bandit_altos": 0,
+        "pip_audit_vulnerabilidades": 0,
+        "secretos_sin_clasificar": 0,
+        "pruebas_fallidas": 0,
+        "pruebas_dbt_pct": 100.0,
+        "comparables_pct": 98.1,
+        "rechazadas_pct": 0.008,
+        "ausencias_region_canal": 0,
+        "atipicos_pct": 0.03,
+        "vigencia_dias": 1
+      }
     }
   ]
 }
