@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.51 |
+| Versión | 3.52 |
 | Fecha | 04-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -271,3 +271,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.49 | 04-11-2026 | Las tres páginas de «Calidad» se llaman «Plan de calidad», «Controles de datos» y «Cambios e incidentes», en ese orden (D-507) |
 | 3.50 | 04-11-2026 | El dashboard «Análisis BA y BI» se llama «Análisis» (D-508) |
 | 3.51 | 04-11-2026 | «Descargar» en el paso 4 de Semanal: todos los precios filtrados en Excel (tabla con filtro, formatos y notas) o CSV, en el idioma de la visita (RF-01, D-509) |
+| 3.52 | 04-11-2026 | Las cifras que se leen de la base al abrir una página llevan la marca «en vivo», un punto verde que late (RNF-06, D-510) |

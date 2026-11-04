@@ -16,7 +16,7 @@ import html
 import re
 from pathlib import Path
 
-from bi import brand_icons, charts, database_map, doc_views, project, queries
+from bi import live_mark, brand_icons, charts, database_map, doc_views, project, queries
 
 REPOSITORY = Path(__file__).resolve().parent.parent
 # Disc colors (light top, dark bottom, glyph) beyond database_map.BRANDS.
@@ -438,6 +438,8 @@ def build_css(palette):
 .evidence div {{ text-align:center; }}
 .evidence strong {{ display:block; color:{ink}; font:600 30px/1.1 {sans}; font-variant-numeric:tabular-nums; }}
 .evidence span {{ color:{muted}; font-size:13px; }}
+.evidence .live-mark {{ align-self:center; }}
+{live_mark.build_css(dark)}
 </style>"""
 
 
@@ -501,6 +503,9 @@ def build_stack_html(palette, figures, addresses):
     numbers = "".join(
         f'<div><strong>{format_number(value)}</strong><span>{html.escape(label)}</span></div>'
         for value, label in evidence
+    ) + live_mark.build_html(  # D-510: the three figures are read when the page opens
+        "weekly_price, dbt_node y etl_run se cuentan en la Base DuckDB al abrir la página; las pruebas de pytest, en "
+        "la carpeta tests/."
     )
     return (
         build_css(palette) + '<div class="sk-map"><div class="sk-stage" role="group" '

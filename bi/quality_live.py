@@ -16,7 +16,7 @@ rows leave at the second, and every gate flows into the verdict. All are pure en
 import html
 from datetime import date, datetime, timezone
 
-from bi import charts, queries, quality, quality_view, weeks
+from bi import live_mark, charts, queries, quality, quality_view, weeks
 
 # The project's thresholds, shown next to each figure so a verdict can be disputed.
 LAST_WEEK_MIN_SHARE = 0.75  # rows of the latest week vs the median of the 8 before
@@ -575,6 +575,8 @@ def build_pipeline_css(palette):
 .qp .pq-head h2 {{ margin:0; font-size:20px; font-weight:700; letter-spacing:-.01em; color:{ink}; }}
 .qp .pq-head p {{ margin:0; font:400 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
 .qp .pq-head p.hint {{ font-family:inherit; font-size:12.5px; }}
+.qp .pq-head .live-mark {{ margin-left:auto; }}
+{live_mark.build_css(dark)}
 .qp .pq-grid {{ display:grid; margin-top:4px; align-items:center; column-gap:0; row-gap:0;
   grid-template-columns:minmax(76px, .85fr) minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(0, 1.3fr)
     minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(76px, .85fr);
@@ -744,7 +746,11 @@ def build_pipeline_html(indicators, columns, measures=None):
     head = (
         f'<div class="pq-head"><h2>Pipeline de calidad de datos</h2>'
         f'<p>{words[len(GATE_VIEW)].capitalize()} puertas · {words[len(HUB)]} dimensiones · un veredicto</p>'
-        '<p class="hint">· pulsa cada pieza para ver su detalle</p></div>'
+        '<p class="hint">· pulsa cada pieza para ver su detalle</p>'
+        + live_mark.build_html(  # D-510: every figure of the pipeline is measured when the page opens
+            'weekly_price, rejection, etl_run y dbt_result se consultan en la Base DuckDB al abrir la página.'
+        )
+        + '</div>'
     )
     return f'<div class="pq">{head}<div class="pq-grid">{"".join(parts)}</div></div>'
 

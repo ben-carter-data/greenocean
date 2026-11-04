@@ -36,6 +36,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (
+    live_mark,
     price_export,
     actions_view,
     business_analysis,
@@ -3035,7 +3036,13 @@ def show_architecture_page(mode):
     columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
     tooltips = app_diagrams.model_tooltips(row_counts)  # D-448: the same explanations as the SAD's drawing
     st.markdown(build_architecture_css(mode), unsafe_allow_html=True)
-    show_page_bar(PAGE_ARCHITECTURE, PAGE_ARCHITECTURE, MODEL_DESCRIPTION, build_architecture_chips(row_counts))
+    show_page_bar(
+        PAGE_ARCHITECTURE,
+        PAGE_ARCHITECTURE,
+        MODEL_DESCRIPTION,
+        build_architecture_chips(row_counts),
+        live="Las filas de weekly_price, etl_run y rejection se cuentan en la Base DuckDB al abrir la página.",
+    )
     # The views of the same database, from the model to where it lives (D-189, D-236): the star, the
     # entity-relation, the storage architecture and, last, where two databases touch.
     view = (
@@ -3763,11 +3770,12 @@ def format_load_time(latest):
     return f"{stamp.day} {month} · {stamp:%H:%M}"
 
 
-def show_page_bar(view, title, description, chips=(), side=None, terms=()):
+def show_page_bar(view, title, description, chips=(), side=None, terms=(), live=None):
     """The header of a page (D-267, D-398): only «Volver», the path (the description on hover) and the time of the
     data. What the page says (its question when it is not just its name, its figures as chips, what it measures) and
     what it does (side: a button, a switch) go in a row of the content right under the bar. Links to other pages live
-    in the menu, never here. D-456: a page drawn as a tab of «Análisis» keeps only that row, under the tabs."""
+    in the menu, never here. D-456: a page drawn as a tab of «Análisis» keeps only that row, under the tabs. D-510: «live»
+    names what the page's figures were read from, and the mark that beats goes beside them."""
     tab = DRAWN_TAB.get()
     if tab:
         show_title = tr(title) != tr(tab)
@@ -3783,12 +3791,15 @@ def show_page_bar(view, title, description, chips=(), side=None, terms=()):
                 unsafe_allow_html=True,
                 width="content",
             )
-        show_title = tr(title) != path.rpartition(" › ")[2]
+            show_title = tr(title) != path.rpartition(" › ")[2]
+            if live and not (show_title or chips or side or terms):
+                # D-510: a page with no row of its own (its tabs draw theirs) carries the mark in the bar itself
+                st.markdown(live_mark.build_html(tr(live)), unsafe_allow_html=True, width="content")
     if not (show_title or chips or side or terms):
         return
     with st.container(key="page_info", horizontal=True, vertical_alignment="center"):
         st.markdown(
-            page_bar.build_info_html(tr(title), tr(description), chips, show_title),
+            page_bar.build_info_html(tr(title), tr(description), chips, show_title, tr(live) if live else None),
             unsafe_allow_html=True,
             width="stretch",
         )
@@ -5556,6 +5567,7 @@ def show_ba_page(mode):
         PAGE_BA,
         "La historia de los precios por mes, año y temporada, con sus valores atípicos; los precios frente a la "
         "inflación, las respuestas de hoy, quién usa los datos y cómo se calcula cada cifra.",
+        live="weekly_price, ipc_weekly y las alertas K6 se leen en la Base DuckDB al abrir la página.",
     )
     palette = charts.get_palette(mode)
     wanted = st.query_params.get(BA_TAB_PARAMETER)
@@ -6463,6 +6475,7 @@ def show_runs_page(mode):
         "Dónde corre cada pieza, cómo llega un cambio a producción y el "
         "estado de cada paso de la carga semanal, con su log y dónde actuar.",
         side=show_admin_card,
+        live="Las ejecuciones se leen de GitHub Actions y etl_run al abrir la página.",
     )
     tab = show_view_tabs(RUNS_VIEW_KEY, list(RUNS_VIEWS), charts.get_palette(mode))
     RUNS_VIEWS[tab](mode)  # D-360: only the tab in sight is drawn
@@ -6536,6 +6549,7 @@ def show_actions_page(mode):
         PAGE_ACTIONS,
         PAGE_ACTIONS,
         "Las últimas ejecuciones de pruebas, carga semanal y calidad, y qué falló en la última que falló. Solo lectura.",
+        live="Las ejecuciones se leen de la API de GitHub Actions al abrir la página.",
     )
     model = read_actions_model(get_secret(SECRET_READ_TOKEN), get_secret(SECRET_GITHUB_TOKEN))
     st.markdown(actions_view.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
@@ -7271,6 +7285,7 @@ def show_operations_page(mode):
         "Controles de datos",
         "La calidad medida en cada carga y los controles que demuestran que lo publicado se puede rastrear y repetir.",
         side=show_recheck_button,
+        live="weekly_price, rejection, etl_run y dbt_result se consultan en la Base DuckDB al abrir la página.",
     )
     measures = read_quality_measures(get_database_version())
     indicators = quality_live.build_indicators(measures)
@@ -7848,6 +7863,8 @@ def show_stack_page(mode):
         PAGE_STACK,
         "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.",
         side=choose_view,
+        live="weekly_price, dbt_node y etl_run se cuentan en la Base DuckDB al abrir la página; las pruebas de pytest, en "
+        "la carpeta tests/.",
     )  # D-398: «Mapa de la app» is the next line of the menu, not a link of the header
     if view_holder.get("view") == STACK_VIEWS[1]:
         model_running = read_flow_model()[0]["mode"] == "live"
@@ -8178,6 +8195,7 @@ def show_pipeline_page_header(summary):
         "Pipeline y linaje",
         "El recorrido de los datos, de ODEPA y el INE al panel, y el linaje de dbt con el estado de sus pruebas.",
         build_pipeline_chips(summary),
+        live="etl_run y dbt_result de la última carga se leen en la Base DuckDB al abrir la página.",
     )
 
 

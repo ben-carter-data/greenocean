@@ -10,7 +10,7 @@ Pure functions: no Streamlit. bi/dashboard.py lays the Streamlit elements around
 
 import html
 
-from bi import charts
+from bi import charts, live_mark
 
 
 def esc(value):
@@ -19,6 +19,7 @@ def esc(value):
 
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
+    live = live_mark.build_css(dark)  # D-510
     ink, muted, card, border = palette["strong_text"], palette["reference"], palette["card"], palette["card_border"]
     soft = palette["grid"] if dark else "#f1f5f9"
     rise, fall = ("#ff8a96", "#83baff") if dark else ("#c81e3a", "#1d5fbf")
@@ -40,6 +41,7 @@ def build_css(palette):
 .page-bar-updated {{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; font-size:12.5px; color:{muted}; }}
 .page-bar-updated i {{ width:7px; height:7px; border-radius:50%; background:#529e57; flex:none; }}
 .page-bar-updated i.failed {{ background:#e62035; }}
+{live}
 /* The row of the content under the bar: the page's question, its chips, its terms and its controls. It wraps. */
 .stApp .st-key-page_info {{ gap:6px 10px !important; flex-wrap:wrap !important; align-items:center !important;
   margin:-4px 0 8px !important; }}
@@ -73,9 +75,10 @@ def build_bar_html(path, description=""):
     )
 
 
-def build_info_html(title, description, chips=(), show_title=True):
+def build_info_html(title, description, chips=(), show_title=True, live=None):
     """The row of the content under the bar (D-398): the page's question, when it is not just its name, and its figures
-    as chips: (value as escaped HTML, what it counts in words, shown on hover)."""
+    as chips: (value as escaped HTML, what it counts in words, shown on hover). D-510: «live», what the figures were
+    read from, adds the mark that beats beside them."""
     heading = (
         f'<span class="page-info-title" role="heading" aria-level="2" title="{esc(description)}">{esc(title)}</span>'
         if show_title
@@ -85,6 +88,7 @@ def build_info_html(title, description, chips=(), show_title=True):
         '<div class="page-info">'
         + heading
         + "".join(f'<span class="page-chip" title="{esc(note)}">{value}</span>' for value, note in chips)
+        + (live_mark.build_html(live) if live else "")
         + "</div>"
     )
 
