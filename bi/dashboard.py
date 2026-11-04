@@ -4232,12 +4232,7 @@ def alert_items(rows):
     return items
 
 
-PRODUCT_ORDERS = ('Mayor cambio', 'Subidas', 'Bajadas', 'Nombre')
-
-
-def channel_label(channel):
-    """A channel in the selector as the table names it (D-403): «Todos», or the channel in the reader's language."""
-    return i18n.translate_text(channel) if channel == 'Todos' else data_terms.term(channel)
+PRODUCT_ORDERS = ('Mayor cambio', 'Nombre')  # D-495: the rises and the falls are the alert buttons; the channel, step 2
 
 
 normalize_search = overview.normalize_search
@@ -4329,10 +4324,6 @@ def sort_family_products(rows, order):
 
     if order == 'Nombre':
         return sorted(rows, key=names)
-    if order == 'Subidas':
-        return sorted(rows, key=lambda row: (thin(row), -row['variation'], names(row)))
-    if order == 'Bajadas':
-        return sorted(rows, key=lambda row: (thin(row), row['variation'], names(row)))
     return sorted(rows, key=lambda row: (thin(row), -abs(row['variation']), names(row)))
 
 
@@ -4546,20 +4537,13 @@ def show_market_overview(mode, prefix):
                 else next((value for name, value, _ in averages if name == products_family), None)
             )
             heading = st.empty()
-            channel_column, order_column, enlarge_column = st.columns([1.25, 1.5, 0.3], vertical_alignment='center')
-            channels = ['Todos'] + sorted({str(row['channel']) for row in rows})
-            if st.session_state.get('home_products_channel') not in channels:
-                st.session_state['home_products_channel'] = 'Todos'
-            channel = channel_column.selectbox(
-                'Canal', channels, key='home_products_channel', disabled=not family_open, format_func=channel_label
-            )
-            orders = PRODUCT_ORDERS  # D-491: the alerts have their own buttons, so the order has no «Inusuales»
+            # D-495: only the order; the channel is step 2 and the rises and falls are the alert buttons (D-491)
+            order_column, _, enlarge_column = st.columns([1.1, 1.65, 0.3], vertical_alignment='center')
+            orders = PRODUCT_ORDERS
             if st.session_state.get('home_products_order') not in orders:
                 st.session_state['home_products_order'] = orders[0]
             order = order_column.selectbox('Orden', orders, key='home_products_order', disabled=not family_open)
             total = len(rows)
-            if channel != 'Todos':
-                rows = [row for row in rows if row['channel'] == channel]
             if query:
                 rows = [row for row in rows if matches_product_search(row, query)]
             rows = sort_family_products(rows, order)
@@ -4613,7 +4597,6 @@ def show_market_overview(mode, prefix):
                 st.session_state.update(
                     {
                         'dialog_products_search': query,
-                        'dialog_products_channel': channel,
                         'dialog_products_order': order,
                     }
                 )
@@ -4622,7 +4605,6 @@ def show_market_overview(mode, prefix):
                     average,
                     scope,
                     family_rows,
-                    channels,
                     orders,
                     model['week_label'],
                     model['previous_label'],
@@ -4654,12 +4636,9 @@ def show_market_overview(mode, prefix):
     trends, basket_trend = read_home_trends(get_database_version(), week)
     basket_value = home_mockup.basket_median(model['family_rows'])
     with detail_column:
-        channel_column, family_column = st.container(key='home_top').columns([0.25, 0.75], gap='small')
+        channel_column, family_column = st.container(key='home_top').columns([0.35, 0.65], gap='small')
         with channel_column, st.container(key='home_channels'):
-            if not region_open:
-                st.markdown(
-                    f'<div class="greenocean-mockup">{home_mockup.lock_overlay(2)}</div>', unsafe_allow_html=True
-                )
+            # D-494: step 2 waits for the region dimmed, without a padlock of its own: step 3 already says what to do
             st.markdown(
                 '<div class="greenocean-mockup">'
                 + home_mockup.channel_list(
@@ -4709,10 +4688,10 @@ def show_market_overview(mode, prefix):
 
 @st.dialog("Productos", width="large")
 def show_products_dialog(
-    family, average, scope, family_rows, channels, orders, week_label, previous_label, region, published=None, note=""
+    family, average, scope, family_rows, orders, week_label, previous_label, region, published=None, note=""
 ):
     """The products table at the size of the window (D-317) with the same filters as the panel (D-322): it opens with the
-    panel's search, channel and order, and filters on its own without closing."""
+    panel's search and order, and filters on its own without closing."""
     with st.container(horizontal=True, vertical_alignment="center", key="dialog_products_filters"):
         query = st.text_input(
             'Buscar',
@@ -4723,9 +4702,8 @@ def show_products_dialog(
             type='search',
             live=True,
         )
-        channel = st.selectbox('Canal', channels, key='dialog_products_channel', format_func=channel_label)
         order = st.selectbox('Orden', orders, key='dialog_products_order')
-    rows = [row for row in family_rows if channel == 'Todos' or row['channel'] == channel]
+    rows = list(family_rows)
     if query.strip():
         rows = [row for row in rows if matches_product_search(row, query)]
     rows = sort_family_products(rows, order)

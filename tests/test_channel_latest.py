@@ -114,11 +114,7 @@ def test_d405_a_channel_page_is_the_panorama_with_that_channel_and_the_panorama_
     assert not app.exception
     page = " ".join(block.value for block in app.markdown)
     assert "Semanal › </span><b>Feria libre</b>" in page  # the path names the channel
-    assert (
-        'class="mock-channel-row rise selected"' in page
-        or 'class="mock-channel-row fall selected"' in page
-        or ('class="mock-channel-row neutral selected"' in page)
-    )
+    assert re.search(r'class="mock-channel-row mock-channel-tile \w+ selected"', page)  # its block, lit
     assert 'class="mock-products-table"' in page and "mock-movement" in page  # the Dashboard's own panels
     channels = set(re.findall(r'</td><td>([^<]+)</td><td class="num">', page))
     assert channels == {"Feria libre"}, channels  # only that channel's products
@@ -189,7 +185,8 @@ def test_d494_a_channel_is_chosen_in_place_like_a_region_or_a_family():
     markup = home_mockup.channel_list(cards, lambda c: f"?canal={c}", "Feria libre", "?", lambda c: "", step=2)
     assert markup.count('class="mock-channel-row') == len(cards) + 1  # «Todos los canales» first
     assert "2</b><span>Elige un canal" in markup and 'href="?canal=Feria libre"' in markup
-    assert re.search(r'class="mock-channel-row \w+ selected" href="\?canal=Feria libre"', markup)
+    assert "Opcional: sin elegir, se ven todos." in markup  # it says it is never required
+    assert re.search(r'class="mock-channel-row mock-channel-tile \w+ selected" href="\?canal=Feria libre"', markup)
     assert "+10,0 %" in markup  # the median change of its card (D-404)
 
 
@@ -244,4 +241,4 @@ def test_d453_each_channel_card_has_its_own_3d_icon_in_its_own_colours():
         }
     ]
     markup = home_mockup.channel_list(cards, lambda c: "#", None, "#", lambda c: channel_icons.image(c, 20), step=2)
-    assert '<img class="ch-icon"' in markup and "pan · " in markup  # D-494: its icon, and what it holds
+    assert '<img class="ch-icon"' in markup and ">pan</small>" in markup  # D-494: its icon, and what it holds

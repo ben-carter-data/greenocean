@@ -301,13 +301,12 @@ def test_d092_region_and_family_clicks_fill_the_products_table():
     assert 'class="mock-chile-map"' in markup and 'class="mock-chosen"' not in markup  # D-446: the map stays
     table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
     assert table.count('<tr>') > 1 and 'Regiones ↑ / ↓' in table
-    # Channel and order filter the same rows; prices stay real.
-    app.selectbox(key='home_products_order').set_value('Bajadas').run()
+    # The order sorts the same rows; prices stay real (D-495: by name, the only order besides the largest change).
+    app.selectbox(key='home_products_order').set_value('Nombre').run()
     markup = ' '.join(block.value for block in app.markdown)
     table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
-    table = re.sub(r'<ul class="mock-regions-tip">.*?</ul>', '', table)  # D-304: the hover box repeats regional changes
-    values = [float(v.replace('−', '-').replace(',', '.')) for v in re.findall(r'<b>([+−]?[\d,]+) %</b>', table)]
-    assert values == sorted(values)
+    products = [name.split(' · ')[0] for name in re.findall(r'<td><strong>([^<]+)</strong>', table)]
+    assert products == sorted(products) and len(products) > 1
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
@@ -440,9 +439,8 @@ def test_d327_a_change_resting_on_one_region_sorts_last_in_every_order():
     wide = dict(ZAPALLO, product='Acelga', variation=0.30, _same_regions=7, _single_quote=False)
     narrow = dict(ZAPALLO, product='Ají', variation=0.50, _same_regions=1)
     quote = dict(ZAPALLO, product='Apio', variation=0.40, _single_quote=True)
-    for order in ('Mayor cambio', 'Subidas'):
-        names = [row['product'] for row in dashboard.sort_family_products([narrow, quote, wide], order)]
-        assert names == ['Acelga', 'Ají', 'Apio'] or names[0] == 'Acelga', (order, names)
+    names = [row['product'] for row in dashboard.sort_family_products([narrow, quote, wide], 'Mayor cambio')]
+    assert names == ['Acelga', 'Ají', 'Apio'] or names[0] == 'Acelga', names
 
 
 # endregion

@@ -340,7 +340,7 @@ def test_d371_any_profile_lands_on_the_panorama_from_any_page():
         app = open_entry_window(view)
         app.button(key=choice).click().run()
         assert not app.exception and not app.get("dialog"), choice
-        assert [box for box in app.selectbox if box.key == "home_products_channel"], choice  # the Dashboard ran
+        assert [box for box in app.selectbox if box.key == "home_products_order"], choice  # the Dashboard ran
 
 
 def test_d371_a_document_the_address_opens_stays_after_the_choice():

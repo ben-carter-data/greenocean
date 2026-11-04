@@ -848,8 +848,8 @@ def test_d069_map_scope_replaces_permanent_selectors_and_context_holds_across_vi
     dashboard_bar.query_params["perfil"] = "Analista BI"
     dashboard_bar.run()
     assert not dashboard_bar.exception
-    # Only the two filters of the products table: no permanent selectors (D-092).
-    assert {box.key for box in dashboard_bar.main.selectbox} == {'home_products_channel', 'home_products_order'}
+    # Only the order of the products table: no permanent selectors (D-092); the channel is step 2 (D-494, D-495).
+    assert {box.key for box in dashboard_bar.main.selectbox} == {'home_products_order'}
     # The page has one text field; the profile door's key field (D-335) is not a selector of the page.
     assert [box.key for box in dashboard_bar.text_input if not box.key.startswith('profile_')] == [
         'home_products_search'
@@ -870,7 +870,7 @@ def test_d069_a_click_filter_reaches_the_bar_and_the_map_starts_with_two_regions
     app.session_state["dashboard_group"] = "Frutas"
     app.run()
     assert not app.exception
-    assert {box.key for box in app.main.selectbox} == {'home_products_channel', 'home_products_order'}
+    assert {box.key for box in app.main.selectbox} == {'home_products_order'}
     assert app.session_state['dashboard_group'] == 'Frutas'
     texts = " ".join(block.value for block in app.markdown)
     assert "tiene precio en una sola región" not in texts
@@ -1074,13 +1074,14 @@ def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
         values = [abs(value) for thin, value in shown if thin == group]
         assert values == sorted(values, reverse=True)
     largest = changes()
-    app.selectbox(key='home_products_order').set_value('Bajadas').run()
+    # D-495: «Nombre» is the other order; the rises, the falls and the unusual ones are the alert buttons (D-491)
+    app.selectbox(key='home_products_order').set_value('Nombre').run()
     assert not app.exception
-    for group in (True, False):
-        values = [value for thin, value in rows() if thin == group]
-        assert values == sorted(values)
-    # D-491: the alerts have their own buttons between steps 2 and 3, so the order has no «Inusuales»
-    assert 'Inusuales' not in app.selectbox(key='home_products_order').options and largest
+    markup = ' '.join(block.value for block in app.markdown)
+    table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
+    products = [name.split(' · ')[0] for name in re.findall(r'<td><strong>([^<]+)</strong>', table)]
+    assert products == sorted(products) and len(products) == len(largest)
+    assert set(app.selectbox(key='home_products_order').options) == {'Mayor cambio', 'Nombre'}
 
 
 @needs_database

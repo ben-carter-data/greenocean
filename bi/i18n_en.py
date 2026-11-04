@@ -2241,6 +2241,7 @@ PAGES = {
     # D-494: step 2 of «Semanal», the channels
     "Elige un canal": "Choose a channel",
     "Todos los canales": "Every channel",
+    "Opcional: sin elegir, se ven todos.": "Optional: none chosen shows them all.",
     "¿Dónde se compra?": "Where is it bought?",
     "Opcional: sin elegir, se ven todos los canales. Cada canal muestra su última semana publicada y la mediana del cambio de sus precios comparables frente a la anterior.": "Optional: without a choice, every channel is shown. Each channel shows its latest published week and the median change of its comparable prices against the one before.",
     "Mediana de {n} precios comparables frente a su semana anterior": "Median of {} comparable prices against its previous week",

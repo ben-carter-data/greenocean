@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.38 |
+| Version | 3.39 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -258,3 +258,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.36 | 2026-11-03 | The chosen family's alerts, between step 2 and step 3; the order no longer has «Inusuales» (RF-05, D-491) |
 | 3.37 | 2026-11-03 | Step 3 is called «Productos»; the search sits by the alerts and looks within the one chosen (RF-05, D-492) |
 | 3.38 | 2026-11-03 | Weekly has four steps: the channel becomes step 2, optional, and the section keeps two dashboards (D-494) |
+| 3.39 | 2026-11-03 | The products table only orders by «Mayor cambio» or «Nombre»; the channel is step 2 and the alerts, their buttons (D-495) |

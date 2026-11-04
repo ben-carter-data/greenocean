@@ -79,7 +79,7 @@ def test_d378_choosing_a_view_opens_the_dashboard():
     app.button(key="profile_choose_consulta").click().run()
     assert not app.exception and not app.get("dialog")
     assert [
-        box for box in app.selectbox if box.key == "home_products_channel"
+        box for box in app.selectbox if box.key == "home_products_order"
     ]  # D-371: the Dashboard, not the first link
 
 

@@ -53,7 +53,7 @@ def test_d352_in_the_user_view_panels_two_and_three_start_locked_with_no_region_
     assert (
         "Elige primero una región" in text and "Elige primero una familia" in text
     )  # both phrases, with their padlock
-    assert text.count('class="mock-lock"') == 3  # the channels and the families wait for the region
+    assert text.count('class="mock-lock"') == 2  # D-494: the channels wait dimmed; the families' padlock says why
     assert ".st-key-home_channels" in text and ".st-key-home_families" in text and ".st-key-home_products" in text
     assert "saturate(.4)" in text
     assert re.search(r'mock-movement-row (rise|fall|neutral) selected', text) is None  # no family preselected
@@ -88,7 +88,7 @@ def test_d372_the_professional_and_the_author_wait_for_each_step_like_the_user()
         app = draw("profesional", state=state)
         text = page(app)
         assert not app.exception and "1</b><span>Elige una región" in text and "4</b><span>Productos" in text
-        assert text.count('class="mock-lock"') == 3 and "Elige primero una región" in text and "saturate(.4)" in text
+        assert text.count('class="mock-lock"') == 2 and "Elige primero una región" in text and "saturate(.4)" in text
         assert all(box.disabled for box in app.text_input if box.key == "home_products_search")
         assert re.search(r"mock-movement-row (rise|fall|neutral) selected", text) is None  # no family preselected
     done = draw("profesional", state={"home_region_done": True, "home_family_done": True})

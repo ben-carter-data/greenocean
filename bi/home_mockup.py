@@ -11,7 +11,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-from bi import data_terms
+from bi import data_terms, i18n
 
 RED = '#e62035'
 BLUE = '#0783ff'
@@ -647,20 +647,27 @@ def channel_list(cards, channel_link, selected, all_link, icon, step=None):
     first, the choice when none is made."""
     rows = [
         f'<a class="mock-channel-row{" selected" if selected is None else ""}" href="{esc(all_link)}" target="_self">'
-        '<span class="mock-channel-all" aria-hidden="true"></span><strong>Todos los canales</strong></a>'
+        f'<span class="mock-channel-all{" checked" if selected is None else ""}" aria-hidden="true"></span>'
+        '<strong>Todos los canales</strong></a>'
     ]
     for card in cards:
         change = card['median']
         state = 'neutral' if change is None else change_state(change)
         figure = '—' if change is None else '0,0 %' if state == 'neutral' else percent(change * 100, True)
-        title = f'Mediana de {number(card["compared"])} precios comparables frente a su semana anterior'
-        content = data_terms.channel_content(card['channel'])  # D-494: what is inside, so «Mayorista» is not misread
+        # D-494: what is inside, so «Mayorista» is not misread; the hover is translated here, piece by piece, because a
+        # sentence composed with the name would not be found whole by the English layer
+        content = data_terms.channel_content(card['channel'])
+        median = i18n.translate_text(
+            f'Mediana de {number(card["compared"])} precios comparables frente a su semana anterior'
+        )
+        title = ' · '.join(part for part in (content, median) if part)
         rows.append(
-            f'<a class="mock-channel-row {state}{" selected" if card["channel"] == selected else ""}" '
+            f'<a class="mock-channel-row mock-channel-tile {state}{" selected" if card["channel"] == selected else ""}" '
             f'href="{esc(channel_link(card["channel"]))}" target="_self" title="{esc(title)}">'
-            f'{icon(card["channel"])}<strong>{esc(data_terms.term(card["channel"]))}'
-            f'<small class="mock-channel-change">{esc(content + " · ") if content else ""}<b>{figure}</b></small>'
-            '</strong></a>'
+            f'{icon(card["channel"])}<b class="mock-channel-figure">{figure}</b>'
+            f'<strong>{esc(data_terms.term(card["channel"]))}</strong>'
+            + (f'<small class="mock-channel-change">{esc(content)}</small>' if content else '')
+            + '</a>'
         )
     return (
         '<section class="mock-channels"><div class="mock-step-row">'
@@ -671,8 +678,11 @@ def channel_list(cards, channel_link, selected, all_link, icon, step=None):
             'su última semana publicada y la mediana del cambio de sus precios comparables frente a la anterior.</span>',
         )
         + '</div>'
-        + ''.join(rows)
-        + '</section>'
+        + '<p class="mock-optional">Opcional: sin elegir, se ven todos.</p>'  # D-494: never required, and it says so
+        + rows[0]
+        + '<div class="mock-channel-grid">'  # D-494: small blocks, two by two, so steps 2 and 3 stay low
+        + ''.join(rows[1:])
+        + '</div></section>'
     )
 
 
