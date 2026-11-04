@@ -1489,7 +1489,7 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
         assert 'background:transparent !important' in section and 'border-radius:0' in section
         assert 'box-shadow:none' in section and 'linear-gradient' not in css
         assert dashboard.MENU_INK[dark][6] in css and 'a::before' in css
-        assert 'font-size:.9375rem' in css  # 15 px rows
+        assert 'font-size:.8125rem' in css and 'uppercase' not in css.split('a.nav-source-link')[0]  # D-501: 13 px rows
     assert 'linear-gradient' not in dashboard.build_sidebar_css(charts.MODE_DARK)
     assert set(dashboard.SIDEBAR_ICONS) == {
         page for _, _, pages in dashboard.MENU_BLOCKS if pages is not dashboard.SOURCE_LINKS for page in pages

@@ -1756,7 +1756,7 @@ def build_style_css(mode):
        freshness on one line, compact figures, tighter cards and gaps. */
     .compact-header {{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px;
                        margin: 0 0 2px 0; }}
-    .compact-header h1 {{ font-size: 1.3rem !important; margin: 0 !important; white-space: nowrap;
+    .compact-header h1 {{ font-size: 1.0625rem !important; font-weight: 600 !important; margin: 0 !important; white-space: nowrap;
                           padding: 0 !important; line-height: 1.25; cursor: help; }}
     .compact-header .page-freshness {{ margin: 0; font-size: 0.8rem; }}
     /* Main navigation views open as a complete panorama. Long tables and
@@ -8942,48 +8942,49 @@ def read_current_view(window):
 
 
 def build_section_colors_css(dark):
-    """The flat menu (D-231): sections divided by a hairline, grey small-capital headings,
-    rows with a thin icon; the current page has a faint fill and a blue bar on its left."""
+    """The flat menu (D-231): sections divided by a hairline, rows with a thin icon; the current page has a faint fill
+    and a blue bar on its left. D-501: the sizes of a side panel like those of VS Code, Apple or Claude: rows of 13 px,
+    grey section headings of 12 px in plain case, and nothing bolder than medium."""
     text, heading, icon, hover, current, accent, line = MENU_INK[dark]
-    return f"""[class*="st-key-nav_block_"] {{margin:0 !important; padding:12px 0 !important; gap:1px !important;
+    return f"""[class*="st-key-nav_block_"] {{margin:0 !important; padding:8px 0 !important; gap:1px !important;
         background:transparent !important; border:0; border-bottom:1px solid {line}; border-radius:0; box-shadow:none;}}
     .st-key-nav_block_documentos {{border-bottom:0;}}
     [class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div,
     [class*="st-key-nav_group_"] button {{width:100% !important; box-sizing:border-box;}}
-    [class*="st-key-nav_group_"] button {{justify-content:flex-start !important; padding:4px 10px !important;
-        min-height:26px !important; background:transparent !important; border:0 !important; margin:0 0 4px;}}
+    [class*="st-key-nav_group_"] button {{justify-content:flex-start !important; padding:2px 8px !important;
+        min-height:24px !important; background:transparent !important; border:0 !important; margin:0 0 2px;}}
     [class*="st-key-nav_group_"] button:hover:not(:disabled) {{background:transparent !important;}}
     [class*="st-key-nav_group_"] button > div {{justify-content:flex-start !important;}}
     [class*="st-key-nav_group_"] button p {{color:{heading} !important; -webkit-text-fill-color:{heading} !important;
-        font-size:.72rem !important; font-weight:500 !important; letter-spacing:.12em !important; white-space:nowrap;
-        text-transform:uppercase; text-align:left !important;}}
+        font-size:.75rem !important; font-weight:500 !important; letter-spacing:0 !important; white-space:nowrap;
+        text-align:left !important;}}
     [class*="st-key-nav_group_"] button:hover p {{color:{text} !important; -webkit-text-fill-color:{text} !important;}}
     [class*="st-key-nav_group_"] button p::after {{content:"⌄"; margin-left:8px; opacity:0; transition:opacity .12s ease;}}
     [class*="st-key-nav_group_"] button:hover p::after {{opacity:.8;}}
     [class*="st-key-nav_group_"][class*="_folded"] button p::after {{content:"›"; opacity:.8;}}
     /* D-459: «Dashboards», the title of the three tiles under «Negocio · BA y BI»: smaller than a section, set in. */
     /* Its block keeps the -1rem of a markdown block (D-173), so the paragraph keeps 1rem under it. */
-    [data-testid="stSidebar"] p.nav-subtitle {{margin:0 0 calc(1rem + 3px) !important; padding:0 10px 0 22px; color:{heading} !important;
-        opacity:.8; font-size:.64rem !important; font-weight:600; letter-spacing:.14em; text-transform:uppercase;}}
-    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a {{position:relative; padding:5px 10px !important;
-        min-height:36px !important; border-radius:10px !important; border:0 !important;
+    [data-testid="stSidebar"] p.nav-subtitle {{margin:0 0 calc(1rem + 3px) !important; padding:0 8px; color:{heading} !important;
+        opacity:.8; font-size:.6875rem !important; font-weight:500; letter-spacing:0;}}
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a {{position:relative; padding:3px 8px !important;
+        min-height:28px !important; border-radius:6px !important; border:0 !important;
         background:transparent !important; box-shadow:none !important; gap:0 !important;}}
     [class*="st-key-nav_block_"] [data-testid="stPageLink"] a:hover {{background:{hover} !important;}}
     [class*="st-key-nav_block_"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:.9375rem !important; font-weight:400 !important; padding-left:12px; text-shadow:none !important;
+        font-size:.8125rem !important; font-weight:400 !important; padding-left:8px; text-shadow:none !important;
         white-space:normal; overflow:visible; text-overflow:clip; line-height:1.3;}}
     [class*="st-key-nav_block_"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{color:{icon} !important;
-        font-size:20px !important; width:20px; opacity:1; font-variation-settings:"wght" 300;}}
+        font-size:16px !important; width:16px; opacity:1; font-variation-settings:"wght" 300;}}
     [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] a {{background:{current} !important;}}
     [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] a::before {{content:""; position:absolute;
         left:0; top:7px; bottom:7px; width:3px; border-radius:3px; background:{accent};}}
     [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] p {{font-weight:500 !important;}}
     [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stIconMaterial"] {{color:{accent} !important;}}
-    [data-testid="stSidebar"] a.nav-source-link {{display:flex; align-items:center; padding:6px 10px !important; margin:0 !important;
-        font-size:.9375rem; color:{text} !important; -webkit-text-fill-color:{text} !important; text-decoration:none !important;
-        border-radius:10px; line-height:1.3;}}
+    [data-testid="stSidebar"] a.nav-source-link {{display:flex; align-items:center; padding:4px 8px !important; margin:0 !important;
+        font-size:.8125rem; color:{text} !important; -webkit-text-fill-color:{text} !important; text-decoration:none !important;
+        border-radius:6px; line-height:1.3;}}
     [data-testid="stSidebar"] a.nav-source-link:hover {{background:{hover};}}
-    [data-testid="stSidebar"] .nav-source-icon {{margin-right:12px; color:{icon}; flex:0 0 auto;}}    /* D-298: the alert of a failed load, under the menu, on every page. */
+    [data-testid="stSidebar"] .nav-source-icon {{margin-right:8px; color:{icon}; flex:0 0 auto;}}    /* D-298: the alert of a failed load, under the menu, on every page. */
     .st-key-load_alert {{margin:0 0 6px; padding:8px 12px 6px; border-radius:10px; gap:2px !important;
         border:1px solid #e5484d; background:color-mix(in srgb, #e5484d 14%, transparent);}}
     .st-key-load_alert [data-testid="stMarkdownContainer"] {{margin-bottom:0 !important;}}
@@ -9048,12 +9049,12 @@ def build_sidebar_css(mode):
     /* D-373: the view button, under the logo, before the menu: visible, with its profile icon. */
     .st-key-profile_indicator_top {{ padding:0 0 10px; }}
     [data-testid="stSidebarLogo"], [data-testid="stHeaderLogo"] {{ cursor:pointer; }}
-    [data-testid="stSidebar"] .st-key-profile_indicator_top button {{ min-height:38px; justify-content:flex-start;
+    [data-testid="stSidebar"] .st-key-profile_indicator_top button {{ min-height:30px; justify-content:flex-start;
         border-radius:10px !important; border:1px solid color-mix(in srgb, {view_ink} 55%, transparent) !important;
         background:color-mix(in srgb, {view_ink} 12%, transparent) !important; }}
     [data-testid="stSidebar"] .st-key-profile_indicator_top button p,
     [data-testid="stSidebar"] .st-key-profile_indicator_top button [data-testid="stIconMaterial"] {{
-        color:{view_ink} !important; font-weight:600; font-size:.88rem; }}
+        color:{view_ink} !important; font-weight:500; font-size:.78125rem; }}
     [data-testid="stSidebar"] .st-key-profile_indicator_top button:hover {{ border-color:{view_ink} !important; }}
     .st-key-sidebar_footer {{position:fixed; left:0; bottom:0; width:300px; padding:12px 22px 12px;
         background:{palette['sidebar']}; gap:7px !important; z-index:5; border-top:1px solid {hairline};}}
@@ -9085,28 +9086,29 @@ def build_sidebar_css(mode):
     .st-key-sidebar_tiles > div {{flex:1 1 0 !important; min-width:0 !important;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button {{
         display:flex !important; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-        width:100% !important; height:74px; min-height:74px !important; padding:6px 4px !important; gap:3px !important;
-        border-radius:12px; background:transparent !important;
+        width:100% !important; height:60px; min-height:60px !important; padding:6px 4px !important; gap:3px !important;
+        border-radius:8px; background:transparent !important;
         border:1px solid {MENU_INK[dark][6]} !important; box-shadow:none !important;}}
     .st-key-sources_tile, .st-key-sources_tile [data-testid="stLayoutWrapper"], .st-key-sources_tile [data-testid="stPopover"],
     .st-key-sources_tile [data-testid="stPopover"] > div {{width:100% !important;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] {{margin:4px 0 0 !important;}}
-    .st-key-sources_tile button::before {{content:""; flex:none; width:40px; height:30px;
+    .st-key-sources_tile button::before {{content:""; flex:none; width:30px; height:22px;
         background:url("data:image/svg+xml;base64,{base64.b64encode(SOURCES_TILE_SVG.encode()).decode()}") center / contain no-repeat;
         transition:transform .18s ease;}}
     .st-key-sources_tile button:hover {{background:{MENU_INK[dark][3]} !important;}}
     .st-key-sources_tile button:hover::before {{transform:translateY(-2px);}}
     .st-key-sources_tile button p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:.88rem !important; font-weight:600 !important; line-height:1.15 !important; white-space:nowrap; margin:0 !important;}}
+        font-size:.75rem !important; font-weight:500 !important; line-height:1.15 !important; white-space:nowrap; margin:0 !important;}}
     .st-key-sources_tile button [data-testid="stIconMaterial"], .st-key-sources_tile button svg {{display:none !important;}}
+    .st-key-sources_tile button > div > div:has([data-testid="stIconMaterial"]) {{display:none !important;}}
     .st-key-sources_tile button > div {{display:contents;}}
-    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:40px; height:30px;
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:30px; height:22px;
         background:url("data:image/svg+xml;base64,{base64.b64encode(FOLDER_TILE_SVG.encode()).decode()}") center / contain no-repeat;
         transition:transform .18s ease;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover {{background:{MENU_INK[dark][3]} !important;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover::before {{transform:translateY(-2px);}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:.88rem !important; font-weight:600 !important; line-height:1.15 !important; margin:0 !important;}}
+        font-size:.75rem !important; font-weight:500 !important; line-height:1.15 !important; margin:0 !important;}}
     .st-key-nav_folder_tile_nav_current [data-testid="stPageLink"] a {{background:{MENU_INK[dark][4]} !important;
         border-color:{MENU_INK[dark][5]};}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
@@ -9119,16 +9121,16 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_dashboard_tile_2"] [data-testid="stPageLink"] a::before {{
         background-image:url("data:image/svg+xml;base64,{base64.b64encode(BA_TILE_SVG.encode()).decode()}") !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a {{display:flex !important; flex-direction:row;
-        align-items:center; gap:12px !important; width:100% !important; min-height:58px !important; padding:8px 12px !important;
-        border-radius:12px; background:{MENU_INK[dark][3]} !important; border:1px solid {MENU_INK[dark][6]} !important;
+        align-items:center; gap:10px !important; width:100% !important; min-height:44px !important; padding:6px 10px !important;
+        border-radius:8px; background:{MENU_INK[dark][3]} !important; border:1px solid {MENU_INK[dark][6]} !important;
         box-shadow:none !important;}}
-    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:52px; height:38px;
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:36px; height:26px;
         background:url("data:image/svg+xml;base64,{base64.b64encode(DASHBOARD_TILE_SVG.encode()).decode()}") center / contain no-repeat;
         transition:transform .18s ease;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a:hover {{background:{MENU_INK[dark][4]} !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a:hover::before {{transform:translateY(-2px);}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:1rem !important; font-weight:700 !important; margin:0 !important;}}
+        font-size:.8125rem !important; font-weight:500 !important; margin:0 !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a span:has(> div > p),
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a span:has(> div > p) *,
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] p {{white-space:normal !important;

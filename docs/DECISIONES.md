@@ -4073,3 +4073,12 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Qué no cambia:** el nombre de la tecnología sin enlace («GitHub Actions», «GitHub CLI») sigue en diagramas y documentos, porque describe cómo funciona el proyecto. El repositorio sigue siendo público: `bi/served_database.py` descarga de ahí la Base DuckDB.
 - **Falla registrada:** F-34.
 - **Pruebas:** `tests/test_repository_links.py` recorre cada pantalla de `tests/i18n_audit.py` como Usuario y como Profesional, y falla si aparece una dirección del repositorio; también comprueba lo que conserva el Autor y el acceso directo a «Enlaces». `tests/test_dashboard.py` lee como Autor lo que es del Autor.
+
+## D-501 · Los títulos y las secciones, con la medida de un panel lateral
+- **Pedido del autor:** las letras del panel no se ven elegantes. Los títulos y las secciones deben tener el tamaño y la apariencia del panel lateral de VS Code, Apple o Claude.
+- **Medido antes:** la letra ya era la del sistema (D-175); lo que pesaba era la medida. En el menú, «Semanal» iba a 16 px en negrita, las opciones a 15 px y las secciones en mayúsculas con letras separadas.
+- **Decisión (corrige D-231):** en el menú, las secciones van a 12 px, en gris, sin mayúsculas ni separación; «Dashboards», a 11 px; las opciones, a 13 px y con ícono de 16 px; los recuadros «Semanal» y «Análisis BA y BI», a 13 px; y «Documentos», «Fuentes» y la vista elegida, a 12 y 12,5 px. Nada pasa de seminegrita liviana (500), y las filas y recuadros se achican con su letra. Fuera del menú, los títulos de los pasos de «Semanal» van a 13 px en seminegrita (600) y el título de cada página, a 17 px.
+- **«Fuentes» a la altura de «Documentos»:** la flecha oculta de su botón seguía ocupando espacio y lo subía unos 11 px.
+- **Qué no cambia:** las cifras, las tablas, los diagramas y el círculo de color de cada paso (D-372).
+- **Pruebas:** `tests/test_dashboard.py` y `tests/test_panorama_steps.py` (las medidas). Medido con Playwright a 1024, 1280 y 1440 px en español, y a 1024 y 1440 px en inglés: ningún texto del menú ni de los pasos se corta o se sale.
+

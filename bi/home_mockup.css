@@ -600,7 +600,7 @@ ul.mock-calc-out li em {font-style:normal;}
 
 /* D-352: reading order of the Dashboard. Numbered panels, «Todo Chile», trends, the whole basket, locks and the search in the accent colour. */
 /* D-372: the step number big, in a circle of colour, at the start of each panel; its text clearly legible. */
-.mock-step {display:inline-flex;align-self:flex-start;width:fit-content;align-items:center;gap:9px;margin:0 10px 6px 0;font-size:14.5px;font-weight:700;color:__INK__;letter-spacing:-.01em;}
+.mock-step {display:inline-flex;align-self:flex-start;width:fit-content;align-items:center;gap:9px;margin:0 10px 6px 0;font-size:13px;font-weight:600;color:__INK__;letter-spacing:-.005em;}
 .mock-step b {display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border-radius:50%;background:__ACCENT__;color:#ffffff;font-size:16px;font-weight:800;box-shadow:0 0 0 4px color-mix(in srgb,__ACCENT__ 22%,transparent);}
 .mock-scope-row {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .mock-all-chile {display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 20px;border-radius:999px;border:1.5px solid __ACCENT__;color:__ACCENT__!important;font-size:13px;font-weight:700;text-decoration:none!important;background:transparent;}
@@ -675,7 +675,7 @@ ul.mock-calc-out li em {font-style:normal;}
    and «Ampliar»), so the table keeps the height. */
 .st-key-home_overview .mock-products-slim {flex-wrap:nowrap!important;gap:0 8px!important;}
 .st-key-home_overview .mock-products-slim .mock-kicker,.st-key-home_overview .mock-products-slim h2 {display:none!important;}
-.st-key-home_overview .mock-products-slim .mock-step {margin:0!important;font-size:13.5px;}
+.st-key-home_overview .mock-products-slim .mock-step {margin:0!important;font-size:13px;}
 .st-key-home_overview .mock-products-slim .mock-step b {width:22px;height:22px;font-size:12.5px;box-shadow:0 0 0 3px color-mix(in srgb,__ACCENT__ 22%,transparent);}
 .st-key-home_overview .st-key-home_products {gap:3px!important;padding-top:5px!important;}
 .st-key-home_overview .st-key-home_products_search [data-testid="stTextInputRootElement"] {min-height:28px!important;height:28px;border-width:1.5px!important;border-radius:8px;}
