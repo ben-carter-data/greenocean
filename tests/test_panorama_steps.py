@@ -297,3 +297,11 @@ def test_d531_a_reload_or_a_profile_change_brings_the_dashboard_back_to_its_init
     reset = AppTest.from_string(script, default_timeout=90).run()
     assert not reset.exception and not [key for key in reset.session_state if str(key).startswith("home_")]
     assert not {"_home_region", "familia", "canal", "alerta"} & set(reset.query_params)
+
+
+def test_d532_the_alert_line_and_step_four_rerun_alone_without_the_map_and_the_first_steps():
+    """A search, a filter, an alert button or «Ampliar» rerun only their fragment; the page reads the alert there."""
+    source = Path(dashboard.__file__).read_text(encoding="utf-8")
+    assert re.search(r"@st\.fragment\n\s+def show_products_section\(\):", source)
+    assert "rerun_scope='fragment'" in source and "st.rerun(scope=rerun_scope)" in source
+    assert "def show_products(alert):" in source  # the alert comes from the fragment, never from a stale closure

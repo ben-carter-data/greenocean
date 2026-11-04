@@ -28,6 +28,7 @@ from zoneinfo import ZoneInfo
 import duckdb
 import pandas as pd
 import streamlit as st
+from streamlit.errors import StreamlitAPIException
 import streamlit.components.v1 as components
 
 # region Imports of the project
@@ -4571,13 +4572,16 @@ def sort_family_products(rows):
     return sorted(rows, key=lambda row: (thin(row), -abs(row['variation']), names(row)))
 
 
+SEARCH_STILL_CSS = '.st-key-home_products_search [data-testid="stTextInputRootElement"] {animation:none!important;}'
+
+
 def build_steps_css(palette, region_open, family_open, flash, searched=False):
     """D-352: a panel that waits for the step before it is dimmed and cannot be used; the one that has just opened lights
     up for a moment. Panels 2 and 3 are the containers «home_families» and «home_products». D-372: the search stops
     glowing once someone typed in it."""
     rules = []
     if searched:
-        rules.append('.st-key-home_products_search [data-testid="stTextInputRootElement"] {animation:none!important;}')
+        rules.append(SEARCH_STILL_CSS)
     for container, opened in (
         ("home_channels", region_open),
         ("home_families", region_open),
@@ -4751,12 +4755,7 @@ def show_market_overview(mode, prefix):
             st.caption(notice)  # D-356: a quiet line; the week is not filled in, it waits for the source
     # D-452: a channel page behaves exactly as the Dashboard: its three panels stay together (D-446), nothing folds.
 
-    # D-489, D-491: ▲ or ▼, between steps 2 and 3, shows only the chosen family's sharp rises or drops in step 3;
-    # choosing a family again brings back every product.
-    alert = st.query_params.get('alerta') if family_open else None
-    alert = alert if alert in ALERT_KINDS else None
-
-    def show_products():
+    def show_products(alert):
         with st.container(key='home_products'):
             query = st.session_state.get('home_products_search', '').strip()  # D-492: typed in the alert line
             if not family_open:
@@ -4934,8 +4933,22 @@ def show_market_overview(mode, prefix):
                 + '</div>',
                 unsafe_allow_html=True,
             )
-        show_alert_line(week, products_family, family_open, alert, place)
-        show_products()
+
+        @st.fragment
+        def show_products_section():
+            """D-532: the alert line and step 4 rerun on their own: a search, a filter, an alert button or «Ampliar»
+            no longer redraw the map and steps 1 to 3. D-489, D-491: ▲ or ▼ shows only the chosen family's sharp rises
+            or drops in step 4; choosing a family again brings back every product. The alert is read here, because this
+            part reruns without the page."""
+            chosen = st.query_params.get('alerta') if family_open else None
+            chosen = chosen if chosen in ALERT_KINDS else None
+            show_alert_line(week, products_family, family_open, chosen, place, rerun_scope='fragment')
+            if st.session_state.get('home_products_search'):  # D-372: the glow stops here too, between page runs
+                st.session_state[scoped(HOME_SEARCHED)] = True
+                st.markdown(f'<style>{SEARCH_STILL_CSS}</style>', unsafe_allow_html=True)
+            show_products(chosen)
+
+        show_products_section()
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown(
         '<div class="greenocean-mockup">'
@@ -9696,11 +9709,12 @@ def show_alert_buttons(week, family, family_open, alert, prefix, region=None):
     return pressed
 
 
-def show_alert_line(week, family, family_open, alert, region=None):
+def show_alert_line(week, family, family_open, alert, region=None, rerun_scope="app"):
     """D-491: between steps 2 and 3, a thin line with the alert buttons, which show only those products in step 3.
     D-492: the search sits on the same line and never leaves: with a kind of alert chosen it looks only among those
     alerts. D-497: beside it, the filter by direction; an alert already shows one direction, so the filter rests at
-    «Todo» while it is chosen and the two never contradict each other."""
+    «Todo» while it is chosen and the two never contradict each other. D-532: drawn inside the fragment of step 4,
+    a press reruns only that fragment."""
     with st.container(key="home_alert_line", horizontal=True, gap="small", vertical_alignment="center"):
         pressed = show_alert_buttons(week, family, family_open, alert, "home", region)
         if pressed:
@@ -9708,7 +9722,10 @@ def show_alert_line(week, family, family_open, alert, region=None):
                 st.query_params.pop("alerta", None)
             else:
                 st.query_params["alerta"] = pressed
-            st.rerun()
+            try:
+                st.rerun(scope=rerun_scope)
+            except StreamlitAPIException:  # a full run (the first draw, AppTest): the whole page reruns instead
+                st.rerun()
         st.text_input(
             "Buscar",
             key="home_products_search",
