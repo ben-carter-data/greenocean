@@ -277,23 +277,23 @@ def test_d506_the_basket_says_why_its_median_reads_as_it_does():
 
 
 @needs_database
-def test_d530_a_new_visit_starts_locked_even_when_the_address_names_a_region_and_a_family():
-    """The address a browser restores after a restart carries the choices; without the visit's ticket, or with an
-    expired one, they unlock nothing. With a live ticket the visit goes on, and a click writes the ticket into the
-    address so a reload of the tab keeps the steps."""
-    from datetime import datetime, timezone
-
-    now = datetime.now(timezone.utc).timestamp()
-    dashboard.VISIT_TICKETS.update({"alive-visit": now + 600, "stale-visit": now - 1})
+def test_d531_a_reload_or_a_profile_change_brings_the_dashboard_back_to_its_initial_state():
+    """The address alone (a reload, a tab the browser restores) opens no step; a channel link carries the steps of the
+    session into the channel; choosing a profile again resets the steps and the address."""
     locked = draw("consulta", query={"_home_region": "Todas", "familia": "Frutas"})
     assert "Elige primero una región" in page(locked) and not locked.session_state.get("home_region_done")
-    expired = draw("consulta", query={"_home_region": "Todas", "familia": "Frutas", "_v": "stale-visit"})
-    assert "Elige primero una región" in page(expired) and "stale-visit" not in dashboard.VISIT_TICKETS
-    same = draw("consulta", query={"_home_region": "Todas", "familia": "Frutas", "_v": "alive-visit"})
-    assert same.session_state["home_region_done"] and same.session_state["home_family_done"]
-    assert 'class="mock-lock"' not in page(same) and same.session_state["visit_ticket"] == "alive-visit"
-    clicked = draw("consulta", link="?_home_region=Todas&_home_week=2026-10-12&_home_step=region")
-    ticket = clicked.query_params["_v"]
-    assert ticket in dashboard.VISIT_TICKETS and dashboard.redeem_visit_ticket(ticket, now + 100)
-    expiry = dashboard.VISIT_TICKETS[ticket]  # issued now, for VISIT_IDLE_SECONDS
-    assert not dashboard.redeem_visit_ticket(ticket, expiry + 1)  # idle too long: a new visit
+    done = {"home_region_done": True, "home_family_done": True}
+    channel = draw("consulta", state=done, link="?_home_region=Todas&familia=Frutas&canal=Feria+libre")
+    assert channel.session_state.get("home_region_done@Feria libre") and channel.session_state.get(
+        "home_family_done@Feria libre"
+    )
+    assert channel.query_params["canal"] == "Feria libre" and not channel.exception
+    script = (
+        f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\nfrom bi import dashboard\n"
+        "st.session_state.update({'home_region_done': True, 'home_family_done': True, 'home_region_done@Feria libre': True})\n"
+        "st.query_params.update({'_home_region': 'Todas', 'familia': 'Frutas', 'canal': 'Feria libre', 'alerta': 'rise'})\n"
+        "dashboard.choose_profile('profesional', 'bi')\n"
+    )
+    reset = AppTest.from_string(script, default_timeout=90).run()
+    assert not reset.exception and not [key for key in reset.session_state if str(key).startswith("home_")]
+    assert not {"_home_region", "familia", "canal", "alerta"} & set(reset.query_params)

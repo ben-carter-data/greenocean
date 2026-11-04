@@ -699,8 +699,19 @@ def current_view_name():
     return tr("Autor") if st.session_state.get(ADMIN_UNLOCKED) else tr("Profesional")
 
 
+def reset_home_steps():
+    """D-531: «Semanal» back to its initial state: every step waits again, in every channel, and the address names
+    no region, week, family, alert or channel."""
+    for key in list(st.session_state.keys()):
+        if str(key).split('@')[0] in (HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_FLASH, HOME_SEARCHED):
+            st.session_state.pop(key, None)
+    for name in (*HOME_LINK_PARAMETERS, HOME_STEP_PARAMETER):
+        st.query_params.pop(name, None)
+
+
 def choose_profile(profile, role=None):
     st.session_state.pop(CHANGE_VIEW, None)
+    reset_home_steps()  # D-531: a new view starts the dashboard from the beginning
     st.session_state[PROFILE_STATE] = profile
     if role:
         st.session_state[ROLE_STATE] = role
@@ -873,41 +884,6 @@ def redeem_author_ticket(ticket, now=None):
         AUTHOR_TICKETS.pop(ticket, None)
         return False
     st.session_state[AUTHOR_TICKET] = ticket
-    return True
-
-
-# D-530: a visit is one server session, or a reload of it within VISIT_IDLE_SECONDS. The address alone (a browser
-# restores it after a restart) never unlocks the steps of «Semanal»; a ticket the server issued, written into the
-# address by the app itself when a step was chosen, does.
-VISIT_TICKETS = vars(bi).setdefault("VISIT_TICKETS", {})
-VISIT_TICKET, VISIT_PARAMETER = "visit_ticket", "_v"
-VISIT_IDLE_SECONDS = AUTHOR_IDLE_SECONDS
-
-
-def issue_visit_ticket(now=None):
-    """The ticket of this visit, renewed on each run; it expires after VISIT_IDLE_SECONDS without a run."""
-    now = datetime.now(timezone.utc).timestamp() if now is None else now
-    for ticket, expiry in list(VISIT_TICKETS.items()):
-        if expiry <= now:
-            VISIT_TICKETS.pop(ticket, None)
-    ticket = st.session_state.get(VISIT_TICKET)
-    if ticket not in VISIT_TICKETS:
-        ticket = st.session_state[VISIT_TICKET] = secrets.token_urlsafe(16)
-    VISIT_TICKETS[ticket] = now + VISIT_IDLE_SECONDS
-    return ticket
-
-
-def redeem_visit_ticket(ticket, now=None):
-    """True for a ticket the server issued that has not expired: the visit goes on in this session (a reload, the
-    second load Streamlit Community Cloud makes, or a restart within VISIT_IDLE_SECONDS), which takes it over."""
-    now = datetime.now(timezone.utc).timestamp() if now is None else now
-    if not isinstance(ticket, str):
-        return False
-    expiry = VISIT_TICKETS.get(ticket)
-    if not (expiry and expiry > now):
-        VISIT_TICKETS.pop(ticket, None)
-        return False
-    st.session_state[VISIT_TICKET] = ticket
     return True
 
 
@@ -4088,7 +4064,12 @@ def apply_home_link_click():
             st.query_params[name] = parameters[name][0]
         else:
             st.query_params.pop(name, None)
-    st.query_params[VISIT_PARAMETER] = issue_visit_ticket()  # D-530: a reload of this tab keeps the steps
+    # D-531: a channel link (step 2) carries the steps already done into the scope of the channel it opens
+    if not step and parameters.get('_home_region'):
+        channel = (parameters.get(CHANNEL_PARAMETER) or [None])[0]
+        for name in (HOME_REGION_DONE, HOME_FAMILY_DONE):
+            if st.session_state.get(scoped(name)):
+                st.session_state[name if channel is None else f'{name}@{channel}'] = True
 
 
 def apply_home_focus(options):
@@ -4684,14 +4665,9 @@ def show_market_overview(mode, prefix):
     if family not in choices:
         family = families[0] if families else None
     scope = 'todo Chile' if region == ALL_VALUES else home_mockup.short_region(region)
-    # D-352, D-372: in every view (user, professional and author) the panels 2 and 3 wait for the step before them; a
-    # link that names a region or a family counts as having chosen it. D-530: only within the same visit, proven by the
-    # ticket the app wrote into the address; a new visit starts locked, however the address was restored.
-    same_visit = redeem_visit_ticket(st.query_params.get(VISIT_PARAMETER))
-    if same_visit and st.query_params.get('_home_region'):
-        st.session_state[scoped(HOME_REGION_DONE)] = True
-    if same_visit and st.session_state.get(scoped(HOME_REGION_DONE)) and st.query_params.get('familia') in choices:
-        st.session_state[scoped(HOME_FAMILY_DONE)] = True
+    # D-352, D-372: in every view (user, professional and author) the panels 2 and 3 wait for the step before them.
+    # D-531: only a click of this session opens a step; the address alone (a reload, a restored tab) opens nothing,
+    # and choosing a profile again brings every step back to waiting (reset_home_steps).
     region_open = bool(st.session_state.get(scoped(HOME_REGION_DONE)))
     family_open = bool(st.session_state.get(scoped(HOME_FAMILY_DONE)))
     if not family_open:
@@ -9845,7 +9821,6 @@ def main():
     i18n.install()
     settle_profile()
     restore_return_context()
-    issue_visit_ticket()  # D-530: the visit's ticket lives as long as the session, renewed on each run
     # «Ver como» left the menu (D-213); an old ?ver= address still opens, without it.
     st.query_params.pop("ver", None)
     profile = None

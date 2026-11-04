@@ -63,8 +63,8 @@ def draw_page(title, state=None, query=None):
 
 # The home page opens on the latest week and its most moved family, both of which
 # change every Tuesday; tests that read figures pin the week of 2026-10-05.
-PINNED_HOME = {"_home_region": "Todas", "_home_week": "2026-10-05", "familia": "Hortalizas", "_v": "pinned-visit"}
-dashboard.VISIT_TICKETS["pinned-visit"] = 4_102_444_800  # D-530: the pinned address belongs to a visit that never ends
+PINNED_HOME = {"_home_region": "Todas", "_home_week": "2026-10-05", "familia": "Hortalizas"}
+HOME_DONE = {dashboard.HOME_REGION_DONE: True, dashboard.HOME_FAMILY_DONE: True}  # D-531: chosen in the session
 
 
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
@@ -135,7 +135,7 @@ def test_hover_hint_is_plain_text_and_escaped():
 @needs_database
 def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     # D-446: the Dashboard never folds its steps, so the three panels are always together.
-    app = draw_page(dashboard.HOME_PAGE, query=PINNED_HOME)
+    app = draw_page(dashboard.HOME_PAGE, query=PINNED_HOME, state=HOME_DONE)
     assert not app.exception and not app.tabs
     texts = " ".join(block.value for block in app.markdown)
     assert (
@@ -893,6 +893,8 @@ def read_product_names(app):
 def test_d093_search_ignores_case_and_accents_and_matches_the_start_of_any_word():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params.update(PINNED_HOME)
+    for key, value in HOME_DONE.items():
+        app.session_state[key] = value
     app.run()
     assert not app.exception
     every = read_product_names(app)
