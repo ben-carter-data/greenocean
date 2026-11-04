@@ -2989,9 +2989,9 @@ def build_architecture_chips(row_counts):
             f"weekly_price, la tabla de hechos: {number(row_counts['weekly_price'])} filas",
         ),
         (
-            f"<em>Auditoría</em><b>{number(row_counts['etl_run'])}</b><small>cargas ·</small>"
+            f"<em>Registro de cargas</em><b>{number(row_counts['etl_run'])}</b><small>cargas ·</small>"
             f"<b>{number(row_counts['rejection'])}</b><small>rechazos</small>",
-            f"Auditoría: {number(row_counts['etl_run'])} cargas registradas en etl_run y "
+            f"Registro de cargas: {number(row_counts['etl_run'])} cargas registradas en etl_run y "
             f"{number(row_counts['rejection'])} filas rechazadas en rejection",
         ),
     ]
@@ -3115,7 +3115,11 @@ def show_architecture_page(mode):
         )
         with st.container(key="architecture_diagram"):
             st.markdown(
-                build_model_frame_html(er_diagram.build_er_svg(schema, row_counts, mode, tooltips)),
+                build_model_frame_html(
+                    er_diagram.build_er_svg(
+                        schema, row_counts, mode, tooltips, empty_units=read_er_empty_units(get_database_version())
+                    )
+                ),
                 unsafe_allow_html=True,
             )
             st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
@@ -3238,6 +3242,12 @@ def read_crossing_checks(database_version):
 def read_er_schema(database_version):
     """Columns and DuckDB types of the tables of the entity-relationship diagram (D-195)."""
     return er_diagram.read_schema()
+
+
+@st.cache_data(show_spinner=False)
+def read_er_empty_units(database_version):
+    """D-526: the rows of weekly_price without a unit, for the legend that tells its logical key apart."""
+    return er_diagram.read_empty_units()
 
 
 MODEL_VIEWS = ["Modelo estrella", "Entidad-relación", "Dónde viven los datos", "Cruces entre bases"]

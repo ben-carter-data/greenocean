@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.21 |
-| Fecha | 03-11-2026 |
+| Versión | 3.22 |
+| Fecha | 04-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo está construido GreenOcean, cómo corre cada semana, dónde viven sus datos y por qué tiene esa forma. |
@@ -160,7 +160,7 @@ Cada archivo de datos, dónde vive y qué lo produce: las fuentes externas, la z
 
 ### 6.2 Modelo estrella
 
-Una fila de `weekly_price` es un producto (variedad y calidad) en una región, un canal, una unidad y una semana. Las cuatro dimensiones la rodean; el IPC y la auditoría de cargas quedan a los lados.
+Una fila de `weekly_price` es un producto (variedad y calidad) en una región, un canal, una unidad y una semana. Las cuatro dimensiones la rodean; el IPC y el registro de cargas quedan a los lados.
 
 [[diagrama:estrella]]
 
@@ -559,3 +559,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.19 | 03-11-2026 | La carga parte a las 12:17 UTC, con dos intentos más (D-485) |
 | 3.20 | 03-11-2026 | La carga parte a las 12:07 UTC, con un intento cada 15 minutos hasta las 14:52 y cada hora hasta las 02:07 (D-487) |
 | 3.21 | 03-11-2026 | El canal es el paso 2 de Semanal; latest_by_source lo alimenta (D-494) |
+| 3.22 | 04-11-2026 | El precio mayorista pesa el volumen (D-521); weekly_same_package y la regla del mismo envase (D-522); source_unit y las unidades revisadas (D-524); el registro de cargas y la clave lógica de weekly_price en el modelo (D-526) |

@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.21 |
-| Date | 2026-11-03 |
+| Version | 3.22 |
+| Date | 2026-11-04 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain how GreenOcean is built, how it runs each week, where its data lives and why it has that shape. |
@@ -160,7 +160,7 @@ Each data file, where it lives and what produces it: the external sources, the w
 
 ### 6.2 Star schema
 
-One row of `weekly_price` is a product (variety and quality) in a region, a channel, a unit and a week. The four dimensions surround it; the CPI and the load audit sit at the sides.
+One row of `weekly_price` is a product (variety and quality) in a region, a channel, a unit and a week. The four dimensions surround it; the CPI and the load log sit at the sides.
 
 [[diagrama:estrella]]
 
@@ -559,3 +559,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.19 | 2026-11-03 | The load starts at 12:17 UTC, with two more attempts (D-485) |
 | 3.20 | 2026-11-03 | The load starts at 12:07 UTC, with an attempt every 15 minutes until 14:52 and every hour until 02:07 (D-487) |
 | 3.21 | 2026-11-03 | The channel is step 2 of Weekly; latest_by_source feeds it (D-494) |
+| 3.22 | 2026-11-04 | The wholesale price weights the volume (D-521); weekly_same_package and the same-package rule (D-522); source_unit and the reviewed units (D-524); the load log and the logical key of weekly_price in the model (D-526) |

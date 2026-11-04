@@ -233,7 +233,7 @@ def test_d097_model_page_is_one_panoramic_diagram():
     joined = " ".join(block.value for block in app.markdown)
     assert joined.count('aria-label="Modelo estrella de datos.duckdb"') == 1
     assert "<script" not in joined
-    assert joined.count("Auditoría de cargas".upper()) == 1
+    assert joined.count("Registro de cargas".upper()) == 1  # D-526
     # D-147: one panoramic diagram; no table picker and no SQL. Each table explains
     # itself on hover, with its role and its rows.
     assert not app.radio and not app.code

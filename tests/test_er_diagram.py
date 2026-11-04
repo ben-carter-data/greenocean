@@ -86,3 +86,33 @@ def test_d474_every_table_of_the_database_is_drawn_or_named_outside_the_diagram(
     svg = er_diagram.build_er_svg(er_diagram.read_schema(), {}, charts.THEMES[0])
     legend = svg[svg.index("Fuera del diagrama") :]
     assert not {table for table in tables - set(er_diagram.TABLES) if table not in legend}
+
+
+@needs_database
+def test_d526_the_key_of_weekly_price_is_logical_and_the_legend_says_why_with_the_real_count():
+    schema = er_diagram.read_schema()
+    empty = er_diagram.read_empty_units()
+    with queries.open_database(queries.DATABASE_FILE) as connection:
+        counted = connection.execute("SELECT count(*) FROM weekly_price WHERE normalized_unit IS NULL").fetchone()[0]
+    assert empty == counted > 0
+    note = er_diagram.logical_key_note(empty)
+    assert "clave lógica" in note and charts.format_thousands(empty) in note
+    plain = er_diagram.build_er_svg(schema, {}, charts.MODE_DARK)
+    svg = er_diagram.build_er_svg(schema, {}, charts.MODE_DARK, empty_units=empty)
+    assert note in svg and note not in plain  # the legend grows by one line only when it has the figure
+    assert svg.count("<text") == plain.count("<text") + 1
+    assert height_of(svg) == height_of(plain) + 18
+    assert er_diagram.key_label("weekly_price", "normalized_unit") == "PK"  # the column keeps its mark
+
+
+def height_of(svg):
+    return float(re.search(r'viewBox="0 0 [\d.]+ ([\d.]+)"', svg).group(1))
+
+
+def test_d526_the_logical_key_reads_in_english(monkeypatch):
+    from bi import i18n
+
+    monkeypatch.setattr(i18n, "is_english", lambda: True)
+    english = i18n.translate_html(f"<svg><text>{er_diagram.logical_key_note(12185)}</text></svg>")
+    assert "weekly_price: logical key" in english and "rows and a strict primary key" in english
+    assert "clave" not in english and "filas" not in english

@@ -292,7 +292,7 @@ def build_audit_group(row_counts, colors, rect, tooltips=None):
     x, top = rect[0], rect[1] + GROUP_LABEL_HEIGHT
     label = (
         f'<text x="{x:.1f}" y="{top - 10:.1f}" font-size="13" font-weight="700" '
-        f'letter-spacing=".04em" fill="{colors["text"]}">AUDITORÍA DE CARGAS</text>'
+        f'letter-spacing=".04em" fill="{colors["text"]}">REGISTRO DE CARGAS</text>'
     )
     boxes = []
     y = top

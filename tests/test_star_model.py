@@ -124,7 +124,7 @@ def test_d097_no_zoom_controls_no_script_and_text_scales_with_its_container():
 
 def test_d097_audit_trail_shows_etl_run_feeding_rejection_apart_from_the_star():
     svg = star_model.build_star_svg(COLUMNS, ROW_COUNTS, charts.MODE_DARK)
-    assert "AUDITORÍA DE CARGAS" in svg
+    assert "REGISTRO DE CARGAS" in svg and "AUDITORÍA" not in svg  # D-526: the official name of etl_run
     assert svg.index("etl_run") < svg.index("rejection")
     assert "4 filas" in svg and "201 filas" in svg
     assert "run_id (FK)" in svg

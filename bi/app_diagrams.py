@@ -121,7 +121,15 @@ def build_star_html(mode):
 def build_entity_relation_html(mode):
     """[[diagrama:entidad_relacion]]: the entity-relation diagram of «Modelo de datos» (D-195)."""
     row_counts = project.count_table_rows()
-    return page(er_diagram.build_er_svg(er_diagram.read_schema(), row_counts, mode, model_tooltips(row_counts)))
+    return page(
+        er_diagram.build_er_svg(
+            er_diagram.read_schema(),
+            row_counts,
+            mode,
+            model_tooltips(row_counts),
+            empty_units=er_diagram.read_empty_units(),  # D-526: the same legend as the panel
+        )
+    )
 
 
 def build_storage_html(mode):

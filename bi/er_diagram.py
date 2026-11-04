@@ -91,6 +91,21 @@ def read_schema(database_file=queries.DATABASE_FILE):
         }
 
 
+def read_empty_units(database_file=queries.DATABASE_FILE):
+    """D-526: the rows of weekly_price without a unit. Its five key columns identify each row, but normalized_unit
+    is empty in these, and a strict primary key admits no empty value: the key is logical, and the legend says so."""
+    with queries.open_database(database_file) as connection:
+        return int(connection.execute("SELECT count(*) FROM weekly_price WHERE normalized_unit IS NULL").fetchone()[0])
+
+
+def logical_key_note(empty_units):
+    """The line of the legend that tells weekly_price's key apart, with the figure read from the database."""
+    return (
+        "weekly_price: clave lógica. Sus cinco columnas PK identifican cada fila, pero normalized_unit queda vacía en "
+        f"{charts.format_thousands(empty_units)} filas y una clave primaria estricta no admite vacíos."
+    )
+
+
 def key_label(table, column):
     primary = column in PRIMARY_KEYS[table]
     foreign = (table, column) in FOREIGN_KEYS
@@ -233,8 +248,9 @@ def build_relation(places, schema, relation, shade):
     )
 
 
-def build_er_svg(schema, counts, mode, tooltips=None):
-    """The diagram: tables, relationships and the legend, as one SVG."""
+def build_er_svg(schema, counts, mode, tooltips=None, empty_units=None):
+    """The diagram: tables, relationships and the legend, as one SVG. With `empty_units`, the legend says that the key
+    of weekly_price is logical, and why (D-526)."""
     shade = colors(mode)
     places = layout(schema)
     tooltips = tooltips or {}
@@ -252,19 +268,23 @@ def build_er_svg(schema, counts, mode, tooltips=None):
     )
     tables = "".join(build_table(table, schema, places, counts, tooltips, shade) for table in TABLES)
     legend_y = bottom + 16
-    legend = (
-        f'<text x="{MARGIN}" y="{legend_y}" font-size="12" fill="{shade["muted"]}">PK clave primaria · FK clave foránea · '
-        f'pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · línea punteada: relación lógica, sin clave foránea</text>'
-        f'<text x="{MARGIN}" y="{legend_y + 18}" font-size="12" fill="{shade["muted"]}">Fuera del diagrama: ine_ipc_source '
-        f'(copia cruda del INE), dbt_node y dbt_result (la traza de dbt).</text>'
-        f'<text x="{MARGIN}" y="{legend_y + 36}" font-size="12" fill="{shade["muted"]}">También fuera: latest_by_source, '
-        f'las 2 últimas semanas de cada fuente, ya con sus nombres y sin claves (D-365).</text>'
-        f'<text x="{MARGIN}" y="{legend_y + 54}" font-size="12" fill="{shade["muted"]}">También fuera: weekly_same_package, '
-        f'el cambio de cada precio contra la semana anterior en el mismo envase (D-522).</text>'
-        f'<text x="{MARGIN}" y="{legend_y + 72}" font-size="12" fill="{shade["muted"]}">También fuera: source_unit, '
-        f'las unidades de venta que vio la última carga (D-524).</text>'
+    lines = [
+        "PK clave primaria · FK clave foránea · pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · "
+        "línea punteada: relación lógica, sin clave foránea"
+    ]
+    if empty_units is not None:
+        lines.append(logical_key_note(empty_units))
+    lines += [
+        "Fuera del diagrama: ine_ipc_source (copia cruda del INE), dbt_node y dbt_result (la traza de dbt).",
+        "También fuera: latest_by_source, las 2 últimas semanas de cada fuente, ya con sus nombres y sin claves (D-365).",
+        "También fuera: weekly_same_package, el cambio de cada precio contra la semana anterior en el mismo envase (D-522).",
+        "También fuera: source_unit, las unidades de venta que vio la última carga (D-524).",
+    ]
+    legend = "".join(
+        f'<text x="{MARGIN}" y="{legend_y + 18 * index}" font-size="12" fill="{shade["muted"]}">{line}</text>'
+        for index, line in enumerate(lines)
     )
-    total = bottom + 110
+    total = bottom + 20 + 18 * len(lines)
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {total}" width="100%" role="img" '
         f'aria-label="Modelo entidad-relación de datos.duckdb" font-family="{charts.CHART_FONT}">'
