@@ -1,11 +1,11 @@
-# Informe semanal de calidad N° 2
+# Informe semanal de calidad N° 3
 
 | | |
 |---|---|
-| **Fecha** | 2026-11-04 06:06 UTC |
+| **Fecha** | 2026-11-04 20:56 UTC |
 | **Semana de datos** | 2026-10-26 |
-| **Código evaluado** | 01bfbe7 |
-| **Informe anterior** | N° 1 |
+| **Código evaluado** | 2352be5 |
+| **Informe anterior** | N° 2 |
 | **Medido según** | SQAP v1.13 |
 
 Autoevaluación automática de la carga semanal: 5 de 5 indicadores de datos dentro de lo aceptable; 0 no conformidades. Los aceptables son los de `metas.json` al crearse el informe; el método está en el SQAP (`docs/calidad/PLAN_DE_CALIDAD.md`).
@@ -13,7 +13,7 @@ Autoevaluación automática de la carga semanal: 5 de 5 indicadores de datos den
 | Indicador | Tipo | Falla | Aceptable | Estado | Lectura |
 |---|---|---|---|---|---|
 | Pruebas de datos dbt superadas | datos | 0 % | 0 % | Cumple | Dentro de lo aceptable: no afecta. |
-| Precios con comparación válida | datos | 1,90 % | 3 % | Cumple | Dentro de lo aceptable: no afecta. |
+| Precios con comparación válida | datos | 2,60 % | 3 % | Cumple | Dentro de lo aceptable: no afecta. |
 | Filas rechazadas | datos | 0,01 % | 1 % | Cumple | Dentro de lo aceptable: no afecta. |
 | Regiones o canales ausentes | datos | 0 | 0 | Cumple | Dentro de lo aceptable: no afecta. |
 | Precios atípicos de la semana | datos | 0,03 % | 0,25 % | Cumple | Dentro de lo aceptable: no afecta. |
