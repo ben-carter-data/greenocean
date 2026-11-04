@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.47 |
+| Versión | 3.48 |
 | Fecha | 04-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -267,3 +267,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.45 | 04-11-2026 | El modelo estrella de «Modelo de datos» es apaisado y usa su panel: dos dimensiones a cada lado de weekly_price, el IPC a la izquierda y la auditoría a la derecha (D-503) |
 | 3.46 | 04-11-2026 | El menú lateral ya no se desplaza hacia un vacío: el logo, el botón de plegar y el pie quedan siempre a la vista, y se desplaza solo si el contenido no cabe (RNF-06, D-504) |
 | 3.47 | 04-11-2026 | Los estilos viajan en el primer elemento de cada página, así nada se ve sin estilo al cambiar de página (RNF-06, D-505) |
+| 3.48 | 04-11-2026 | «Toda la canasta» explica su mediana tras una «i»: hacia dónde se movieron más precios y los tres conteos (RF-01, D-506) |

@@ -415,11 +415,12 @@ def step_chip(step, texts=None):
     )
 
 
-def panel_hint(title, body):
+def panel_hint(title, body, extra=''):
     """D-451: what a panel explains, behind a small «i» next to its step: it opens on hover or with the keyboard, so the
     panel keeps its height for the data."""
     return (
-        f'<span class="mock-hint" tabindex="0" aria-label="{esc(title)}"><i aria-hidden="true">i</i>'
+        f'<span class="mock-hint{" " + extra if extra else ""}" tabindex="0" aria-label="{esc(title)}">'
+        f'<i aria-hidden="true">i</i>'
         f'<span class="mock-hint-body" role="tooltip"><span class="mock-hint-title">{esc(title)}</span>{body}</span></span>'
     )
 
@@ -458,6 +459,41 @@ def sparkline(values, label=None):
         f'aria-label="{esc(label)}"><title>{esc(label)}</title><polyline points="{coords}" fill="none" stroke="currentColor" '
         'stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></span>'
     )
+
+
+def basket_counts(rows):
+    """D-506: how many of the comparable prices of the basket rose, fell and did not change, by the same rule as the
+    families' «Subió / Bajó / Sin cambio» (change_state) and over the same rows as basket_median."""
+    counts = {'rise': 0, 'fall': 0, 'neutral': 0}
+    for row in rows:
+        value = row.get('variation')
+        if value is not None and math.isfinite(float(value)):
+            counts[change_state(float(value))] += 1
+    return counts
+
+
+def basket_why(value, counts):
+    """D-506: why the basket's median reads as it does, behind an «i» beside its figure: which way more prices moved,
+    the three counts, and the reason the median lands on zero when it does."""
+    rise, fall, still = counts['rise'], counts['fall'], counts['neutral']
+    total = rise + fall + still
+    if not total:
+        return ''
+    # «Parecidas»: the two sides differ by less than 5 % of the prices compared.
+    alike = abs(rise - fall) * 20 < total
+    most_still = still * 2 > total
+    if alike:
+        lead = 'Subieron y bajaron en cantidades parecidas.'
+    else:
+        way = 'bajaron que subieron' if fall > rise else 'subieron que bajaron'
+        lead = f'Más precios {way}, pero la mayoría no cambió.' if most_still else f'Más precios {way}.'
+    # Each count is its own whole sentence, so the English layer finds it (D-443).
+    tally = (
+        f'<span class="mock-basket-tally"><b class="rise">▲ {number(rise)} subieron</b>'
+        f'<b class="fall">▼ {number(fall)} bajaron</b><b>= {number(still)} sin cambio</b></span>'
+    )
+    zero = '<span>Por eso la mediana queda en 0 %.</span>' if change_state(value) == 'neutral' else ''
+    return panel_hint('Toda la canasta', f'<strong>{esc(lead)}</strong>{tally}{zero}', 'mock-basket-why')
 
 
 def basket_median(rows):
@@ -711,7 +747,7 @@ def family_movement(
     markup = []
     trends = trends or {}
     if basket:  # D-450: the whole basket is chosen like a family, with a box to tick, and opens every product
-        value, series = basket
+        value, series, counts = basket
         chosen = selected_family == ALL_FAMILIES
         state = change_state(value)
         word = {'rise': 'Subió', 'fall': 'Bajó', 'neutral': 'Sin cambio'}[state]
@@ -724,7 +760,8 @@ def family_movement(
             f'<span class="mock-basket-art{" checked" if chosen else ""}" aria-hidden="true"></span><strong>Toda la canasta</strong>'
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(value * 100, True)}</b>'
-            f'<span class="mock-movement-state">{word}</span>{sparkline(series, trend_label(scope))}<span></span></a>'
+            f'<span class="mock-movement-state">{word}{basket_why(value, counts)}</span>'
+            f'{sparkline(series, trend_label(scope))}<span></span></a>'
         )
     for group, average, members in summary:
         state = change_state(average)

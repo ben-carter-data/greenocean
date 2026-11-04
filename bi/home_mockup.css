@@ -697,6 +697,16 @@ ul.mock-calc-out li em {font-style:normal;}
 .mock-hint-title {display:block;margin-bottom:4px;color:var(--mock-fall);font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;}
 .mock-hint-body strong {display:block;margin-bottom:3px;font-size:13px;font-weight:500;}
 .mock-hint-body > span:not(.mock-hint-title),.mock-hint-body .mock-movement-note {display:block;color:var(--mock-muted);font-size:11.5px;}
+/* D-506: why the basket's median reads as it does, beside its figure; its box opens to the left, so it stays inside the panel. */
+.mock-movement-row.mock-basket {grid-template-columns:12px minmax(138px,1.3fr) minmax(130px,2.2fr) 70px 92px 60px 14px;}
+.mock-basket .mock-movement-state {display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.mock-basket-why {width:16px;height:16px;}
+.mock-basket-why i {font-size:10px;}
+.mock-basket-why .mock-hint-body {left:auto;right:0;width:252px;white-space:normal;}
+.mock-hint-body > span.mock-basket-tally {display:flex;flex-wrap:wrap;gap:2px 9px;margin-top:4px;font-variant-numeric:tabular-nums;}
+.mock-basket-tally b {font-weight:500;}
+.mock-basket-tally b.rise {color:var(--mock-rise);}
+.mock-basket-tally b.fall {color:var(--mock-fall);}
 .st-key-home_overview .mock-movement {overflow:visible;}
 .mock-products-table td.mock-family-cell {width:84px;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mock-muted);}
 

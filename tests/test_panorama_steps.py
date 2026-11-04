@@ -140,7 +140,12 @@ def test_d450_the_whole_basket_row_is_the_median_of_every_comparable_price_and_i
     assert home_mockup.basket_median(rows) == statistics.median([0.04, -0.02, 0.01])
     assert home_mockup.basket_median([]) is None
     html = home_mockup.family_movement(
-        rows, lambda family: "#" + family, None, "todo Chile", basket=(0.01, [1.0, 2.0, 3.0]), basket_link="#Todas"
+        rows,
+        lambda family: "#" + family,
+        None,
+        "todo Chile",
+        basket=(0.01, [1.0, 2.0, 3.0], home_mockup.basket_counts(rows)),
+        basket_link="#Todas",
     )
     basket = html[html.index("mock-basket") :]
     assert "Toda la canasta" in html and basket.index("Toda la canasta") < basket.index("mock-movement-row rise")
@@ -153,7 +158,7 @@ def test_d450_the_whole_basket_row_is_the_median_of_every_comparable_price_and_i
         lambda family: "#" + family,
         home_mockup.ALL_FAMILIES,
         "todo Chile",
-        basket=(0.01, [1.0, 2.0]),
+        basket=(0.01, [1.0, 2.0], home_mockup.basket_counts(rows)),
         basket_link="#",
     )
     assert 'aria-checked="true"' in ticked and 'mock-basket-art checked' in ticked
@@ -242,3 +247,30 @@ def test_d451_the_panels_explain_themselves_behind_a_small_i_next_to_their_step(
     assert "¿Qué familias subieron y cuáles bajaron?" in head  # the same words, now on hover or focus
     css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
     assert ".mock-hint:hover .mock-hint-body,.mock-hint:focus .mock-hint-body {display:block;}" in css
+
+
+def test_d506_the_basket_says_why_its_median_reads_as_it_does():
+    rows = [{'variation': 0.05}] * 161 + [{'variation': -0.05}] * 227 + [{'variation': 0.0}] * 335
+    counts = home_mockup.basket_counts(rows)
+    assert counts == {'rise': 161, 'fall': 227, 'neutral': 335}
+    assert sum(counts.values()) == len(rows)  # every comparable price is counted once
+    assert home_mockup.basket_counts([{'variation': None}, {'variation': float('inf')}]) == {
+        'rise': 0,
+        'fall': 0,
+        'neutral': 0,
+    }
+    hint = home_mockup.basket_why(0.0, counts)
+    assert 'mock-basket-why' in hint and 'Toda la canasta' in hint
+    assert '>▲ 161 subieron<' in hint and '>▼ 227 bajaron<' in hint and '>= 335 sin cambio<' in hint
+    assert '<b class="rise">▲' in hint and '<b class="fall">▼' in hint  # the dashboard's own red and blue
+    assert 'Más precios bajaron que subieron.' in hint  # 388 of 723 moved: most did change
+    assert 'Por eso la mediana queda en 0 %.' in hint
+    # most unchanged, and a median that is not zero: the clause comes back and the reason leaves
+    many_still = {'rise': 20, 'fall': 5, 'neutral': 75}
+    rising = home_mockup.basket_why(0.012, many_still)
+    assert 'Más precios subieron que bajaron, pero la mayoría no cambió.' in rising
+    assert 'Por eso la mediana' not in rising
+    assert 'Subieron y bajaron en cantidades parecidas.' in home_mockup.basket_why(
+        0.0, {'rise': 300, 'fall': 295, 'neutral': 10}
+    )
+    assert home_mockup.basket_why(0.0, {'rise': 0, 'fall': 0, 'neutral': 0}) == ''

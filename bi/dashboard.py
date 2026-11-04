@@ -4712,7 +4712,10 @@ def show_market_overview(mode, prefix):
                     home_mockup.movement_note(model),
                     step=3,
                     trends=trends,
-                    basket=None if basket_value is None else (basket_value, basket_trend),
+                    basket=None
+                    if basket_value is None
+                    # D-506: the counts behind the median, from the same comparable prices
+                    else (basket_value, basket_trend, home_mockup.basket_counts(model['family_rows'])),
                     basket_link=overview_link(None if region == ALL_VALUES else region, ALL_VALUES, 'family'),
                 )
                 + '</div>',
