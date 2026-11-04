@@ -18,7 +18,7 @@ jobs:
       - run: mypy
   pytest:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30  # D-527: the suite took 14.6–15.1 min at 410d6e0 and the 15-minute cap cancelled it
     strategy:
       fail-fast: false
       matrix:

@@ -2348,6 +2348,58 @@
           "referencia": "D-525"
         }
       ]
+    },
+    {
+      "id": "F-42",
+      "categoria": "código",
+      "falla": [
+        "El CI quedó en rojo tras una subida que la suite local daba por buena",
+        "The CI went red after a push the local suite had passed"
+      ],
+      "deteccion": [
+        "Actions: pruebas.yml cancelado por tiempo y calidad.yml con dos indicadores fuera de lo aceptable",
+        "Actions: pruebas.yml cancelled at its time cap and calidad.yml with two indicators past the acceptable"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La suite local corría solo con la base reconstruida y el CI prueba con la publicada; el tope de 15 minutos quedó corto y un nombre de prueba parecía un token",
+        "The local suite ran only with the rebuilt base and the CI tests with the published one; the 15-minute cap fell short and a test name looked like a token"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "Ninguna: la carga no corrió y la app publicada siguió igual",
+        "None: the load did not run and the published app stayed as it was"
+      ],
+      "correctiva": [
+        "Tope de 30 minutos, prueba renombrada, dos tolerancias hasta la próxima carga y la regla de correr la suite con las dos bases (D-527)",
+        "A 30-minute cap, the test renamed, two tolerances until the next load and the rule of running the suite with both bases (D-527)"
+      ],
+      "estacion": 14,
+      "caso_real": "D-527",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-04",
+          "ocurrencia": [
+            "pruebas.yml #166 cancelado a los 15 minutos y calidad.yml #49 en rojo, los dos del commit 410d6e0.",
+            "pruebas.yml #166 cancelled at 15 minutes and calidad.yml #49 red, both of commit 410d6e0."
+          ],
+          "diagnostico": [
+            "El CI prueba con la base publicada, sin source_unit y con la descripción anterior; el tope quedó corto; un nombre de prueba parecía un token.",
+            "The CI tests with the published base, without source_unit and with the earlier description; the cap fell short; a test name looked like a token."
+          ],
+          "solucion": [
+            "Tope de 30 minutos, prueba renombrada, dos tolerancias y la suite con las dos bases antes de subir.",
+            "A 30-minute cap, the test renamed, two tolerances and the suite with both bases before pushing."
+          ],
+          "comentario": [
+            "Queda abierta hasta quitar las dos tolerancias (test_documents.py e i18n_en.py, marcadas D-527) después de la próxima carga.",
+            "Stays open until the two tolerances (test_documents.py and i18n_en.py, marked D-527) are removed after the next load."
+          ],
+          "estacion": 14,
+          "estado": "abierta",
+          "referencia": "D-527"
+        }
+      ]
     }
   ]
 }

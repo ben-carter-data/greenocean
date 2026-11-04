@@ -46,6 +46,8 @@ SERVING_TABLES = [
     "latest_by_source",  # D-365: each source's own last two weeks, for «Último dato por canal»
     "weekly_same_package",  # D-522: every change of a price against the week before, in the same package
 ]
+# D-524, D-527: the table the pipeline writes in Python after dbt, apart from SERVING_TABLES.
+PYTHON_TABLES = ["source_unit"]
 SOURCE_UNIT_SQL = """CREATE TABLE source_unit AS
 SELECT source, unit, normalized_unit, unit_quantity, volume_quantity, count(*) AS row_count,
        strftime(min(first_date), '%Y-%m-%d') AS first_date, strftime(max(first_date), '%Y-%m-%d') AS last_date

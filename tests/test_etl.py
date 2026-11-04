@@ -280,7 +280,8 @@ def test_rn07_weekly_wholesale_price_is_weighted_by_volume():
     assert weekly_prices.iloc[0]["observation_count"] == 2
 
 
-def test_d521_a_week_that_mixes_packages_weighs_the_kilos_each_brings_not_the_packages():
+# D-527: not «…weighs_the_kilos…»: «ghs_» followed by 36 letters reads as a GitHub token to detect-secrets
+def test_d521_a_week_that_mixes_packages_is_weighted_by_the_kilos_each_brings_not_by_the_packages():
     raw_rows = pd.concat(
         [
             # 10 bins of 400 kilos at 400 per kilo, and 100 boxes of 15 kilos at 1000 per kilo
