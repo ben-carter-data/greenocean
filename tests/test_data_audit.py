@@ -85,7 +85,7 @@ def to_number(text):
 
 def recompute_weekly_price(raw, row):
     """The weekly price of one panel row, rebuilt from raw.db without the ETL's
-    aggregation: volume-weighted for wholesale (RN-07), plain average for consumer
+    aggregation: weighted by quantity for wholesale (RN-07, D-521), plain average for consumer
     (RN-09). Only the unit reading (RN-03 to RN-05) is shared with the ETL."""
     monday = pd.Timestamp(row["week_start"])
     if row["source"] == etl.SOURCE_WHOLESALE:
@@ -128,6 +128,8 @@ def recompute_weekly_price(raw, row):
         weight = to_number(raw_row["volume"]) if row["source"] == etl.SOURCE_WHOLESALE else 1.0
         if not weight or weight <= 0:
             continue
+        if row["source"] == etl.SOURCE_WHOLESALE:  # D-521: the kilos or units that volume brings
+            weight *= etl.volume_quantity(normalize(raw_row[unit_column]))
         prices.append(values[2] / quantity)
         weights.append(weight)
     return sum(price * weight for price, weight in zip(prices, weights)) / sum(weights)

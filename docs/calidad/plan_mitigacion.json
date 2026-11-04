@@ -2192,6 +2192,58 @@
           "referencia": "D-520"
         }
       ]
+    },
+    {
+      "id": "F-39",
+      "categoria": "datos",
+      "falla": [
+        "Una semana que mezcla envases promediaba como si un bins de 400 kilos pesara igual que una caja de 15",
+        "A week that mixes packages averaged as if a bin of 400 kilos weighed the same as a box of 15"
+      ],
+      "deteccion": [
+        "Revisión de las filas sin unidad; se comparó la regla con el boletín de ODEPA y con los datos crudos",
+        "Review of the rows without a unit; the rule was compared with ODEPA's bulletin and the raw data"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "RN-07 sumaba el volumen sin ver que ODEPA lo cuenta en envases, y los documentos lo llamaban «vendido»",
+        "RN-07 added the volume without seeing that ODEPA counts it in packages, and the documents called it «sold»"
+      ],
+      "severidad": "alta",
+      "contencion": [
+        "Ninguna: la cifra publicada seguía siendo la anterior hasta reconstruir la base",
+        "None: the published figure stayed the previous one until the base was rebuilt"
+      ],
+      "correctiva": [
+        "El precio pesa volumen × kilos o unidades del envase, en la ETL y en dbt, con prueba por unidad (D-521)",
+        "The price weighs volume × kilos or units of the package, in the ETL and in dbt, tested per unit (D-521)"
+      ],
+      "estacion": 14,
+      "caso_real": "D-521",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-04",
+          "ocurrencia": [
+            "28.328 de 237.641 precios mayoristas semanales mezclan envases; 5.954 estaban más de 5 % corridos.",
+            "28,328 of 237,641 weekly wholesale prices mix packages; 5,954 were more than 5 % off."
+          ],
+          "diagnostico": [
+            "ODEPA cuenta el volumen en envases, y la regla sumaba envases de distinto tamaño como iguales.",
+            "ODEPA counts the volume in packages, and the rule added packages of different sizes as equal."
+          ],
+          "solucion": [
+            "Cada precio pesa los kilos o unidades que trae su volumen; el consumidor y el índice no cambian.",
+            "Each price weighs the kilos or units its volume brings; the consumer prices and the index do not change."
+          ],
+          "comentario": [
+            "Antes → después: alertas 4.071 → 4.043; última semana 13 → 15; mediana del margen 77,2 % → 78,0 %.",
+            "Before → after: alerts 4,071 → 4,043; latest week 13 → 15; median margin 77.2 % → 78.0 %."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-521"
+        }
+      ]
     }
   ]
 }

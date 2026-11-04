@@ -2,6 +2,8 @@
 -- Una unidad sin una sola cantidad declarada queda sin precio comparable.
 -- D-520: «cien» son 100 unidades; «12 canastillos 125 gramos» son 1,5 kilos; una docena de paquetes con unidades
 -- queda sin precio, porque la fuente no la usa siempre igual.
+-- D-521: volume_quantity es cuántos kilos o unidades trae cada unidad de Volumen: ODEPA cuenta envases, salvo que la
+-- unidad diga «volumen en unidades»; el kilo en un envase cuenta ese envase.
 with valid as (
     select * from {{ ref('int_prices__validated') }} where reason is null
 ),
@@ -26,6 +28,7 @@ parsed as (
 converted as (
     select
         unit,
+        text,
         prefix_unit,
         per_hundred,
         try_cast(baskets as double) * try_cast(replace(basket_grams, ',', '.') as double) * 0.001 as basket_kilos,
@@ -50,10 +53,16 @@ conversion as (
              when per_hundred then 100.0
              when basket_kilos > 0 then basket_kilos
              when number_count = 1 and measure_unit is not null and measure_quantity > 0 and not dozen_of_units
-                 then measure_quantity end                                           as unit_quantity
+                 then measure_quantity end                                           as unit_quantity,
+        text
     from converted
 )
 select valid.*, conversion.normalized_unit, conversion.unit_quantity,
+       case when conversion.normalized_unit is null then null
+            when contains(conversion.text, 'volumen en unidades') then 1.0
+            when regexp_matches(conversion.text, '^\$/kilo \(en .*?(\d+) kilos')
+                then try_cast(regexp_extract(conversion.text, '^\$/kilo \(en .*?(\d+) kilos', 1) as double)
+            else conversion.unit_quantity end                                        as volume_quantity,
        valid.avg_price / conversion.unit_quantity as normalized_price
 from valid
 join conversion using (unit)

@@ -94,6 +94,10 @@ UNIT_BASKETS_PATTERN = re.compile(r"(\d+) canastillos (\d+(?:,\d+)?) ?(?:gramos|
 UNIT_NUMBER_PATTERN = re.compile(r"\d+(?:,\d+)?")
 # A quantity followed by its measure: "18 kilos", "15 unidades", "900 ml".
 UNIT_QUANTITY_PATTERN = re.compile(r"(\d+(?:,\d+)?) ?(kilos?|unidades|gramos|grs|litros?|ml)\b")
+# D-521: Volumen counts packages, as ODEPA's bulletin shows it, unless the unit says it counts units.
+VOLUME_IN_UNITS_MARK = "volumen en unidades"
+# D-521: a price per kilo sold in a package: Volumen counts the packages, whose kilos the unit declares.
+KILO_IN_PACKAGE_PATTERN = re.compile(r"^\$/kilo \(en .*?(\d+) kilos")
 # Measure word -> (normalized unit, how many normalized units one of them is).
 NORMALIZED_UNIT_BY_MEASURE = {
     "kilo": (UNIT_KILO, 1),
@@ -392,13 +396,30 @@ def convert_unit(unit_text: str) -> tuple[str | None, float | None]:
     return normalized_unit, quantity
 
 
+def volume_quantity(unit_text: str) -> float | None:
+    """RN-07, D-521: how many kilos, units or liters one counted Volumen of this unit brings, so that a bin of 400 kilos
+    does not weigh the same as a box of 15. None when the unit is not convertible."""
+    normalized_unit, quantity = convert_unit(unit_text)
+    if normalized_unit is None:
+        return None
+    text = unit_text.lower()
+    if VOLUME_IN_UNITS_MARK in text:
+        return 1.0
+    in_package = KILO_IN_PACKAGE_PATTERN.search(text)
+    return float(in_package.group(1)) if in_package else quantity
+
+
 def normalize_units(rows: pd.DataFrame) -> pd.DataFrame:
     """RN-03, RN-04, RN-05: add normalized_unit and normalized_price to each row.
 
     Rows whose unit is not convertible are kept, with both columns empty.
     """
-    conversions = [(unit, *convert_unit(unit)) for unit in rows["unit"].unique()]
-    conversion_table = pd.DataFrame(conversions, columns=["unit", "normalized_unit", "unit_quantity"])
+    conversions = [(unit, *convert_unit(unit), volume_quantity(unit)) for unit in rows["unit"].unique()]
+    conversion_table = pd.DataFrame(
+        conversions, columns=["unit", "normalized_unit", "unit_quantity", "volume_quantity"]
+    )
+    for column in ("unit_quantity", "volume_quantity"):  # a file with no convertible unit still divides as numbers
+        conversion_table[column] = pd.to_numeric(conversion_table[column])
     rows = rows.merge(conversion_table, on="unit", how="left")
     rows["normalized_price"] = rows["avg_price"] / rows["unit_quantity"]
     return rows
@@ -416,16 +437,20 @@ def assign_week_start(rows: pd.DataFrame) -> pd.DataFrame:
 
 
 def aggregate_wholesale_weekly(wholesale_rows: pd.DataFrame) -> pd.DataFrame:
-    """RN-07: weekly wholesale price = daily prices weighted by their volume."""
+    """RN-07, D-521: weekly wholesale price = daily prices weighted by the kilos or units their volume brings."""
     rows = wholesale_rows.copy()
-    rows["price_times_volume"] = rows["normalized_price"] * rows["volume"]
+    rows["quantity"] = rows["volume"] * rows["volume_quantity"]
+    rows["price_times_quantity"] = rows["normalized_price"] * rows["quantity"]
     weekly_prices = rows.groupby(WEEKLY_KEY_COLUMNS, dropna=False, as_index=False).agg(
-        price_times_volume=("price_times_volume", "sum"), volume=("volume", "sum"), observation_count=("volume", "size")
+        price_times_quantity=("price_times_quantity", "sum"),
+        quantity=("quantity", "sum"),
+        volume=("volume", "sum"),
+        observation_count=("volume", "size"),
     )
-    weekly_prices["price"] = weekly_prices["price_times_volume"] / weekly_prices["volume"]
+    weekly_prices["price"] = weekly_prices["price_times_quantity"] / weekly_prices["quantity"]
     # Without a normalized unit there is no price: the sum above would give 0.
     weekly_prices.loc[weekly_prices["normalized_unit"].isna(), "price"] = float("nan")
-    return weekly_prices.drop(columns="price_times_volume")
+    return weekly_prices.drop(columns=["price_times_quantity", "quantity"])
 
 
 def aggregate_consumer_weekly(consumer_rows: pd.DataFrame) -> pd.DataFrame:

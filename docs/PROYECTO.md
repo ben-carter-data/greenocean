@@ -23,7 +23,7 @@ Textos de Definición del proyecto, Indicadores, Reglas y Glosario. La seguridad
 
 Las dos fuentes son archivos abiertos de ODEPA (Ministerio de Agricultura), uno por año:
 
-- **Precios mayoristas:** un precio por día hábil, mercado, producto, variedad y calidad, en la unidad en que se vende (por ejemplo `$/bandeja 18 kilos`), con el volumen vendido.
+- **Precios mayoristas:** un precio por día hábil, mercado, producto, variedad y calidad, en la unidad en que se vende (por ejemplo `$/bandeja 18 kilos`), con la estimación de ODEPA del volumen que ingresó al mercado ese día, contado en envases.
 - **Precios al consumidor:** un precio por semana, región, tipo de comercio (feria, supermercado, carnicería…) y producto.
 
 Para compararlas hay que resolver tres diferencias:
@@ -69,7 +69,7 @@ El data warehouse (`etl/datos.duckdb`, la base servida) es un modelo estrella: u
 | RN-04 | La conserva con su precio por unidad. | Igual que RN-03, para lo que se vende por unidad. | `$/cien unidades` son 100 unidades (D-520). |
 | RN-05 | La conserva sin precio comparable y la marca `UNIDAD_NO_CONVERTIBLE`. | Un atado no tiene peso declarado; inventarlo daría márgenes falsos (D-008). | `$/docena de paquetes 5 unidades`: la fuente no la usa siempre igual (D-520). |
 | RN-06 | No calcula margen si las unidades no coinciden. | Un precio por unidad no se compara con uno por kilo. | — |
-| RN-07 | Junta los días de la semana en un precio, pesando más los días con más volumen. | Un día con poca venta no debe pesar lo mismo que uno con mucha. | Las 4 filas de esa semana dan (666,67 × 940 + 694,44 × 160) / 1.100 = 670,71 por kilo. |
+| RN-07 | Junta los días de la semana en un precio, pesando más lo que trae más kilos o unidades (D-521). | Un día con poco volumen no debe pesar lo mismo que uno con mucho, ni un bins de 400 kilos lo mismo que una caja de 15. | Las 4 filas de esa semana dan (666,67 × 940 + 694,44 × 160) / 1.100 = 670,71 por kilo. |
 | RN-08 | Asigna cada día a su lunes. | Es la semana del consumidor; sin ella no hay cruce. | — |
 | RN-09 | Junta los precios del consumidor de la semana en un promedio por región y canal. | ODEPA publica varios puntos de venta por región. | — |
 | RN-10 | Trata «Mercado Mayorista» del consumidor como un canal más. | Es un punto de venta al público, no la fuente mayorista. | — |

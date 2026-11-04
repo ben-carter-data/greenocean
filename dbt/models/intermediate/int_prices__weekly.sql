@@ -5,15 +5,16 @@ with rows as (
     from {{ ref('int_prices__units_normalized') }}
 ),
 wholesale as (
-    -- RN-07: precio semanal mayorista = precios diarios ponderados por su volumen.
+    -- RN-07, D-521: precio semanal mayorista = precios diarios ponderados por los kilos o unidades que trae su volumen.
     select week_start, source, channel, region_id, product_group, product, variety, quality,
            normalized_unit,
-           case when normalized_unit is not null then price_times_volume / volume end as price,
+           case when normalized_unit is not null then price_times_quantity / quantity end as price,
            volume, observation_count
     from (
         select week_start, source, channel, cast(region_id as integer) as region_id, product_group,
                product, variety, quality, normalized_unit,
-               sum(normalized_price * volume) as price_times_volume,
+               sum(normalized_price * volume * volume_quantity) as price_times_quantity,
+               sum(volume * volume_quantity) as quantity,
                sum(volume) as volume,
                count(*) as observation_count
         from rows where source = 'wholesale'

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.59 |
+| Version | 3.60 |
 | Date | 2026-11-04 |
 | Status | Current |
 | Owner | The author |
@@ -279,3 +279,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.57 | 2026-11-04 | «Análisis (Histórico)»: a green box with the largest yearly jump of the food CPI and what came after it, computed from the DuckDB database (D-518) |
 | 3.58 | 2026-11-04 | «Relaciones» in SQL queries says the same as «Modelo de datos»: the same relations and keys (RF-06, D-519) |
 | 3.59 | 2026-11-04 | Each ODEPA sale unit is read as it was reviewed by hand: «cien» and «canastillos» get a price, and a dozen without a safe reading gets none (D-520) |
+| 3.60 | 2026-11-04 | The weekly wholesale price weighs the kilos or units the volume brings, not the packages counted (D-521) |

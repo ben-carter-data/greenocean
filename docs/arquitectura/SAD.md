@@ -209,7 +209,7 @@ Cada tabla de la Base DuckDB, su función y sus columnas.
 | `channel_id` | BIGINT | FK → `dim_channel` | Canal de venta |
 | `normalized_unit` | VARCHAR | | Unidad normalizada: `kilo`, `litro` o `unidad`; vacía si no se puede convertir |
 | `price` | DOUBLE | | Precio semanal en pesos nominales, por unidad normalizada; vacío cuando la unidad no se puede convertir (marca `UNIDAD_NO_CONVERTIBLE`) |
-| `volume` | DOUBLE | | Volumen informado por la fuente, cuando existe |
+| `volume` | DOUBLE | | Estimación de ODEPA del volumen que ingresó al mercado, contado en envases y sumado tal como viene; el precio pesa los kilos o unidades que trae (D-521) |
 | `observation_count` | BIGINT | | Número de cotizaciones que forman el precio de la semana |
 | `flag` | VARCHAR | | Vacía si el precio entra en los indicadores; `ATIPICO` o `UNIDAD_NO_CONVERTIBLE` si queda fuera de ellos |
 

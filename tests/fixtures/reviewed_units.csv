@@ -1,200 +1,200 @@
-unit,expected_unit,expected_quantity
-$/Caja de 1 Litro,litro,1
-$/atado,,
-"$/atado 0,5 a 1 kilo",,
-"$/atado 1 a 1,5 kilos",,
-"$/atado 1,5 a 2 kilos",,
-"$/atado 2,5 a 3 kilos",,
-$/atado 300 a 500 gramos,,
-$/atado 4 unidades,unidad,4
-$/atado 7 kilos,kilo,7
-$/bandeja 10 kilos,kilo,10
-$/bandeja 10 kilos empedrada,kilo,10
-$/bandeja 10 kilos granel,kilo,10
-$/bandeja 12 canastillos 125 gramos,kilo,1.5
-$/bandeja 12 canastillos 170 gramos,kilo,2.04
-$/bandeja 12 kilos,kilo,12
-$/bandeja 12 unidades,unidad,12
-$/bandeja 13 kilos,kilo,13
-$/bandeja 15 kilos,kilo,15
-$/bandeja 15 kilos empedrada,kilo,15
-$/bandeja 15 kilos granel,kilo,15
-$/bandeja 18 kilos,kilo,18
-$/bandeja 18 kilos empedrada,kilo,18
-$/bandeja 18 kilos granel,kilo,18
-$/bandeja 2 kilos,kilo,2
-"$/bandeja 2,5 kilos",kilo,2.5
-$/bandeja 20 kilos,kilo,20
-$/bandeja 20 unidades,unidad,20
-$/bandeja 3 kilos,kilo,3
-$/bandeja 30 unidades,unidad,30
-$/bandeja 4 kilos,kilo,4
-$/bandeja 5 kilos,kilo,5
-$/bandeja 5 kilos empedrada,kilo,5
-$/bandeja 6 kilos,kilo,6
-$/bandeja 6 kilos empredada,kilo,6
-$/bandeja 6 kilos granel,kilo,6
-$/bandeja 7 kilos,kilo,7
-$/bandeja 8 kilos,kilo,8
-$/bandeja 8 kilos empedrada,kilo,8
-$/bandeja 8 kilos granel,kilo,8
-$/bandeja 9 kilos,kilo,9
-$/bandeja 9 kilos empedrada,kilo,9
-$/bins (350 kilos),kilo,350
-$/bins (400 kilos),kilo,400
-$/bins (420 kilos),kilo,420
-$/bins (430 kilos),kilo,430
-$/bins (450 kilos),kilo,450
-$/bins (500 kilos),kilo,500
-$/bolsa 1 kilo,kilo,1
-$/bolsa 800 grs,kilo,0.8
-$/botella 900 ml,litro,0.9
-$/caja 10 kilos,kilo,10
-$/caja 10 kilos empedrada,kilo,10
-$/caja 10 kilos granel,kilo,10
-$/caja 10 unidades,unidad,10
-$/caja 100 unidades,unidad,100
-$/caja 110 unidades,unidad,110
-$/caja 12 kilos,kilo,12
-$/caja 12 kilos embalada,kilo,12
-$/caja 12 kilos empedrada,kilo,12
-$/caja 12 kilos granel,kilo,12
-$/caja 12 unidades,unidad,12
-$/caja 120 unidades,unidad,120
-$/caja 13 kilos,kilo,13
-$/caja 13 kilos empedrada,kilo,13
-$/caja 13 kilos granel,kilo,13
-$/caja 14 kilos,kilo,14
-$/caja 14 kilos empedrada,kilo,14
-$/caja 14 kilos granel,kilo,14
-$/caja 14 unidades,unidad,14
-$/caja 15 kilos,kilo,15
-$/caja 15 kilos embalada,kilo,15
-$/caja 15 kilos empedrada,kilo,15
-$/caja 15 kilos granel,kilo,15
-$/caja 15 unidades,unidad,15
-$/caja 16 kilos,kilo,16
-$/caja 16 kilos empedrada,kilo,16
-$/caja 16 kilos granel,kilo,16
-$/caja 16 unidades,unidad,16
-$/caja 17 kilos,kilo,17
-$/caja 17 kilos empedrada,kilo,17
-$/caja 18 kilos,kilo,18
-$/caja 18 kilos embalada,kilo,18
-$/caja 18 kilos empedrada,kilo,18
-$/caja 18 kilos granel,kilo,18
-$/caja 18 kilos importada,kilo,18
-$/caja 18 unidades,unidad,18
-$/caja 180 unidades,unidad,180
-$/caja 20 kilos,kilo,20
-$/caja 20 kilos empedrada,kilo,20
-$/caja 20 kilos granel,kilo,20
-$/caja 20 unidades,unidad,20
-$/caja 23 kilos,kilo,23
-$/caja 24 kilos,kilo,24
-$/caja 24 unidades,unidad,24
-$/caja 25 kilos,kilo,25
-$/caja 25 kilos granel,kilo,25
-$/caja 25 unidades,unidad,25
-$/caja 30 kilos,kilo,30
-$/caja 30 unidades,unidad,30
-$/caja 35 unidades,unidad,35
-$/caja 36 atados,,
-$/caja 36 unidades,unidad,36
-$/caja 4 kilos,kilo,4
-$/caja 40 unidades,unidad,40
-$/caja 5 kilos,kilo,5
-$/caja 5 unidades,unidad,5
-$/caja 50 paquetes,,
-$/caja 50 unidades,unidad,50
-$/caja 6 unidades,unidad,6
-$/caja 60 unidades,unidad,60
-$/caja 7 kilos,kilo,7
-$/caja 7 unidades,unidad,7
-$/caja 70 unidades,unidad,70
-$/caja 8 kilos,kilo,8
-$/caja 8 kilos empedrada,kilo,8
-$/caja 8 unidades,unidad,8
-$/caja 80 unidades,unidad,80
-$/caja 90 unidades,unidad,90
-$/cien,unidad,100
-$/cien en rama (volumen en unidades),unidad,100
-$/cien unidades (volumen en unidades),unidad,100
-$/cuna 10 kilos,kilo,10
-$/docena de 3 kilos,kilo,3
-$/docena de atados,,
-$/docena de atados (1 kilo),kilo,1
-$/docena de atados (12 kilos),kilo,12
-$/docena de atados (2 kilos),kilo,2
-$/docena de atados (3 kilos),kilo,3
-$/docena de atados (4 kilos),kilo,4
-$/docena de atados (6 kilos),kilo,6
-$/docena de matas,,
-$/docena de paquetes,,
-$/docena de paquetes 5 unidades,,
-$/envase 1 kilo,kilo,1
-$/envase 125 gramos,kilo,0.125
-$/envase 400 gramos,kilo,0.4
-$/envase 50 kilos,kilo,50
-$/kilo,kilo,1
-$/kilo (en bandeja de 10 kilos),kilo,1
-$/kilo (en bandeja de 18 kilos),kilo,1
-$/kilo (en bins de 450 kilos),kilo,1
-$/kilo (en caja de 10 kilos ),kilo,1
-$/kilo (en caja de 14 kilos),kilo,1
-$/kilo (en caja de 15 kilos),kilo,1
-$/kilo (en caja de 17 kilos),kilo,1
-$/kilo (en caja de 18 kilos),kilo,1
-$/kilo (en caja de 20 kilos),kilo,1
-$/kilo (en caja de 8 kilos ),kilo,1
-$/kilo (en envase de 1 kilo),kilo,1
-$/kilo (en saco de 25 kilos),kilo,1
-$/kilo (en saco de 5 kilos),kilo,1
-$/kilo (volumen en unidades),kilo,1
-$/litro,litro,1
-$/malla 10 kilos,kilo,10
-$/malla 100 unidades,unidad,100
-$/malla 13 kilos,kilo,13
-$/malla 14 kilos,kilo,14
-$/malla 15 kilos,kilo,15
-$/malla 16 kilos,kilo,16
-$/malla 17 kilos,kilo,17
-$/malla 18 kilos,kilo,18
-$/malla 20 kilos,kilo,20
-$/malla 20 unidades,unidad,20
-$/malla 22 kilos,kilo,22
-$/malla 25 kilos,kilo,25
-$/malla 30 kilos,kilo,30
-$/malla 30 unidades,unidad,30
-$/malla 50 kilos,kilo,50
-$/malla 50 unidades,unidad,50
-$/malla 60 unidades,unidad,60
-$/malla 70 unidades,unidad,70
-$/media docena de atados,,
-$/media docena de matas,,
-$/pan de 250 gramos,kilo,0.25
-$/paquete,,
-"$/paquete 1,5 a 2 kilos",,
-$/paquete 10 unidades (volumen en unidades),unidad,10
-"$/paquete 2 a 2,5 kilos",,
-$/paquete 2 kilos,kilo,2
-$/paquete 20 unidades,unidad,20
-$/paquete 20 unidades (volumen en unidades),unidad,20
-$/paquete 3 unidades,unidad,3
-$/paquete 30 unidades,unidad,30
-$/paquete 36 unidades,unidad,36
-$/paquete 4 unidades,unidad,4
-$/paquete 5 unidades,unidad,5
-$/paquete 6 unidades,unidad,6
-$/pote 500 gramos,kilo,0.5
-$/saco 100 unidades,unidad,100
-$/saco 150 unidades,unidad,150
-$/saco 16 kilos,kilo,16
-$/saco 20 kilos,kilo,20
-$/saco 200 unidades,unidad,200
-$/saco 25 kilos,kilo,25
-$/saco 50 unidades,unidad,50
-$/saco 75 unidades,unidad,75
-$/trenza 100 unidades,unidad,100
-$/trenza 50 unidades,unidad,50
-$/unidad,unidad,1
+unit,expected_unit,expected_quantity,expected_volume_quantity
+$/Caja de 1 Litro,litro,1,1
+$/atado,,,
+"$/atado 0,5 a 1 kilo",,,
+"$/atado 1 a 1,5 kilos",,,
+"$/atado 1,5 a 2 kilos",,,
+"$/atado 2,5 a 3 kilos",,,
+$/atado 300 a 500 gramos,,,
+$/atado 4 unidades,unidad,4,4
+$/atado 7 kilos,kilo,7,7
+$/bandeja 10 kilos,kilo,10,10
+$/bandeja 10 kilos empedrada,kilo,10,10
+$/bandeja 10 kilos granel,kilo,10,10
+$/bandeja 12 canastillos 125 gramos,kilo,1.5,1.5
+$/bandeja 12 canastillos 170 gramos,kilo,2.04,2.04
+$/bandeja 12 kilos,kilo,12,12
+$/bandeja 12 unidades,unidad,12,12
+$/bandeja 13 kilos,kilo,13,13
+$/bandeja 15 kilos,kilo,15,15
+$/bandeja 15 kilos empedrada,kilo,15,15
+$/bandeja 15 kilos granel,kilo,15,15
+$/bandeja 18 kilos,kilo,18,18
+$/bandeja 18 kilos empedrada,kilo,18,18
+$/bandeja 18 kilos granel,kilo,18,18
+$/bandeja 2 kilos,kilo,2,2
+"$/bandeja 2,5 kilos",kilo,2.5,2.5
+$/bandeja 20 kilos,kilo,20,20
+$/bandeja 20 unidades,unidad,20,20
+$/bandeja 3 kilos,kilo,3,3
+$/bandeja 30 unidades,unidad,30,30
+$/bandeja 4 kilos,kilo,4,4
+$/bandeja 5 kilos,kilo,5,5
+$/bandeja 5 kilos empedrada,kilo,5,5
+$/bandeja 6 kilos,kilo,6,6
+$/bandeja 6 kilos empredada,kilo,6,6
+$/bandeja 6 kilos granel,kilo,6,6
+$/bandeja 7 kilos,kilo,7,7
+$/bandeja 8 kilos,kilo,8,8
+$/bandeja 8 kilos empedrada,kilo,8,8
+$/bandeja 8 kilos granel,kilo,8,8
+$/bandeja 9 kilos,kilo,9,9
+$/bandeja 9 kilos empedrada,kilo,9,9
+$/bins (350 kilos),kilo,350,350
+$/bins (400 kilos),kilo,400,400
+$/bins (420 kilos),kilo,420,420
+$/bins (430 kilos),kilo,430,430
+$/bins (450 kilos),kilo,450,450
+$/bins (500 kilos),kilo,500,500
+$/bolsa 1 kilo,kilo,1,1
+$/bolsa 800 grs,kilo,0.8,0.8
+$/botella 900 ml,litro,0.9,0.9
+$/caja 10 kilos,kilo,10,10
+$/caja 10 kilos empedrada,kilo,10,10
+$/caja 10 kilos granel,kilo,10,10
+$/caja 10 unidades,unidad,10,10
+$/caja 100 unidades,unidad,100,100
+$/caja 110 unidades,unidad,110,110
+$/caja 12 kilos,kilo,12,12
+$/caja 12 kilos embalada,kilo,12,12
+$/caja 12 kilos empedrada,kilo,12,12
+$/caja 12 kilos granel,kilo,12,12
+$/caja 12 unidades,unidad,12,12
+$/caja 120 unidades,unidad,120,120
+$/caja 13 kilos,kilo,13,13
+$/caja 13 kilos empedrada,kilo,13,13
+$/caja 13 kilos granel,kilo,13,13
+$/caja 14 kilos,kilo,14,14
+$/caja 14 kilos empedrada,kilo,14,14
+$/caja 14 kilos granel,kilo,14,14
+$/caja 14 unidades,unidad,14,14
+$/caja 15 kilos,kilo,15,15
+$/caja 15 kilos embalada,kilo,15,15
+$/caja 15 kilos empedrada,kilo,15,15
+$/caja 15 kilos granel,kilo,15,15
+$/caja 15 unidades,unidad,15,15
+$/caja 16 kilos,kilo,16,16
+$/caja 16 kilos empedrada,kilo,16,16
+$/caja 16 kilos granel,kilo,16,16
+$/caja 16 unidades,unidad,16,16
+$/caja 17 kilos,kilo,17,17
+$/caja 17 kilos empedrada,kilo,17,17
+$/caja 18 kilos,kilo,18,18
+$/caja 18 kilos embalada,kilo,18,18
+$/caja 18 kilos empedrada,kilo,18,18
+$/caja 18 kilos granel,kilo,18,18
+$/caja 18 kilos importada,kilo,18,18
+$/caja 18 unidades,unidad,18,18
+$/caja 180 unidades,unidad,180,180
+$/caja 20 kilos,kilo,20,20
+$/caja 20 kilos empedrada,kilo,20,20
+$/caja 20 kilos granel,kilo,20,20
+$/caja 20 unidades,unidad,20,20
+$/caja 23 kilos,kilo,23,23
+$/caja 24 kilos,kilo,24,24
+$/caja 24 unidades,unidad,24,24
+$/caja 25 kilos,kilo,25,25
+$/caja 25 kilos granel,kilo,25,25
+$/caja 25 unidades,unidad,25,25
+$/caja 30 kilos,kilo,30,30
+$/caja 30 unidades,unidad,30,30
+$/caja 35 unidades,unidad,35,35
+$/caja 36 atados,,,
+$/caja 36 unidades,unidad,36,36
+$/caja 4 kilos,kilo,4,4
+$/caja 40 unidades,unidad,40,40
+$/caja 5 kilos,kilo,5,5
+$/caja 5 unidades,unidad,5,5
+$/caja 50 paquetes,,,
+$/caja 50 unidades,unidad,50,50
+$/caja 6 unidades,unidad,6,6
+$/caja 60 unidades,unidad,60,60
+$/caja 7 kilos,kilo,7,7
+$/caja 7 unidades,unidad,7,7
+$/caja 70 unidades,unidad,70,70
+$/caja 8 kilos,kilo,8,8
+$/caja 8 kilos empedrada,kilo,8,8
+$/caja 8 unidades,unidad,8,8
+$/caja 80 unidades,unidad,80,80
+$/caja 90 unidades,unidad,90,90
+$/cien,unidad,100,100
+$/cien en rama (volumen en unidades),unidad,100,1
+$/cien unidades (volumen en unidades),unidad,100,1
+$/cuna 10 kilos,kilo,10,10
+$/docena de 3 kilos,kilo,3,3
+$/docena de atados,,,
+$/docena de atados (1 kilo),kilo,1,1
+$/docena de atados (12 kilos),kilo,12,12
+$/docena de atados (2 kilos),kilo,2,2
+$/docena de atados (3 kilos),kilo,3,3
+$/docena de atados (4 kilos),kilo,4,4
+$/docena de atados (6 kilos),kilo,6,6
+$/docena de matas,,,
+$/docena de paquetes,,,
+$/docena de paquetes 5 unidades,,,
+$/envase 1 kilo,kilo,1,1
+$/envase 125 gramos,kilo,0.125,0.125
+$/envase 400 gramos,kilo,0.4,0.4
+$/envase 50 kilos,kilo,50,50
+$/kilo,kilo,1,1
+$/kilo (en bandeja de 10 kilos),kilo,1,10
+$/kilo (en bandeja de 18 kilos),kilo,1,18
+$/kilo (en bins de 450 kilos),kilo,1,450
+$/kilo (en caja de 10 kilos ),kilo,1,10
+$/kilo (en caja de 14 kilos),kilo,1,14
+$/kilo (en caja de 15 kilos),kilo,1,15
+$/kilo (en caja de 17 kilos),kilo,1,17
+$/kilo (en caja de 18 kilos),kilo,1,18
+$/kilo (en caja de 20 kilos),kilo,1,20
+$/kilo (en caja de 8 kilos ),kilo,1,8
+$/kilo (en envase de 1 kilo),kilo,1,1
+$/kilo (en saco de 25 kilos),kilo,1,25
+$/kilo (en saco de 5 kilos),kilo,1,5
+$/kilo (volumen en unidades),kilo,1,1
+$/litro,litro,1,1
+$/malla 10 kilos,kilo,10,10
+$/malla 100 unidades,unidad,100,100
+$/malla 13 kilos,kilo,13,13
+$/malla 14 kilos,kilo,14,14
+$/malla 15 kilos,kilo,15,15
+$/malla 16 kilos,kilo,16,16
+$/malla 17 kilos,kilo,17,17
+$/malla 18 kilos,kilo,18,18
+$/malla 20 kilos,kilo,20,20
+$/malla 20 unidades,unidad,20,20
+$/malla 22 kilos,kilo,22,22
+$/malla 25 kilos,kilo,25,25
+$/malla 30 kilos,kilo,30,30
+$/malla 30 unidades,unidad,30,30
+$/malla 50 kilos,kilo,50,50
+$/malla 50 unidades,unidad,50,50
+$/malla 60 unidades,unidad,60,60
+$/malla 70 unidades,unidad,70,70
+$/media docena de atados,,,
+$/media docena de matas,,,
+$/pan de 250 gramos,kilo,0.25,0.25
+$/paquete,,,
+"$/paquete 1,5 a 2 kilos",,,
+$/paquete 10 unidades (volumen en unidades),unidad,10,1
+"$/paquete 2 a 2,5 kilos",,,
+$/paquete 2 kilos,kilo,2,2
+$/paquete 20 unidades,unidad,20,20
+$/paquete 20 unidades (volumen en unidades),unidad,20,1
+$/paquete 3 unidades,unidad,3,3
+$/paquete 30 unidades,unidad,30,30
+$/paquete 36 unidades,unidad,36,36
+$/paquete 4 unidades,unidad,4,4
+$/paquete 5 unidades,unidad,5,5
+$/paquete 6 unidades,unidad,6,6
+$/pote 500 gramos,kilo,0.5,0.5
+$/saco 100 unidades,unidad,100,100
+$/saco 150 unidades,unidad,150,150
+$/saco 16 kilos,kilo,16,16
+$/saco 20 kilos,kilo,20,20
+$/saco 200 unidades,unidad,200,200
+$/saco 25 kilos,kilo,25,25
+$/saco 50 unidades,unidad,50,50
+$/saco 75 unidades,unidad,75,75
+$/trenza 100 unidades,unidad,100,100
+$/trenza 50 unidades,unidad,50,50
+$/unidad,unidad,1,1

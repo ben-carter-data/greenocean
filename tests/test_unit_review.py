@@ -49,6 +49,8 @@ def test_d520_the_etl_reads_every_unit_as_it_was_reviewed():
         unit, quantity = etl.convert_unit(row["unit"])
         assert (unit or "") == row["expected_unit"], row["unit"]
         assert quantity == (pytest.approx(float(row["expected_quantity"])) if row["expected_quantity"] else None), row
+        weighs = row["expected_volume_quantity"]
+        assert etl.volume_quantity(row["unit"]) == (pytest.approx(float(weighs)) if weighs else None), row
 
 
 def test_d520_dbt_reads_every_unit_like_the_etl():
@@ -59,14 +61,16 @@ def test_d520_dbt_reads_every_unit_like_the_etl():
     connection = duckdb.connect()
     connection.register("reviewed_frame", table[["unit"]])
     connection.execute("CREATE TABLE reviewed AS SELECT unit FROM reviewed_frame")
-    read = connection.execute(f"SELECT unit, normalized_unit, unit_quantity FROM ({model})").fetchall()
+    read = connection.execute(f"SELECT unit, normalized_unit, unit_quantity, volume_quantity FROM ({model})").fetchall()
     connection.close()
     assert len(read) == len(table)
     expected = {row["unit"]: row for row in table.to_dict("records")}
-    for unit, normalized_unit, quantity in read:
+    for unit, normalized_unit, quantity, weighs in read:
         assert (normalized_unit or "") == expected[unit]["expected_unit"], unit
         wanted = expected[unit]["expected_quantity"]
         assert quantity == (pytest.approx(float(wanted)) if wanted else None), unit
+        wanted = expected[unit]["expected_volume_quantity"]
+        assert weighs == (pytest.approx(float(wanted)) if wanted else None), unit
 
 
 def test_d520_only_what_can_be_read_two_ways_is_outside_the_plain_shape():

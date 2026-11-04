@@ -280,6 +280,50 @@ def test_rn07_weekly_wholesale_price_is_weighted_by_volume():
     assert weekly_prices.iloc[0]["observation_count"] == 2
 
 
+def test_d521_a_week_that_mixes_packages_weighs_the_kilos_each_brings_not_the_packages():
+    raw_rows = pd.concat(
+        [
+            # 10 bins of 400 kilos at 400 per kilo, and 100 boxes of 15 kilos at 1000 per kilo
+            make_raw_wholesale_rows(
+                price_date="2026-01-06",
+                sale_unit="$/bins (400 kilos)",
+                volume="10",
+                min_price="160000,0000",
+                max_price="160000,0000",
+                avg_price="160000,0000",
+            ),
+            make_raw_wholesale_rows(
+                price_date="2026-01-07",
+                sale_unit="$/caja 15 kilos",
+                volume="100",
+                min_price="15000,0000",
+                max_price="15000,0000",
+                avg_price="15000,0000",
+            ),
+        ],
+        ignore_index=True,
+    )
+    weekly_prices = build_weekly_prices(raw_wholesale_rows=raw_rows)
+    assert len(weekly_prices) == 1
+    # (400 * 4000 + 1000 * 1500) / 5500 = 563.64 per kilo; counting packages would give 945.45.
+    assert weekly_prices.iloc[0]["price"] == pytest.approx(3100000 / 5500)
+    assert weekly_prices.iloc[0]["volume"] == 110  # the source's own figure is kept as it comes
+
+
+def test_d521_what_one_counted_volume_brings():
+    assert etl.volume_quantity("$/bins (400 kilos)") == 400
+    assert etl.volume_quantity("$/caja 15 unidades") == 15
+    assert etl.volume_quantity("$/kilo") == 1
+    assert etl.volume_quantity("$/kilo (en caja de 17 kilos)") == 17  # the bulletin counts the boxes
+    assert etl.volume_quantity("$/kilo (en caja de 8 kilos )") == 8
+    assert etl.volume_quantity("$/paquete 20 unidades (volumen en unidades)") == 1  # the unit says it counts units
+    assert etl.volume_quantity("$/cien unidades (volumen en unidades)") == 1
+    assert etl.volume_quantity("$/kilo (volumen en unidades)") == 1
+    assert etl.volume_quantity("$/cien") == 100
+    assert etl.volume_quantity("$/bandeja 12 canastillos 125 gramos") == pytest.approx(1.5)
+    assert etl.volume_quantity("$/docena de atados") is None
+
+
 def test_rn08_wholesale_date_is_assigned_to_the_monday_of_the_consumer_week():
     # 2026-01-08 is a Thursday; its week starts on Monday 2026-01-05.
     weekly_prices = build_weekly_prices(
