@@ -483,6 +483,8 @@ EN = {
     # The documents, by the name of their page
     "PRD · Requisitos del producto": "PRD · Product requirements",
     "SAD · Arquitectura": "SAD · Architecture",
+    "Acta de cierre": "Closure record",
+    "Cómo empezó el proyecto, qué se aprendió y a quién sirve.": "How the project started, what was learned and whom it serves.",
     "ADR · Decisiones de arquitectura": "ADR · Architecture decisions",
     "Manual de operación": "Operations runbook",
     "Índice de decisiones": "Decision index",
@@ -633,6 +635,7 @@ def documents_dir(language=None):
 # D-381: the official documents live in one folder per subject, in docs/ and in docs/en/ alike.
 DOCUMENT_FOLDERS = {
     "PRD.md": "negocio",
+    "ACTA_DE_CIERRE.md": "negocio",  # D-529
     "GLOSARIO.md": "negocio",
     "SAD.md": "arquitectura",
     "ADR.md": "arquitectura",

@@ -17,6 +17,7 @@ DOCUMENTS = [
     "GLOSARIO.md",
     "INDICE_DECISIONES.md",
     "PLAN_DE_CALIDAD.md",
+    "ACTA_DE_CIERRE.md",
 ]
 MARKER = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 

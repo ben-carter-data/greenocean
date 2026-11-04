@@ -27,6 +27,7 @@ def open_semanal(region, family='Frutas', **parameters):
     app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
     app.query_params.update({'_home_region': region, 'familia': family, **parameters})
     app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.session_state[dashboard.scoped(dashboard.HOME_FAMILY_DONE)] = True  # D-530: the address alone unlocks nothing
     app.run()
     assert not app.exception
     return app

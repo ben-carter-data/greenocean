@@ -2117,6 +2117,149 @@ def weekly_cycle(mode):
 
 # endregion
 
+
+# region Closure record (D-529): the stages of the project, what was expected against what was found, and whom it serves.
+def closure_timeline(mode):
+    def day(spanish, iso):
+        return iso if i18n.is_english() else spanish
+
+    return timeline(
+        mode,
+        say("Las etapas del proyecto", "The stages of the project"),
+        [
+            (
+                day("11-10-2026", "2026-10-11"),
+                say("Hitos 1 a 4", "Milestones 1 to 4"),
+                [say("descarga, ETL,", "download, ETL,"), say("panel y carga semanal", "panel and weekly load")],
+            ),
+            (day("18-10-2026", "2026-10-18"), say("Documentos", "Documents"), ["PRD · SAD · ADR", "D-151"]),
+            (
+                day("27-10-2026", "2026-10-27"),
+                say("Plan de calidad", "Quality plan"),
+                [say("14 indicadores", "14 indicators"), say("e informes · D-323", "and reports · D-323")],
+            ),
+            (
+                day("02-11-2026", "2026-11-02"),
+                say("Inglés", "English"),
+                [say("toda la app", "the whole app"), say("en dos idiomas · D-443", "in two languages · D-443")],
+            ),
+            (
+                day("03-11-2026", "2026-11-03"),
+                say("Semanal, 4 pasos", "Weekly, 4 steps"),
+                [say("región, canal,", "region, channel,"), say("familia y productos", "family and products")],
+            ),
+            (
+                day("04-11-2026", "2026-11-04"),
+                say("Datos fiables", "Reliable data"),
+                [
+                    say("unidades, volumen", "units, volume"),
+                    say("y envase · D-520 a D-528", "and package · D-520 to D-528"),
+                ],
+            ),
+        ],
+    )
+
+
+def closure_expectations(mode):
+    return graph(
+        mode,
+        say("Lo que se esperaba y lo que se encontró", "What was expected and what was found"),
+        {
+            "plan": (
+                130,
+                200,
+                "icon:file",
+                say("Tres fuentes sencillas", "Three simple sources"),
+                say("descargar, normalizar y cruzar", "download, normalise and cross"),
+            ),
+            "units": (
+                560,
+                40,
+                "icon:box",
+                say("200 unidades escritas a mano", "200 hand-written units"),
+                say("revisadas una por una", "reviewed one by one"),
+            ),
+            "volume": (
+                560,
+                150,
+                "icon:layers",
+                say("Volumen en envases", "Volume in packages"),
+                say("no en kilos; los datos lo confirman", "not in kilos; the data confirms it"),
+            ),
+            "package": (
+                560,
+                260,
+                "icon:arrows",
+                say("Envases que cambian", "Packages that change"),
+                say("parecen cambios de precio", "they look like price moves"),
+            ),
+            "late": (
+                560,
+                370,
+                "icon:calendar",
+                say("Fuentes que se atrasan", "Sources that run late"),
+                say("se publica la última semana común", "the last common week is published"),
+            ),
+        },
+        [
+            ("plan", "units", "", "flow", "h"),
+            ("plan", "volume", "", "flow", "h"),
+            ("plan", "package", "", "flow", "h"),
+            ("plan", "late", "", "flow", "h"),
+        ],
+    )
+
+
+def closure_audience(mode):
+    return graph(
+        mode,
+        say("A quién sirve el proyecto", "Whom the project serves"),
+        {
+            "project": (460, 40, "icon:star", "GreenOcean", say("un proyecto de portafolio", "a portfolio project")),
+            "author": (
+                130,
+                190,
+                "icon:tool",
+                say("El autor", "The author"),
+                say(
+                    "consolidar ingeniería de datos, BSA, BI y DevOps",
+                    "to consolidate data engineering, BSA, BI and DevOps",
+                ),
+            ),
+            "professionals": (
+                350,
+                190,
+                "icon:chart",
+                say("Profesionales de datos", "Data professionals"),
+                say("qué hacerle a una fuente antes de publicar", "what to do to a source before publishing"),
+            ),
+            "recruiters": (
+                570,
+                190,
+                "icon:check",
+                say("Reclutadores y revisores", "Recruiters and reviewers"),
+                say("evidencia de cómo trabaja el autor", "evidence of how the author works"),
+            ),
+            "research": (
+                790,
+                190,
+                "icon:files",
+                say("Quien investiga o enseña", "Researchers and teachers"),
+                say("cifras que se siguen hasta la fuente", "figures traced to their source"),
+            ),
+        },
+        [
+            ("project", "author", "", "flow", "hv"),
+            ("project", "professionals", "", "flow", "hv"),
+            ("project", "recruiters", "", "flow", "hv"),
+            ("project", "research", "", "flow", "hv"),
+        ],
+    )
+
+
+# endregion
+
+
 FIGURES = {
     "ciclo_semanal": weekly_cycle,  # D-377: also the «Proceso» block of «Análisis de negocio y sistemas»
     "contexto": sad_context,
@@ -2142,4 +2285,8 @@ FIGURES = {
     "terminos_cifra": glossary_figure,
     "calidades": quality_qualities,
     "estados_calidad": quality_states,
+    # D-529: the closure record
+    "linea_proyecto": closure_timeline,
+    "esperado_real": closure_expectations,
+    "para_quien": closure_audience,
 }

@@ -63,7 +63,8 @@ def draw_page(title, state=None, query=None):
 
 # The home page opens on the latest week and its most moved family, both of which
 # change every Tuesday; tests that read figures pin the week of 2026-10-05.
-PINNED_HOME = {"_home_region": "Todas", "_home_week": "2026-10-05", "familia": "Hortalizas"}
+PINNED_HOME = {"_home_region": "Todas", "_home_week": "2026-10-05", "familia": "Hortalizas", "_v": "pinned-visit"}
+dashboard.VISIT_TICKETS["pinned-visit"] = 4_102_444_800  # D-530: the pinned address belongs to a visit that never ends
 
 
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
@@ -1299,6 +1300,8 @@ def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
     assert '.mock-level.rise-3' in markup and '.mock-alert-scope' in markup
     app.query_params.update({'_home_region': dashboard.ALL_VALUES, 'familia': 'Frutas'})  # D-491: after a family
+    app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True  # D-530: chosen in this visit
+    app.session_state[dashboard.scoped(dashboard.HOME_FAMILY_DONE)] = True
     app.run()
     app.button(key='home_alert_trigger').click().run()
     assert not app.exception
@@ -1562,8 +1565,8 @@ def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_f
     app = draw_page(dashboard.PAGE_FOLDER)
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    assert markup.count('class="df-file"') == len(dashboard.FOLDER_DOCUMENTS) == 8
-    assert "GreenOcean <i>/</i> <b>docs</b>" in markup and "8 documentos" in markup
+    assert markup.count('class="df-file"') == len(dashboard.FOLDER_DOCUMENTS) == 9  # D-529
+    assert "GreenOcean <i>/</i> <b>docs</b>" in markup and "9 documentos" in markup
     for page in dashboard.FOLDER_ORDER:
         filename = dashboard.PROJECT_DOCUMENTS[page][0]
         text = i18n.document_path(filename, "es").read_text(encoding="utf-8")
@@ -1572,7 +1575,7 @@ def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_f
         assert documents_folder.read_title(text) in markup, filename
         # D-500: its file on GitHub is only for the Autor
         assert project.build_github_url(f"docs/{i18n.DOCUMENT_FOLDERS[filename]}/{filename}") not in markup, filename
-    assert markup.count('class="go-icon go-icon-print"') == 8 and markup.count('class="df-preview"') == 8
+    assert markup.count('class="go-icon go-icon-print"') == 9 and markup.count('class="df-preview"') == 9
 
 
 def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_menu():

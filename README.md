@@ -102,6 +102,7 @@ Python · SQL · dbt Core · DuckDB · Parquet · SQLite · GitHub Actions · py
 | Documento | Contenido |
 |---|---|
 | [PRD](docs/negocio/PRD.md) | Qué problema resuelve, para quién, qué preguntas responde y sus requisitos |
+| [Acta de cierre](docs/negocio/ACTA_DE_CIERRE.md) | Cómo empezó el proyecto, qué se encontró en los datos, qué se aprendió y a quién sirve |
 | [SAD](docs/arquitectura/SAD.md) | Cómo está construido: la carga de cada semana, los datos con su diccionario, el despliegue y la capacidad |
 | [ADR](docs/arquitectura/ADR.md) | Las decisiones de arquitectura más importantes |
 | [Plan de pruebas y seguridad](docs/calidad/PLAN_PRUEBAS.md) | Qué se prueba, quién participa en la seguridad y los ataques que se repiten en cada cambio |

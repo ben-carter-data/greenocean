@@ -15,7 +15,7 @@ DOCS_DIR = ROOT / "docs"
 DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md"]
 # The reading documents of the project (D-279): every one has a header, an index, a glossary and a version history.
 # D-290: the scalability plan and the data dictionary live in the SAD; the security plan, in the test plan.
-READING = DOCUMENTS + ["MANUAL.md", "GLOSARIO.md", "INDICE_DECISIONES.md", "PLAN_DE_CALIDAD.md"]
+READING = DOCUMENTS + ["MANUAL.md", "GLOSARIO.md", "INDICE_DECISIONES.md", "PLAN_DE_CALIDAD.md", "ACTA_DE_CIERRE.md"]
 MERGED = {"PLAN_PRUEBAS.md": ["SEGURIDAD.md"], "SAD.md": ["ESCALABILIDAD.md", "DICCIONARIO_DATOS.md"]}
 
 
@@ -60,6 +60,7 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
         "GLOSARIO.md": ["terminos_cifra", "terminos_capas", "terminos_actores"],
         "INDICE_DECISIONES.md": ["temas", "mapa_temas", "adr_decisiones"],
         "PLAN_DE_CALIDAD.md": ["calidades", "calidad", "estados_calidad"],  # D-455
+        "ACTA_DE_CIERRE.md": ["linea_proyecto", "esperado_real", "para_quien"],  # D-529
     }
     for name, markers in names.items():
         assert len(markers) >= (5 if name == "SAD.md" else 3) and len(set(markers)) == len(markers), name
@@ -71,7 +72,7 @@ def test_d290_the_merged_documents_are_gone_and_their_addresses_open_the_documen
     for name, old in MERGED.items():
         for gone in old:
             assert not i18n.document_path(gone, "es").exists() and not i18n.document_path(gone, "en").exists(), gone
-    assert len(dashboard.FOLDER_DOCUMENTS) == 8  # D-355: the SQAP joined
+    assert len(dashboard.FOLDER_DOCUMENTS) == 9  # D-355: the SQAP joined; D-529: the closure record
     for path, page in (
         ("escalabilidad", dashboard.PAGE_SAD),
         ("diccionario-de-datos", dashboard.PAGE_SAD),

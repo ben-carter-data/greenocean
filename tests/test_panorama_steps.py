@@ -274,3 +274,26 @@ def test_d506_the_basket_says_why_its_median_reads_as_it_does():
         0.0, {'rise': 300, 'fall': 295, 'neutral': 10}
     )
     assert home_mockup.basket_why(0.0, {'rise': 0, 'fall': 0, 'neutral': 0}) == ''
+
+
+@needs_database
+def test_d530_a_new_visit_starts_locked_even_when_the_address_names_a_region_and_a_family():
+    """The address a browser restores after a restart carries the choices; without the visit's ticket, or with an
+    expired one, they unlock nothing. With a live ticket the visit goes on, and a click writes the ticket into the
+    address so a reload of the tab keeps the steps."""
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc).timestamp()
+    dashboard.VISIT_TICKETS.update({"alive-visit": now + 600, "stale-visit": now - 1})
+    locked = draw("consulta", query={"_home_region": "Todas", "familia": "Frutas"})
+    assert "Elige primero una región" in page(locked) and not locked.session_state.get("home_region_done")
+    expired = draw("consulta", query={"_home_region": "Todas", "familia": "Frutas", "_v": "stale-visit"})
+    assert "Elige primero una región" in page(expired) and "stale-visit" not in dashboard.VISIT_TICKETS
+    same = draw("consulta", query={"_home_region": "Todas", "familia": "Frutas", "_v": "alive-visit"})
+    assert same.session_state["home_region_done"] and same.session_state["home_family_done"]
+    assert 'class="mock-lock"' not in page(same) and same.session_state["visit_ticket"] == "alive-visit"
+    clicked = draw("consulta", link="?_home_region=Todas&_home_week=2026-10-12&_home_step=region")
+    ticket = clicked.query_params["_v"]
+    assert ticket in dashboard.VISIT_TICKETS and dashboard.redeem_visit_ticket(ticket, now + 100)
+    expiry = dashboard.VISIT_TICKETS[ticket]  # issued now, for VISIT_IDLE_SECONDS
+    assert not dashboard.redeem_visit_ticket(ticket, expiry + 1)  # idle too long: a new visit

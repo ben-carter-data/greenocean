@@ -144,6 +144,7 @@ def test_d509_the_panel_and_the_window_offer_the_download_with_every_filtered_pr
     app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
     app.query_params.update({"_home_region": dashboard.ALL_VALUES, "familia": "Frutas"})
     app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.session_state[dashboard.scoped(dashboard.HOME_FAMILY_DONE)] = True  # D-530: the address alone unlocks nothing
     app.run()
     assert not app.exception
     keys = {str(button.key) for button in app.get("download_button")}
@@ -217,6 +218,7 @@ def test_d525_the_panel_and_the_window_download_the_alerts_when_one_is_chosen(mo
     app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
     app.query_params.update({"_home_region": dashboard.ALL_VALUES, "familia": family, "alerta": dashboard.RISE})
     app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.session_state[dashboard.scoped(dashboard.HOME_FAMILY_DONE)] = True  # D-530: the address alone unlocks nothing
     app.run()
     assert not app.exception
     assert counted(app) == [sharp]  # the alerts, not the whole family

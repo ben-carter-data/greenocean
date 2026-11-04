@@ -11,6 +11,7 @@ const theme = process.argv[3] || 'Vantablack';
 const base = process.env.BASE || 'http://localhost:8599/';
 // D-282: the documents of the folder, opened by their address (window and view), not from the menu.
 const DOCS = [['documentacion-y-enlaces', 'PRD · Requisitos del producto', 'PRD.md'],
+              ['documentacion-y-enlaces', 'Acta de cierre', 'ACTA_DE_CIERRE.md'],
               ['documentacion-y-enlaces', 'SAD · Arquitectura', 'SAD.md'],
               ['documentacion-y-enlaces', 'ADR · Decisiones de arquitectura', 'ADR.md'],
               ['seguridad', 'Plan de pruebas y seguridad', 'PLAN_PRUEBAS.md'],
@@ -21,7 +22,7 @@ const DOCS = [['documentacion-y-enlaces', 'PRD · Requisitos del producto', 'PRD
 function markdownOutline(file) {
   if (!file) return null;
   // D-381: each document sits in the folder of its subject.
-  const folders = { 'PRD.md': 'negocio', 'GLOSARIO.md': 'negocio', 'SAD.md': 'arquitectura', 'ADR.md': 'arquitectura', 'INDICE_DECISIONES.md': 'arquitectura', 'PLAN_DE_CALIDAD.md': 'calidad', 'PLAN_PRUEBAS.md': 'calidad', 'MANUAL.md': 'operacion' };
+  const folders = { 'PRD.md': 'negocio', 'ACTA_DE_CIERRE.md': 'negocio', 'GLOSARIO.md': 'negocio', 'SAD.md': 'arquitectura', 'ADR.md': 'arquitectura', 'INDICE_DECISIONES.md': 'arquitectura', 'PLAN_DE_CALIDAD.md': 'calidad', 'PLAN_PRUEBAS.md': 'calidad', 'MANUAL.md': 'operacion' };
   const text = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', folders[file], file), 'utf8');
   const titles = [...text.matchAll(/^## (.+)$/gm)].map(m => m[1].trim());
   const diagrams = [...text.matchAll(/^\[\[diagrama:(\w+)\]\]\s*$/gm)].length;

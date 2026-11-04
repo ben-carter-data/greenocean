@@ -158,6 +158,7 @@ PAGE_DOCUMENTATION = "Documentación"
 # The documentation is the project's real documents (D-151): requirements,
 # architecture and decisions, read from docs/ so the panel shows what GitHub holds.
 PAGE_PRD = "PRD · Requisitos del producto"
+PAGE_CLOSURE = "Acta de cierre"  # D-529
 PAGE_SAD = "SAD · Arquitectura"
 PAGE_ADR = "ADR · Decisiones de arquitectura"
 # D-201: security has its own section, the attack view and the test plan that backs it.
@@ -246,6 +247,7 @@ WINDOWS = {
         PAGE_PRD,
         PAGE_SAD,
         PAGE_ADR,
+        PAGE_CLOSURE,
         PAGE_DOCUMENTATION,
         PAGE_GLOSSARY,
         PAGE_MANUAL,
@@ -310,6 +312,7 @@ HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
     PAGE_DOCUMENTATION: ":material/menu_book:",
     PAGE_PRD: ":material/assignment:",
+    PAGE_CLOSURE: ":material/flag:",
     PAGE_SAD: ":material/account_tree:",
     PAGE_ADR: ":material/gavel:",
     PAGE_SQL: ":material/terminal:",
@@ -345,6 +348,7 @@ PAGE_PATHS = {
     PAGE_SECURITY: "mapa-de-seguridad",
     PAGE_STACK: "stack-y-evidencia",
     PAGE_PRD: "prd",
+    PAGE_CLOSURE: "acta-de-cierre",
     PAGE_SAD: "sad",
     PAGE_ADR: "adr",
     PAGE_SQL: "consultas-sql",
@@ -869,6 +873,41 @@ def redeem_author_ticket(ticket, now=None):
         AUTHOR_TICKETS.pop(ticket, None)
         return False
     st.session_state[AUTHOR_TICKET] = ticket
+    return True
+
+
+# D-530: a visit is one server session, or a reload of it within VISIT_IDLE_SECONDS. The address alone (a browser
+# restores it after a restart) never unlocks the steps of «Semanal»; a ticket the server issued, written into the
+# address by the app itself when a step was chosen, does.
+VISIT_TICKETS = vars(bi).setdefault("VISIT_TICKETS", {})
+VISIT_TICKET, VISIT_PARAMETER = "visit_ticket", "_v"
+VISIT_IDLE_SECONDS = AUTHOR_IDLE_SECONDS
+
+
+def issue_visit_ticket(now=None):
+    """The ticket of this visit, renewed on each run; it expires after VISIT_IDLE_SECONDS without a run."""
+    now = datetime.now(timezone.utc).timestamp() if now is None else now
+    for ticket, expiry in list(VISIT_TICKETS.items()):
+        if expiry <= now:
+            VISIT_TICKETS.pop(ticket, None)
+    ticket = st.session_state.get(VISIT_TICKET)
+    if ticket not in VISIT_TICKETS:
+        ticket = st.session_state[VISIT_TICKET] = secrets.token_urlsafe(16)
+    VISIT_TICKETS[ticket] = now + VISIT_IDLE_SECONDS
+    return ticket
+
+
+def redeem_visit_ticket(ticket, now=None):
+    """True for a ticket the server issued that has not expired: the visit goes on in this session (a reload, the
+    second load Streamlit Community Cloud makes, or a restart within VISIT_IDLE_SECONDS), which takes it over."""
+    now = datetime.now(timezone.utc).timestamp() if now is None else now
+    if not isinstance(ticket, str):
+        return False
+    expiry = VISIT_TICKETS.get(ticket)
+    if not (expiry and expiry > now):
+        VISIT_TICKETS.pop(ticket, None)
+        return False
+    st.session_state[VISIT_TICKET] = ticket
     return True
 
 
@@ -2363,6 +2402,7 @@ BAR_VIEWS = {
 DOCUMENT_VIEWS = {
     PAGE_DOCUMENTATION,
     PAGE_PRD,
+    PAGE_CLOSURE,
     PAGE_SAD,
     PAGE_ADR,
     PAGE_MANUAL,
@@ -4048,6 +4088,7 @@ def apply_home_link_click():
             st.query_params[name] = parameters[name][0]
         else:
             st.query_params.pop(name, None)
+    st.query_params[VISIT_PARAMETER] = issue_visit_ticket()  # D-530: a reload of this tab keeps the steps
 
 
 def apply_home_focus(options):
@@ -4644,10 +4685,12 @@ def show_market_overview(mode, prefix):
         family = families[0] if families else None
     scope = 'todo Chile' if region == ALL_VALUES else home_mockup.short_region(region)
     # D-352, D-372: in every view (user, professional and author) the panels 2 and 3 wait for the step before them; a
-    # link that names a region or a family counts as having chosen it.
-    if st.query_params.get('_home_region'):
+    # link that names a region or a family counts as having chosen it. D-530: only within the same visit, proven by the
+    # ticket the app wrote into the address; a new visit starts locked, however the address was restored.
+    same_visit = redeem_visit_ticket(st.query_params.get(VISIT_PARAMETER))
+    if same_visit and st.query_params.get('_home_region'):
         st.session_state[scoped(HOME_REGION_DONE)] = True
-    if st.session_state.get(scoped(HOME_REGION_DONE)) and st.query_params.get('familia') in choices:
+    if same_visit and st.session_state.get(scoped(HOME_REGION_DONE)) and st.query_params.get('familia') in choices:
         st.session_state[scoped(HOME_FAMILY_DONE)] = True
     region_open = bool(st.session_state.get(scoped(HOME_REGION_DONE)))
     family_open = bool(st.session_state.get(scoped(HOME_FAMILY_DONE)))
@@ -7625,6 +7668,7 @@ def show_links_page(mode):
 # region Project documents (D-151)
 PROJECT_DOCUMENTS = {
     PAGE_PRD: ("PRD.md", "Qué resuelve el producto, para quién y con qué requisitos."),
+    PAGE_CLOSURE: ("ACTA_DE_CIERRE.md", "Cómo empezó el proyecto, qué se aprendió y a quién sirve."),
     PAGE_SAD: ("SAD.md", "Cómo está construido, cómo corre cada semana, dónde viven sus datos y cómo puede crecer."),
     PAGE_ADR: ("ADR.md", "Las decisiones de arquitectura que más pesan: contexto, decisión, opciones y consecuencias."),
     PAGE_MANUAL: ("MANUAL.md", "Cómo operar el proyecto y resolver sus fallas."),
@@ -7646,6 +7690,7 @@ PROJECT_DOCUMENTS = {
 # D-381: grouped by the four folders of docs/, each document in the folder of its subject.
 FOLDER_DOCUMENTS = [
     (PAGE_PRD, "negocio"),
+    (PAGE_CLOSURE, "negocio"),
     (PAGE_GLOSSARY, "negocio"),
     (PAGE_SAD, "arquitectura"),
     (PAGE_ADR, "arquitectura"),
@@ -8406,6 +8451,7 @@ def build_pipeline_chips(summary):
 SHOW_PAGE_BY_TITLE = {
     PAGE_DOCUMENTATION: lambda mode: show_project_document(mode, PAGE_PRD),
     PAGE_PRD: lambda mode: show_project_document(mode, PAGE_PRD),
+    PAGE_CLOSURE: lambda mode: show_project_document(mode, PAGE_CLOSURE),
     PAGE_SAD: lambda mode: show_project_document(mode, PAGE_SAD),
     PAGE_ADR: lambda mode: show_project_document(mode, PAGE_ADR),
     PAGE_STACK: lambda mode: show_stack_page(mode),
@@ -9799,6 +9845,7 @@ def main():
     i18n.install()
     settle_profile()
     restore_return_context()
+    issue_visit_ticket()  # D-530: the visit's ticket lives as long as the session, renewed on each run
     # «Ver como» left the menu (D-213); an old ?ver= address still opens, without it.
     st.query_params.pop("ver", None)
     profile = None

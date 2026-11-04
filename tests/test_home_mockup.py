@@ -117,6 +117,7 @@ def test_d497_the_filter_sits_beside_the_search_and_rests_while_an_alert_is_chos
     assert app.selectbox(key='home_products_direction').disabled  # no family chosen yet (D-352)
     app.query_params.update({'_home_region': dashboard.ALL_VALUES, 'familia': 'Frutas'})
     app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.session_state[dashboard.scoped(dashboard.HOME_FAMILY_DONE)] = True  # D-530: the address alone unlocks nothing
     app.run()
     box = app.selectbox(key='home_products_direction')
     assert not box.disabled and box.value == 'Todo'
@@ -157,6 +158,7 @@ def test_d498_the_enlarged_table_has_the_line_of_the_panel_and_opens_with_its_ch
     app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
     app.query_params.update({'_home_region': dashboard.ALL_VALUES, 'familia': 'Frutas'})
     app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.session_state[dashboard.scoped(dashboard.HOME_FAMILY_DONE)] = True  # D-530: the address alone unlocks nothing
     app.run()
     app.selectbox(key='home_products_direction').set_value('Subidas').run()
     app.button(key='home_products_enlarge').click().run()
@@ -191,6 +193,7 @@ def test_d491_the_alert_line_waits_for_a_family_then_filters_step_three_and_come
     assert app.button(key='home_alert_trigger').disabled  # no family chosen yet (D-352)
     app.query_params.update({'_home_region': dashboard.ALL_VALUES, 'familia': 'Frutas'})
     app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.session_state[dashboard.scoped(dashboard.HOME_FAMILY_DONE)] = True  # D-530: the address alone unlocks nothing
     app.run()
     week = dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]
     rows = dashboard.home_alert_rows(week, 'Frutas', direction=dashboard.RISE)
@@ -382,6 +385,9 @@ def test_d092_region_and_family_clicks_fill_the_products_table():
     app.query_params['_home_region'] = 'Región de Coquimbo'
     app.query_params['_home_week'] = '2026-10-05'
     app.query_params['familia'] = 'Frutas'
+    # D-530: the address alone unlocks nothing; the visit chose both steps
+    app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.session_state[dashboard.scoped(dashboard.HOME_FAMILY_DONE)] = True
     app.run()
     assert not app.exception
     assert app.session_state['dashboard_region'] == 'Región de Coquimbo'
