@@ -4171,3 +4171,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Medido:** a 1440 × 900, «Consultas SQL» y «Modelo de datos» terminan su cabecera a 127 y 114 px desde el borde (antes 140 y 127); la barra de «Semanal» pasa de 48 a 38 px.
 - **Pruebas:** `tests/test_page_bar.py` (la fila bajo la barra con su nuevo aire), `tests/test_panorama_steps.py`, `tests/test_home_mockup.py` y `tests/test_sql_explorer.py` en verde.
 
+## D-514 · «Consultas SQL» sin la fila de chips: sus límites junto a «Ejecutar», y el editor más alto
+- **Pedido del autor:** la fila «DuckDB solo lectura · máx. 5.000 filas · 10 s» bajo la barra ocupaba un alto que podía ir al editor.
+- **Decisión:** esa fila sale. «DuckDB» y «solo lectura» ya estaban en la píldora de conexión de la barra del estudio; los dos límites («máx. 5.000 filas · 10 s») pasan en letra pequeña junto a «Ejecutar», con su explicación al pasar el cursor. El editor crece lo que la fila dejó: de 264 a 278 px, y empieza 58 px más arriba, así se ven hasta 13 líneas sin desplazamiento.
+- **Medido:** a 1440 × 900 el estudio empieza a 109 px (antes 167) y los resultados a 520 (antes 564); a 1280 × 800 nada se sale de la ventana.
+- **Pruebas:** `tests/test_sql_explorer.py` (el alto del editor y de los resultados suman el alto del estudio), `tests/test_page_bar.py` y `tests/test_i18n.py` (los límites en inglés).
+

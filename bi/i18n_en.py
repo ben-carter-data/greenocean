@@ -2518,6 +2518,9 @@ PAGES = {
     'Subidas': 'Rises',
     'Bajadas': 'Falls',
     'Nombre': 'Name',
+    # D-514: the studio's limits beside «Ejecutar»
+    'máx. {n} filas · {n} s': 'max. {} rows · {} s',
+    'Muestra como máximo {n} filas por consulta; una consulta se detiene a los {n} segundos.': 'Shows at most {} rows per query; a query stops after {} seconds.',
     # D-510: the mark of a figure read from the base, and what each page reads
     'en vivo · leído de la base al abrir': 'live · read from the database on opening',
     'Las filas de weekly_price, etl_run y rejection se cuentan en la Base DuckDB al abrir la página.': 'The rows of weekly_price, etl_run and rejection are counted in the DuckDB base when the page opens.',

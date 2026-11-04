@@ -827,6 +827,7 @@ def build_css(palette):
 .sqlx-db {{ display:inline-flex; align-items:center; gap:7px; padding:4px 12px 4px 9px; border-radius:999px;
   background:{field}; border:1px solid {border}; box-shadow:{raised}; font-size:.78rem; color:{ink};
   font-family:{mono}; white-space:nowrap; }}
+.sqlx-limits {{ font-size:.72rem; color:{muted}; white-space:nowrap; cursor:default; margin-left:2px; }}
 .sqlx-db i {{ width:9px; height:9px; border-radius:50%; background:{charts.STATUS_COLORS['good']};
   box-shadow:0 0 0 3px color-mix(in srgb, {charts.STATUS_COLORS['good']} 22%, transparent); }}
 .sqlx-db small {{ color:{charts.legible(muted, field) if field.startswith('#') else muted}; font-family:{charts.CHART_FONT}; }}
@@ -979,17 +980,14 @@ DESCRIPTION = (
 )
 
 
-def build_bar_chips():
-    """The studio's limits, as chips of the page bar (D-267)."""
+def build_limits_html():
+    """D-514: the studio's two limits, in small letters beside «Ejecutar»; the engine and «solo lectura» are already in
+    the connection pill. Each text whole, so the English layer finds it."""
     limit = f"{ROW_LIMIT:,}".replace(",", ".")
-    return [
-        (
-            "<b>DuckDB</b><small>solo lectura</small>",
-            "La consulta corre en DuckDB con la base abierta en solo lectura.",
-        ),
-        (f"<small>máx.</small><b>{limit}</b><small>filas</small>", f"Muestra como máximo {limit} filas por consulta."),
-        (f"<b>{TIMEOUT_SECONDS} s</b>", f"Una consulta se detiene a los {TIMEOUT_SECONDS} segundos."),
-    ]
+    return (
+        f'<span class="sqlx-limits" title="Muestra como máximo {limit} filas por consulta; una consulta se detiene a los '
+        f'{TIMEOUT_SECONDS} segundos.">máx. {limit} filas · {TIMEOUT_SECONDS} s</span>'
+    )
 
 
 def build_database_html():
@@ -1039,9 +1037,9 @@ def build_tab_html(example):
 def editor_height(sql):
     """Enough lines to show the query without an inner scroll, within one screen."""
     lines = (sql or "").count("\n") + 1
-    # D-233: six to eight lines; a longer query scrolls inside the editor. D-511: the room the filters' own line
-    # gave back (92 px) goes to the editor, so ten to twelve lines show without a scroll.
-    return max(222, min(262, 21 * lines + 24))
+    # D-233: six to eight lines; a longer query scrolls inside the editor. D-511 and D-514: the room the filters' line
+    # and the chips' row gave back goes to the editor, so up to thirteen lines show without a scroll.
+    return max(252, min(292, 21 * lines + 24))
 
 
 def format_elapsed(seconds):
@@ -1422,6 +1420,7 @@ def show_sql_explorer_page(mode, header=None):
                     icon=":material/play_arrow:",
                     help="Ejecuta la consulta del editor (también Ctrl + Enter).",
                 )
+                st.markdown(build_limits_html(), unsafe_allow_html=True)  # D-514
             # The five queries on a row of their own, so none hides under the others (D-184).
             with st.container(key="sqlx_chips_row", horizontal=True, vertical_alignment="center"):
                 st.markdown(

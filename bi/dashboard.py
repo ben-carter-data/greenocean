@@ -8256,9 +8256,8 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_SECURITY: lambda mode: show_security_page(mode),
     PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(
         mode,
-        header=lambda: show_page_bar(
-            PAGE_SQL, "Consultas SQL", sql_explorer.DESCRIPTION, sql_explorer.build_bar_chips()
-        ),
+        # D-514: no row of chips under the bar; the studio's limits sit beside «Ejecutar», and the editor is taller
+        header=lambda: show_page_bar(PAGE_SQL, "Consultas SQL", sql_explorer.DESCRIPTION),
     ),
     PAGE_HOME: show_home_page,
     PAGE_DIAGRAMS: show_diagrams_page,
