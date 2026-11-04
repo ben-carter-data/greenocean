@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from bi import charts, dashboard, i18n, queries, sql_explorer, sql_relations
+from bi import charts, dashboard, er_diagram, i18n, queries, sql_explorer, sql_relations
 
 DASHBOARD_FILE = str(Path(__file__).resolve().parents[1] / "bi" / "dashboard.py")
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
@@ -37,7 +37,7 @@ def test_d515_no_join_is_broken_in_the_data():
             if parent_end == "one":
                 assert orphans == 0, (child, parent)
         # the written joins run as they are, on the views
-        for statement in sql_relations.build_joins().split("\n\n")[1:]:
+        for statement in sql_relations.build_joins().split("\n\n"):
             lines = [line.split("--")[0].rstrip() for line in statement.splitlines() if not line.startswith("--")]
             connection.execute("SELECT count(*) " + " ".join(lines))
     finally:
@@ -55,8 +55,11 @@ def test_d515_the_drawing_has_every_view_every_join_and_the_legend():
     for child, child_column, parent, parent_column, *_ in sql_relations.RELATIONS:
         assert f"{child}.{child_column} → {parent}.{parent_column}" in svg
     assert "PK: las columnas que identifican una fila" in svg and 'width="100%"' in svg and "<script" not in svg
+    assert sql_relations.key_label("productos", "familia") == "PK"
+    assert sql_relations.key_label("precios", "semana") == sql_relations.key_label("precios", "calidad") == "PK, FK"
     assert (
-        sql_relations.key_label("productos", "familia") == "PK" and sql_relations.key_label("precios", "semana") == "FK"
+        sql_relations.key_label("ipc_semanal", "semana") == "PK, FK"
+        and sql_relations.key_label("precios", "anio") == ""
     )
 
 
@@ -147,6 +150,56 @@ def test_d517_the_drawing_paints_each_group_and_names_it_in_both_languages(monke
     for text in ("Data: the ODEPA prices", "Load log: each load of etl_run", "dbt Core: the models and tests"):
         assert text in english, text
     assert "The eight views are in the same DuckDB database" in english and "Las ocho vistas" not in english
+
+
+# The view that reads each table of the data warehouse, to compare «Relaciones» with «Modelo de datos».
+TABLE_OF_VIEW = {
+    "precios": "weekly_price",
+    "semanas": "dim_date",
+    "productos": "dim_product",
+    "ipc_semanal": "ipc_weekly",
+    "ipc_mensual": "ipc_monthly",
+    "cargas": "etl_run",
+    "rechazos": "rejection",
+}
+
+
+def test_d519_every_line_is_a_relation_of_the_entity_relationship_diagram():
+    drawn = {(TABLE_OF_VIEW[child], TABLE_OF_VIEW[parent]) for child, _, parent, *_ in sql_relations.RELATIONS}
+    assert drawn == {
+        (child, parent)
+        for child, _, parent, *_ in er_diagram.RELATIONS
+        # no view of its own: the region and the channel are written inside precios
+        if parent not in ("dim_region", "dim_channel")
+    }
+    ends = {(child, parent): (first, second) for child, _, parent, _, first, second, _ in er_diagram.RELATIONS}
+    for child, _, parent, _, first, second, _ in sql_relations.RELATIONS:
+        assert ends[(TABLE_OF_VIEW[child], TABLE_OF_VIEW[parent])] == (first, second), (child, parent)
+
+
+@needs_database
+def test_d519_every_key_identifies_a_row_and_each_view_has_the_rows_of_its_table():
+    connection = sql_explorer.open_explorer_connection()
+    try:
+        for view, keys in sql_relations.KEYS.items():
+            if keys:
+                columns = ", ".join(keys)
+                total, distinct = connection.execute(
+                    f"SELECT count(*), (SELECT count(*) FROM (SELECT DISTINCT {columns} FROM {view})) FROM {view}"
+                ).fetchone()
+                assert total == distinct, view
+        for view, table in TABLE_OF_VIEW.items():
+            counted = [connection.execute(f"SELECT count(*) FROM {name}").fetchone()[0] for name in (view, table)]
+            assert counted[0] == counted[1], view
+        # the catalogue joins by its four columns, and no price stays out
+        orphans = connection.execute(
+            "SELECT count(*) FROM precios AS p LEFT JOIN productos AS pr ON pr.familia = p.familia "
+            "AND pr.producto = p.producto AND pr.variedad = p.variedad AND pr.calidad = p.calidad "
+            "WHERE pr.producto IS NULL"
+        ).fetchone()[0]
+        assert orphans == 0
+    finally:
+        connection.close()
 
 
 def test_d515_the_joins_name_every_relation_and_every_text_has_its_english():

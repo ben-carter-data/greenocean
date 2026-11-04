@@ -2547,6 +2547,7 @@ PAGES = {
     "Registro de cargas: cada carga de etl_run y las filas que rechazó": "Load log: each load of etl_run and the rows it rejected",
     "dbt Core: los modelos y las pruebas que construyen la Base DuckDB": "dbt Core: the models and tests that build the DuckDB database",
     "Las ocho vistas están en la misma Base DuckDB · etl/datos.duckdb; el color dice qué guarda cada grupo.": "The eight views are in the same DuckDB database · etl/datos.duckdb; the colour says what each group holds.",
+    "precios: sus ocho columnas PK juntas identifican una fila; unidad queda vacía si no se pudo convertir.": "precios: its eight PK columns together identify a row; unidad stays empty when it could not be converted.",
     "Diagrama": "Diagram",
     "JOIN listos para copiar": "JOINs ready to copy",
     "Consulta SQL": "SQL query",
@@ -2556,7 +2557,6 @@ PAGES = {
     'ipc_semanal toma el IPC del mes de su lunes (anio_ipc, mes_ipc) de ipc_mensual (anio, mes)': 'ipc_semanal takes the IPC of the month of its Monday (anio_ipc, mes_ipc) from ipc_mensual (anio, mes)',
     'PK: las columnas que identifican una fila · FK: una columna que apunta a otra vista': 'PK: the columns that identify a row · FK: a column that points at another view',
     'Pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · línea punteada: mismo mes, sin clave': 'Crow\'s foot: many rows · double bar: one · circle: may be none · dotted line: same month, no key',
-    'precios no tiene clave: una fila es una semana, un producto, una región, un canal y una unidad juntos.': 'precios has no key: a row is a week, a product, a region, a channel and a unit together.',
     'Relaciones entre las vistas de Consultas SQL': 'Relationships between the views of SQL queries',
     # D-514: the studio's limits beside «Ejecutar»
     'máx. {n} filas · {n} s': 'max. {} rows · {} s',

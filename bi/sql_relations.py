@@ -21,12 +21,13 @@ COLUMNS = (
     ("ipc_mensual", "cargas", "rechazos"),
 )
 COLUMN_GAPS, BOX_GAP, BRACKET = (86, 100, 140), 26, 34
+BRACKET_ON_THE_RIGHT = {"ipc_semanal"}  # precios already reaches semanas by its left edge
 FONT, MONO = er_diagram.FONT, er_diagram.MONO
 VIEWS = ["productos", "precios", "semanas", "ipc_semanal", "cargas", "rechazos", "ipc_mensual", "modelos_dbt"]
-# The columns that identify one row of a view; a view with none is read by its whole row (precios: its grain is the
-# week, the product, the region, the channel and the unit together).
+# The columns that identify one row of a view, as er_diagram.PRIMARY_KEYS says of its table with the ids written as
+# names (D-519); the tests check that they do. A view with none is read by its whole row.
 KEYS = {
-    "precios": [],
+    "precios": ["semana", "familia", "producto", "variedad", "calidad", "canal", "region", "unidad"],
     "semanas": ["semana"],
     "productos": ["familia", "producto", "variedad", "calidad"],
     "ipc_semanal": ["semana"],
@@ -38,7 +39,7 @@ KEYS = {
 # (child view, child column, parent view, parent column, child end, parent end, what it says)
 RELATIONS = [
     ("precios", "semana", "semanas", "semana", "many0", "one", "cada precio es de una semana del calendario"),
-    ("precios", "semana", "ipc_semanal", "semana", "many0", "zero_one", "cada semana tiene a lo más un factor real"),
+    ("ipc_semanal", "semana", "semanas", "semana", "zero_one", "one", "cada semana tiene a lo más un factor real"),
     (
         "precios",
         "producto",
@@ -59,7 +60,8 @@ LOGICAL = (
     "mismo mes",
     "ipc_semanal toma el IPC del mes de su lunes (anio_ipc, mes_ipc) de ipc_mensual (anio, mes)",
 )
-FOREIGN = {(child, column) for child, column, *_ in RELATIONS}
+# The line to the catalogue meets one column, but its key is four: all four are foreign keys of precios.
+FOREIGN = {(child, column) for child, column, *_ in RELATIONS} | {("precios", column) for column in KEYS["productos"]}
 # D-517: the views that join among themselves, each group with its colour and what it holds. All eight live in the same
 # Base DuckDB and the same load writes them: the colour says what they record, not where they are.
 GROUP_COLORS = {"amber": ("#f5b84b", "#a16207"), "pink": ("#ff7ab8", "#c2337a")}  # (on a dark card, on a light one)
@@ -86,6 +88,7 @@ JOIN_LINES = [
     ("JOIN cargas AS c ON c.inicio = r.inicio_carga", "la carga que rechazó la fila"),
     (None, None),
     ("FROM ipc_semanal AS i", ""),
+    ("JOIN semanas AS s ON s.semana = i.semana", "el calendario de esa semana"),
     ("JOIN ipc_mensual AS m ON m.anio = i.anio_ipc AND m.mes = i.mes_ipc", "el mes del IPC de cada semana"),
 ]
 
@@ -170,7 +173,7 @@ def build_view(view, schema, places, counts, shade, descriptions):
             f'fill="{shade["muted"]}">{html.escape(kind)}</text>'
         )
     rule = ""
-    if KEYS[view]:
+    if KEYS[view] and [name for name, _ in schema[view]][: len(KEYS[view])] == KEYS[view]:  # only keys that come first
         rule_y = y + HEADER + len(KEYS[view]) * ROW
         rule = f'<path d="M{x} {rule_y} H{x + width}" stroke="{shade["line"]}" stroke-width="1.2"/>'
     count = (
@@ -192,10 +195,13 @@ def build_view(view, schema, places, counts, shade, descriptions):
 
 
 def route(places, child, parent, y_child, y_parent):
-    """The path between the facing edges of two boxes: straight at one height, an elbow otherwise; a bracket out of
-    their left edges when one is under the other."""
+    """The path between the facing edges of two boxes: straight at one height, an elbow otherwise; a bracket when one
+    is under the other, out of the edge that no other line uses."""
     c, p = places[child], places[parent]
     if c[0] == p[0]:
+        if child in BRACKET_ON_THE_RIGHT:
+            edge = c[0] + c[2]
+            return f"M{edge} {y_child} H{edge + BRACKET} V{y_parent} H{edge}", "right", "right"
         return f"M{c[0]} {y_child} H{c[0] - BRACKET} V{y_parent} H{p[0]}", "left", "left"
     child_edge, parent_edge = ("left", "right") if p[0] + p[2] <= c[0] else ("right", "left")
     (xc, _), (xp, _) = er_diagram.attach(c, child_edge), er_diagram.attach(p, parent_edge)
@@ -248,7 +254,7 @@ def build_svg(schema, counts, mode, descriptions=None):
         "Las ocho vistas están en la misma Base DuckDB · etl/datos.duckdb; el color dice qué guarda cada grupo.",
         "PK: las columnas que identifican una fila · FK: una columna que apunta a otra vista",
         "Pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · línea punteada: mismo mes, sin clave",
-        "precios no tiene clave: una fila es una semana, un producto, una región, un canal y una unidad juntos.",
+        "precios: sus ocho columnas PK juntas identifican una fila; unidad queda vacía si no se pudo convertir.",
     )
     # in the free corner at the bottom left, the last line level with the end of the tallest column
     legend_y = bottom - MARGIN - 18 * (len(lines) - 1)

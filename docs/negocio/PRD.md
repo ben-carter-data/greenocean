@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.57 |
+| Versión | 3.58 |
 | Fecha | 04-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -277,3 +277,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.55 | 04-11-2026 | Consultas SQL: el diagrama en una sola vista, la tabla con todo el alto de la ventana, el menú plegado y todos sus textos en inglés (RF-06, D-516) |
 | 3.56 | 04-11-2026 | «Relaciones» en Consultas SQL: cada grupo de vistas conectadas con su color: datos, registro de cargas y dbt Core (RF-06, D-517) |
 | 3.57 | 04-11-2026 | «Análisis (Histórico)»: un cuadro verde con el mayor salto anual del IPC de alimentos y lo que vino después, calculado desde la Base DuckDB (D-518) |
+| 3.58 | 04-11-2026 | «Relaciones» en Consultas SQL dice lo mismo que «Modelo de datos»: las mismas relaciones y claves (RF-06, D-519) |

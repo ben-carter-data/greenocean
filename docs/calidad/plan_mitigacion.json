@@ -2088,6 +2088,58 @@
           "referencia": "D-516"
         }
       ]
+    },
+    {
+      "id": "F-37",
+      "categoria": "código",
+      "falla": [
+        "«Relaciones» contradecía a «Modelo de datos» en una relación y en las claves de precios",
+        "«Relaciones» contradicted «Modelo de datos» in one relation and in the keys of precios"
+      ],
+      "deteccion": [
+        "El autor comparó los tres diagramas; ninguna prueba los comparaba entre sí",
+        "The author compared the three diagrams; no test compared them with each other"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Las relaciones de las vistas se escribieron a mano, sin contrastarlas con las de las tablas",
+        "The relations of the views were written by hand, without checking them against those of the tables"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: los datos eran correctos y el cambio no se había publicado",
+        "None: the data were correct and the change had not been published"
+      ],
+      "correctiva": [
+        "«Relaciones» se corrigió y una prueba la compara con el diagrama entidad-relación (D-519)",
+        "«Relaciones» was fixed and a test compares it with the entity-relationship diagram (D-519)"
+      ],
+      "estacion": 9,
+      "caso_real": "D-519",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-04",
+          "ocurrencia": [
+            "«Relaciones» unía precios con ipc_semanal y decía que precios no tiene clave.",
+            "«Relaciones» joined precios with ipc_semanal and said that precios has no key."
+          ],
+          "diagnostico": [
+            "Se dibujó el JOIN que usan las consultas, no la relación declarada en dbt.",
+            "The drawing showed the JOIN the queries use, not the relation declared in dbt."
+          ],
+          "solucion": [
+            "Ahora une ipc_semanal con semanas y marca las ocho columnas que identifican una fila.",
+            "It now joins ipc_semanal with semanas and marks the eight columns that identify a row."
+          ],
+          "comentario": [
+            "La prueba de D-515 tampoco corría el primer bloque de JOIN; ahora los corre todos.",
+            "The D-515 test did not run the first JOIN block either; it now runs them all."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-519"
+        }
+      ]
     }
   ]
 }
