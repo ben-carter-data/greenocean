@@ -37,11 +37,12 @@ def markup_of(app):
 
 
 def recompute_alerts(region, week):
-    """The rule of K6 written again, series by series, from the raw prices of one region."""
+    """The rule of K6 written again, series by series, from the changes of one region in the same package (D-522)."""
     frame = queries.run_sql(
-        """SELECT week_start, product_group, product, variety, quality, channel, normalized_unit, price, observation_count
-           FROM weekly_price JOIN dim_product USING (product_id) JOIN dim_channel USING (channel_id)
-           JOIN dim_region USING (region_id) WHERE region = ? AND flag IS NULL""",
+        """SELECT week_start, product_group, product, variety, quality, channel, normalized_unit, price_now, price_before,
+                  quotes_now, quotes_before
+           FROM weekly_same_package JOIN dim_product USING (product_id) JOIN dim_channel USING (channel_id)
+           JOIN dim_region USING (region_id) WHERE region = ?""",
         parameters=[region],
     )
     frame['week_start'] = pd.to_datetime(frame['week_start'])
@@ -49,17 +50,14 @@ def recompute_alerts(region, week):
     found = {}
     for key, series in frame.groupby(SERIES):
         series = series.set_index('week_start').sort_index()
-        weeks = [day - pd.Timedelta(weeks=back) for back in range(13, -1, -1)]  # 12 usual changes and the one judged
+        weeks = [day - pd.Timedelta(weeks=back) for back in range(12, -1, -1)]  # 12 usual changes and the one judged
         if not all(moment in series.index for moment in weeks):
             continue
-        prices = series.loc[weeks, 'price']
-        if (prices.iloc[:-1] <= 0).any():
-            continue
-        changes = prices.pct_change().dropna()
+        changes = series.loc[weeks, 'price_now'] / series.loc[weeks, 'price_before'] - 1
         usual, change = changes.iloc[:-1], changes.iloc[-1]
         unusual = abs(change - usual.mean()) > 2 * usual.std()
-        quotes = series.loc[weeks[-2:], 'observation_count']
-        if unusual and abs(change) >= 0.10 and (quotes >= 2).all():
+        judged = series.loc[weeks[-1]]
+        if unusual and abs(change) >= 0.10 and judged['quotes_now'] >= 2 and judged['quotes_before'] >= 2:
             found[key] = change
     return found
 

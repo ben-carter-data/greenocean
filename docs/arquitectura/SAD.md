@@ -184,6 +184,7 @@ Cada tabla de la Base DuckDB, su función y sus columnas.
 | Tabla | Función | Contenido |
 |---|---|---|
 | `weekly_price` | Hechos | Un precio por semana, producto, región, canal y unidad |
+| `weekly_same_package` | Hechos | El cambio de cada precio contra la semana anterior, en el mismo envase (D-522) |
 | `dim_product` | Dimensión | Producto, variedad, calidad y familia |
 | `dim_region` | Dimensión | Regiones con precios |
 | `dim_channel` | Dimensión | Canales de venta y su fuente |
@@ -250,6 +251,23 @@ Cada tabla de la Base DuckDB, su función y sus columnas.
 | `year` | BIGINT | | Año del lunes |
 | `season` | VARCHAR | | Estación en Chile: `verano`, `otoño`, `invierno` o `primavera` |
 
+#### weekly_same_package
+
+El cambio de cada precio contra la semana anterior, por región y solo en los envases vendidos las dos semanas (D-522, RN-15). Todo lo que muestra una variación lee esta tabla; `weekly_price` sigue siendo el nivel del precio. Un precio sin un envase común en las dos semanas no tiene fila: queda fuera de la comparación.
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `week_start` | VARCHAR | FK → `dim_date` | Lunes de la semana comparada con la anterior |
+| `product_id` | BIGINT | FK → `dim_product` | Producto |
+| `region_id` | INTEGER | FK → `dim_region` | Región |
+| `channel_id` | BIGINT | FK → `dim_channel` | Canal |
+| `normalized_unit` | VARCHAR |  | Unidad normalizada |
+| `price_now` | DOUBLE |  | Precio de la semana, en los envases comunes |
+| `price_before` | DOUBLE |  | Precio de la semana anterior, en los mismos envases |
+| `quotes_now` | BIGINT |  | Cotizaciones de la semana en esos envases |
+| `quotes_before` | BIGINT |  | Cotizaciones de la semana anterior en esos envases |
+| `packages` | VARCHAR |  | Los envases comparados, como los escribe ODEPA |
+
 #### latest_by_source
 
 Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee el paso 2, Canal, de Semanal (D-494); el dashboard Semanal y los indicadores leen `weekly_price`.
@@ -268,6 +286,11 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee el p
 | `normalized_unit` | VARCHAR |  | Unidad normalizada; vacía si no se puede convertir |
 | `price` | DOUBLE |  | Precio semanal en pesos nominales, por unidad normalizada |
 | `observation_count` | BIGINT |  | Número de cotizaciones de la semana |
+| `same_package_now` | DOUBLE |  | Precio de la semana en los envases comunes con la anterior (D-522) |
+| `same_package_before` | DOUBLE |  | Precio de la semana anterior en esos envases |
+| `same_package_quotes_now` | BIGINT |  | Cotizaciones de la semana en esos envases |
+| `same_package_quotes_before` | BIGINT |  | Cotizaciones de la semana anterior en esos envases |
+| `same_packages` | VARCHAR |  | Los envases comparados |
 | `flag` | VARCHAR |  | Vacía si el precio entra al cálculo; `ATIPICO` o `UNIDAD_NO_CONVERTIBLE` si queda fuera |
 
 **IPC**
@@ -414,7 +437,7 @@ La página «Configuración» también es solo del autor (D-409). Muestra en una
 
 | Medida | Valor | Origen |
 |---|---|---|
-| Base DuckDB | Unos 14 MB en la Base DuckDB | Tamaño de `etl/datos.duckdb` |
+| Base DuckDB | Unos 29 MB en la Base DuckDB | Tamaño de `etl/datos.duckdb` |
 | Datos | Volumen y cobertura de la última carga | [PRD, sección 6](../negocio/PRD.md#6-alcance) |
 | Frecuencia | Una carga por semana | [RF-01](../negocio/PRD.md#5-requisitos) |
 | Usuarios | Un panel público de solo lectura | [PRD, sección 3](../negocio/PRD.md#3-para-quién-es) |
@@ -442,7 +465,7 @@ Con datos públicos, semanales y pequeños, leídos por un solo panel, un data w
 
 | Criterio | Hoy | Umbral |
 |---|---|---|
-| Volumen | Unos 14 MB | Varios GB: ventas por tienda y día, costos, inventario |
+| Volumen | Unos 29 MB | Varios GB: ventas por tienda y día, costos, inventario |
 | Usuarios | Un panel de solo lectura | Varios equipos o herramientas de BI sobre los mismos datos |
 | Acceso | Público | Permisos por persona o datos sensibles |
 | Frescura | Semanal | Varias cargas al día o tiempo real |

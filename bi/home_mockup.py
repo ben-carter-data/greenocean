@@ -13,6 +13,8 @@ from pathlib import Path
 
 from bi import data_terms, i18n
 
+PACKAGE_SEPARATOR = ' · '  # as dbt/models/intermediate/int_prices__same_package.sql joins them
+
 RED = '#e62035'
 BLUE = '#0783ff'
 AMBER = '#af6700'
@@ -135,6 +137,53 @@ def previous_price(row):
 
 
 ORDERS = ('Mayores cambios', 'Subidas', 'Bajadas', 'Inusuales')
+
+
+def same_package_pair(current, previous, changes, keys):
+    """D-522, RN-15: the regional prices of a week and of the week before, as a comparison must read them: only the
+    packages sold in both. A price whose package changed loses the row of the week before, so it is left out of the
+    comparison, as a price without the week before; a price that was not sold this week stays, as it was. Without
+    `changes` (a base published before the rule), the two weeks as they are."""
+    if changes is None:
+        return current, previous
+    now = current.merge(changes[keys + ['price_now', 'quotes_now', 'packages']], on=keys, how='left')
+    now['price'] = now['price_now'].fillna(now['price'])
+    if 'observation_count' in now:
+        now['observation_count'] = now['quotes_now'].fillna(now['observation_count'])
+    now = now.drop(columns=['price_now', 'quotes_now']).rename(columns={'packages': '_packages'})
+    before = previous.merge(changes[keys + ['price_before', 'quotes_before']], on=keys, how='left').merge(
+        current[keys].drop_duplicates(), on=keys, how='left', indicator='_sold_now'
+    )
+    before = before[~(before['_sold_now'].eq('both') & before['price_before'].isna())].copy()
+    before['price'] = before['price_before'].fillna(before['price'])
+    if 'observation_count' in before:
+        before['observation_count'] = before['quotes_before'].fillna(before['observation_count'])
+    return now, before.drop(columns=['price_before', 'quotes_before', '_sold_now'])
+
+
+def join_packages(values):
+    """The packages compared in several regions, once each and in order; None when no region names one."""
+    found = {part for value in values if isinstance(value, str) for part in value.split(PACKAGE_SEPARATOR)}
+    return PACKAGE_SEPARATOR.join(sorted(found)) if found else None
+
+
+def package_label(packages):
+    """A package as a person reads it: «bandeja 18 kilos», without the source's «$/»."""
+    if not isinstance(packages, str) or not packages:
+        return ''
+    return PACKAGE_SEPARATOR.join(part.removeprefix('$/') for part in packages.split(PACKAGE_SEPARATOR))
+
+
+def package_note(row):
+    """D-522: the package a row compares, under the product; a price per kilo sold by the kilo says nothing new."""
+    label = package_label(row.get('_packages'))
+    if not label or label == row.get('normalized_unit'):
+        return ''
+    why = i18n.tr(
+        'Solo se compara el mismo envase en las dos semanas, por eso este precio puede diferir del de Consultas SQL.'
+    )
+    text = f'{i18n.tr("Envase comparado")}: {label}'
+    return f'<span class="mock-package" title="{esc(text)}. {esc(why)}">{esc(text)}</span>'
 
 
 def compare_week(current, previous, keys):
@@ -927,6 +976,7 @@ def calculation_detail(row, week_label, previous_label, published):
         'now': f'sin precio publicado la semana {this_week}',
         'before': f'sin precio publicado la semana {before}',
         'both': 'sin precio publicado en las dos semanas',
+        'package': 'cambió de envase: sin un envase común en las dos semanas',
     }
     left = (
         '<p class="mock-calc-out"><b>Fuera del promedio</b></p><ul class="mock-calc-out">'
@@ -979,6 +1029,7 @@ def products_table(
                 f'<small>{esc(data_terms.term(row["quality"]))} · $/{esc(data_terms.term(row["normalized_unit"]))}'
                 + (' · 1 cotización' if row.get('_single_quote') else '')
                 + '</small>'
+                + package_note(row)
                 + calculation_detail(row, week_label, previous_label, published)
                 if row.get('quality')
                 else ''
@@ -1039,13 +1090,13 @@ def coverage_note(model, quality_link, methodology_link, family=None):
         detail = (
             f'<strong>Cobertura · {esc(short_family(family))}:</strong> {number(stats["available"])} precios '
             f'esta semana; {number(stats["comparable"])} con comparación válida, los de la tabla. '
-            f'Cada variación compara las mismas regiones en ambas semanas; en {number(stats["coverage_changed"])} '
+            f'Cada variación compara las mismas regiones y el mismo envase en ambas semanas; en {number(stats["coverage_changed"])} '
             f'cambios se dejaron fuera las regiones con precio en una sola semana. {number(stats["single_quote"])} cambios apoyados '
             'en una sola cotización van al final del orden con la marca «1 cotización». '
         )
     else:
         coverage = (
-            'Cada variación nacional compara las mismas regiones en ambas semanas; '
+            'Cada variación nacional compara las mismas regiones y el mismo envase en ambas semanas; '
             f'en {model["coverage_changed"]} cambios se dejaron fuera las regiones con precio en una sola semana. '
             f'{model.get("single_quote", 0)} cambios apoyados en una sola cotización van al final del orden y llevan la marca «1 cotización».'
             if model['national']
@@ -1129,7 +1180,7 @@ def family_tables(model, count, order):
 
 def panels(model, scope, focus_link, data_link, history_link, order, count, quality_link, methodology_link):
     coverage = (
-        'Cada variación nacional compara las mismas regiones en ambas semanas; '
+        'Cada variación nacional compara las mismas regiones y el mismo envase en ambas semanas; '
         f'en {model["coverage_changed"]} cambios se dejaron fuera las regiones con precio en una sola semana. '
         f'{model.get("single_quote", 0)} cambios apoyados en una sola cotización van al final del orden y llevan la marca «1 cotización».'
         if model['national']

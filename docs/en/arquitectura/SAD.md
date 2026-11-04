@@ -184,6 +184,7 @@ Each table of the DuckDB database, its role and its columns.
 | Table | Role | Content |
 |---|---|---|
 | `weekly_price` | Facts | One price per week, product, region, channel and unit |
+| `weekly_same_package` | Facts | The change of each price against the week before, in the same package (D-522) |
 | `dim_product` | Dimension | Product, variety, quality and family |
 | `dim_region` | Dimension | Regions with prices |
 | `dim_channel` | Dimension | Sales channels and their source |
@@ -250,6 +251,23 @@ Each table of the DuckDB database, its role and its columns.
 | `year` | BIGINT | | Year of the Monday |
 | `season` | VARCHAR | | Season in Chile: `verano`, `otoño`, `invierno` or `primavera` (summer, autumn, winter or spring) |
 
+#### weekly_same_package
+
+The change of each price against the week before, by region and only in the packages sold both weeks (D-522, RN-15). Everything that shows a variation reads this table; `weekly_price` stays the level of the price. A price without a package in common in the two weeks has no row: it is left out of the comparison.
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `week_start` | VARCHAR | FK → `dim_date` | Monday of the week compared with the one before |
+| `product_id` | BIGINT | FK → `dim_product` | Product |
+| `region_id` | INTEGER | FK → `dim_region` | Region |
+| `channel_id` | BIGINT | FK → `dim_channel` | Channel |
+| `normalized_unit` | VARCHAR |  | Normalized unit |
+| `price_now` | DOUBLE |  | Price of the week, in the packages in common |
+| `price_before` | DOUBLE |  | Price of the week before, in the same packages |
+| `quotes_now` | BIGINT |  | Quotes of the week in those packages |
+| `quotes_before` | BIGINT |  | Quotes of the week before in those packages |
+| `packages` | VARCHAR |  | The packages compared, as ODEPA writes them |
+
 #### latest_by_source
 
 The last two weeks of each source, without the cut of D-356. Only step 2, Channel, of Weekly reads it (D-494); the Weekly dashboard and the indicators read `weekly_price`.
@@ -268,6 +286,11 @@ The last two weeks of each source, without the cut of D-356. Only step 2, Channe
 | `normalized_unit` | VARCHAR |  | Normalized unit; empty if it cannot be converted |
 | `price` | DOUBLE |  | Weekly price in nominal pesos, per normalized unit |
 | `observation_count` | BIGINT |  | Number of quotes of the week |
+| `same_package_now` | DOUBLE |  | Price of the week in the packages in common with the one before (D-522) |
+| `same_package_before` | DOUBLE |  | Price of the week before in those packages |
+| `same_package_quotes_now` | BIGINT |  | Quotes of the week in those packages |
+| `same_package_quotes_before` | BIGINT |  | Quotes of the week before in those packages |
+| `same_packages` | VARCHAR |  | The packages compared |
 | `flag` | VARCHAR |  | Empty if the price enters the calculation; `ATIPICO` or `UNIDAD_NO_CONVERTIBLE` if it stays out |
 
 **CPI**
@@ -414,7 +437,7 @@ The page «Settings» is also the author's only (D-409). It shows on one screen 
 
 | Measure | Value | Origin |
 |---|---|---|
-| DuckDB database | About 14 MB in the DuckDB database | Size of `etl/datos.duckdb` |
+| DuckDB database | About 29 MB in the DuckDB database | Size of `etl/datos.duckdb` |
 | Data | Volume and coverage of the last load | [PRD, section 6](../negocio/PRD.md#6-scope) |
 | Frequency | One load per week | [RF-01](../negocio/PRD.md#5-requirements) |
 | Users | One public, read-only panel | [PRD, section 3](../negocio/PRD.md#3-who-it-is-for) |
@@ -442,7 +465,7 @@ With public, weekly and small data, read by a single panel, a cloud data warehou
 
 | Criterion | Today | Threshold |
 |---|---|---|
-| Volume | About 14 MB | Several GB: sales by store and day, costs, inventory |
+| Volume | About 29 MB | Several GB: sales by store and day, costs, inventory |
 | Users | One read-only panel | Several teams or BI tools on the same data |
 | Access | Public | Permissions per person or sensitive data |
 | Freshness | Weekly | Several loads a day or real time |

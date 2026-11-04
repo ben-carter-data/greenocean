@@ -77,6 +77,7 @@ El data warehouse (`etl/datos.duckdb`, la base servida) es un modelo estrella: u
 | RN-12 | La conserva, la marca `ATIPICO` y la deja fuera de los indicadores. | Un precio 5 veces mayor o menor que el resto esa semana suele ser un error de digitación. | — |
 | RN-13 | Le quita espacios repetidos o no separables. | Un espacio invisible distinto crea dos productos donde hay uno. | En el archivo 2026, «Pavo Pechuga s/hueso» trae un espacio no separable en 546 filas; en la base queda con un espacio normal. |
 | RN-14 | Reconstruye la tabla completa en cada ejecución y revisa que no haya claves repetidas. | Ejecutar dos veces la misma semana no puede duplicar precios. | — |
+| RN-15 | Compara cada precio con la semana anterior solo en los envases vendidos las dos semanas. | Un cambio de envase no es un cambio de precio. Sin un envase común, el precio queda fuera de la comparación (D-522). | Kiwi Hayward Especial mayorista, semana del 26 de octubre de 2026: subió +8,8 % en el mismo envase, no +25,6 %. |
 
 ## Consultas SQL
 

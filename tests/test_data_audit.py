@@ -286,7 +286,7 @@ def test_d327_each_row_calculation_is_rebuilt_from_the_regions_priced_in_both_we
         # Used plus left out are every region the source publishes, each one once, each exclusion with its reason.
         names = [name for name, *_ in used] + [name for name, _ in out]
         assert len(names) == published == len(set(names))
-        assert {reason for _, reason in out} <= {"now", "before", "both"}
+        assert {reason for _, reason in out} <= {"now", "before", "both", "package"}  # D-522
         checked += 1
     assert checked > 100
     # Arica is priced the week before and not the week of 12-10 for the Zapallo Camote of the wholesale channel.

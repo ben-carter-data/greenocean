@@ -35,6 +35,19 @@ def late_week(frame: pd.DataFrame, source: str) -> str | None:
     return str(date.fromisoformat(own[0]) + timedelta(days=7))
 
 
+def same_package_matches(matched: pd.DataFrame) -> pd.DataFrame:
+    """D-522, RN-15: the prices of two weeks of one region, as a comparison reads them: in the same package; a price
+    without a package in common is left out. A base older than the rule has no such columns: the rows stay as they are."""
+    if "same_package_now" not in matched:
+        return matched
+    kept = matched[matched["same_package_now"].notna()].copy()
+    kept["price"], kept["price_before"] = kept["same_package_now"], kept["same_package_before"]
+    if "observation_count_before" in kept:
+        kept["observation_count"] = kept["same_package_quotes_now"]
+        kept["observation_count_before"] = kept["same_package_quotes_before"]
+    return kept
+
+
 def build_rows(frame: pd.DataFrame, source: str) -> tuple[str | None, str | None, list[dict[str, Any]]]:
     """(latest week, previous week, rows) of one source. Each row is one product and channel: the average of the
     regions with a price in both weeks (the variation compares those), the national price of each week and the regions
@@ -48,7 +61,9 @@ def build_rows(frame: pd.DataFrame, source: str) -> tuple[str | None, str | None
     ]
     current, previous = valid[valid["week_start"] == now], valid[valid["week_start"] == before]
     regional = ["region_id", "region"]
-    matched = current.merge(previous[KEY + regional + ["price"]], on=KEY + regional, suffixes=("", "_before"))
+    matched = same_package_matches(
+        current.merge(previous[KEY + regional + ["price"]], on=KEY + regional, suffixes=("", "_before"))
+    )
     national_now = current.groupby(KEY)["price"].mean()
     national_before = previous.groupby(KEY)["price"].mean()
     rows = []
@@ -71,6 +86,7 @@ def build_rows(frame: pd.DataFrame, source: str) -> tuple[str | None, str | None
             _same_before=float(same_before),
             variation=float(same_now / same_before - 1),
             _regions=(up, down, sorted(changes)),
+            _packages=home_mockup.join_packages(group["same_packages"]) if "same_packages" in group else None,
         )
         rows.append(row)
     rows.sort(key=lambda row: (-abs(row["variation"]), row["product"]))

@@ -592,7 +592,7 @@ ATTRIBUTION_TEXT = (
     "Agricultura de Chile, licencia Creative Commons Atribución; IPC de alimentos: Instituto "
     "Nacional de Estadísticas (INE). Este proyecto no es un producto oficial de ODEPA ni del INE. "
     "Lectura de los datos: el precio nacional es un promedio simple de las regiones, sin ponderar "
-    "por población o ventas; cada variación semanal compara las mismas regiones en ambas semanas. "
+    "por población o ventas; cada variación semanal compara las mismas regiones y el mismo envase en ambas semanas. "
     "Los indicadores describen el histórico; no predicen precios. Los precios se reconstruyen "
     "desde la fuente en las pruebas automáticas."
 )
@@ -2649,8 +2649,12 @@ def read_channel_national_prices(database_version, channel):
     for before, now in zip(weeks, weeks[1:]):
         if (pd.Timestamp(now) - pd.Timestamp(before)).days != 7:
             continue
-        matched = part[part["week_start"] == now].merge(
-            part[part["week_start"] == before][keys + ["price", "observation_count"]], on=keys, suffixes=("", "_before")
+        matched = channel_latest.same_package_matches(
+            part[part["week_start"] == now].merge(
+                part[part["week_start"] == before][keys + ["price", "observation_count"]],
+                on=keys,
+                suffixes=("", "_before"),
+            )
         )
         grouped = matched.groupby(NATIONAL_KEY[1:], as_index=False).agg(
             same_region_price=("price", "mean"),
@@ -3326,6 +3330,9 @@ def read_kpi_observation(database_version, identifier):
             ("Periodo del resultado", "Semana " + weeks.week_range(row["week_start"], year=True)),
         ]
         if identifier == "K5":
+            rows = lag.attach_same_package_changes(  # D-522
+                rows, queries.run_query_for_key("same_package_changes", project.EXAMPLE_KEY)
+            )
             best = lag.find_lag(lag.correlate_by_lag(rows)) if lag.has_enough_weeks(rows) else None
             result[1] = (
                 "Periodo del resultado",
@@ -3827,6 +3834,48 @@ def read_cached_week_snapshot_all(database_version, week):
     return add_display_columns(queries.run_sql(sql, parameters=(week,)))
 
 
+@st.cache_data(show_spinner=False)
+def read_cached_same_package_week(database_version, week):
+    """D-522: the changes of one week against the week before, by region and in the same package."""
+    sql = "SELECT * FROM (" + queries.read_query_body("same_package_changes") + ") WHERE week_start = ?"
+    return queries.run_sql(sql, parameters=(week,))
+
+
+def read_channel_same_package_week(database_version, channel, week):
+    """D-522: the same, for a channel page, from its own latest weeks; None on a base older than the rule."""
+    part = read_channel_frame(database_version, channel)
+    if "same_package_now" not in part:
+        return None
+    part = part[(part["week_start"] == week) & part["same_package_now"].notna()]
+    return part.rename(
+        columns={
+            "same_package_now": "price_now",
+            "same_package_before": "price_before",
+            "same_package_quotes_now": "quotes_now",
+            "same_package_quotes_before": "quotes_before",
+            "same_packages": "packages",
+        }
+    )
+
+
+def read_compared_weeks(database_version, week):
+    """D-522, RN-15: (regional prices of a week, of the week before), as every comparison of the page reads them: in
+    the same package. The prices of the week as they were published stay in read_cached_week_snapshot."""
+    previous_week = f"{pd.Timestamp(week) - pd.Timedelta(days=7):%Y-%m-%d}"
+    channel = current_channel()
+    changes = (
+        read_cached_same_package_week(database_version, week)
+        if channel is None
+        else read_channel_same_package_week(database_version, channel, week)
+    )
+    return home_mockup.same_package_pair(
+        read_cached_week_snapshot(database_version, week),
+        read_cached_week_snapshot(database_version, previous_week),
+        changes,
+        queries.KEY_COLUMNS + ["channel", "region"],
+    )
+
+
 def read_cached_market_snapshot(database_version):
     """The regional index (K3) of the latest week."""
     return read_cached_week_snapshot(database_version, f"{read_latest_week():%Y-%m-%d}")
@@ -3988,13 +4037,15 @@ def compare_same_regions(variations, snapshot, prior, join):
     has no valid comparison. _coverage_changed marks the keys that left regions out.
     """
     regional = join + ['region', 'price', 'observation_count']
-    matched = snapshot[regional].merge(prior[regional], on=join + ['region'], suffixes=('', '_before'))
+    named = regional + (['_packages'] if '_packages' in snapshot else [])  # D-522: the packages each region compares
+    matched = snapshot[named].merge(prior[regional], on=join + ['region'], suffixes=('', '_before'))
     same = matched.groupby(join, as_index=False).agg(
         _same_now=('price', 'mean'),
         _same_before=('price_before', 'mean'),
         _same_regions=('region', 'nunique'),
         _quotes_now=('observation_count', 'sum'),
         _quotes_before=('observation_count_before', 'sum'),
+        **({'_packages': ('_packages', home_mockup.join_packages)} if '_packages' in matched else {}),
     )
     regions_now = snapshot.groupby(join).region.nunique().rename('_regions_now')
     regions_before = prior.groupby(join).region.nunique().rename('_regions_before')
@@ -4053,8 +4104,7 @@ def read_home_model(week, group, region, count, order='Mayores cambios', product
         previous = previous[
             (previous['product_group'] == family) & (previous['product'] == product) & (previous['variety'] == variety)
         ]
-    snapshot = read_cached_week_snapshot(version, week)
-    prior = read_cached_week_snapshot(version, previous_week)
+    snapshot, prior = read_compared_weeks(version, week)
     if group != ALL_VALUES:
         snapshot = snapshot[snapshot['product_group'] == group]
         prior = prior[prior['product_group'] == group]
@@ -4257,10 +4307,7 @@ def build_regional_movement_model(current, previous):
 def read_regional_movement_model(week, group=ALL_VALUES, product_filter=None):
     """All available regions under the family/product filters of the dashboard."""
     version = get_database_version()
-    week_date = pd.Timestamp(week)
-    previous_week = f'{week_date - pd.Timedelta(days=7):%Y-%m-%d}'
-    current = read_cached_week_snapshot(version, week).copy()
-    previous = read_cached_week_snapshot(version, previous_week).copy()
+    current, previous = read_compared_weeks(version, week)
     if group != ALL_VALUES:
         current = current[current['product_group'] == group]
         previous = previous[previous['product_group'] == group]
@@ -4359,10 +4406,8 @@ def read_cached_region_directions(database_version, week):
 @st.cache_data
 def read_cached_region_directions_in(database_version, week, channel):
     """{(product key, channel): (regions up, regions down, regions with their change)} between two consecutive weeks."""
-    week_date = pd.Timestamp(week)
     join = queries.KEY_COLUMNS + ['channel']
-    current = read_cached_week_snapshot(database_version, week)
-    previous = read_cached_week_snapshot(database_version, f'{week_date - pd.Timedelta(days=7):%Y-%m-%d}')
+    current, previous = read_compared_weeks(database_version, week)
     columns = join + ['region', 'price']
     compared = home_mockup.compare_week(
         current[columns].rename(columns={'price': 'national_price'}),
@@ -4397,13 +4442,13 @@ def read_cached_region_calculation_in(database_version, week, channel):
     («now»), none the week before («before») or in neither («both»). Nothing is filled in."""
     week_date = pd.Timestamp(week)
     join = queries.KEY_COLUMNS + ['channel']
-    current = read_cached_week_snapshot(database_version, week)
-    previous = read_cached_week_snapshot(database_version, f'{week_date - pd.Timedelta(days=7):%Y-%m-%d}')
+    current, previous = read_compared_weeks(database_version, week)
+    published_before = read_cached_week_snapshot(database_version, f'{week_date - pd.Timedelta(days=7):%Y-%m-%d}')
     published = sorted(queries.run_sql('SELECT region FROM dim_region')['region'])
     columns = join + ['region', 'price']
     both = current[columns].merge(previous[columns], on=join + ['region'], suffixes=('_now', '_before'))
     now_regions = current.groupby(join).region.agg(set)
-    before_regions = previous.groupby(join).region.agg(set)
+    before_regions = published_before.groupby(join).region.agg(set)
     calculation = {}
     for key, group in both.groupby(join):
         used = sorted(
@@ -4411,13 +4456,20 @@ def read_cached_region_calculation_in(database_version, week, channel):
             for region, before, now in zip(group['region'], group['price_before'], group['price_now'])
         )
         in_now, in_before = now_regions.get(key, set()), before_regions.get(key, set())
+        compared = set(group['region'])
         out = [
             (
                 home_mockup.short_region(region),
-                'before' if region in in_now else 'now' if region in in_before else 'both',
+                'package'  # D-522: a price both weeks, but no package in common
+                if region in in_now and region in in_before
+                else 'before'
+                if region in in_now
+                else 'now'
+                if region in in_before
+                else 'both',
             )
             for region in published
-            if not (region in in_now and region in in_before)
+            if region not in compared
         ]
         calculation[key] = {'used': used, 'out': sorted(out)}
     return calculation, len(published)

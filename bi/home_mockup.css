@@ -833,3 +833,5 @@ ul.mock-calc-out li em {font-style:normal;}
 .stApp .st-key-dialog_products_head {flex-wrap:nowrap !important;gap:8px !important;}
 .stApp .st-key-dialog_products_head > * {flex:0 0 auto;width:auto !important;}
 .stApp .st-key-dialog_products_head > :has(.mock-products-heading) {flex:1 1 0 !important;min-width:0;}
+/* D-522: the package a row compares, under the product. */
+.mock-package {display:inline-block;max-width:min(52%,330px);margin-left:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;vertical-align:bottom;font-size:10.5px;line-height:1.3;color:var(--mock-muted);cursor:help;}

@@ -181,7 +181,7 @@ Cada falla diagnosticada y resuelta se anota en `docs/calidad/plan_mitigacion.js
 
 | Límite | Valor | Fuente |
 |---|---|---|
-| Tamaño máximo de un archivo de release | 2 GB; la Base DuckDB pesa unos 14 MB | Documentación de GitHub sobre releases, consultada el 24-10-2026 |
+| Tamaño máximo de un archivo de release | 2 GB; la Base DuckDB pesa unos 29 MB | Documentación de GitHub sobre releases, consultada el 24-10-2026 |
 | Caché de GitHub Actions | Se borra si no se usa en 7 días; esa semana el job descarga todos los años | Documentación de GitHub Actions, consultada el 24-10-2026 |
 | Consultas a la API de GitHub sin token | 60 por hora | Documentación de la API de GitHub |
 | Arquitectura en la nube | No se adopta mientras los datos sean públicos, semanales y pequeños | [ADR-31 · No usar un data warehouse en la nube](../arquitectura/ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube) y [Capacidad y crecimiento del SAD](../arquitectura/SAD.md#9-capacidad-y-crecimiento) |

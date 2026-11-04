@@ -53,10 +53,11 @@ def test_d509_the_rows_carry_the_figures_of_the_table_and_the_name_odepa_publish
     rows, _ = build()
     assert [row[1] for row in rows] == ["Kiwi", "Lechuga"]  # the product as ODEPA writes it
     kiwi, lettuce = rows
-    assert kiwi[8:12] == [1598.0, "26 oct – 1 nov", 2008.0, 0.2565]  # the same-region prices the table shows
-    assert lettuce[8] == 820.0 and lettuce[10] == 790.0  # without same regions, the previous and the national
-    assert kiwi[12:14] == [3, 0] and lettuce[12:14] == [None, None]
-    assert kiwi[14] == "" and lettuce[14] == "Sí"
+    assert kiwi[6] == ""  # D-522: without a package named, the column stays empty
+    assert kiwi[9:13] == [1598.0, "26 oct – 1 nov", 2008.0, 0.2565]  # the same-region prices the table shows
+    assert lettuce[9] == 820.0 and lettuce[11] == 790.0  # without same regions, the previous and the national
+    assert kiwi[13:15] == [3, 0] and lettuce[13:15] == [None, None]
+    assert kiwi[15] == "" and lettuce[15] == "Sí"
     assert len(kiwi) == len(price_export.COLUMNS)
 
 
@@ -66,16 +67,16 @@ def test_d509_the_workbook_is_a_table_with_its_filter_its_formats_and_its_notes_
     assert book.sheetnames == ["Datos", "Notas"]
     data = book["Datos"]
     assert data.freeze_panes == "A2"
-    assert list(data.tables) == ["Precios"] and data.tables["Precios"].ref == "A1:O3"
+    assert list(data.tables) == ["Precios"] and data.tables["Precios"].ref == "A1:P3"
     assert data.tables["Precios"].autoFilter is not None
     assert not data.merged_cells.ranges and not book["Notas"].merged_cells.ranges
     headings = [cell.value for cell in data[1]]
     assert headings == [name for name, _ in price_export.COLUMNS]
     assert (
-        data["I2"].number_format == price_export.MONEY_FORMAT and data["K2"].number_format == price_export.MONEY_FORMAT
+        data["J2"].number_format == price_export.MONEY_FORMAT and data["L2"].number_format == price_export.MONEY_FORMAT
     )
-    assert data["L2"].number_format == price_export.PERCENT_FORMAT and data["L2"].value == 0.2565
-    assert data["M2"].number_format == "0" and data["M2"].value == 3
+    assert data["M2"].number_format == price_export.PERCENT_FORMAT and data["M2"].value == 0.2565
+    assert data["N2"].number_format == "0" and data["N2"].value == 3
     labels = [row[0].value for row in book["Notas"].iter_rows(min_row=2)]
     assert labels[:2] == ["Semana", "Región"]
     for needle in (
@@ -96,7 +97,7 @@ def test_d509_the_csv_is_the_same_table_in_utf8_with_a_bom():
     assert raw.startswith(b"\xef\xbb\xbf")
     lines = list(csv.reader(io.StringIO(raw.decode("utf-8-sig")), delimiter=";"))
     assert lines[0] == [name for name, _ in price_export.COLUMNS]
-    assert lines[1][1] == "Kiwi" and lines[1][11] == "0.2565" and lines[2][14] == "Sí"
+    assert lines[1][1] == "Kiwi" and lines[1][12] == "0.2565" and lines[2][15] == "Sí"
     assert len(lines) == 3
 
 
@@ -107,7 +108,7 @@ def test_d509_the_file_reads_in_english_except_the_product(monkeypatch):
     assert book.sheetnames == ["Data", "Notes"]
     assert [cell.value for cell in book["Data"][1]][:3] == ["Family", "Product", "Variety"]
     assert book["Data"]["A2"].value == "Fruit" and book["Data"]["B2"].value == "Kiwi"
-    assert book["Data"]["E2"].value == "Wholesale" and book["Data"]["O3"].value == "Yes"
+    assert book["Data"]["E2"].value == "Wholesale" and book["Data"]["P3"].value == "Yes"
     assert book["Notes"]["A2"].value == "Week" and book["Notes"]["A3"].value == "Region"
     assert price_export.build_name("2026-10-26", "todo Chile", "csv") == "greenocean-prices-2026-10-26-todo-chile.csv"
 
@@ -117,6 +118,14 @@ def test_d509_the_name_of_the_file_says_the_week_and_the_scope():
         price_export.build_name("2026-10-26", "Región de Ñuble", "xlsx")
         == "greenocean-precios-2026-10-26-region-de-nuble.xlsx"
     )
+
+
+def test_d522_the_file_names_the_package_each_price_compares():
+    row = {**ROWS[0], "_packages": "$/bandeja 10 kilos · $/kilo (en bins de 450 kilos)"}
+    built = price_export.build_rows([row], "26 oct – 1 nov", "19–25 oct", "todo Chile")[0]
+    assert built[6] == "bandeja 10 kilos · kilo (en bins de 450 kilos)"
+    assert price_export.COLUMNS[6][0] == "Envase comparado"
+    assert "bandeja 10 kilos" in price_export.build_csv([built]).decode("utf-8-sig")
 
 
 def test_d509_every_text_of_the_file_has_its_english():

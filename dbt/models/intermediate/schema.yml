@@ -13,6 +13,9 @@ models:
     description: >
       Un precio por semana (lunes, RN-08), producto, región, canal y unidad: promedio ponderado
       por los kilos o unidades que trae el volumen en mayorista (RN-07, D-521) y promedio simple al consumidor (RN-09).
+  - name: int_prices__same_package
+    description: >
+      Compara cada precio con la semana anterior solo en los envases vendidos las dos semanas, región por región (D-522, RN-15); sin un envase común, el precio queda fuera de la comparación.
   - name: int_prices__outlier_flagged
     description: >
       Marca ATIPICO el precio que está a más de 5 veces, o a menos de un quinto, de la mediana

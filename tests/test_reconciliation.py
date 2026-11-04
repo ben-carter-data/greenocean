@@ -31,7 +31,8 @@ def calculate_k6_in_python():
 
 def calculate_k5_variations_in_python():
     """Weekly changes of bi/lag.py for every K5 series with 26 weeks or more."""
-    margins = queries.run_query("k1_margin")
+    # D-522: the changes in the same package, as the query reads them
+    margins = lag.attach_same_package_changes(queries.run_query("k1_margin"), queries.run_query("same_package_changes"))
     series_parts = [
         lag.add_weekly_variations(series_rows)
         for _, series_rows in margins.groupby(K5_SERIES_COLUMNS)

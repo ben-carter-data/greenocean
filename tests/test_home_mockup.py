@@ -412,30 +412,27 @@ st.session_state['week']=week
     assert not app.exception
     model = app.session_state['model']
     week = app.session_state['week']
-    # D-144: the national change averages only the regions with a price in both weeks.
-    sql = '''SELECT AVG(a.price) AS current_price, AVG(b.price) AS previous_price
-    FROM weekly_price a JOIN weekly_price b
-    ON b.product_id=a.product_id AND b.channel_id=a.channel_id AND b.normalized_unit=a.normalized_unit
-    AND b.region_id=a.region_id AND b.week_start=strftime(CAST(a.week_start AS DATE) - 7, '%Y-%m-%d')
-    WHERE a.week_start=? AND a.flag IS NULL AND b.flag IS NULL
-    GROUP BY a.product_id, a.channel_id, a.normalized_unit'''
+    # D-144, D-522: the national change averages only the regions with a price in both weeks, in the same package.
+    sql = '''SELECT AVG(price_now) AS current_price, AVG(price_before) AS previous_price
+    FROM weekly_same_package WHERE week_start=?
+    GROUP BY product_id, channel_id, normalized_unit'''
     oracle = queries.run_sql(sql, parameters=[week])
     variation = oracle.current_price / oracle.previous_price - 1
     assert model['counts'] == [int((variation > 0).sum()), int((variation < 0).sum()), int((variation == 0).sum())]
     # D-153: prices shown are each week's national price; when the regions are the same in
     # both weeks they reproduce the change exactly, otherwise the row says so.
     for row in model['rows']:
-        if not row['_coverage_changed']:
-            assert row['national_price'] / row['_previous_price'] - 1 == pytest.approx(row['variation'])
-            assert row['change_amount'] == pytest.approx(row['national_price'] - row['_previous_price'])
+        # D-522: the change is the one of the prices the row shows, those of the same regions and the same package.
+        assert row['_same_now'] / row['_same_before'] - 1 == pytest.approx(row['variation'])
+        assert row['change_amount'] == pytest.approx(row['_same_now'] - row['_same_before'])
     region = app.session_state['regional']
     assert all(row['region'] == 'Región de Coquimbo' for row in region['rows'])
     for row in region['rows']:
         assert row['national_price'] / row['_previous_price'] - 1 == pytest.approx(row['variation'])
-        independent = queries.run_sql(
-            '''SELECT w.price FROM weekly_price w JOIN dim_product p USING(product_id)
+        independent = queries.run_sql(  # D-522: the price of the same package in both weeks
+            '''SELECT w.price_now AS price FROM weekly_same_package w JOIN dim_product p USING(product_id)
             JOIN dim_region r USING(region_id) JOIN dim_channel c USING(channel_id)
-            WHERE w.flag IS NULL AND week_start=? AND p.product_group=? AND p.product=?
+            WHERE week_start=? AND p.product_group=? AND p.product=?
             AND p.variety=? AND p.quality=? AND w.normalized_unit=? AND c.channel=? AND r.region=?''',
             parameters=[week] + [row[k] for k in queries.KEY_COLUMNS + ['channel', 'region']],
         )

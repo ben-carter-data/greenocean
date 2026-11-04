@@ -367,7 +367,7 @@ def build_map_html(palette, counts, layers, tests, sizes=None):
         "dbt": f"Una base de trabajo con {models} modelos en tres capas (staging {layers.get('staging', 0)}, "
         f"intermedio {layers.get('intermediate', 0)} y marts {layers.get('marts', 0)}) y {tests} pruebas "
         "de datos de dbt.",
-        "served": "La base que el panel lee: 13 tablas, agrupadas por quién las escribe.",
+        "served": "La base que el panel lee: 14 tablas, agrupadas por quién las escribe.",
     }
     nodes, tips = [], []
     for key, kind, row, x_range, slug, name, file in STORES:

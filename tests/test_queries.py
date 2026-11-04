@@ -70,6 +70,7 @@ def test_queries_file_has_one_named_query_per_indicator():
         "quality_outliers",
         "k6_usual_range_sql",
         "k5_weekly_variations_sql",
+        "same_package_changes",
         "quality_week_range",
         "quality_rejected_rows",
         "quality_unconvertible_units",

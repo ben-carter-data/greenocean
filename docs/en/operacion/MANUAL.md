@@ -181,7 +181,7 @@ Every diagnosed and solved failure is recorded in `docs/calidad/plan_mitigacion.
 
 | Limit | Value | Source |
 |---|---|---|
-| Maximum size of a release file | 2 GB; the DuckDB database weighs about 14 MB | GitHub documentation on releases, read on 2026-10-24 |
+| Maximum size of a release file | 2 GB; the DuckDB database weighs about 29 MB | GitHub documentation on releases, read on 2026-10-24 |
 | GitHub Actions cache | Deleted if it is not used for 7 days; that week the job downloads every year | GitHub Actions documentation, read on 2026-10-24 |
 | GitHub API requests without a token | 60 per hour | GitHub API documentation |
 | Cloud architecture | Not adopted while the data is public, weekly and small | [ADR-31 · Do not use a cloud data warehouse](../arquitectura/ADR.md#adr-31--do-not-use-a-cloud-data-warehouse) and [Capacity and growth in the SAD](../arquitectura/SAD.md#9-capacity-and-growth) |

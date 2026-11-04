@@ -182,8 +182,10 @@ def test_each_test_counts_once_so_the_badges_add_up_to_the_build_total():
     assert not sources & set(counts)
 
 
-def test_d380_the_marts_column_fits_ten_tiles_without_touching():
-    marts = 10  # the nine of before and latest_by_source (D-365)
-    pitch = min(lineage.MART_PITCH, (lineage.LAST_ROW - lineage.FIRST_ROW) / (marts - 1))
-    assert pitch >= lineage.TILE + 8  # a mart's hit box is 62 tall; the tile itself is 54
-    assert lineage.LAST_ROW - 33 + (lineage.TILE + 8) <= lineage.LEGEND_Y - 16  # and the last one ends above the legend
+def test_d380_the_marts_column_fits_eleven_tiles_without_touching():
+    marts = 11  # the nine of before, latest_by_source (D-365) and weekly_same_package (D-522)
+    pitch = min(lineage.MART_PITCH, (lineage.LAST_MART_ROW - lineage.FIRST_ROW) / (marts - 1))
+    assert pitch >= lineage.TILE + 6  # a mart's hit box is 60 tall; the tile itself is 54
+    assert (
+        lineage.LAST_MART_ROW - 33 + (lineage.TILE + 6) <= lineage.LEGEND_Y - 16
+    )  # and the last one ends above the legend

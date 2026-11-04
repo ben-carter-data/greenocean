@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.60 |
+| Versión | 3.61 |
 | Fecha | 04-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -280,3 +280,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.58 | 04-11-2026 | «Relaciones» en Consultas SQL dice lo mismo que «Modelo de datos»: las mismas relaciones y claves (RF-06, D-519) |
 | 3.59 | 04-11-2026 | Cada unidad de venta de ODEPA se lee como se revisó a mano: «cien» y «canastillos» reciben precio, y una docena sin lectura segura queda sin él (D-520) |
 | 3.60 | 04-11-2026 | El precio mayorista semanal pesa los kilos o unidades que trae el volumen, no los envases contados (D-521) |
+| 3.61 | 04-11-2026 | Toda variación semanal compara solo el mismo envase, y el paso 4 y el Excel dicen cuál (D-522) |

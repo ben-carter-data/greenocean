@@ -28,6 +28,7 @@ COLUMNS: tuple[tuple[str, str], ...] = (
     ("Calidad", "text"),
     ("Canal", "text"),
     ("Unidad", "text"),
+    ("Envase comparado", "text"),  # D-522: why this price can differ from the one in «Consultas SQL»
     ("Alcance", "text"),
     ("Semana anterior", "week"),
     ("Precio anterior", "money"),
@@ -72,6 +73,7 @@ def build_rows(rows, week_label, previous_label, scope):
                 data_terms.term(row.get("quality")),
                 data_terms.term(row.get("channel")),
                 data_terms.term(row.get("normalized_unit")),
+                home_mockup.package_label(row.get("_packages")),
                 scope,
                 previous_label,
                 before,
@@ -101,7 +103,7 @@ def build_notes(week_label, filters, updated, model, published=None):
         (
             tr("Cálculo de la variación"),
             tr(
-                "Cada variación compara las mismas regiones en ambas semanas; un precio que falta en una de las dos "
+                "Cada variación compara las mismas regiones y el mismo envase en ambas semanas; un precio que falta en una de las dos "
                 "queda fuera, sin rellenar."
             ),
         ),

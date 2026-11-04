@@ -72,5 +72,7 @@ models:
         data_tests: [not_null]
   - name: ine_ipc_source
     description: "Las filas del IPC tal como se leyeron del INE, guardadas en la base publicada para rehacer la capa bronce si el INE no responde una semana."
+  - name: weekly_same_package
+    description: "El cambio de cada precio contra la semana anterior, por región y solo en el mismo envase, entre precios válidos de las dos semanas (D-522, RN-15); todo lo que muestra una variación lee esta tabla."
   - name: latest_by_source
     description: "Las dos últimas semanas de cada fuente, sin el corte de la semana común, para la página «Último dato por canal» (D-365); el Dashboard y los indicadores siguen con la última semana completa en ambas fuentes."

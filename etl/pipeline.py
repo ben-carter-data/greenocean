@@ -44,6 +44,7 @@ SERVING_TABLES = [
     "ipc_weekly",
     "ine_ipc_source",
     "latest_by_source",  # D-365: each source's own last two weeks, for «Último dato por canal»
+    "weekly_same_package",  # D-522: every change of a price against the week before, in the same package
 ]
 DBT_TARGET_DIR = DBT_DIR / "target"
 # The lineage and the test results of the last dbt build travel with the serving file:

@@ -21,18 +21,37 @@ MINIMUM_PAIRS = 3
 # approximation of 95 % confidence. Below it, the highest correlation is noise.
 SIGNIFICANCE_FACTOR = 2
 VARIATION_COLUMNS = {"wholesale_price": "wholesale_variation", "consumer_price": "consumer_variation"}
+WHOLESALE_CHANNEL = "Mayorista"
 # endregion
 
 
 # region Lag
+def attach_same_package_changes(series_rows, changes):
+    """D-522: the weekly changes of a K5 series as every other change of the panel: in the same package. A week without
+    a package in common has no change, as a week after a gap."""
+    keys = ["week_start", "product_group", "product", "variety", "quality", "normalized_unit", "region"]
+    moved = changes.assign(
+        variation=changes["price_now"] / changes["price_before"] - 1, week_start=pd.to_datetime(changes["week_start"])
+    )
+    series_rows = series_rows.assign(week_start=pd.to_datetime(series_rows["week_start"]))
+    wholesale = moved.loc[moved["channel"] == WHOLESALE_CHANNEL, keys + ["variation"]]
+    consumer = moved.loc[moved["channel"] != WHOLESALE_CHANNEL, keys + ["channel", "variation"]]
+    return series_rows.merge(wholesale.rename(columns={"variation": "wholesale_variation"}), on=keys, how="left").merge(
+        consumer.rename(columns={"variation": "consumer_variation"}), on=keys + ["channel"], how="left"
+    )
+
+
 def add_weekly_variations(series_rows):
     """Add the change of each price against the week before, as a fraction.
 
     A change measured across a gap of several weeks is not a weekly change,
-    so it stays empty, as in the K6 alerts.
+    so it stays empty, as in the K6 alerts. Rows that already carry their changes
+    in the same package keep them (D-522).
     """
     rows = series_rows.assign(week_start=pd.to_datetime(series_rows["week_start"]))
     rows = rows.sort_values("week_start")
+    if set(VARIATION_COLUMNS.values()) <= set(rows.columns):
+        return rows
     is_consecutive_week = rows["week_start"].diff().dt.days == DAYS_IN_A_WEEK
     for price_column, variation_column in VARIATION_COLUMNS.items():
         variation = rows[price_column] / rows[price_column].shift(1) - 1

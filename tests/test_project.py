@@ -23,7 +23,7 @@ def test_markdown_table_keeps_escaped_pipes_inside_a_cell():
 
 def test_project_guide_explains_every_rule_indicator_and_table():
     rules = {row["Regla"] for row in project.read_guide_table("Reglas de calidad")}
-    assert rules == {f"RN-{number:02d}" for number in range(1, 15)}
+    assert rules == {f"RN-{number:02d}" for number in range(1, 16)}
     assert {row["KPI"] for row in project.read_guide_table("KPI")} == {f"K{number}" for number in range(1, 9)}
     definitions = project.parse_definitions(
         project.read_section(project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos")

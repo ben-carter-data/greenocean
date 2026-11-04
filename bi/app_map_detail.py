@@ -1046,7 +1046,15 @@ def inside_duckdb(facts):
     return {
         "columns": [
             ("Dimensiones", [tab("dim_product"), tab("dim_region"), tab("dim_channel"), tab("dim_date")]),
-            ("Hechos", [tab("weekly_price", "Un precio por semana, producto, región, canal y unidad.")]),
+            (
+                "Hechos",
+                [
+                    tab("weekly_price", "Un precio por semana, producto, región, canal y unidad."),
+                    tab(
+                        "weekly_same_package", "El cambio de cada precio contra la semana anterior, en el mismo envase."
+                    ),
+                ],
+            ),
             ("IPC", [tab("ipc_monthly"), tab("ipc_weekly"), tab("ine_ipc_source")]),
             ("Última semana", [tab("latest_by_source", "Las dos últimas semanas de cada fuente (D-365).")]),
             ("Registro de la carga", [tab("etl_run"), tab("rejection"), tab("dbt_node"), tab("dbt_result")]),

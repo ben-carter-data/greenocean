@@ -172,20 +172,16 @@ ORDER BY weekly_prices DESC, dim_product.product;
 -- variation and its usual range are computed in bi/alerts.py, because SQLite
 -- has no standard deviation. D-144: the change against the week before uses only
 -- the regions with a price in both weeks (same_region_*), so a region that starts
--- or stops reporting does not look like a price movement.
+-- or stops reporting does not look like a price movement. D-522: and only the packages
+-- sold in both weeks, so a change of package does not look like one either.
 WITH same_regions AS (
-    SELECT now.week_start, now.product_id, now.channel_id, now.normalized_unit,
-           AVG(now.price) AS same_region_price, AVG(before.price) AS same_region_previous_price,
+    SELECT week_start, product_id, channel_id, normalized_unit,
+           AVG(price_now) AS same_region_price, AVG(price_before) AS same_region_previous_price,
            -- D-158: the quotes behind each week of that comparison.
-           SUM(now.observation_count) AS same_region_quotes,
-           SUM(before.observation_count) AS same_region_previous_quotes
-    FROM weekly_price AS now
-    JOIN weekly_price AS before
-      ON before.product_id = now.product_id AND before.channel_id = now.channel_id
-     AND before.normalized_unit = now.normalized_unit AND before.region_id = now.region_id
-     AND before.week_start = strftime(CAST(now.week_start AS DATE) - 7, '%Y-%m-%d')
-    WHERE now.flag IS NULL AND before.flag IS NULL
-    GROUP BY now.week_start, now.product_id, now.channel_id, now.normalized_unit
+           SUM(quotes_now) AS same_region_quotes,
+           SUM(quotes_before) AS same_region_previous_quotes
+    FROM weekly_same_package
+    GROUP BY week_start, product_id, channel_id, normalized_unit
 )
 SELECT weekly_price.week_start,
        dim_product.product_group, dim_product.product, dim_product.variety,
@@ -211,23 +207,33 @@ GROUP BY weekly_price.week_start, weekly_price.product_id, weekly_price.channel_
 -- name: k6_regional_weekly_price
 -- D-499: the series of K6 inside each region, for «Semanal» with a region chosen. The same columns as
 -- k6_national_weekly_price, so bi/alerts.py reads both: inside a region there is one price per key, so
--- national_price and same_region_price are that price, and the change compares it with the week before.
+-- national_price and same_region_price are that price, and the change compares it with the week before; D-522: in
+-- the same package, so a week without a package in common has no change.
 SELECT now.week_start, dim_region.region,
        dim_product.product_group, dim_product.product, dim_product.variety,
        dim_product.quality, dim_channel.channel, now.normalized_unit,
        now.price AS national_price,
-       now.price AS same_region_price, before.price AS same_region_previous_price,
-       now.observation_count AS same_region_quotes, before.observation_count AS same_region_previous_quotes
+       COALESCE(change.price_now, now.price) AS same_region_price, change.price_before AS same_region_previous_price,
+       COALESCE(change.quotes_now, now.observation_count) AS same_region_quotes,
+       change.quotes_before AS same_region_previous_quotes
 FROM weekly_price AS now
 JOIN dim_product ON dim_product.product_id = now.product_id
 JOIN dim_channel ON dim_channel.channel_id = now.channel_id
 JOIN dim_region ON dim_region.region_id = now.region_id
-LEFT JOIN weekly_price AS before
-  ON before.product_id = now.product_id AND before.channel_id = now.channel_id
- AND before.normalized_unit = now.normalized_unit AND before.region_id = now.region_id
- AND before.week_start = strftime(CAST(now.week_start AS DATE) - 7, '%Y-%m-%d')
- AND before.flag IS NULL
+LEFT JOIN weekly_same_package AS change
+  ON change.week_start = now.week_start AND change.product_id = now.product_id AND change.channel_id = now.channel_id
+ AND change.normalized_unit = now.normalized_unit AND change.region_id = now.region_id
 WHERE now.flag IS NULL;
+
+-- name: same_package_changes
+-- D-522, RN-15: the change of each price against the week before, by region and in the same package, with its names.
+SELECT change.week_start, dim_product.product_group, dim_product.product, dim_product.variety, dim_product.quality,
+       dim_channel.channel, dim_region.region, change.normalized_unit,
+       change.price_now, change.price_before, change.quotes_now, change.quotes_before, change.packages
+FROM weekly_same_package AS change
+JOIN dim_product ON dim_product.product_id = change.product_id
+JOIN dim_channel ON dim_channel.channel_id = change.channel_id
+JOIN dim_region ON dim_region.region_id = change.region_id;
 
 -- name: k6_usual_range_sql
 -- K6 (P6) in SQL, the alternative to bi/alerts.py (the version the dashboard
@@ -246,18 +252,13 @@ WITH national AS (
              weekly_price.normalized_unit
 ),
 -- D-144: the weekly change over the regions with a price in both weeks; a week
--- without the one before has no such region, so a gap never yields a change.
+-- without the one before has no such region, so a gap never yields a change. D-522: in the same package.
 same_regions AS (
-    SELECT now.week_start, now.product_id, now.channel_id, now.normalized_unit,
-           AVG(now.price) / AVG(before.price) - 1 AS variation,
-           SUM(now.observation_count) AS quotes, SUM(before.observation_count) AS previous_quotes
-    FROM weekly_price AS now
-    JOIN weekly_price AS before
-      ON before.product_id = now.product_id AND before.channel_id = now.channel_id
-     AND before.normalized_unit = now.normalized_unit AND before.region_id = now.region_id
-     AND before.week_start = strftime(CAST(now.week_start AS DATE) - 7, '%Y-%m-%d')
-    WHERE now.flag IS NULL AND before.flag IS NULL
-    GROUP BY now.week_start, now.product_id, now.channel_id, now.normalized_unit
+    SELECT week_start, product_id, channel_id, normalized_unit,
+           AVG(price_now) / AVG(price_before) - 1 AS variation,
+           SUM(quotes_now) AS quotes, SUM(quotes_before) AS previous_quotes
+    FROM weekly_same_package
+    GROUP BY week_start, product_id, channel_id, normalized_unit
 ),
 variations AS (
     SELECT national.*, same_regions.variation, same_regions.quotes, same_regions.previous_quotes
@@ -298,14 +299,13 @@ JOIN dim_channel ON dim_channel.channel_id = usual.channel_id
 WHERE usual.previous_count = 12 AND usual.variation IS NOT NULL;
 
 -- name: k5_weekly_variations_sql
--- K5 (P5) in SQL, first half: the weekly changes of both prices, with LAG(),
+-- K5 (P5) in SQL, first half: the weekly changes of both prices, in the same package (D-522),
 -- for the series with at least 26 weeks with both prices (HAVING). The
 -- correlation for each lag stays in bi/lag.py (D-049). A series is one product
 -- key, unit, region and consumer channel with the pairs of k1_margin (D-048).
 WITH pairs AS (
     SELECT consumer.week_start, consumer.product_id, consumer.region_id,
-           consumer.channel_id, consumer.normalized_unit,
-           wholesale.price AS wholesale_price, consumer.price AS consumer_price
+           consumer.channel_id, consumer.normalized_unit, wholesale.channel_id AS wholesale_channel_id
     FROM weekly_price AS consumer
     JOIN dim_channel AS consumer_channel
       ON consumer_channel.channel_id = consumer.channel_id
@@ -326,32 +326,29 @@ long_series AS (
     GROUP BY product_id, region_id, channel_id, normalized_unit
     HAVING COUNT(*) >= 26
 ),
-ordered AS (
-    SELECT pairs.*,
-           date_diff('day', CAST(LAG(pairs.week_start) OVER series AS DATE), CAST(pairs.week_start AS DATE))
-               AS days_since_previous_week,
-           LAG(pairs.wholesale_price) OVER series AS previous_wholesale_price,
-           LAG(pairs.consumer_price) OVER series AS previous_consumer_price
-    FROM pairs
-    JOIN long_series USING (product_id, region_id, channel_id, normalized_unit)
-    WINDOW series AS (PARTITION BY pairs.product_id, pairs.region_id, pairs.channel_id,
-                                   pairs.normalized_unit
-                      ORDER BY pairs.week_start)
+changes AS (
+    SELECT week_start, product_id, region_id, channel_id, normalized_unit, price_now / price_before - 1 AS variation
+    FROM weekly_same_package
 )
-SELECT ordered.week_start,
+SELECT pairs.week_start,
        dim_product.product_group, dim_product.product, dim_product.variety,
-       dim_product.quality, ordered.normalized_unit, dim_region.region,
+       dim_product.quality, pairs.normalized_unit, dim_region.region,
        dim_channel.channel,
-       CASE WHEN ordered.days_since_previous_week = 7
-            THEN ordered.wholesale_price / ordered.previous_wholesale_price - 1
-       END AS wholesale_variation,
-       CASE WHEN ordered.days_since_previous_week = 7
-            THEN ordered.consumer_price / ordered.previous_consumer_price - 1
-       END AS consumer_variation
-FROM ordered
-JOIN dim_product ON dim_product.product_id = ordered.product_id
-JOIN dim_region ON dim_region.region_id = ordered.region_id
-JOIN dim_channel ON dim_channel.channel_id = ordered.channel_id;
+       wholesale_change.variation AS wholesale_variation,
+       consumer_change.variation AS consumer_variation
+FROM pairs
+JOIN long_series USING (product_id, region_id, channel_id, normalized_unit)
+LEFT JOIN changes AS wholesale_change
+  ON wholesale_change.week_start = pairs.week_start AND wholesale_change.product_id = pairs.product_id
+ AND wholesale_change.region_id = pairs.region_id AND wholesale_change.channel_id = pairs.wholesale_channel_id
+ AND wholesale_change.normalized_unit = pairs.normalized_unit
+LEFT JOIN changes AS consumer_change
+  ON consumer_change.week_start = pairs.week_start AND consumer_change.product_id = pairs.product_id
+ AND consumer_change.region_id = pairs.region_id AND consumer_change.channel_id = pairs.channel_id
+ AND consumer_change.normalized_unit = pairs.normalized_unit
+JOIN dim_product ON dim_product.product_id = pairs.product_id
+JOIN dim_region ON dim_region.region_id = pairs.region_id
+JOIN dim_channel ON dim_channel.channel_id = pairs.channel_id;
 
 -- name: quality_week_range
 -- First and last week loaded in the data warehouse, and their years (ISO rule,

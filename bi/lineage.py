@@ -87,16 +87,17 @@ LAYER_ICONS = {
 
 # Geometry of the drawing (SVG units): five columns, the marts set the rows.
 WIDTH = 1600
-HEIGHT = 800
+HEIGHT = 820
 SIDE = 18
 SUBTITLE_Y = 21  # the line «dbt Core · staging → intermedio → marts · …»
 HEADER_Y = 80  # baseline of a column title; its subtitle goes 19 below
 # D-380: ten marts since D-365 (latest_by_source): the rows reach a little higher and lower, and a mart's hit box is
-# 62 tall (the tile is 54), so ten of them fit one column without touching.
+# 60 tall (the tile is 54), so eleven of them fit one column without touching (D-522).
 FIRST_ROW = 144  # centre of the highest model
 LAST_ROW = 706  # lowest centre a model may take
+LAST_MART_ROW = 754  # the marts, without pills under them, reach a little lower (D-522)
 MART_PITCH = 70
-LEGEND_Y = 772
+LEGEND_Y = 798
 TILE = 54
 GOLD = 92
 NAME_SIZE = 14
@@ -342,7 +343,7 @@ def lay_out(columns):
     marts = [node["unique_id"] for node in columns["marts"]]
     y = {}
     for _ in range(2):
-        pitch = min(MART_PITCH, (LAST_ROW - FIRST_ROW) / max(1, len(marts) - 1))
+        pitch = min(MART_PITCH, (LAST_MART_ROW - FIRST_ROW) / max(1, len(marts) - 1))
         y.update({node_id: FIRST_ROW + index * pitch for index, node_id in enumerate(marts)})
         for layer in ("intermediate", "staging", "bronze"):
             ids = [node["unique_id"] for node in columns[layer]]
@@ -788,7 +789,7 @@ def build_lineage_node(x, y, node, layer, kind, total, passing, reads, up, down,
             f'fill="{palette["strong_text"]}">{html.escape(node["name"])}</text>'
         )
         pills = build_pill_row(left, pills_y, kind, total, passing, node, palette, False)
-        box = (x - half - 6, y - half - 6, half + 22 + width + 6, max(TILE + 8, pills_y + 12 - (y - half - 6)))
+        box = (x - half - 6, y - half - 6, half + 22 + width + 6, max(TILE + 6, pills_y + 12 - (y - half - 6)))
     hit = (
         f'<rect x="{box[0]:.1f}" y="{box[1]:.1f}" width="{box[2]:.1f}" height="{box[3]:.1f}" rx="10" '
         f'fill="#000" fill-opacity="0"/>'

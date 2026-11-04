@@ -2244,6 +2244,58 @@
           "referencia": "D-521"
         }
       ]
+    },
+    {
+      "id": "F-40",
+      "categoria": "datos",
+      "falla": [
+        "Un cambio de envase entre dos semanas parecía un movimiento del precio, y podía crear una alerta",
+        "A change of package between two weeks looked like a price movement, and could raise an alert"
+      ],
+      "deteccion": [
+        "Al comparar el precio del mismo envase con el publicado, en la revisión de las filas sin unidad",
+        "By comparing the price of the same package with the published one, in the review of the rows without a unit"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La variación comparaba el precio promedio de cada semana, sin ver si los envases eran los mismos",
+        "The variation compared the average price of each week, without seeing whether the packages were the same"
+      ],
+      "severidad": "alta",
+      "contencion": [
+        "Ninguna: la regla se aplicó antes de publicar, y la próxima carga la lleva a la app",
+        "None: the rule was applied before publishing, and the next load takes it to the app"
+      ],
+      "correctiva": [
+        "Toda variación semanal compara solo el mismo envase; el paso 4 y el Excel dicen cuál (D-522)",
+        "Every weekly variation compares only the same package; step 4 and the Excel say which (D-522)"
+      ],
+      "estacion": 14,
+      "caso_real": "D-522",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-04",
+          "ocurrencia": [
+            "Kiwi Hayward Especial mayorista, semana del 26 oct, publicaba una alerta de +25,6 %.",
+            "Kiwi Hayward Especial wholesale, week of 26 Oct, published an alert of +25.6 %."
+          ],
+          "diagnostico": [
+            "El Maule pasó de bandeja de 18 kilos a bandeja de 10; en el mismo envase subió +8,8 %.",
+            "Maule went from a tray of 18 kilos to a tray of 10; in the same package it rose +8.8 %."
+          ],
+          "solucion": [
+            "Se comparan solo los envases de las dos semanas; sin un envase común, el precio queda fuera.",
+            "Only the packages of both weeks are compared; without one in common, the price is left out."
+          ],
+          "comentario": [
+            "Antes → después: alertas 4.043 → 3.903; última semana 15 → 13; 1.003 cambios quedan fuera.",
+            "Before → after: alerts 4,043 → 3,903; latest week 15 → 13; 1,003 changes are left out."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-522"
+        }
+      ]
     }
   ]
 }

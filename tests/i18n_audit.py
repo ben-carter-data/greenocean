@@ -82,6 +82,9 @@ def read_data_values():
     }  # D-306: proper names
     from bi import sql_explorer
 
+    # D-522: a package is written as ODEPA writes it
+    with (Path(__file__).parent / "fixtures" / "reviewed_units.csv").open(encoding="utf-8") as units:
+        values |= {row.split(",")[0].strip('"').removeprefix("$/") for row in units.readlines()[1:]}
     # D-516: the name of a view of «Consultas SQL» is code, as the query writes it
     return (
         values

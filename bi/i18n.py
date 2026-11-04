@@ -377,6 +377,8 @@ EN = {
     "-- Brecha mayorista-consumidor: ¿cuánto más paga el consumidor que el mayorista?\n-- Solo Frutas y Hortalizas tienen precio mayorista. Se emparejan el mismo producto, variedad,\n-- calidad, unidad, región y semana en los dos canales. Es una brecha, no un margen:\n-- no incluye transporte, mermas ni costos del comercio.": "-- Wholesale gap: how much more does the consumer pay than the wholesaler?\n-- Only Fruit and Vegetables have a wholesale price. The same product, variety,\n-- quality, unit, region and week are paired in the two channels. It is a gap, not a margin:\n-- it does not include transport, losses or retail costs.",
     "-- Calendario de compra: ¿en qué mes cada producto suele estar más barato y más caro?\n-- Índice estacional en pesos reales: en cada serie y año, el precio de cada mes se divide por la\n-- mediana de ese año; luego se toma la mediana por mes. 100 = precio típico del año.": "-- Purchase calendar: in which month is each product usually cheapest and most expensive?\n-- Seasonal index in real pesos: in each series and year, the price of each month is divided by the\n-- median of that year; then the median per month is taken. 100 = the typical price of the year.",
     "el calendario de esa semana": "the calendar of that week",
+    "Envase comparado": "Package compared",
+    "Solo se compara el mismo envase en las dos semanas, por eso este precio puede diferir del de Consultas SQL.": "Only the same package is compared in the two weeks, so this price can differ from the one in SQL queries.",
     "Tabla del data warehouse. Columnas: {}": "Data warehouse table. Columns: {}",
     "Columnas: {}": "Columns: {}",
     "consulta.sql": "query.sql",
@@ -436,7 +438,7 @@ EN = {
     "ODEPA, Oficina de Estudios y Políticas Agrarias, Ministerio de Agricultura de Chile": "ODEPA, Office of Agricultural Studies and Policies, Ministry of Agriculture of Chile",
     "Creative Commons Atribución: se puede reutilizar citando la fuente": "Creative Commons Attribution: it may be reused citing the source",
     "Cálculo de la variación": "How the change is computed",
-    "Cada variación compara las mismas regiones en ambas semanas; un precio que falta en una de las dos queda fuera, sin rellenar.": "Each change compares the same regions in both weeks; a price missing in either one stays out, with nothing filled in.",
+    "Cada variación compara las mismas regiones y el mismo envase en ambas semanas; un precio que falta en una de las dos queda fuera, sin rellenar.": "Each change compares the same regions and the same package in both weeks; a price missing in either one stays out, with nothing filled in.",
     "Regiones que publica la fuente": "Regions the source publishes",
     "Precios sin comparación válida": "Prices with no valid comparison",
     "Precios nominales": "Nominal prices",
@@ -508,14 +510,14 @@ EN = {
         "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de Agricultura de Chile, licencia Creative "
         "Commons Atribución; IPC de alimentos: Instituto Nacional de Estadísticas (INE). Este proyecto no es un producto "
         "oficial de ODEPA ni del INE. Lectura de los datos: el precio nacional es un promedio simple de las regiones, sin "
-        "ponderar por población o ventas; cada variación semanal compara las mismas regiones en ambas semanas. Los "
+        "ponderar por población o ventas; cada variación semanal compara las mismas regiones y el mismo envase en ambas semanas. Los "
         "indicadores describen el histórico; no predicen precios. Los precios se reconstruyen desde la fuente en las "
         "pruebas automáticas."
     ): (
         "Data: Office of Agricultural Studies and Policies (ODEPA), Ministry of Agriculture of Chile, Creative Commons "
         "Attribution license; food CPI: National Statistics Institute (INE). This project is not an official product "
         "of ODEPA or the INE. Reading the data: the national price is a simple average of the regions, not weighted by "
-        "population or sales; each weekly change compares the same regions in both weeks. The indicators describe the "
+        "population or sales; each weekly change compares the same regions and the same package in both weeks. The indicators describe the "
         "history; they do not forecast prices. Prices are rebuilt from the source in the automated tests."
     ),
     # GitHub's answers, as the operations center describes them (bi/control.py)

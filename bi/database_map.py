@@ -35,8 +35,9 @@ ORIGINS = [
             "ipc_monthly",
             "ine_ipc_source",
             "latest_by_source",  # D-365
+            "weekly_same_package",  # D-522
         ],
-        "Las diez tablas del modelo: los precios semanales, sus dimensiones, el último dato de cada fuente, las filas "
+        "Las once tablas del modelo: los precios semanales, su cambio en el mismo envase, sus dimensiones, el último dato de cada fuente, las filas "
         "rechazadas y el IPC.",
         "dbt las construye y las prueba en cada carga; el pipeline las copia tal cual a la Base DuckDB.",
     ),
@@ -122,7 +123,7 @@ NODES = [
         "DuckDB",
         "etl/datos.duckdb",
         (755, MAIN_Y),
-        "La base que el panel lee: 13 tablas, agrupadas por quién las escribe (abajo).",
+        "La base que el panel lee: 14 tablas, agrupadas por quién las escribe (abajo).",
         "Es un solo archivo, rápido para consultas analíticas y de solo lectura para el panel.",
     ),
     (
