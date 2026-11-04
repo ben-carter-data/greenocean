@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.16 |
+| Version | 2.17 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -39,7 +39,7 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | BA and BI analysis (Stakeholders) | Indicators |
 | BSA | Business systems analysis: the role that decides how the system meets what the business asks: what is measured, what blocks publication and what warns. | BA and BI analysis (Method) | Indicators |
 | RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
-| Price alert | A weekly change outside the average ± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week (K6). It splits into sharp rises and sharp drops (D-477). | Weekly | Indicators |
+| Price alert | A weekly change outside the average ± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week (K6). It splits into sharp rises and sharp drops (D-477). In Weekly, with a region chosen, it is calculated with the price of that region (D-499). | Weekly | Indicators |
 | Sharp rise | A price alert for a rise, in red. Its level says how unusual it was: Extreme rise (4 deviations or more), Very sharp rise (3 or more) or Sharp rise (more than 2) (D-478, D-479). | Weekly | Indicators |
 | Sharp drop | A price alert for a drop, in green: good news for whoever buys. Its level: Extreme drop (4 deviations or more), Very sharp drop (3 or more) or Sharp drop (more than 2) (D-478, D-479). | Weekly | Indicators |
 | Real price | A price expressed in pesos of the last published month of the CPI. | BA and BI analysis (Prices and inflation) | Indicators |
@@ -127,3 +127,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.14 | 2026-11-03 | The bounds of each level, as the alert window shows them: 4 or more, 3 or more, more than 2 (D-479) |
 | 2.15 | 2026-11-03 | The load's cron: 12:17 UTC and two more attempts (D-485) |
 | 2.16 | 2026-11-03 | The load's cron: 12:07 UTC, an attempt every 15 minutes until 14:52 and every hour until 02:07 (D-487) |
+| 2.17 | 2026-11-03 | The price alert in Weekly, with the price of the chosen region (D-499) |

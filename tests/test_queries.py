@@ -63,6 +63,7 @@ def test_queries_file_has_one_named_query_per_indicator():
         "k3_regional_index",
         "k4_seasonal_index",
         "k6_national_weekly_price",
+        "k6_regional_weekly_price",
         "k8_rejected_rows",
         "quality_runs",
         "quality_flag_counts",

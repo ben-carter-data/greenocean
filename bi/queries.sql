@@ -208,6 +208,27 @@ GROUP BY weekly_price.week_start, weekly_price.product_id, weekly_price.channel_
          same_regions.same_region_price, same_regions.same_region_previous_price,
          same_regions.same_region_quotes, same_regions.same_region_previous_quotes;
 
+-- name: k6_regional_weekly_price
+-- D-499: the series of K6 inside each region, for «Semanal» with a region chosen. The same columns as
+-- k6_national_weekly_price, so bi/alerts.py reads both: inside a region there is one price per key, so
+-- national_price and same_region_price are that price, and the change compares it with the week before.
+SELECT now.week_start, dim_region.region,
+       dim_product.product_group, dim_product.product, dim_product.variety,
+       dim_product.quality, dim_channel.channel, now.normalized_unit,
+       now.price AS national_price,
+       now.price AS same_region_price, before.price AS same_region_previous_price,
+       now.observation_count AS same_region_quotes, before.observation_count AS same_region_previous_quotes
+FROM weekly_price AS now
+JOIN dim_product ON dim_product.product_id = now.product_id
+JOIN dim_channel ON dim_channel.channel_id = now.channel_id
+JOIN dim_region ON dim_region.region_id = now.region_id
+LEFT JOIN weekly_price AS before
+  ON before.product_id = now.product_id AND before.channel_id = now.channel_id
+ AND before.normalized_unit = now.normalized_unit AND before.region_id = now.region_id
+ AND before.week_start = strftime(CAST(now.week_start AS DATE) - 7, '%Y-%m-%d')
+ AND before.flag IS NULL
+WHERE now.flag IS NULL;
+
 -- name: k6_usual_range_sql
 -- K6 (P6) in SQL, the alternative to bi/alerts.py (the version the dashboard
 -- uses); a test checks that both give the same result (D-049). For each week:

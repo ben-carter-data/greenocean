@@ -2707,6 +2707,26 @@ def read_price_alerts():
     return read_cached_price_alerts(get_database_version())
 
 
+@st.cache_data(show_spinner=False)
+def read_cached_region_series(database_version, region):
+    """D-499: what «Semanal» needs of one region under the rule of K6: its alerts, and the weekly changes behind the
+    little lines of its families. Read once per region, and only the result stays in memory."""
+    prices = queries.run_query_for_region("k6_regional_weekly_price", region)
+    changes = alerts.add_weekly_variation(prices)
+    changes = changes.loc[changes["variation"].notna(), ["week_start", "product_group", "channel", "variation"]]
+    return add_display_columns(alerts.find_price_alerts(prices)), changes
+
+
+def read_place_alerts(region=None):
+    """D-499: the alerts of the place chosen in step 1: K6 with all of Chile, the same rule on its own prices in a
+    region; on a channel page, that channel's (D-405)."""
+    if region in (None, ALL_VALUES):
+        return read_price_alerts()
+    found = read_cached_region_series(get_database_version(), region)[0]
+    channel = current_channel()
+    return found if channel is None else found[found["channel"] == channel]
+
+
 @st.cache_data
 def read_cached_match_coverage(database_version):
     """K7, computed once per database: its query crosses the whole price table."""
@@ -4169,10 +4189,10 @@ def read_regional_movement_model(week, group=ALL_VALUES, product_filter=None):
     return build_regional_movement_model(current, previous)
 
 
-def home_alert_rows(week, group, product_filter=None, direction=None):
-    """National alerts in the same week and product scope as the dashboard; D-477: only the sharp rises or only the
-    sharp drops when a direction is given."""
-    rows = read_price_alerts()
+def home_alert_rows(week, group, product_filter=None, direction=None, region=None):
+    """The alerts of the place chosen (D-499) in the same week and product scope as the dashboard; D-477: only the
+    sharp rises or only the sharp drops when a direction is given."""
+    rows = read_place_alerts(region)
     rows = rows[rows['week_start'] == pd.Timestamp(week)]
     if direction == RISE:
         rows = rows[rows['variation'] > 0]
@@ -4203,11 +4223,11 @@ def alert_count_text(count, direction):
     return f'{count} {one if count == 1 else many}'
 
 
-def family_alerts_table(week, family, direction, query):
+def family_alerts_table(week, family, direction, query, region=None):
     """D-489, D-492: the products table with only the sharp rises or the sharp drops of the chosen family (or of the
     whole basket), at the national price of K6; the search looks only among them. The levels and the rule are said on
     hover (D-479): the «Nivel» header and the buttons. D-498: the panel and the enlarged table draw the same one."""
-    rows = home_alert_rows(week, family or ALL_VALUES, direction=direction)
+    rows = home_alert_rows(week, family or ALL_VALUES, direction=direction, region=region)
     if query:
         rows = rows[[matches_product_search(row, query) for row in rows.to_dict('records')]]
     return (
@@ -4359,17 +4379,21 @@ def build_steps_css(palette, region_open, family_open, flash, searched=False):
     return "<style>" + "".join(rules) + "</style>" if rules else ""
 
 
-def read_home_trends(database_version, week):
+def read_home_trends(database_version, week, region=None):
     """D-405: keyed on the scope, so a channel page never reads the Dashboard's cache."""
-    return read_home_trends_in(database_version, week, current_channel())
+    return read_home_trends_in(database_version, week, current_channel(), region)
 
 
 @st.cache_data(show_spinner=False)
-def read_home_trends_in(database_version, week, channel):
-    """The last 8 weeks of the median weekly change (national, in %) by family and for the whole basket, for the little
-    lines of the Dashboard (D-352). Comparable series only, like the median beside them; calculated from the same
-    weekly variations as the weeks table."""
-    variations = read_cached_all_variations(database_version)
+def read_home_trends_in(database_version, week, channel, region=None):
+    """The last 8 weeks of the median weekly change (in %) by family and for the whole basket, for the little lines of
+    the Dashboard (D-352), of all of Chile or of the region chosen (D-499). Comparable series only, like the median
+    beside them; calculated from the same weekly variations as the weeks table."""
+    if region is None:
+        variations = read_cached_all_variations(database_version)
+    else:
+        variations = read_cached_region_series(database_version, region)[1]
+        variations = variations if channel is None else variations[variations["channel"] == channel]
     upto = variations[variations["week_start"] <= pd.Timestamp(week)]
     heat = overview.family_heat(upto, weeks=8).sort_values("week_start")
     by_family = {group: list(frame["change"]) for group, frame in heat.groupby("product_group")}
@@ -4491,16 +4515,13 @@ def show_market_overview(mode, prefix):
             unsafe_allow_html=True,
             width="content",
         )
+    place = None if region == ALL_VALUES else region  # D-499: what step 1 chose; everything after it works on it
     # D-398: the header only places the reader. The note of a late source is content, in one row under the bar.
     notice = describe_late_sources(latest['message'] if latest['status'] == etl.STATUS_LOADED else '')
     channel = current_channel()
     if channel is not None:  # D-405: a channel says only its own delay
         card = next(
-            (
-                item
-                for item in channel_latest.channel_cards(read_latest_by_source(get_database_version()))
-                if item['channel'] == channel
-            ),
+            (item for item in read_channel_cards(get_database_version(), place) if item['channel'] == channel),
             None,
         )
         notice = (
@@ -4567,7 +4588,7 @@ def show_market_overview(mode, prefix):
                 st.markdown(
                     '<div class="greenocean-mockup">'
                     + (
-                        home_mockup.alert_heading(step=4)
+                        home_mockup.alert_heading(step=4, region=place)
                         if alert
                         else home_mockup.products_heading(
                             products_family or 'Sin familia', average, scope, len(rows), total, note, step=4
@@ -4587,7 +4608,7 @@ def show_market_overview(mode, prefix):
             for row in rows:
                 row['_regions'] = directions.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
             table_html = (
-                family_alerts_table(week, family, alert, query)
+                family_alerts_table(week, family, alert, query, place)
                 if alert
                 else '<div class="greenocean-mockup">'
                 + home_mockup.products_table(
@@ -4647,7 +4668,7 @@ def show_market_overview(mode, prefix):
         + '</div>',
         unsafe_allow_html=True,
     )
-    trends, basket_trend = read_home_trends(get_database_version(), week)
+    trends, basket_trend = read_home_trends(get_database_version(), week, place)
     basket_value = home_mockup.basket_median(model['family_rows'])
     with detail_column:
         channel_column, family_column = st.container(key='home_top').columns([0.35, 0.65], gap='small')
@@ -4656,7 +4677,7 @@ def show_market_overview(mode, prefix):
             st.markdown(
                 '<div class="greenocean-mockup">'
                 + home_mockup.channel_list(
-                    read_channel_cards(get_database_version()),
+                    read_channel_cards(get_database_version(), place),
                     channel_link,
                     current_channel(),
                     channel_link(None),
@@ -4687,7 +4708,7 @@ def show_market_overview(mode, prefix):
                 + '</div>',
                 unsafe_allow_html=True,
             )
-        show_alert_line(week, products_family, family_open, alert)
+        show_alert_line(week, products_family, family_open, alert, place)
         show_products()
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown(
@@ -4721,7 +4742,7 @@ def draw_products_window(
     if alert:
         st.session_state["dialog_products_direction"] = PRODUCT_DIRECTIONS[0]
     with st.container(horizontal=True, vertical_alignment="center", key="dialog_products_filters"):
-        pressed = show_alert_buttons(week, family, True, alert, "dialog")
+        pressed = show_alert_buttons(week, family, True, alert, "dialog", region)
         if pressed:
             st.session_state["dialog_products_alert"] = None if pressed == alert else pressed
             st.rerun(scope="fragment")
@@ -4744,9 +4765,9 @@ def draw_products_window(
     if alert:
         st.markdown(
             '<div class="greenocean-mockup products-large">'
-            + home_mockup.alert_heading()
+            + home_mockup.alert_heading(region=region)
             + '</div>'
-            + family_alerts_table(week, family, alert, query.strip()),
+            + family_alerts_table(week, family, alert, query.strip(), region),
             unsafe_allow_html=True,
         )
         return
@@ -4788,10 +4809,13 @@ def scope_path():
 
 
 @st.cache_data(show_spinner=False)
-def read_channel_cards(database_version):
-    """The channels of the data with their own latest week and median change (D-404), for step 2 (D-494)."""
+def read_channel_cards(database_version, region=None):
+    """The channels of the data with their own latest week and median change (D-404), for step 2 (D-494); with a region
+    chosen, only those that publish there, with that region's figures (D-499)."""
     frame = read_latest_by_source(database_version)
-    return channel_latest.channel_cards(frame) if frame is not None else []
+    if frame is None:
+        return []
+    return channel_latest.channel_cards(frame if region is None else frame[frame["region"] == region])
 
 
 def show_home_page(mode):
@@ -9292,12 +9316,12 @@ def build_sidebar_github_html(is_current):
 WINDOW_PAGES = {}
 
 
-def show_alert_buttons(week, family, family_open, alert, prefix):
+def show_alert_buttons(week, family, family_open, alert, prefix, region=None):
     """D-491: the sharp rises (red) and the sharp drops (green) of the chosen family, or of the whole basket; they wake
     up once a family is chosen (D-352). One shows only those products, and pressing it again brings back every product.
-    The count is national, like K6 (D-477, D-489). D-498: drawn by the panel and by the enlarged table, each with its
-    keys; it returns the one pressed, and the caller remembers the choice."""
-    now = read_price_alerts()
+    The count is of the place chosen: national, like K6 (D-477, D-489), or of the region (D-499). D-498: drawn by the
+    panel and by the enlarged table, each with its keys; it returns the one pressed, and the caller remembers it."""
+    now = read_place_alerts(region)
     now = now[now["week_start"] == pd.Timestamp(week)] if not now.empty else now
     if family_open and family not in (None, ALL_VALUES) and not now.empty:
         now = now[now["product_group"] == family]
@@ -9323,7 +9347,7 @@ def show_alert_buttons(week, family, family_open, alert, prefix):
         help_text = (
             tr("Pulsa de nuevo para ver todos los productos.")
             if on
-            else alerts.describe_kind(direction == RISE, not is_public_profile())
+            else alerts.describe_kind(direction == RISE, not is_public_profile(), bool(region))
             if family_open
             else tr("Elige primero una familia.")
         )
@@ -9338,13 +9362,13 @@ def show_alert_buttons(week, family, family_open, alert, prefix):
     return pressed
 
 
-def show_alert_line(week, family, family_open, alert):
+def show_alert_line(week, family, family_open, alert, region=None):
     """D-491: between steps 2 and 3, a thin line with the alert buttons, which show only those products in step 3.
     D-492: the search sits on the same line and never leaves: with a kind of alert chosen it looks only among those
     alerts. D-497: beside it, the filter by direction; an alert already shows one direction, so the filter rests at
     «Todo» while it is chosen and the two never contradict each other."""
     with st.container(key="home_alert_line", horizontal=True, gap="small", vertical_alignment="center"):
-        pressed = show_alert_buttons(week, family, family_open, alert, "home")
+        pressed = show_alert_buttons(week, family, family_open, alert, "home", region)
         if pressed:
             if pressed == alert:
                 st.query_params.pop("alerta", None)

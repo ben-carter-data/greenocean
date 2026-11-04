@@ -30,15 +30,17 @@ def describe_rule() -> str:
     )
 
 
-def describe_kind(rise: bool, professional: bool) -> str:
+def describe_kind(rise: bool, professional: bool, regional: bool = False) -> str:
     """D-479: what a sharp rise or a sharp drop is, from the same constants, so no figure is computed in silence.
-    The Usuario reads plain words with the statistical term in brackets; Profesional and Autor read the formula."""
+    The Usuario reads plain words with the statistical term in brackets; Profesional and Autor read the formula.
+    D-499: the same rule on the price of the region chosen."""
     change = round(ALERT_MINIMUM_CHANGE * 100)
     if professional:
         quotes = QUOTE_WORDS.get(ALERT_MINIMUM_QUOTES, str(ALERT_MINIMUM_QUOTES))
         return (
             f"K6 · variación semanal {'≥ +' if rise else '≤ −'}{change} % y a más de {ALERT_DEVIATIONS} desviaciones "
-            f"estándar del promedio de las variaciones de sus {ALERT_WINDOW_WEEKS} semanas previas; precio nacional, "
+            f"estándar del promedio de las variaciones de sus {ALERT_WINDOW_WEEKS} semanas previas; "
+            f"{'precio de la región elegida' if regional else 'precio nacional'}, "
             f"con {quotes} cotizaciones en cada semana."
         )
     # D-482: the distance is from the usual change, not from zero, as the formula of the Profesional says

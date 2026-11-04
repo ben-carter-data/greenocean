@@ -576,4 +576,4 @@ def test_d480_step_three_says_how_each_figure_is_computed():
     assert 'Precio publicado en la región elegida' in regional
     heading = home_mockup.products_heading('Pan', 0.01, 'todo Chile', 1, 1, step=3)
     assert 'mock-hint' in heading and 'Regiones ↑ / ↓' in heading and '0,05 %' in heading
-    assert '<title>' in home_mockup.sparkline([1, 2, 3]) and 'todo Chile' in home_mockup.TREND_LABEL
+    assert '<title>' in home_mockup.sparkline([1, 2, 3]) and 'todo Chile' in home_mockup.trend_label()

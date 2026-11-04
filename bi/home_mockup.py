@@ -405,7 +405,6 @@ STEP_TEXTS = {
 }
 LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una región', 4: 'Elige primero una familia'}
 SEARCH_DARK, SEARCH_LIGHT = '#39ff14', '#00a83a'  # D-450: fluorescent green
-TREND_LABEL = 'Mediana semanal de las últimas 8 semanas, todo Chile'  # D-480: always national, said on hover
 
 
 def step_chip(step, texts=None):
@@ -435,6 +434,11 @@ def lock_overlay(step, texts=None):
     return f'<div class="mock-lock" role="note">{lock}<span>{esc((texts or LOCK_TEXTS)[step])}</span></div>'
 
 
+def trend_label(scope='todo Chile'):
+    """D-480: said on hover; D-499: of all of Chile or of the region chosen."""
+    return f'Mediana semanal de las últimas 8 semanas, {scope}'
+
+
 def sparkline(values, label=None):
     """The last weeks of a median change as a small line; nothing when there are fewer than two points."""
     points = [float(v) for v in (values or []) if v is not None and math.isfinite(float(v))]
@@ -448,9 +452,10 @@ def sparkline(values, label=None):
         for index, value in enumerate(points)
     )
     state = change_state(points[-1] / 100)
+    label = label or trend_label()
     return (
         f'<span class="mock-spark {state}"><svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" role="img" '
-        f'aria-label="{esc(label or TREND_LABEL)}"><title>{esc(label or TREND_LABEL)}</title><polyline points="{coords}" fill="none" stroke="currentColor" '
+        f'aria-label="{esc(label)}"><title>{esc(label)}</title><polyline points="{coords}" fill="none" stroke="currentColor" '
         'stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></span>'
     )
 
@@ -675,7 +680,8 @@ def channel_list(cards, channel_link, selected, all_link, icon, step=None):
         + panel_hint(
             'Canal',
             '<strong>¿Dónde se compra?</strong><span>Opcional: sin elegir, se ven todos los canales. Cada canal muestra '
-            'su última semana publicada y la mediana del cambio de sus precios comparables frente a la anterior.</span>',
+            'su última semana publicada y la mediana del cambio de sus precios comparables frente a la anterior. Con una '
+            'región elegida, solo los canales que publican ahí, con sus cifras.</span>',
         )
         + '</div>'
         + '<p class="mock-optional">Opcional: sin elegir, se ven todos.</p>'  # D-494: never required, and it says so
@@ -718,7 +724,7 @@ def family_movement(
             f'<span class="mock-basket-art{" checked" if chosen else ""}" aria-hidden="true"></span><strong>Toda la canasta</strong>'
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(value * 100, True)}</b>'
-            f'<span class="mock-movement-state">{word}</span>{sparkline(series)}<span></span></a>'
+            f'<span class="mock-movement-state">{word}</span>{sparkline(series, trend_label(scope))}<span></span></a>'
         )
     for group, average, members in summary:
         state = change_state(average)
@@ -732,7 +738,7 @@ def family_movement(
             f'{family_art(group, "mock-movement-art")}<strong>{esc(short_family(group))}</strong>'
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(average * 100, True)}</b>'
-            f'<span class="mock-movement-state">{word}</span>{sparkline(trends.get(group))}'
+            f'<span class="mock-movement-state">{word}</span>{sparkline(trends.get(group), trend_label(scope))}'
             '<span class="mock-movement-chevron">›</span></a>'
         )
     place = scope[0].upper() + scope[1:]
@@ -744,7 +750,7 @@ def family_movement(
             '<strong>¿Qué familias subieron y cuáles bajaron?</strong>'
             f'<span>Mediana (el valor del medio) del cambio de cada precio comparable frente a la semana anterior, '
             f'{esc(scope)}. «Sin cambio»: menos de 0,05 %. La línea pequeña: esa mediana en las últimas 8 '
-            f'semanas, siempre de todo Chile.</span>'
+            f'semanas, {esc(scope)}.</span>'
             '<span>La barra es la mediana de la familia, no de cada producto: una familia puede bajar en conjunto y '
             'tener productos que subieron mucho más de lo normal para ellos. Bajo este panel, ▲ y ▼ muestran esas alzas '
             'fuertes y bajas fuertes de la familia elegida.</span>'
@@ -805,11 +811,13 @@ def products_heading(family, average, scope, shown=None, total=None, note='', st
     )
 
 
-def alert_heading(step=None):
-    """D-492: step 3 while it shows the alerts: its number and name, and the price it uses, at the right edge."""
+def alert_heading(step=None, region=None):
+    """D-492: step 3 while it shows the alerts: its number and name, and the price it uses, at the right edge: the
+    national one, or that of the region chosen (D-499)."""
+    place = f'precio de ODEPA en {esc(short_region(region))}' if region else 'precio nacional de ODEPA'
     return (
         f'<div class="mock-products-heading mock-products-slim">{step_chip(step)}'
-        '<span class="mock-alert-scope">precio nacional de ODEPA</span></div>'
+        f'<span class="mock-alert-scope">{place}</span></div>'
     )
 
 

@@ -65,6 +65,11 @@ def read_query_body(query_name: str) -> str:
     return load_queries()[query_name].strip().rstrip(";")
 
 
+def run_query_for_region(query_name: str, region: str, database_file: Path = DATABASE_FILE) -> pd.DataFrame:
+    """Rows of one named query for a single region (D-499); the database filters them, as in run_query_for_key."""
+    return run_sql(f"SELECT * FROM (\n{read_query_body(query_name)}\n) WHERE region = ?", database_file, [region])
+
+
 def run_query_for_key(query_name: str, key: dict[str, Any], database_file: Path = DATABASE_FILE) -> pd.DataFrame:
     """Rows of one named query for a single product key (D-050).
 
