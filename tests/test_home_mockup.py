@@ -1,5 +1,6 @@
 """Data fidelity and SVG geometry of the approved initial-screen mockup."""
 
+import inspect
 import re
 from pathlib import Path
 import pandas as pd
@@ -141,6 +142,44 @@ def test_d497_the_filter_sits_beside_the_search_and_rests_while_an_alert_is_chos
     source = (ROOT / 'bi/dashboard.py').read_text(encoding='utf-8')
     line = source[source.index('def show_alert_line') : source.index('def show_profile_indicator')]
     assert line.index('key="home_products_search"') < line.index('key="home_products_direction"')
+
+
+def test_d498_the_window_brings_the_channel_back_when_it_reruns_alone(monkeypatch):
+    seen = []
+    monkeypatch.setattr(dashboard, 'draw_products_window', lambda *window: seen.append(dashboard.current_channel()))
+    inspect.unwrap(dashboard.show_products_dialog)('Feria libre')
+    assert seen == ['Feria libre'] and dashboard.current_channel() is None
+
+
+@pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
+def test_d498_the_enlarged_table_has_the_line_of_the_panel_and_opens_with_its_choices():
+    app = AppTest.from_file(ROOT / 'bi/dashboard.py', default_timeout=60)
+    app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
+    app.query_params.update({'_home_region': dashboard.ALL_VALUES, 'familia': 'Frutas'})
+    app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.run()
+    app.selectbox(key='home_products_direction').set_value('Subidas').run()
+    app.button(key='home_products_enlarge').click().run()
+    assert not app.exception and app.get('dialog')
+    for kind in ('alert', 'drop'):
+        window, panel = app.button(key=f'dialog_{kind}_trigger'), app.button(key=f'home_{kind}_trigger')
+        assert window.label == panel.label and window.disabled == panel.disabled
+    filtered = app.selectbox(key='dialog_products_direction')
+    assert filtered.options == ['Todo', 'Subidas', 'Bajadas'] and filtered.value == 'Subidas'
+    assert not filtered.disabled and app.text_input(key='dialog_products_search').value == ''
+    # with an alert chosen, «Ampliar» is there too and the window opens on that alert
+    week = dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]
+    sharp = dashboard.home_alert_rows(week, 'Frutas', direction=dashboard.RISE)
+    app.query_params['alerta'] = dashboard.RISE
+    app.run()
+    app.button(key='home_products_enlarge').click().run()
+    assert not app.exception and app.get('dialog')
+    filtered = app.selectbox(key='dialog_products_direction')
+    assert filtered.disabled and filtered.value == 'Todo'
+    markup = ' '.join(block.value for block in app.markdown)
+    assert markup.count('class="mock-level ') == 2 * len(sharp) > 0  # the panel's table and the window's
+    source = (ROOT / 'bi/dashboard.py').read_text(encoding='utf-8')
+    assert '.st-key-dialog_alert_trigger button' in source and '.st-key-dialog_drop_trigger button' in source
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')

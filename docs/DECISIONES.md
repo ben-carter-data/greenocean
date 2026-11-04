@@ -4048,3 +4048,11 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Sin filas:** si ningún producto va en ese sentido, la tabla lo dice («Ninguno de estos productos subió esta semana.»), en vez de decir que no hay precios.
 - **Pantalla:** «Ampliar» sube a la línea del encabezado del paso 4, así la tabla gana la fila que dejaba el selector. Con menos de 640 px de línea, los botones de alertas se achican y la búsqueda cede ancho; con un panel de productos de menos de 600 px, el encabezado pasa a dos líneas antes que cortar un texto.
 - **Pruebas:** `tests/test_dashboard.py` y `tests/test_home_mockup.py` (las tres opciones, qué deja cada una, los fuertes incluidos, el filtro apagado con una alerta y el mensaje sin filas), `tests/test_menu_order.py` y `tests/test_control.py`.
+
+## D-498 · La tabla ampliada tiene las mismas funciones que el panel
+- **Pedido del autor:** al ampliar la tabla de productos, se tienen que ver igual los botones de alertas, la búsqueda y el filtro.
+- **Decisión:** la ventana de «Ampliar» trae la misma línea del panel: «▲ alzas fuertes», «▼ bajas fuertes», la búsqueda en verde y el filtro «Todo», «Subidas» y «Bajadas» (D-497), con los mismos conteos y las mismas reglas. Abre con lo que el panel tenía elegido, y pulsar un botón dentro de la ventana no la cierra. Lo elegido dentro de la ventana no cambia el panel, como ya pasaba con la búsqueda (D-322).
+- **Con una alerta elegida:** «Ampliar» también aparece, y la ventana abre en esa alerta (antes el botón no estaba). El filtro se apaga y queda en «Todo», como en el panel (D-497).
+- **Con un canal elegido:** las alertas de la ventana son las de ese canal, como en el panel (D-405), también después de pulsar un botón dentro de ella, que vuelve a dibujar solo la ventana.
+- **Lo que no cambia:** dentro de una ventana no se muestran los textos al pasar el cursor por un botón (D-478); la regla K6 se lee en el panel.
+- **Pruebas:** `tests/test_home_mockup.py` (los botones de la ventana dicen lo mismo que los del panel, abre con el filtro y la alerta elegidos, conserva el canal, sus estilos).

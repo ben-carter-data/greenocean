@@ -4203,21 +4203,19 @@ def alert_count_text(count, direction):
     return f'{count} {one if count == 1 else many}'
 
 
-def show_family_alerts(week, family, direction, query):
-    """D-489, D-492: step 3 with only the sharp rises or the sharp drops of the chosen family (or of the whole basket),
-    at the national price of K6; the search of the alert line looks only among them. The levels and the rule are said
-    on hover (D-479): the «Nivel» header and the buttons."""
+def family_alerts_table(week, family, direction, query):
+    """D-489, D-492: the products table with only the sharp rises or the sharp drops of the chosen family (or of the
+    whole basket), at the national price of K6; the search looks only among them. The levels and the rule are said on
+    hover (D-479): the «Nivel» header and the buttons. D-498: the panel and the enlarged table draw the same one."""
     rows = home_alert_rows(week, family or ALL_VALUES, direction=direction)
     if query:
         rows = rows[[matches_product_search(row, query) for row in rows.to_dict('records')]]
-    st.markdown(
+    return (
         '<div class="greenocean-mockup">'
-        + home_mockup.alert_heading(step=4)
         + home_mockup.alert_table(
             alert_items(rows), query, level_guide_text(direction == RISE, not is_public_profile())
         )
-        + '</div>',
-        unsafe_allow_html=True,
+        + '</div>'
     )
 
 
@@ -4529,9 +4527,6 @@ def show_market_overview(mode, prefix):
     def show_products():
         with st.container(key='home_products'):
             query = st.session_state.get('home_products_search', '').strip()  # D-492: typed in the alert line
-            if alert:
-                show_family_alerts(week, family, alert, query)
-                return
             if not family_open:
                 st.markdown(
                     f'<div class="greenocean-mockup">{home_mockup.lock_overlay(4)}</div>', unsafe_allow_html=True
@@ -4571,8 +4566,12 @@ def show_market_overview(mode, prefix):
             with st.container(key='home_products_head', horizontal=True, vertical_alignment='center'):
                 st.markdown(
                     '<div class="greenocean-mockup">'
-                    + home_mockup.products_heading(
-                        products_family or 'Sin familia', average, scope, len(rows), total, note, step=4
+                    + (
+                        home_mockup.alert_heading(step=4)
+                        if alert
+                        else home_mockup.products_heading(
+                            products_family or 'Sin familia', average, scope, len(rows), total, note, step=4
+                        )
                     )
                     + '</div>',
                     unsafe_allow_html=True,
@@ -4588,7 +4587,9 @@ def show_market_overview(mode, prefix):
             for row in rows:
                 row['_regions'] = directions.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
             table_html = (
-                '<div class="greenocean-mockup">'
+                family_alerts_table(week, family, alert, query)
+                if alert
+                else '<div class="greenocean-mockup">'
                 + home_mockup.products_table(
                     rows,
                     model['week_label'],
@@ -4609,13 +4610,16 @@ def show_market_overview(mode, prefix):
                     {
                         'dialog_products_search': query,
                         'dialog_products_direction': direction,
+                        'dialog_products_alert': alert,
                     }
                 )
                 show_products_dialog(
+                    current_channel(),
                     family or 'Sin familia',
                     average,
                     scope,
                     family_rows,
+                    week,
                     model['week_label'],
                     model['previous_label'],
                     None if region == ALL_VALUES else region,
@@ -4697,12 +4701,30 @@ def show_market_overview(mode, prefix):
 
 
 @st.dialog("Productos", width="large")
-def show_products_dialog(
-    family, average, scope, family_rows, week_label, previous_label, region, published=None, note=""
+def show_products_dialog(channel, *window):
+    """D-498: a press in the window reruns only the window, outside the scope of show_home_page, so it brings the
+    channel of step 2 back: the alerts are read under it (D-405)."""
+    token = PRICE_SCOPE.set(channel)
+    try:
+        draw_products_window(*window)
+    finally:
+        PRICE_SCOPE.reset(token)
+
+
+def draw_products_window(
+    family, average, scope, family_rows, week, week_label, previous_label, region, published=None, note=""
 ):
     """The products table at the size of the window (D-317) with the same filters as the panel (D-322): it opens with the
-    panel's search and direction (D-497), and filters on its own without closing."""
+    panel's search and direction (D-497), and filters on its own without closing. D-498: the same line as the panel,
+    with the alert buttons; the window remembers its alert, since a press in it reruns only the window."""
+    alert = st.session_state.get("dialog_products_alert")
+    if alert:
+        st.session_state["dialog_products_direction"] = PRODUCT_DIRECTIONS[0]
     with st.container(horizontal=True, vertical_alignment="center", key="dialog_products_filters"):
+        pressed = show_alert_buttons(week, family, True, alert, "dialog")
+        if pressed:
+            st.session_state["dialog_products_alert"] = None if pressed == alert else pressed
+            st.rerun(scope="fragment")
         query = st.text_input(
             'Buscar',
             key='dialog_products_search',
@@ -4713,8 +4735,21 @@ def show_products_dialog(
             live=True,
         )
         direction = st.selectbox(
-            'Mostrar', PRODUCT_DIRECTIONS, key='dialog_products_direction', label_visibility='collapsed'
+            'Mostrar',
+            PRODUCT_DIRECTIONS,
+            key='dialog_products_direction',
+            label_visibility='collapsed',
+            disabled=bool(alert),
         )
+    if alert:
+        st.markdown(
+            '<div class="greenocean-mockup products-large">'
+            + home_mockup.alert_heading()
+            + '</div>'
+            + family_alerts_table(week, family, alert, query.strip()),
+            unsafe_allow_html=True,
+        )
+        return
     rows = keep_direction(list(family_rows), direction)
     if query.strip():
         rows = [row for row in rows if matches_product_search(row, query)]
@@ -8976,23 +9011,23 @@ def build_sidebar_css(mode):
     .st-key-sidebar_footer {{position:fixed; left:0; bottom:0; width:300px; padding:12px 22px 12px;
         background:{palette['sidebar']}; gap:7px !important; z-index:5; border-top:1px solid {hairline};}}
     /* The price alerts, a red chip in the Resumen's bar (D-169, D-264). */
-    .st-key-home_alert_trigger button {{border:0 !important; background:color-mix(in srgb,{alert_text} 14%,transparent) !important;
+    .st-key-home_alert_trigger button, .st-key-dialog_alert_trigger button {{border:0 !important; background:color-mix(in srgb,{alert_text} 14%,transparent) !important;
         color:{alert_text} !important; border-radius:8px; padding:3px 10px !important; min-height:28px; box-shadow:none !important;}}
-    .st-key-home_alert_trigger button:hover {{background:color-mix(in srgb,{alert_text} 24%,transparent) !important;}}
-    .st-key-home_alert_trigger button p {{color:{alert_text} !important; -webkit-text-fill-color:{alert_text} !important;
+    .st-key-home_alert_trigger button:hover, .st-key-dialog_alert_trigger button:hover {{background:color-mix(in srgb,{alert_text} 24%,transparent) !important;}}
+    .st-key-home_alert_trigger button p, .st-key-dialog_alert_trigger button p {{color:{alert_text} !important; -webkit-text-fill-color:{alert_text} !important;
         font-weight:600; font-size:13.5px; letter-spacing:0; font-variant-numeric:tabular-nums;}}
     /* D-478: a chip's help never stays over the window it opened. */
     body:has([data-testid="stDialog"]) [data-baseweb="tooltip"] {{display:none !important;}}
     /* D-477: the sharp drops, a green chip beside it: good news for whoever buys. */
-    .st-key-home_drop_trigger button {{border:0 !important; background:color-mix(in srgb,{drop_text} 14%,transparent) !important;
+    .st-key-home_drop_trigger button, .st-key-dialog_drop_trigger button {{border:0 !important; background:color-mix(in srgb,{drop_text} 14%,transparent) !important;
         color:{drop_text} !important; border-radius:8px; padding:3px 10px !important; min-height:28px; box-shadow:none !important;}}
-    .st-key-home_drop_trigger button:hover {{background:color-mix(in srgb,{drop_text} 24%,transparent) !important;}}
-    .st-key-home_drop_trigger button p {{color:{drop_text} !important; -webkit-text-fill-color:{drop_text} !important;
+    .st-key-home_drop_trigger button:hover, .st-key-dialog_drop_trigger button:hover {{background:color-mix(in srgb,{drop_text} 24%,transparent) !important;}}
+    .st-key-home_drop_trigger button p, .st-key-dialog_drop_trigger button p {{color:{drop_text} !important; -webkit-text-fill-color:{drop_text} !important;
         font-weight:600; font-size:13.5px; letter-spacing:0; font-variant-numeric:tabular-nums;}}
     /* D-491: the one shown in step 3 is outlined; both wait, faded, until a family is chosen. */
-    .st-key-home_alert_trigger [data-testid="stBaseButton-primary"] {{box-shadow:inset 0 0 0 1.5px {alert_text} !important;}}
-    .st-key-home_drop_trigger [data-testid="stBaseButton-primary"] {{box-shadow:inset 0 0 0 1.5px {drop_text} !important;}}
-    .st-key-home_alert_trigger button:disabled, .st-key-home_drop_trigger button:disabled {{opacity:.45;}}
+    .st-key-home_alert_trigger [data-testid="stBaseButton-primary"], .st-key-dialog_alert_trigger [data-testid="stBaseButton-primary"] {{box-shadow:inset 0 0 0 1.5px {alert_text} !important;}}
+    .st-key-home_drop_trigger [data-testid="stBaseButton-primary"], .st-key-dialog_drop_trigger [data-testid="stBaseButton-primary"] {{box-shadow:inset 0 0 0 1.5px {drop_text} !important;}}
+    .st-key-home_alert_trigger button:disabled, .st-key-home_drop_trigger button:disabled, .st-key-dialog_alert_trigger button:disabled, .st-key-dialog_drop_trigger button:disabled {{opacity:.45;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button {{background:transparent !important;
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
@@ -9257,13 +9292,11 @@ def build_sidebar_github_html(is_current):
 WINDOW_PAGES = {}
 
 
-def show_alert_line(week, family, family_open, alert):
-    """D-491: between steps 2 and 3, a thin line with the sharp rises (red) and the sharp drops (green) of the chosen
-    family, or of the whole basket; they wake up once a family is chosen (D-352). One shows only those products in step
-    3, and pressing it again brings back every product. The count is national, like K6 (D-477, D-489). D-492: the
-    search sits on the same line and never leaves: with a kind of alert chosen it looks only among those alerts.
-    D-497: beside it, the filter by direction; an alert already shows one direction, so the filter rests at «Todo»
-    while it is chosen and the two never contradict each other."""
+def show_alert_buttons(week, family, family_open, alert, prefix):
+    """D-491: the sharp rises (red) and the sharp drops (green) of the chosen family, or of the whole basket; they wake
+    up once a family is chosen (D-352). One shows only those products, and pressing it again brings back every product.
+    The count is national, like K6 (D-477, D-489). D-498: drawn by the panel and by the enlarged table, each with its
+    keys; it returns the one pressed, and the caller remembers the choice."""
     now = read_price_alerts()
     now = now[now["week_start"] == pd.Timestamp(week)] if not now.empty else now
     if family_open and family not in (None, ALL_VALUES) and not now.empty:
@@ -9275,37 +9308,49 @@ def show_alert_line(week, family, family_open, alert):
     chips = [
         (
             RISE,
-            "home_alert_trigger",
+            f"{prefix}_alert_trigger",
             tr("▲ {} alzas fuertes").format(counts[RISE]) if counts[RISE] != 1 else tr("▲ 1 alza fuerte"),
         ),
         (
             DROP,
-            "home_drop_trigger",
+            f"{prefix}_drop_trigger",
             tr("▼ {} bajas fuertes").format(counts[DROP]) if counts[DROP] != 1 else tr("▼ 1 baja fuerte"),
         ),
     ]
+    pressed = None
+    for direction, key, label in chips:
+        on = alert == direction
+        help_text = (
+            tr("Pulsa de nuevo para ver todos los productos.")
+            if on
+            else alerts.describe_kind(direction == RISE, not is_public_profile())
+            if family_open
+            else tr("Elige primero una familia.")
+        )
+        if st.button(
+            label,
+            key=key,
+            type="primary" if on else "secondary",
+            disabled=not family_open or not counts[direction],
+            help=help_text,
+        ):
+            pressed = direction
+    return pressed
+
+
+def show_alert_line(week, family, family_open, alert):
+    """D-491: between steps 2 and 3, a thin line with the alert buttons, which show only those products in step 3.
+    D-492: the search sits on the same line and never leaves: with a kind of alert chosen it looks only among those
+    alerts. D-497: beside it, the filter by direction; an alert already shows one direction, so the filter rests at
+    «Todo» while it is chosen and the two never contradict each other."""
     with st.container(key="home_alert_line", horizontal=True, gap="small", vertical_alignment="center"):
-        for direction, key, label in chips:
-            on = alert == direction
-            help_text = (
-                tr("Pulsa de nuevo para ver todos los productos.")
-                if on
-                else alerts.describe_kind(direction == RISE, not is_public_profile())
-                if family_open
-                else tr("Elige primero una familia.")
-            )
-            if st.button(
-                label,
-                key=key,
-                type="primary" if on else "secondary",
-                disabled=not family_open or not counts[direction],
-                help=help_text,
-            ):
-                if on:
-                    st.query_params.pop("alerta", None)
-                else:
-                    st.query_params["alerta"] = direction
-                st.rerun()
+        pressed = show_alert_buttons(week, family, family_open, alert, "home")
+        if pressed:
+            if pressed == alert:
+                st.query_params.pop("alerta", None)
+            else:
+                st.query_params["alerta"] = pressed
+            st.rerun()
         st.text_input(
             "Buscar",
             key="home_products_search",

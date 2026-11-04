@@ -545,10 +545,11 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-products-slim .mock-products-scope, .mock-products-slim .mock-products-chip {white-space:nowrap;}
 
 .st-key-dialog_products_filters {gap:10px!important;}
-.st-key-dialog_products_filters [data-testid="stSelectbox"] {display:flex;align-items:center;gap:6px;max-width:260px;}
+.st-key-dialog_products_filters [data-testid="stSelectbox"] {display:flex;align-items:center;gap:6px;}
 .st-key-dialog_products_filters [data-testid="stSelectbox"] label {margin:0!important;min-height:0;flex:none;white-space:nowrap;}
-.st-key-dialog_products_filters [data-testid="stSelectbox"] .react-aria-ComboBox > div {height:30px!important;min-height:30px!important;}
-.st-key-dialog_products_filters [data-testid="stTextInput"] {max-width:280px;}
+.st-key-dialog_products_filters [data-testid="stSelectbox"] .react-aria-ComboBox > div {height:28px!important;min-height:28px!important;}
+.st-key-dialog_products_filters [data-testid="stSelectbox"] .react-aria-ComboBox input {height:26px!important;padding:0 8px!important;font-size:12.5px!important;}
+.st-key-dialog_products_filters [data-testid="stSelectbox"] .react-aria-ComboBox button {height:26px!important;}
 /* D-322: the weeks table closes with air under it and rounded corners. */
 [role="dialog"] .ov-ht {margin-bottom:22px;border-radius:12px;overflow:hidden;border:1px solid var(--mock-border, rgba(255,255,255,.08));}
 [role="dialog"]:has(.ov-ht) {padding-bottom:18px!important;}
@@ -712,6 +713,13 @@ ul.mock-calc-out li em {font-style:normal;}
  .st-key-home_alert_line .st-key-home_alert_trigger button,.st-key-home_alert_line .st-key-home_drop_trigger button {padding:3px 6px!important;}
  .st-key-home_alert_line .st-key-home_alert_trigger button p,.st-key-home_alert_line .st-key-home_drop_trigger button p {font-size:12px!important;}
 }
+/* D-498: the enlarged table has the line of the panel: the alert buttons, the search in green and the filter. */
+.st-key-dialog_products_filters button p {white-space:nowrap;}
+.st-key-dialog_products_filters .st-key-dialog_products_search {flex:1 1 220px!important;max-width:380px;}
+.st-key-dialog_products_filters .st-key-dialog_products_direction {flex:0 0 104px!important;width:104px!important;}
+.st-key-dialog_products_filters .st-key-dialog_products_search [data-testid="stTextInputRootElement"] {border:1.5px solid __SEARCH__!important;min-height:28px!important;height:28px;border-radius:8px!important;}
+.st-key-dialog_products_search input {font-size:12.5px!important;min-height:0!important;padding-top:0;padding-bottom:0;}
+.st-key-dialog_products_search svg,.st-key-dialog_products_search [data-testid="stIconMaterial"] {color:__SEARCH__!important;fill:__SEARCH__!important;font-size:17px!important;}
 /* D-497: «Ampliar» on the heading's line, which wraps before it cuts a word when the panel is narrow. */
 .stApp .st-key-home_products_head {flex-wrap:nowrap!important;gap:6px!important;}
 .stApp .st-key-home_products_head > * {flex:0 0 auto;min-width:0;width:auto!important;}
