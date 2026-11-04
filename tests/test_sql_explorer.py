@@ -1,13 +1,16 @@
 """Consultas SQL page: example queries, read-only guard, timeout and rendering."""
 
+import re
 from pathlib import Path
 
 import pandas as pd
 import pytest
+from streamlit.testing.v1 import AppTest
 
-from bi import queries, sql_explorer
+from bi import charts, dashboard, i18n, queries, sql_explorer
 
 REPOSITORY = Path(__file__).resolve().parent.parent
+DASHBOARD_FILE = str(REPOSITORY / "bi" / "dashboard.py")
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.duckdb is not built")
 
 
@@ -190,15 +193,98 @@ def test_d182_the_explorer_lists_the_real_tables_and_one_opens():
     assert "precio_vs_epoca.sql" in tab and "sqlx-info" in tab and sql_explorer.EXAMPLES[1][1] in tab
 
 
-def test_d183_a_short_query_gives_its_room_to_the_results():
-    long_sql = sql_explorer.EXAMPLES[0][2]
-    short_sql = "SELECT *\nFROM main.weekly_price\nLIMIT 100"
-    assert sql_explorer.results_height(short_sql, 100) > sql_explorer.results_height(long_sql, 100)
-    assert (
-        sql_explorer.editor_height(short_sql) + sql_explorer.results_height(short_sql, 100)
-        == sql_explorer.STUDIO_HEIGHT
-    )
-    assert sql_explorer.results_height(short_sql, 2) == 35 * 3 + 3
+def test_d516_the_grid_takes_what_the_window_leaves_and_a_few_rows_keep_their_height():
+    long_sql, short_sql = sql_explorer.EXAMPLES[0][2], "SELECT 1"
+    assert sql_explorer.results_height(100) == "stretch"
+    assert sql_explorer.results_height(2) == sql_explorer.GRID_ROW * 3 + 3
+    for sql in (short_sql, long_sql):
+        offset = sql_explorer.AROUND_GRID + sql_explorer.editor_height(sql)
+        css = sql_explorer.build_grid_css(sql)
+        assert f"calc(100vh - {offset}px)" in css and f"{sql_explorer.GRID_FLOOR}px" in css
+    assert sql_explorer.editor_height(short_sql) < sql_explorer.editor_height(long_sql)
+    # the fixed height that left a band empty under the grid is gone
+    assert "698px" not in sql_explorer.build_css(charts.get_palette(charts.MODE_DARK))
+
+
+def english_page(**state):
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
+    app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PROFESSIONAL
+    app.query_params.update({dashboard.VIEW_PARAMETER: dashboard.PAGE_SQL, "lang": "en"})
+    for key, value in state.items():
+        app.session_state[key] = value
+    app.run()
+    assert not app.exception
+    return app
+
+
+def test_d516_every_comment_of_every_query_has_its_english(monkeypatch):
+    monkeypatch.setattr(i18n, "is_english", lambda: True)
+    for index, (title, _, template, _) in enumerate(sql_explorer.TEMPLATES):
+        spanish = sql_explorer.COMMENT_PATTERN.findall(template)
+        assert spanish, title
+        for comment in spanish:
+            assert comment.rstrip("\n") in i18n.EN, comment
+        written = sql_explorer.render_example(index)
+        comments = sql_explorer.COMMENT_PATTERN.findall(written)
+        assert not re.search(r"[áéíóúñ¿¡]| (de|del|la|el|que|por|cada|en) ", " ".join(comments)), comments
+        # only the comments change: without them the query is the same one
+        strip = lambda sql: sql_explorer.COMMENT_PATTERN.sub("", sql)  # noqa: E731
+        assert strip(written) == strip(sql_explorer.EXAMPLES[index][2]), title
+    assert "since January 2022" in sql_explorer.render_example(3, {"periodo": sql_explorer.SINCE_2022})
+    assert "year 2025" in sql_explorer.render_example(3, {"periodo": 2025})
+
+
+def test_d516_the_list_of_examples_never_freezes_the_language_of_the_first_visit(monkeypatch):
+    monkeypatch.setattr(i18n, "is_english", lambda: True)
+    frozen = [
+        (title, question, sql_explorer.render_example(index, read=str))
+        for index, (title, question, _, _) in enumerate(sql_explorer.TEMPLATES)
+    ]
+    assert frozen == sql_explorer.EXAMPLES
+    assert sql_explorer.EXAMPLES[0][2].startswith("-- Tabla completa")
+
+
+@needs_database
+def test_d516_the_page_in_english_writes_comments_summary_and_messages_in_english():
+    # the result in the session, as a run leaves it: AppTest cannot rerun a page with translated selectors
+    app = english_page(sqlx_result=sql_explorer.run_user_query(sql_explorer.EXAMPLES[0][2]))
+    assert app.text_area[0].value.startswith("-- Full table: one weekly price")
+    written = " ".join(block.value for block in app.caption)
+    assert re.search(r"[\d,]+ rows · \d+ columns · [\d,]+ ms · showing the first 5,000", written), written
+    markup = " ".join(block.value for block in app.markdown)
+    assert "query.sql" in markup or "full_table.sql" in markup
+    assert "filas" not in written and "columnas" not in written
+
+
+@needs_database
+def test_d516_the_grid_shows_the_names_the_query_wrote_and_the_week_as_a_date():
+    app = english_page(sqlx_result=sql_explorer.run_user_query(sql_explorer.EXAMPLES[0][2]))
+    columns = list(app.dataframe[0].value.columns)
+    assert columns[:3] == ["semana", "familia", "producto"], columns  # never a half-translated «week»
+    assert app.text_area[0].value.count("p.semana") >= 1
+
+
+def test_d516_a_message_of_a_rejected_query_reads_in_english(monkeypatch):
+    monkeypatch.setattr(i18n, "is_english", lambda: True)
+    for sql, expected in (
+        ("", "Write a SELECT query"),
+        ("DROP TABLE precios", "Only read queries are allowed"),
+        ("SELECT 1; SELECT 2", "Run one query at a time"),
+        ("SELECT * FROM read_csv('a.csv')", "Queries work only on the tables"),
+    ):
+        assert expected in sql_explorer.outcome_of(sql), sql
+    assert sql_explorer.outcome_of("SELECT no_such FROM nothing").startswith("DuckDB returned an error")
+
+
+def test_d516_every_text_of_the_templates_and_the_views_reads_in_english(monkeypatch):
+    monkeypatch.setattr(i18n, "is_english", lambda: True)
+    for title, question, *_ in sql_explorer.TEMPLATES:
+        assert i18n.translate_text(question) != question, question
+        assert i18n.translate_text(title) != title, title
+    for name, description, _ in sql_explorer.VIEWS:
+        assert i18n.translate_text(description) != description, name
+    for script in sql_explorer.SCRIPT_NAMES.values():
+        assert i18n.tr(script) != script, script
 
 
 # region The answers of the PRD, recomputed another way (D-244)

@@ -368,6 +368,40 @@ EN = {
     "el mes del IPC de cada semana": "the month of each week's IPC",
     "Relaciones": "Relationships",
     "Relaciones entre las vistas": "Relationships between the views",
+    # D-516: the comments of the example queries, whole, and what the page writes around a query
+    "-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y región,\n-- cruzado con el IPC de alimentos del INE. precio_real = precio × factor_real\n-- (pesos del último mes publicado). Filtros elegidos sobre el editor; un filtro sin elegir no filtra.": "-- Full table: one weekly price per product, variety, quality, channel and region,\n-- crossed with the INE Food CPI. precio_real = precio × factor_real\n-- (pesos of the last published month). Filters chosen above the editor; a filter left unchosen does not filter.",
+    "-- Precio vs. época: ¿está caro o barato frente a la misma época de años anteriores?\n-- Cada serie (producto, variedad, calidad, canal, unidad y región) se compara consigo misma:\n-- últimas 4 semanas frente a las mismas semanas ISO de los años anteriores, en pesos reales.": "-- Price vs. season: is it expensive or cheap against the same season of earlier years?\n-- Each series (product, variety, quality, channel, unit and region) is compared with itself:\n-- the last 4 weeks against the same ISO weeks of earlier years, in real pesos.",
+    "-- Canal más barato: ¿dónde comprar cada producto y cuánto se ahorra?\n-- Se comparan canales con el mismo producto, variedad, calidad, unidad, región y semanas\n-- (promedio de las últimas 4 semanas, para no depender de una sola semana).": "-- Cheapest channel: where to buy each product and how much is saved?\n-- Channels are compared on the same product, variety, quality, unit, region and weeks\n-- (average of the last 4 weeks, so as not to depend on a single week).",
+    "-- 3 regiones en todo el país; 1 si se eligió una región": "-- 3 regions across the country; 1 if a region was chosen",
+    "-- Inflación vs IPC: ¿qué productos subieron más que la inflación de alimentos?\n-- Período elegido arriba ({periodo}). Cada serie se mide entre su primer y su último precio\n-- del período, y el IPC entre esas mismas dos semanas: la comparación es exacta, serie a serie.": "-- Inflation vs CPI: which products rose more than food inflation?\n-- Period chosen above ({periodo}). Each series is measured between its first and its last price\n-- of the period, and the CPI between those same two weeks: the comparison is exact, series by series.",
+    "-- Brecha mayorista-consumidor: ¿cuánto más paga el consumidor que el mayorista?\n-- Solo Frutas y Hortalizas tienen precio mayorista. Se emparejan el mismo producto, variedad,\n-- calidad, unidad, región y semana en los dos canales. Es una brecha, no un margen:\n-- no incluye transporte, mermas ni costos del comercio.": "-- Wholesale gap: how much more does the consumer pay than the wholesaler?\n-- Only Fruit and Vegetables have a wholesale price. The same product, variety,\n-- quality, unit, region and week are paired in the two channels. It is a gap, not a margin:\n-- it does not include transport, losses or retail costs.",
+    "-- Calendario de compra: ¿en qué mes cada producto suele estar más barato y más caro?\n-- Índice estacional en pesos reales: en cada serie y año, el precio de cada mes se divide por la\n-- mediana de ese año; luego se toma la mediana por mes. 100 = precio típico del año.": "-- Purchase calendar: in which month is each product usually cheapest and most expensive?\n-- Seasonal index in real pesos: in each series and year, the price of each month is divided by the\n-- median of that year; then the median per month is taken. 100 = the typical price of the year.",
+    "Tabla del data warehouse. Columnas: {}": "Data warehouse table. Columns: {}",
+    "Columnas: {}": "Columns: {}",
+    "consulta.sql": "query.sql",
+    "tabla_completa.sql": "full_table.sql",
+    "precio_vs_epoca.sql": "price_vs_season.sql",
+    "canal_mas_barato.sql": "cheapest_channel.sql",
+    "inflacion_vs_ipc.sql": "inflation_vs_cpi.sql",
+    "brecha_mayorista.sql": "wholesale_gap.sql",
+    "calendario_compra.sql": "purchase_calendar.sql",
+    "desde enero de 2022": "since January 2022",
+    "año {}": "year {}",
+    "{} filas · {} columnas · {} ms": "{} rows · {} columns · {} ms",
+    " · se muestran las primeras {}": " · showing the first {}",
+    "consulta": "query",
+    "Ejecutando…": "Running…",
+    "La consulta terminó con errores.": "The query ended with errors.",
+    "0 filas": "0 rows",
+    "Escribe una consulta SELECT antes de ejecutar.": "Write a SELECT query before running.",
+    "Solo se permiten consultas de lectura: SELECT o WITH (también DESCRIBE, SHOW y SUMMARIZE). INSERT, UPDATE, DELETE, DROP, CREATE, ATTACH, COPY, PRAGMA, SET y otras instrucciones no se ejecutan.": "Only read queries are allowed: SELECT or WITH (also DESCRIBE, SHOW and SUMMARIZE). INSERT, UPDATE, DELETE, DROP, CREATE, ATTACH, COPY, PRAGMA, SET and other statements do not run.",
+    "La consulta no se pudo interpretar: {}": "The query could not be parsed: {}",
+    "Ejecuta una sola consulta a la vez (sin varias instrucciones separadas por punto y coma).": "Run one query at a time (without several statements separated by semicolons).",
+    "Solo se permiten consultas de lectura (SELECT o WITH).": "Only read queries are allowed (SELECT or WITH).",
+    "Las consultas trabajan solo sobre las tablas de esta base: leer archivos o direcciones web (read_csv, read_parquet, http…) está desactivado.": "Queries work only on the tables of this database: reading files or web addresses (read_csv, read_parquet, http…) is turned off.",
+    "La consulta superó el límite de {} segundos y se detuvo. Prueba filtrando por semana, producto o región.": "The query passed the limit of {} seconds and stopped. Try filtering by week, product or region.",
+    "DuckDB devolvió un error: {}": "DuckDB returned an error: {}",
+    "No se pudo leer la base de datos: {}": "The database could not be read: {}",
     "Cómo se unen las vistas: el diagrama entidad-relación y cada JOIN listo para copiar.": "How the views join: the entity-relationship diagram and each JOIN ready to copy.",
     "{}: elige uno o déjalo en todos": "{}: choose one or leave it at all",
     # D-509: the file of «Descargar»: its headings, its notes and what the reader chose
@@ -632,9 +666,11 @@ TEXT_NODE = _re.compile(r">([^<>]+)<")
 ATTRIBUTE = _re.compile(
     r'(\b(?:title|aria-label|alt|placeholder|data-tip|data-title|data-label|data-what)=")([^"]*)(")'
 )
-# Scripts keep their code (only their whole strings are looked up); styles, code and preformatted text are left alone.
+# Scripts keep their code (only their whole strings are looked up); styles, code and preformatted text are left alone,
+# and a drawing's text marked translate="no": the name of a view or a column is code (D-516).
 BLOCK = _re.compile(
-    r"(<script\b[^>]*>)(.*?)(</script>)|(<style\b[^>]*>.*?</style>|<pre\b[^>]*>.*?</pre>|<code\b[^>]*>.*?</code>)",
+    r"(<script\b[^>]*>)(.*?)(</script>)|(<style\b[^>]*>.*?</style>|<pre\b[^>]*>.*?</pre>|<code\b[^>]*>.*?</code>"
+    r'|<text translate="no"[^>]*>[^<]*</text>)',
     _re.DOTALL | _re.IGNORECASE,
 )
 JS_STRING = _re.compile(r"""(["'])((?:(?!\1)[^\\\n]|\\.){2,}?)\1""")
@@ -825,9 +861,13 @@ def _translate_plain_html(markup):
     return ATTRIBUTE.sub(lambda match: match.group(1) + translate_markup_text(match.group(2)) + match.group(3), markup)
 
 
+class Verbatim(str):
+    """D-516: a label that is code, as the name of a view: it reads the same in every language."""
+
+
 def translate_any(value):
     """A label or a body: HTML when it has tags, otherwise a whole text, line by line for Markdown."""
-    if not isinstance(value, str) or not is_english():
+    if not isinstance(value, str) or isinstance(value, Verbatim) or not is_english():
         return value
     if "<" in value and ">" in value:
         return translate_html(value)
@@ -904,6 +944,10 @@ def translate_spec(spec):
     return spec
 
 
+# D-516: a frame with this mark is the answer to a SQL query: its column names are what the query wrote.
+KEEP_NAMES = "keep_names"
+
+
 def translate_frame(frame):
     """A table: its column names and the cells that are a whole entry (labels, never data)."""
     try:
@@ -912,7 +956,11 @@ def translate_frame(frame):
         return frame
     if not is_english() or not isinstance(frame, pd.DataFrame):
         return frame
-    frame = frame.rename(columns=lambda column: translate_text(column) if isinstance(column, str) else column)
+    frame = (
+        frame.copy()
+        if frame.attrs.get(KEEP_NAMES)
+        else frame.rename(columns=lambda column: translate_text(column) if isinstance(column, str) else column)
+    )
     for column in frame.columns:
         if frame[column].dtype == object:
             frame[column] = frame[column].map(lambda cell: translate_text(cell) if isinstance(cell, str) else cell)

@@ -9280,9 +9280,10 @@ FOLDER_TILE_BLOCK = "documentos"
 SOURCES_TILE_BLOCK = "fuentes"
 # D-442, D-452, D-453: the two dashboards are tiles, not lines, at the head of «Negocio · BA y BI».
 DASHBOARD_TILES = [PAGE_HOME, PAGE_BA]  # D-494
-# D-463: the pages whose dashboards or diagrams want the width: the menu folds on going to them.
+# D-463, D-516: the pages whose dashboards, diagrams or SQL editor want the width: the menu folds on going to them.
 FOLD_MENU_VIEWS = [
     *DASHBOARD_TILES,
+    PAGE_SQL,
     PAGE_DIAGRAMS,
     PAGE_ARCHITECTURE,
     PAGE_STACK,

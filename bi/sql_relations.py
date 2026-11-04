@@ -11,9 +11,16 @@ import html
 
 from bi import er_diagram, i18n, sql_explorer
 
-HEADER, ROW, BOX, MARGIN = er_diagram.HEADER, er_diagram.ROW, 250, er_diagram.MARGIN
-# The boxes of the lower band, each as wide as its longest column beside its type.
-LOWER = {"cargas": 240, "rechazos": 240, "ipc_mensual": 245, "modelos_dbt": 255}
+HEADER, ROW, BOX, MARGIN = 32, 24, 255, er_diagram.MARGIN
+# D-516: four columns, so the drawing is wider than tall and all of it fits one look at the window. Each view beside the
+# view it joins; the gaps leave room for the lines that pass between two columns.
+COLUMNS = (
+    ("productos", "modelos_dbt"),
+    ("precios",),
+    ("semanas", "ipc_semanal"),
+    ("ipc_mensual", "cargas", "rechazos"),
+)
+COLUMN_GAPS, BOX_GAP, BRACKET = (86, 100, 140), 26, 34
 FONT, MONO = er_diagram.FONT, er_diagram.MONO
 VIEWS = ["productos", "precios", "semanas", "ipc_semanal", "cargas", "rechazos", "ipc_mensual", "modelos_dbt"]
 # The columns that identify one row of a view; a view with none is read by its whole row (precios: its grain is the
@@ -111,22 +118,15 @@ def key_label(view, column):
 
 
 def layout(schema):
-    """{view: (x, y, width, height)}: the catalogue at the left, the prices in the middle, the calendar and the IPC at
-    the right; the loads, the rejections, the monthly IPC and the dbt models in a band below."""
-    height = {view: HEADER + len(schema[view]) * ROW for view in VIEWS}
-    left, center, right = MARGIN, MARGIN + BOX + 150, MARGIN + 2 * (BOX + 150)
-    top = MARGIN
-    places = {
-        "productos": (left, top, BOX, height["productos"]),
-        "precios": (center, top, BOX, height["precios"]),
-        "semanas": (right, top, BOX, height["semanas"]),
-        "ipc_semanal": (right, top + height["semanas"] + 50, BOX, height["ipc_semanal"]),
-    }
-    band = max(y + h for _, y, _, h in places.values()) + 70
-    x = MARGIN
-    for index, view in enumerate(("cargas", "rechazos", "ipc_mensual", "modelos_dbt")):
-        places[view] = (x, band, LOWER[view], height[view])
-        x += LOWER[view] + ((46, 36, 74)[index] if index < 3 else 0)
+    """{view: (x, y, width, height)}: the columns of COLUMNS from left to right, each view under the one before."""
+    places, x = {}, MARGIN
+    for views, gap in zip(COLUMNS, (*COLUMN_GAPS, 0)):
+        y = MARGIN
+        for view in views:
+            height = HEADER + len(schema[view]) * ROW
+            places[view] = (x, y, BOX, height)
+            y += height + BOX_GAP
+        x += BOX + gap
     return places
 
 
@@ -142,11 +142,12 @@ def build_view(view, schema, places, counts, shade, descriptions):
     for index, (column, kind) in enumerate(schema[view]):
         base = y + HEADER + index * ROW
         rows.append(
-            f'<text x="{x + 10}" y="{base + 17}" font-size="11" font-weight="600" fill="{shade["accent"]}">'
+            f'<text x="{x + 10}" y="{base + 16}" font-size="11" font-weight="600" fill="{shade["accent"]}">'
             f"{key_label(view, column)}</text>"
-            f'<text x="{x + 50}" y="{base + 17}" font-family="{MONO}" font-size="{FONT}" fill="{shade["ink"]}">'
+            f'<text translate="no" x="{x + 50}" y="{base + 16}" font-family="{MONO}" font-size="{FONT}" '
+            f'fill="{shade["ink"]}">'
             f"{html.escape(column)}</text>"
-            f'<text x="{x + width - 10}" y="{base + 17}" text-anchor="end" font-family="{MONO}" font-size="11" '
+            f'<text x="{x + width - 10}" y="{base + 16}" text-anchor="end" font-family="{MONO}" font-size="11" '
             f'fill="{shade["muted"]}">{html.escape(kind)}</text>'
         )
     rule = ""
@@ -154,7 +155,7 @@ def build_view(view, schema, places, counts, shade, descriptions):
         rule_y = y + HEADER + len(KEYS[view]) * ROW
         rule = f'<path d="M{x} {rule_y} H{x + width}" stroke="{shade["line"]}" stroke-width="1.2"/>'
     count = (
-        f'<text x="{x + width - 10}" y="{y + 22}" text-anchor="end" font-size="10.5" fill="{shade["muted"]}">'
+        f'<text x="{x + width - 10}" y="{y + 21}" text-anchor="end" font-size="10.5" fill="{shade["muted"]}">'
         f"{er_diagram.charts.format_thousands(counts[view])} filas</text>"
         if counts.get(view) is not None
         else ""
@@ -165,14 +166,18 @@ def build_view(view, schema, places, counts, shade, descriptions):
         f'stroke="{shade["line"]}" stroke-width="1.4"/>'
         f'<path d="M{x} {y + HEADER} V{y + 6} Q{x} {y} {x + 6} {y} H{x + width - 6} Q{x + width} {y} {x + width} {y + 6} '
         f'V{y + HEADER} Z" fill="{shade["accent"]}" fill-opacity="{shade["header_opacity"]}"/>'
-        f'<text x="{x + 10}" y="{y + 22}" font-size="14" font-weight="600" fill="{shade["ink"]}">{html.escape(view)}</text>'
+        f'<text translate="no" x="{x + 10}" y="{y + 21}" font-size="14" font-weight="600" '
+        f'fill="{shade["ink"]}">{html.escape(view)}</text>'
         f'{count}{rule}{"".join(rows)}</g>'
     )
 
 
 def route(places, child, parent, y_child, y_parent):
-    """The path between the facing edges of two boxes: straight when they share a band, an elbow otherwise."""
+    """The path between the facing edges of two boxes: straight at one height, an elbow otherwise; a bracket out of
+    their left edges when one is under the other."""
     c, p = places[child], places[parent]
+    if c[0] == p[0]:
+        return f"M{c[0]} {y_child} H{c[0] - BRACKET} V{y_parent} H{p[0]}", "left", "left"
     child_edge, parent_edge = ("left", "right") if p[0] + p[2] <= c[0] else ("right", "left")
     (xc, _), (xp, _) = er_diagram.attach(c, child_edge), er_diagram.attach(p, parent_edge)
     if y_child == y_parent:
@@ -208,25 +213,27 @@ def build_svg(schema, counts, mode, descriptions=None):
     child, child_column, parent, parent_column, label, meaning = LOGICAL
     y_a, y_b = row_y(places, child, child_column, schema), row_y(places, parent, parent_column, schema)
     path, _, _ = route(places, child, parent, y_a, y_b)
-    xc, xp = places[child][0] + places[child][2], places[parent][0]
+    # the name of the link over its first stretch, between the box and the turn
+    label_x = places[child][0] - COLUMN_GAPS[-1] / 4
     logical = (
         f'<g class="er-link"><title>{html.escape(meaning)}</title>'
         f'<path d="{path}" stroke="{shade["muted"]}" stroke-width="1.4" stroke-dasharray="5 5" fill="none"/>'
-        f'<text x="{(xc + xp) / 2 + 6}" y="{(y_a + y_b) / 2}" font-size="11" fill="{shade["muted"]}">'
+        f'<text x="{label_x}" y="{y_a - 5}" text-anchor="middle" font-size="11" fill="{shade["muted"]}">'
         f"{html.escape(label)}</text></g>"
     )
     tables = "".join(build_view(view, schema, places, counts, shade, descriptions) for view in VIEWS)
-    legend_y = bottom + 16
     lines = (
         "PK: las columnas que identifican una fila · FK: una columna que apunta a otra vista",
         "Pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · línea punteada: mismo mes, sin clave",
         "precios no tiene clave: una fila es una semana, un producto, una región, un canal y una unidad juntos.",
     )
+    # in the free corner at the bottom left, the last line level with the end of the tallest column
+    legend_y = bottom - MARGIN - 18 * (len(lines) - 1)
     legend = "".join(
         f'<text x="{MARGIN}" y="{legend_y + 18 * index}" font-size="12" fill="{shade["muted"]}">{html.escape(line)}</text>'
         for index, line in enumerate(lines)
     )
-    height = legend_y + 18 * len(lines) + 12
+    height = bottom
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="100%" role="img" '
         f'aria-label="Relaciones entre las vistas de Consultas SQL" font-family="{er_diagram.charts.CHART_FONT}">'

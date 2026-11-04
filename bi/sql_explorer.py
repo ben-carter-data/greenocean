@@ -404,20 +404,35 @@ def build_conditions(values, names):
     return conditions
 
 
-def period_bounds(period):
+def period_bounds(period, read=tr):
     """(text, from, to) of the inflation period: a calendar year, or since January 2022."""
     if str(period) == SINCE_2022:
-        return "desde enero de 2022", "DATE '2022-01-01'", "DATE '2099-12-31'"
+        return read("desde enero de 2022"), "DATE '2022-01-01'", "DATE '2099-12-31'"
     year = int(period)
-    return f"año {year}", f"DATE '{year}-01-01'", f"DATE '{year}-12-31'"
+    return read("año {}").format(year), f"DATE '{year}-01-01'", f"DATE '{year}-12-31'"
 
 
-def render_example(index, values=None):
-    """The example's SQL with its parameters filled in (D-180, D-185)."""
+# A run of whole comment lines reads as one text; a comment after code, as another.
+COMMENT_PATTERN = re.compile(r"(?:^--[^\n]*(?:\n|$))+|--[^\n]*", re.MULTILINE)
+
+
+def translate_comments(template, read=tr):
+    """D-516: the comments of a template in the language of the visit. The SQL, its names and its data stay."""
+
+    def translated(match):
+        text = match.group(0)
+        return read(text.rstrip("\n")) + text[len(text.rstrip("\n")) :]
+
+    return COMMENT_PATTERN.sub(translated, template)
+
+
+def render_example(index, values=None, read=tr):
+    """The example's SQL with its parameters filled in (D-180, D-185), its comments in the language of the visit."""
     values = {**PARAMETER_DEFAULTS, **(values or {})}
     _, _, template, names = TEMPLATES[index]
+    template = translate_comments(template, read)
     conditions = build_conditions(values, names)
-    text, start, end = period_bounds(values["periodo"])
+    text, start, end = period_bounds(values["periodo"], read)
     return (
         template.replace("{where}", ("\nWHERE " + "\n  AND ".join(conditions)) if conditions else "")
         .replace("{filtros}", "".join(f"\n      AND {condition}" for condition in conditions))
@@ -428,8 +443,11 @@ def render_example(index, values=None):
     )
 
 
-# (title, question, SQL with the default parameters), as the tests and the chips read them.
-EXAMPLES = [(title, question, render_example(index)) for index, (title, question, _, _) in enumerate(TEMPLATES)]
+# (title, question, SQL with the default parameters), as the tests and the chips read them. In the text they are written
+# in: this list is built once for every visit, so the page asks render_example for the language of each.
+EXAMPLES = [
+    (title, question, render_example(index, read=str)) for index, (title, question, _, _) in enumerate(TEMPLATES)
+]
 
 
 # Gold tables offered as CSV in «Llevar los datos a otra herramienta».
@@ -455,6 +473,20 @@ EXPORTS = [
 
 
 # region Validation
+# The messages for the reader, whole, so that the English layer finds them (D-443).
+ONLY_READING = (
+    "Solo se permiten consultas de lectura: SELECT o WITH (también DESCRIBE, SHOW y "
+    "SUMMARIZE). INSERT, UPDATE, DELETE, DROP, CREATE, ATTACH, COPY, PRAGMA, SET y "
+    "otras instrucciones no se ejecutan."
+)
+ONLY_THIS_DATABASE = (
+    "Las consultas trabajan solo sobre las tablas de esta base: leer "
+    "archivos o direcciones web (read_csv, read_parquet, http…) está "
+    "desactivado."
+)
+TOO_LONG = "La consulta superó el límite de {} segundos y se detuvo. Prueba filtrando por semana, producto o región."
+
+
 class QueryRejected(ValueError):
     """A query that the explorer does not run; the message is for the visitor."""
 
@@ -498,28 +530,22 @@ def validate_query(sql):
     while text.endswith(";"):
         text = text[:-1].rstrip()
     if not text:
-        raise QueryRejected("Escribe una consulta SELECT antes de ejecutar.")
+        raise QueryRejected(tr("Escribe una consulta SELECT antes de ejecutar."))
     first_word = FIRST_WORD_PATTERN.match(text.lstrip("( \n\t"))
     if not first_word or first_word.group(0).upper() not in ALLOWED_FIRST_WORDS:
-        raise QueryRejected(
-            "Solo se permiten consultas de lectura: SELECT o WITH (también DESCRIBE, SHOW y "
-            "SUMMARIZE). INSERT, UPDATE, DELETE, DROP, CREATE, ATTACH, COPY, PRAGMA, SET y "
-            "otras instrucciones no se ejecutan."
-        )
+        raise QueryRejected(tr(ONLY_READING))
     try:
         statements = duckdb.extract_statements(text)
     except duckdb.Error as error:
-        raise QueryRejected(f"La consulta no se pudo interpretar: {error}") from error
+        raise QueryRejected(tr("La consulta no se pudo interpretar: {}").format(error)) from error
     if len(statements) != 1:
-        raise QueryRejected("Ejecuta una sola consulta a la vez (sin varias instrucciones separadas por punto y coma).")
-    if statements[0].type != duckdb.StatementType.SELECT:
-        raise QueryRejected("Solo se permiten consultas de lectura (SELECT o WITH).")
-    if FILE_FUNCTION_PATTERN.search(text) or URL_PATTERN.search(text):
         raise QueryRejected(
-            "Las consultas trabajan solo sobre las tablas de esta base: leer "
-            "archivos o direcciones web (read_csv, read_parquet, http…) está "
-            "desactivado."
+            tr("Ejecuta una sola consulta a la vez (sin varias instrucciones separadas por punto y coma).")
         )
+    if statements[0].type != duckdb.StatementType.SELECT:
+        raise QueryRejected(tr("Solo se permiten consultas de lectura (SELECT o WITH)."))
+    if FILE_FUNCTION_PATTERN.search(text) or URL_PATTERN.search(text):
+        raise QueryRejected(tr(ONLY_THIS_DATABASE))
     return text
 
 
@@ -565,10 +591,7 @@ def run_user_query(sql, database_file=queries.DATABASE_FILE, timeout=TIMEOUT_SEC
         timer.start()
         rows = connection.execute(wrapped).df()
     except duckdb.InterruptException as error:
-        raise QueryTimeout(
-            f"La consulta superó el límite de {timeout:g} segundos y se detuvo. "
-            "Prueba filtrando por semana, producto o región."
-        ) from error
+        raise QueryTimeout(tr(TOO_LONG).format(f"{timeout:g}")) from error
     finally:
         timer.cancel()
         connection.close()
@@ -845,9 +868,8 @@ def build_css(palette):
 .st-key-sqlx_body {{ gap:0 !important; }}
 /* D-233, D-267: the studio and the short footer fit the window: the explorer scrolls by itself (its bar shows on hover) and the grid takes
    what the editor leaves; below a floor the page scrolls rather than squash them. */
-.st-key-sqlx_explorer {{ max-height:max(calc(100vh - 388px), 360px); overflow-y:auto; scrollbar-width:none; }}
+.st-key-sqlx_explorer {{ max-height:max(calc(100vh - 248px), 360px); overflow-y:auto; scrollbar-width:none; }}
 .st-key-sqlx_explorer:hover {{ scrollbar-width:thin; scrollbar-color:{border} transparent; }}
-.st-key-sqlx_results [data-testid="stDataFrame"] {{ height:max(calc(100vh - 698px), 190px) !important; }}
 .st-key-sqlx_body [data-testid="stHorizontalBlock"] {{ align-items:stretch; gap:0 !important; }}
 [data-testid="stColumn"]:has(.st-key-sqlx_explorer) > [data-testid="stVerticalBlock"],
 [data-testid="stColumn"]:has(.st-key-sqlx_explorer) [data-testid="stLayoutWrapper"] {{ height:100%; flex:1 1 auto; }}
@@ -876,7 +898,8 @@ def build_css(palette):
 .st-key-sqlx_explorer .st-key-sqlx_relations button {{ width:100%; min-height:28px !important; box-shadow:{raised} !important; }}
 .st-key-sqlx_explorer .st-key-sqlx_relations button p {{ font-size:.76rem !important; }}
 /* D-515: the drawing of the relationships takes the width of its window; its joins keep the editor's letter. */
-.sqlx-relations svg {{ display:block; width:100%; height:auto; }}
+/* D-516: the whole diagram in one look, at any window: it scales to the width and never passes the height. */
+.sqlx-relations svg {{ display:block; width:100%; height:auto; max-height:calc(100vh - 230px); }}
 .st-key-sqlx_explorer [data-testid="stPopover"] {{ margin-top:6px; }}
 .st-key-sqlx_explorer [data-testid="stPopover"]>button {{ width:100%; min-height:28px !important; box-shadow:{raised} !important; }}
 .st-key-sqlx_explorer [data-testid="stPopover"]>button p {{ font-size:.76rem !important; }}
@@ -942,7 +965,12 @@ def build_css(palette):
 .sqlx-code .t-s {{ color:{tokens['s']}; }} .sqlx-code .t-n {{ color:{tokens['n']}; }}
 .sqlx-code .t-c {{ color:{tokens['c']}; font-style:italic; }} .sqlx-code .t-o {{ color:{tokens['o']}; }}
 .sqlx-code .t-q {{ color:{tokens['q']}; }}
-.st-key-sqlx_results {{ gap:0 !important; }}
+.st-key-sqlx_results {{ gap:0 !important; position:relative; }}
+/* D-516: the summary and the downloads share the line of the tabs, and the grid gets that height. */
+.st-key-sqlx_resultbar {{ position:absolute; top:9px; right:0; left:170px; width:auto !important; height:34px; z-index:2; }}
+.st-key-sqlx_resultbar > [data-testid="stElementContainer"]:has([data-testid="stCaptionContainer"]) {{ flex:1 1 0; min-width:0; }}
+.st-key-sqlx_resultbar [data-testid="stCaptionContainer"] p {{ margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+.st-key-sqlx_results [data-testid="stTabPanel"] > [data-testid="stVerticalBlock"] {{ gap:0 !important; }}
 .st-key-sqlx_results [data-testid="stTabs"] [data-baseweb="tab-list"] {{ gap:4px; border-bottom:1px solid {border}; }}
 .st-key-sqlx_results [data-testid="stTabs"] button[data-baseweb="tab"] {{ padding:5px 12px; border-radius:8px 8px 0 0; }}
 .st-key-sqlx_results [data-testid="stTabs"] button[data-baseweb="tab"] p {{ font-size:.8rem; }}
@@ -1019,6 +1047,11 @@ def build_folder_html(name, count):
     )
 
 
+def build_column_names(columns):
+    """The columns of a table on hover, as code: their names read the same in every language (D-516)."""
+    return ", ".join(f"`{column}`" for column, _ in columns)
+
+
 def build_view_html(name, description, count, columns):
     """One quiet line under a view's name: its rows and columns."""
     count_text = f"{count:,}".replace(",", ".")
@@ -1029,9 +1062,13 @@ def build_tab_html(example):
     """The editor's tab strip: the script's file name and an «i» that tells, on hover,
     which question it answers (D-182)."""
     if example is None:
-        return '<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>consulta.sql</span></div>'
+        return (
+            '<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>'
+            + tr("consulta.sql")
+            + "</span></div>"
+        )
     title, question, _ = EXAMPLES[example]
-    script = SCRIPT_NAMES.get(title, "consulta.sql")
+    script = tr(SCRIPT_NAMES.get(title, "consulta.sql"))
     return (
         f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>{html.escape(script)}</span>'
         f'<span class="sqlx-info" tabindex="0" title="{html.escape(question, quote=True)}">'
@@ -1053,12 +1090,17 @@ def format_elapsed(seconds):
     return f"{whole // 3600:02d}:{whole % 3600 // 60:02d}:{whole % 60:02d}.{int(seconds * 1000) % 1000:03d}"
 
 
+def format_count(value):
+    """D-284: a figure in the language of the visit."""
+    return f"{value:,.0f}" if i18n.is_english() else f"{value:,.0f}".replace(",", ".")
+
+
 def build_status_html(outcome):
     """The status bar: the verdict, the engine, the database, the time and the rows."""
     if outcome is None:
         kind, verdict, elapsed, rows = "idle", "Lista para ejecutar (Ctrl + Enter o «Ejecutar»).", "00:00:00.000", "—"
     elif isinstance(outcome, str):
-        kind, verdict, elapsed, rows = "err", "La consulta terminó con errores.", "00:00:00.000", "0 filas"
+        kind, verdict, elapsed, rows = "err", tr("La consulta terminó con errores."), "00:00:00.000", tr("0 filas")
     else:
         kind, verdict = "ok", "Consulta ejecutada correctamente."
         elapsed = format_elapsed(outcome.seconds)
@@ -1077,17 +1119,15 @@ def build_messages_html(outcome):
         return f'<pre class="sqlx-msg">{tr("Sin mensajes todavía. Ejecuta una consulta.")}</pre>'
     if isinstance(outcome, str):
         return f'<pre class="sqlx-msg"><span class="err">{html.escape(outcome)}</span>\n\n{tr("La consulta no se ejecutó.")}</pre>'
-    # D-284: figures in the language of the visit; the messages are preformatted, so they are written in it here.
-    number = (lambda value: f"{value:,.0f}") if i18n.is_english() else (lambda value: f"{value:,.0f}".replace(",", "."))
     note = (
-        "\n" + tr("Se muestran las primeras {} filas; el resultado tenía más.").format(number(ROW_LIMIT))
+        "\n" + tr("Se muestran las primeras {} filas; el resultado tenía más.").format(format_count(ROW_LIMIT))
         if outcome.truncated
         else ""
     )
     return (
-        f'<pre class="sqlx-msg">{tr("({} filas afectadas)").format(number(len(outcome.rows)))}{note}\n\n'
+        f'<pre class="sqlx-msg">{tr("({} filas afectadas)").format(format_count(len(outcome.rows)))}{note}\n\n'
         f'<span class="ok">✓ {tr("Consulta ejecutada correctamente.")}</span>  '
-        f'{tr("Tiempo: {} ms").format(number(outcome.seconds * 1000))}</pre>'
+        f'{tr("Tiempo: {} ms").format(format_count(outcome.seconds * 1000))}</pre>'
     )
 
 
@@ -1169,7 +1209,7 @@ def outcome_of(sql):
     except (QueryRejected, QueryTimeout) as error:
         return str(error)
     except duckdb.Error as error:
-        return f"DuckDB devolvió un error: {error}"
+        return tr("DuckDB devolvió un error: {}").format(error)
 
 
 def choose_example(index):
@@ -1309,25 +1349,35 @@ def choose_view(name):
 def execute_editor(st, sql):
     """Run the editor's text and keep the outcome (rows or a message) in the session."""
     try:
-        with st.spinner("Ejecutando…"):
+        with st.spinner(tr("Ejecutando…")):
             st.session_state["sqlx_result"] = run_user_query(sql)
     except (QueryRejected, QueryTimeout) as error:
         st.session_state["sqlx_result"] = str(error)
     except duckdb.Error as error:
-        st.session_state["sqlx_result"] = f"DuckDB devolvió un error: {error}"
+        st.session_state["sqlx_result"] = tr("DuckDB devolvió un error: {}").format(error)
 
 
-# Editor and results share one height (D-183): a short query leaves its room to the rows.
-STUDIO_HEIGHT = 560
+# D-516: the grid takes all the height the window leaves under the editor, so the rows read without scrolling more
+# than needed; below the floor the page scrolls instead. A few rows keep their own height: an empty grid says nothing.
+AROUND_GRID, GRID_FLOOR, GRID_ROW = 348, 190, 28
 
 
-def results_height(sql, row_count):
-    """The grid's height: what the editor leaves free, never more than the rows need."""
-    room = max(250, STUDIO_HEIGHT - editor_height(sql))
-    return min(room, 35 * (row_count + 1) + 3)
+def results_height(row_count):
+    """The grid's height: what its container gives it, or just what its rows need when they are few."""
+    needed = GRID_ROW * (row_count + 1) + 3
+    return needed if needed <= GRID_FLOOR else "stretch"
 
 
-def show_result(st, outcome, sql=""):
+def build_grid_css(sql):
+    """The window's height minus what is above and below the grid; the editor above it grows with its text."""
+    offset = AROUND_GRID + editor_height(sql)
+    return (
+        f'<style>[data-testid="stLayoutWrapper"]:has(> .st-key-sqlx_grid) '
+        f"{{ height:max(calc(100vh - {offset}px), {GRID_FLOOR}px); }}</style>"
+    )
+
+
+def show_result(st, outcome):
     if outcome is None:
         st.markdown('<p class="sqlx-empty">El resultado aparecerá aquí.</p>', unsafe_allow_html=True)
         return
@@ -1335,17 +1385,18 @@ def show_result(st, outcome, sql=""):
         st.error(outcome)
         return
     rows, truncated, seconds = outcome.rows, outcome.truncated, outcome.seconds
-    count_text = f"{len(rows):,}".replace(",", ".")
-    note = f" · se muestran las primeras {ROW_LIMIT:,}".replace(",", ".") if truncated else ""
-    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
-        st.caption(
-            f"{count_text} filas · {len(rows.columns)} columnas · {seconds * 1000:,.0f} ms{note}".replace(",", ".")
-        )
+    summary = tr("{} filas · {} columnas · {} ms").format(
+        format_count(len(rows)), len(rows.columns), format_count(seconds * 1000)
+    )
+    note = tr(" · se muestran las primeras {}").format(format_count(ROW_LIMIT)) if truncated else ""
+    file_name = tr("consulta")
+    with st.container(key="sqlx_resultbar", horizontal=True, vertical_alignment="center", gap="small"):
+        st.caption(summary + note)
         if not rows.empty:
             st.download_button(
                 "CSV",
                 to_csv_bytes(rows),
-                "consulta.csv",
+                f"{file_name}.csv",
                 "text/csv",
                 key="sqlx_csv",
                 on_click="ignore",
@@ -1354,13 +1405,14 @@ def show_result(st, outcome, sql=""):
             st.download_button(
                 "Parquet",
                 partial(to_parquet_bytes, rows),
-                "consulta.parquet",
+                f"{file_name}.parquet",
                 "application/vnd.apache.parquet",
                 key="sqlx_parquet",
                 on_click="ignore",
                 icon=":material/download:",
             )
     numbered = rows.set_axis(range(1, len(rows) + 1))  # rows count from 1, as a SQL client
+    numbered.attrs[i18n.KEEP_NAMES] = True  # the grid shows the names the query uses, in any language (D-516)
     # Weeks are dates: show them without a midnight time.
     dates = {
         column: st.column_config.DateColumn(column, format="YYYY-MM-DD")
@@ -1368,9 +1420,31 @@ def show_result(st, outcome, sql=""):
         if pd.api.types.is_datetime64_any_dtype(rows[column])
         and (rows[column].dropna().dt.normalize() == rows[column].dropna()).all()
     }
-    st.dataframe(
-        numbered, width="stretch", hide_index=False, height=results_height(sql, len(rows)), column_config=dates
-    )
+    with st.container(key="sqlx_grid"):
+        st.dataframe(
+            numbered,
+            width="stretch",
+            hide_index=False,
+            height=results_height(len(rows)),
+            row_height=GRID_ROW,
+            column_config=dates,
+        )
+
+
+def follow_language(st):
+    """D-516: the visit changed language with an example in the editor: its comments follow. A text the reader wrote
+    or edited stays as it is."""
+    language, before = i18n.get_language(), st.session_state.get("sqlx_language")
+    st.session_state["sqlx_language"] = language
+    if before in (None, language):
+        return
+    if isinstance(st.session_state.get("sqlx_result"), str):  # a message written in the language left behind
+        st.session_state.pop("sqlx_result")
+    example = st.session_state.get("sqlx_example")
+    if example is not None and st.session_state.get("sqlx_editor") == st.session_state.get("sqlx_rendered"):
+        st.session_state["sqlx_editor"] = st.session_state["sqlx_rendered"] = render_example(
+            example, parameter_values()
+        )
 
 
 def show_relations_dialog(st, mode, descriptions):
@@ -1380,16 +1454,14 @@ def show_relations_dialog(st, mode, descriptions):
     @st.dialog("Relaciones entre las vistas", width="large")
     def relations():
         schema, counts = sql_relations.read_schema()
-        st.markdown(
-            '<p class="sqlx-note">Cada línea une dos vistas por la columna que señala; la columna PK identifica una '
-            "fila. Abajo, cada unión escrita, lista para copiar en el editor.</p>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            '<div class="sqlx-relations">' + sql_relations.build_svg(schema, counts, mode, descriptions) + "</div>",
-            unsafe_allow_html=True,
-        )
-        st.code(sql_relations.build_joins(), language="sql", wrap_lines=False)
+        drawing, joins = st.tabs(["Diagrama", "JOIN listos para copiar"])
+        with drawing:
+            st.markdown(
+                '<div class="sqlx-relations">' + sql_relations.build_svg(schema, counts, mode, descriptions) + "</div>",
+                unsafe_allow_html=True,
+            )
+        with joins:
+            st.code(sql_relations.build_joins(), language="sql", wrap_lines=False)
 
     relations()
 
@@ -1428,13 +1500,15 @@ def show_sql_explorer_page(mode, header=None):
     if header:  # the page bar of the dashboard (D-267)
         header()
     if "sqlx_editor" not in st.session_state:
-        st.session_state["sqlx_editor"] = EXAMPLES[0][2]
+        st.session_state["sqlx_editor"] = st.session_state["sqlx_rendered"] = render_example(0)
         st.session_state["sqlx_example"] = 0
+    follow_language(st)
+    st.markdown(build_grid_css(st.session_state["sqlx_editor"]), unsafe_allow_html=True)
     try:
         catalog = load_catalog()
     except Exception as error:  # the page still explains itself without the database
         catalog = []
-        st.warning(f"No se pudo leer la base de datos: {error}")
+        st.warning(tr("No se pudo leer la base de datos: {}").format(error))
     with st.container(key="sqlx_studio"):
         with st.container(key="sqlx_toolbar"):
             with st.container(key="sqlx_toolbar_main", horizontal=True, vertical_alignment="center"):
@@ -1473,18 +1547,20 @@ def show_sql_explorer_page(mode, header=None):
                         icon=":material/table:",
                         on_click=choose_table,
                         args=(name,),
-                        help="Tabla del data warehouse. Columnas: " + ", ".join(column for column, _ in columns),
+                        help=tr("Tabla del data warehouse. Columnas: {}").format(build_column_names(columns)),
                     )
                     st.markdown(build_view_html(name, "", count, columns), unsafe_allow_html=True)
                 st.markdown(build_folder_html("Vistas", len(catalog)), unsafe_allow_html=True)
                 for name, description, count, columns in catalog:
                     st.button(
-                        name,
+                        i18n.Verbatim(name),  # the name of a view is code: a query writes it as it is (D-516)
                         key=f"sqlx_view_{name}",
                         icon=":material/view_list:",
                         on_click=choose_view,
                         args=(name,),
-                        help=f"{description} Columnas: " + ", ".join(column for column, _ in columns),
+                        help=i18n.translate_text(description)
+                        + " "
+                        + tr("Columnas: {}").format(build_column_names(columns)),
                     )
                     st.markdown(build_view_html(name, description, count, columns), unsafe_allow_html=True)
                 # D-515: how the views join, before the exports; a SQL client shows its keys the same way
@@ -1499,8 +1575,8 @@ def show_sql_explorer_page(mode, header=None):
                 show_exports(st)
             with main, st.container(key="sqlx_main"):
                 example = st.session_state.get("sqlx_example")
-                written = st.session_state.get("sqlx_rendered", EXAMPLES[0][2])
-                if example is not None and st.session_state["sqlx_editor"] not in (written, EXAMPLES[example][2]):
+                written = st.session_state.get("sqlx_rendered", render_example(0))
+                if example is not None and st.session_state["sqlx_editor"] not in (written, render_example(example)):
                     example = None
                 # D-511: one line holds the script's tab and, to its right, the filters
                 with st.container(key="sqlx_tabrow", horizontal=True, vertical_alignment="center", gap="small"):
@@ -1521,7 +1597,7 @@ def show_sql_explorer_page(mode, header=None):
                 with st.container(key="sqlx_results"):
                     results, messages = st.tabs(["Resultados", "Mensajes"])
                     with results:
-                        show_result(st, outcome, st.session_state.get("sqlx_editor", ""))
+                        show_result(st, outcome)
                     with messages:
                         st.markdown(build_messages_html(outcome), unsafe_allow_html=True)
         st.markdown(build_status_html(st.session_state.get("sqlx_result")), unsafe_allow_html=True)

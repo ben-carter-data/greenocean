@@ -34,6 +34,7 @@ OFFICIAL_REGION = re.compile(r"^Región (?:de |del )?[^\n·]+$", re.MULTILINE)
 
 # Proper names drawn by the map of Chile and two-letter codes that are not Spanish words.
 PROPER_NAMES = {
+    "Español",  # the language switch names each language in itself
     "Arica y Parinacota",
     "Tarapacá",
     "Antofagasta",
@@ -79,7 +80,15 @@ def read_data_values():
     values |= {
         market for data in overview.read_points().values() for market in data["wholesale"]
     }  # D-306: proper names
-    return values | {value.replace(" - ", " · ") for value in values} | set(home_mockup.FAMILY_SHORT_NAMES.values())
+    from bi import sql_explorer
+
+    # D-516: the name of a view of «Consultas SQL» is code, as the query writes it
+    return (
+        values
+        | {value.replace(" - ", " · ") for value in values}
+        | set(home_mockup.FAMILY_SHORT_NAMES.values())
+        | set(sql_explorer.VIEW_NAMES)
+    )
 
 
 def script_texts(markup):
@@ -130,6 +139,10 @@ def collect(app):
         texts += [widget.label, getattr(widget.proto, "placeholder", "")]
     for widget in app.get("expander") + app.get("popover"):
         texts.append(getattr(widget.proto, "label", "") or "")
+    # D-516: what a control says on hover
+    for kind in ("button", "download_button", "popover", "selectbox", "text_input", "text_area", "radio", "pills"):
+        for widget in app.get(kind):
+            texts.append(getattr(widget.proto, "help", "") or "")
     for frame in app.dataframe:
         texts += [str(column) for column in frame.value.columns]
     for chart in app.get("vega_lite_chart") + app.get("arrow_vega_lite_chart"):

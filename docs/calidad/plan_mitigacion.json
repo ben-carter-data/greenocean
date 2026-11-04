@@ -2036,6 +2036,58 @@
           "referencia": "D-505"
         }
       ]
+    },
+    {
+      "id": "F-36",
+      "categoria": "código",
+      "falla": [
+        "En inglés, «Consultas SQL» seguía con textos en español y nombres de código a medio traducir",
+        "In English, «Consultas SQL» kept Spanish texts and half-translated code names"
+      ],
+      "deteccion": [
+        "El autor lo vio en el panel; la auditoría de inglés no leía los textos al pasar el cursor",
+        "The author saw it in the panel; the English audit did not read the texts on hover"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "El SQL y sus mensajes no pasaban por la capa de inglés, y esta traducía nombres de vistas",
+        "The SQL and its messages skipped the English layer, and that layer translated view names"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "Ninguna: las cifras eran correctas y el panel público no cambió",
+        "None: the figures were correct and the public panel did not change"
+      ],
+      "correctiva": [
+        "Comentarios y mensajes con su inglés; vistas y columnas siempre como código (D-516)",
+        "Comments and messages have their English; views and columns always as code (D-516)"
+      ],
+      "estacion": 9,
+      "caso_real": "D-516",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-04",
+          "ocurrencia": [
+            "Con el panel en inglés, los comentarios del SQL y la línea de resultado seguían en español.",
+            "With the panel in English, the SQL comments and the result line stayed in Spanish."
+          ],
+          "diagnostico": [
+            "Esos textos no pasaban por la capa de inglés, y la columna «semana» se traducía sola a «week».",
+            "Those texts skipped the English layer, and the «semana» column alone was translated to «week»."
+          ],
+          "solucion": [
+            "Cada texto tiene su inglés; la tabla y el diagrama muestran los nombres reales de la consulta.",
+            "Each text has its English; the grid and the diagram show the real names of the query."
+          ],
+          "comentario": [
+            "Al renombrar «semana», la tabla además perdía su formato de fecha y mostraba la medianoche.",
+            "Renaming «semana» also made the grid lose its date format and show midnight."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-516"
+        }
+      ]
     }
   ]
 }
