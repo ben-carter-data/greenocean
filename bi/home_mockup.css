@@ -709,6 +709,8 @@ ul.mock-calc-out li em {font-style:normal;}
 .mock-basket-tally b.fall {color:var(--mock-fall);}
 .st-key-home_overview .mock-movement {overflow:visible;}
 .mock-products-table td.mock-family-cell {width:84px;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mock-muted);}
+/* D-509: in the enlarged table the window has room: the family is written whole, never «Hortaliz…». */
+[role="dialog"] .mock-products-table td.mock-family-cell {width:auto;max-width:none;white-space:nowrap;}
 
 /* D-492: the alerts and the search, on one line between steps 2 and 3. */
 .st-key-home_alert_line {align-items:center!important;gap:8px!important;}
@@ -821,3 +823,12 @@ ul.mock-calc-out li em {font-style:normal;}
  .mock-channel-tile strong {font-size:8px;letter-spacing:-.01em;}
  .mock-channel-tile .mock-channel-change {white-space:normal;font-size:7.5px;}
 }
+
+/* D-509: «Descargar», beside «Ampliar» in the panel and beside the count in the window. */
+.st-key-home_products_tools [data-testid="stPopover"] button,.st-key-dialog_products_head [data-testid="stPopover"] button {
+ min-height:28px;padding:0 9px !important;border-radius:7px;background:transparent !important;box-shadow:none !important;}
+.st-key-home_products_tools [data-testid="stPopover"] button p,.st-key-dialog_products_head [data-testid="stPopover"] button p {font-size:12.5px !important;}
+.st-key-home_products_tools {flex:0 0 auto;}
+.stApp .st-key-dialog_products_head {flex-wrap:nowrap !important;gap:8px !important;}
+.stApp .st-key-dialog_products_head > * {flex:0 0 auto;width:auto !important;}
+.stApp .st-key-dialog_products_head > :has(.mock-products-heading) {flex:1 1 0 !important;min-width:0;}

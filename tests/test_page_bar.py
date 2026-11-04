@@ -137,10 +137,10 @@ def test_d268_the_sql_filters_and_status_bar_fit_a_narrow_window():
 
 
 def test_d391_the_inflation_page_sits_in_its_menu_section():
-    # D-456: «Precios e inflación» is a tab of «Análisis BA y BI», a page of «Negocio · BA y BI»; its address opens it
+    # D-456: «Precios e inflación» is a tab of «Análisis», a page of «Negocio · BA y BI»; its address opens it
     view = dashboard.PAGE_BA
     path = dashboard.build_view_path(dashboard.WINDOW_OF_VIEW[view], view)
-    assert path == "Negocio · BA y BI › Análisis BA y BI" and "Dashboard" not in path
+    assert path == "Negocio · BA y BI › Análisis" and "Dashboard" not in path
     address = dashboard.build_page_address(dashboard.PAGE_SEASONALITY)
     assert "pestana=Precios+e+inflaci%C3%B3n" in address and "Contexto" not in address
 

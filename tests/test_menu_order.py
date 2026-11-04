@@ -1,4 +1,4 @@
-"""The section «Negocio · BA y BI» (D-378, D-456, D-494): its two dashboards as tiles, «Semanal» and «Análisis BA y BI»,
+"""The section «Negocio · BA y BI» (D-378, D-456, D-494): its two dashboards as tiles, «Semanal» and «Análisis»,
 which gathers the history of the prices and the former pages in its tabs; the app map lists the same pages in the same
 order."""
 
@@ -43,8 +43,8 @@ def test_d456_the_section_is_its_three_dashboards_and_the_analysis_gathers_the_r
 @needs_database
 def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_only_it():
     for language, expected in (
-        ("es", ["Semanal", "Análisis BA y BI"]),  # D-459, D-494
-        ("en", ["Weekly", "BA and BI analysis"]),
+        ("es", ["Semanal", "Análisis"]),  # D-459, D-494
+        ("en", ["Weekly", "Analysis"]),
     ):
         user = draw("consulta", dashboard.PAGE_BA, language)
         assert not user.exception
@@ -90,9 +90,7 @@ def test_d378_the_app_map_names_the_menu_pages_in_the_menu_order():
         for view in dashboard.MENU_ORDER
         if view not in dashboard.AUTHOR_ONLY_PAGES and view != dashboard.PAGE_FOLDER
     ]
-    expected = [
-        dashboard.SIDEBAR_LABELS.get(view, view) for view in menu
-    ]  # D-456: «Análisis BA y BI» names its tabs beside it
+    expected = [dashboard.SIDEBAR_LABELS.get(view, view) for view in menu]  # D-456: «Análisis» names its tabs beside it
     positions = [pages.index(label) for label in expected]
     assert positions == sorted(positions), expected  # every page is named, in the menu's order
     assert pages in i18n.PAGES  # and the map's sentence has its English
@@ -174,8 +172,8 @@ def test_d459_the_three_dashboards_sit_under_their_title_and_the_old_address_ope
     assert dashboard.PAGE_HOME == "Semanal" and dashboard.RETIRED_VIEWS["Dashboard"] == dashboard.HOME_PAGE
     assert i18n.EN["Semanal"] == "Weekly" and i18n.EN["Dashboards"] == "Dashboards"
     for language, labels, title in (
-        ("es", ["Semanal", "Análisis BA y BI"], "Dashboards"),
-        ("en", ["Weekly", "BA and BI analysis"], "Dashboards"),
+        ("es", ["Semanal", "Análisis"], "Dashboards"),
+        ("en", ["Weekly", "Analysis"], "Dashboards"),
     ):
         app = draw("profesional", "Dashboard", language)
         assert not app.exception

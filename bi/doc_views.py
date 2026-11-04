@@ -99,7 +99,7 @@ MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 MOCKUPS = [
     ("m1-dashboard-corporativo.jpg", "M-1 · Semanal", "Corporativo", "Usuario"),
     ("m2-resumen-vantablack.jpg", "M-2 · Semanal", "Vantablack", "Profesional"),
-    ("m3-analisis-darkgrey.jpg", "M-3 · Análisis BA y BI", "Dark Grey", "Profesional"),  # D-456
+    ("m3-analisis-darkgrey.jpg", "M-3 · Análisis", "Dark Grey", "Profesional"),  # D-456
     ("m4-pipeline-bluelight.jpg", "M-4 · Pipeline y linaje", "Blue Light", "Profesional"),
     ("m5-sql-corporativo.jpg", "M-5 · Consultas SQL", "Corporativo", "Profesional"),
     ("m6-calidad-vantablack.jpg", "M-6 · Controles de datos", "Vantablack", "Profesional"),

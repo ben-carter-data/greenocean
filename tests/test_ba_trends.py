@@ -1,4 +1,4 @@
-"""«Análisis BA y BI» · «Mensual» and «Histórico» (D-456, D-457): every figure is recomputed from the database, the
+"""«Análisis» · «Mensual» and «Histórico» (D-456, D-457): every figure is recomputed from the database, the
 ones the page shares with «Precios e inflación» are the same numbers, and every sentence a chart says on hover holds
 the figures it explains."""
 

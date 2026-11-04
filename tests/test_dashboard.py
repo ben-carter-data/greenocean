@@ -1269,7 +1269,7 @@ def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
     assert toggle.label == 'Negocio · BA y BI'
     tiles = [
         'Semanal',
-        'Análisis BA y BI',
+        'Análisis',
     ]  # D-456, D-459, D-494: the section is its two dashboards
     assert [link.proto.label for link in app.sidebar.get('page_link')][:2] == tiles
     toggle.click().run()
@@ -1477,7 +1477,7 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
     labels = [link.proto.label for link in app.sidebar.get('page_link')]
     # D-286: the documents folder closes the menu as a larger tile in the footer, always in sight; D-442: the
     # Dashboard opens it, a tile of its own over the sections; D-452: «Último dato por canal» is the tile under it.
-    assert labels == ['Semanal', 'Análisis BA y BI'] + [page for pages in MENU_BLOCKS.values() for page in pages] + [
+    assert labels == ['Semanal', 'Análisis'] + [page for pages in MENU_BLOCKS.values() for page in pages] + [
         'Documentos'
     ]
     assert all(link.proto.icon for link in app.sidebar.get('page_link')[:-1])

@@ -130,7 +130,7 @@ When it opens, the panel compares its database with the pointer of the `main` br
 
 The entry asks for the view on every visit and every reload the reader makes:
 
-- **User:** the business. Its two dashboards: Weekly, guided in four steps (the channel is optional), and BA and BI analysis.
+- **User:** the business. Its two dashboards: Weekly, guided in four steps (the channel is optional), and Analysis.
 - **Professional:** the whole project, ordered by the profile it picks (Data Eng, BA, BI, DevOps or Security).
 - **Author:** the same as Professional, plus its own part, with the control code.
 
@@ -513,8 +513,8 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.12 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
 | 3.13 | 2026-11-02 | The app's diagrams in the document, drawn by the same code: tools (3.4), where the data lives, star schema, entity-relationship and crossings between databases (6.1 to 6.4), and deployment (7); the data dictionary moves to 6.5 (D-448) |
 | 3.14 | 2026-11-02 | The data is drawn with the journey by layers of «Pipeline and lineage», instead of a drawing of its own (6, D-455) |
-| 3.15 | 2026-11-02 | The User view and the key scenarios name «BA and BI analysis», which gathers in tabs Prices and inflation, Insights and Stakeholders (2.1, 5, D-456) |
-| 3.16 | 2026-11-02 | The key scenarios name the tabs «Monthly» and «Historical» of «BA and BI analysis», which replace «Trends» (2.1, D-457) |
+| 3.15 | 2026-11-02 | The User view and the key scenarios name «Analysis», which gathers in tabs Prices and inflation, Insights and Stakeholders (2.1, 5, D-456) |
+| 3.16 | 2026-11-02 | The key scenarios name the tabs «Monthly» and «Historical» of «Analysis», which replace «Trends» (2.1, D-457) |
 | 3.17 | 2026-11-02 | The week's dashboard is called «Weekly», under the title «Dashboards» (2.1, 5, 6.5, D-459) |
 | 3.18 | 2026-11-03 | The quality plan measures 14 indicators (D-475); the entity-relationship diagram names latest_by_source outside the model (D-474) |
 | 3.19 | 2026-11-03 | The load starts at 12:17 UTC, with two more attempts (D-485) |

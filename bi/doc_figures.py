@@ -930,7 +930,7 @@ def sad_scenarios(mode):
                 ),
                 # D-456: one page, in tabs, gathers the history and the former four pages of the section.
                 tile(
-                    say("Análisis BA y BI", "BA and BI analysis"),
+                    say("Análisis", "Analysis"),
                     say(
                         "Mensual · Histórico · Precios e inflación · Insights · Interesados · Método",
                         "Monthly · Historical · Prices and inflation · Insights · Stakeholders · Method",

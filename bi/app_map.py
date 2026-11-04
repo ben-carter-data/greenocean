@@ -83,7 +83,7 @@ NODES = {
         "Instituto Nacional de Estadísticas de Chile.",
         "Publica el IPC de alimentos, con el que los precios se expresan en pesos de hoy.",
         "Publica cada mes; la carga descarga cada martes.",
-        "Análisis BA y BI",
+        "Análisis",
         [],
     ),
     "agent": (
@@ -162,6 +162,7 @@ NODES = {
         [
             ("SQL", "el lenguaje de los modelos, de las consultas del panel (bi/queries.sql) y del estudio SQL."),
             ("pandas", "recibe el resultado de cada consulta que el panel convierte en tabla o gráfico."),
+            ("openpyxl", "escribe el Excel de «Descargar» del paso 4: la tabla con su filtro y su hoja de notas."),
         ],
     ),
     "release": (
@@ -189,7 +190,7 @@ NODES = {
         [
             (
                 "Páginas",
-                "Semanal, Análisis BA y BI (Mensual, Histórico, Precios e inflación, "
+                "Semanal, Análisis (Mensual, Histórico, Precios e inflación, "
                 "Insights, Interesados y Método), Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, "
                 "Arquitectura de seguridad, Plan de calidad, Controles de datos, Cambios e incidentes y la carpeta de "
                 "documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.",
@@ -203,7 +204,7 @@ NODES = {
         ["datos"],
         ("flow", 9),
         "Quien quiere saber cómo se mueven los precios: analista, compras, gerencia o público.",
-        "Ve el negocio: sus dos dashboards, Semanal y Análisis BA y BI, sin cuenta: los datos son públicos.",
+        "Ve el negocio: sus dos dashboards, Semanal y Análisis, sin cuenta: los datos son públicos.",
         "Cuando elige la vista Usuario.",
         "Semanal",
         [],
@@ -384,9 +385,9 @@ NODES = {
         ["navegador"],
         ("web", 7),
         "Biblioteca de gráficos declarativos de Python y su motor en el navegador.",
-        "Dibuja los gráficos de «Análisis BA y BI» y del dashboard Semanal, con el formato de números del idioma.",
+        "Dibuja los gráficos de «Análisis» y del dashboard Semanal, con el formato de números del idioma.",
         "En el navegador, cuando una página muestra un gráfico.",
-        "Análisis BA y BI",
+        "Análisis",
         [],
     ),
     "gates": (

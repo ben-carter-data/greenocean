@@ -36,6 +36,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (
+    price_export,
     actions_view,
     business_analysis,
     alerts,
@@ -114,10 +115,10 @@ PAGE_ARCHITECTURE = "Modelo de datos"
 PAGE_SEASONALITY = "Contexto del precio"
 # D-162: read-only SQL on the gold layer, the destination of «Consultas SQL» in the pipeline.
 PAGE_SQL = "Consultas SQL"
-# D-456: the BA and BI analysis in one page, in tabs, like a report of Power BI: the history of the prices first, then
+# D-456: the Analysis in one page, in tabs, like a report of Power BI: the history of the prices first, then
 # the four pages it gathers. Their old addresses open their tab. D-457: the history is read two ways that never mix,
 # one period month by month and the whole history year by year; the old «Tendencias» opens «Mensual».
-PAGE_BA = "Análisis BA y BI"
+PAGE_BA = "Análisis"
 BA_MONTHLY_TAB = "Mensual"
 BA_HISTORY_TAB = "Histórico"
 BA_RETIRED_TABS = {"Tendencias": BA_MONTHLY_TAB}
@@ -166,7 +167,7 @@ PAGE_APP_MAP = "Mapa de la app"
 # D-320: how the project was assessed against software and data quality standards.
 PAGE_METHOD = "Plan de calidad"
 GIT_TAB_PARAMETER, GIT_TAB_LOG = "pestana", "registro"  # D-346: «Ver registro completo» opens the Incident log
-BA_TAB_PARAMETER = GIT_TAB_PARAMETER  # D-456: the tab of «Análisis BA y BI» an address opens
+BA_TAB_PARAMETER = GIT_TAB_PARAMETER  # D-456: the tab of «Análisis» an address opens
 PAGE_GIT = "Cambios e incidentes"  # D-344: how a change travels from an idea to a live deployment
 PAGE_DECISION_INDEX = "Índice de decisiones"
 # D-290: the test plan and the security plan are one document; the scalability plan and the data dictionary live in the SAD.
@@ -188,6 +189,7 @@ RETIRED_VIEWS.update(
         "Método y calidad": PAGE_METHOD,
         "Git workflow": PAGE_GIT,
         "Calidad y auditoría": PAGE_OPERATIONS,
+        "Análisis BA y BI": PAGE_BA,  # D-508: the dashboard is «Análisis»
     }
 )
 RETIRED_VIEWS.update(
@@ -3113,6 +3115,66 @@ def show_architecture_page(mode):
 
 
 @st.cache_data(show_spinner=False)
+def build_price_files(built, notes, language):
+    """D-509: the two files of «Descargar», built once per set of prices (the language is part of the key, because
+    the headings and the notes are read in it)."""
+    del language  # part of the cache key, not of the call
+    return price_export.build_workbook(built, notes), price_export.build_csv(built)
+
+
+def show_price_download(rows, model, scope, week, updated, published, filters, prefix):
+    """D-509: the prices of step 4 as a file: every filtered price, not only the rows in sight, in the language of the
+    visit. A dataset to work with, so Excel carries its table, its filter and its formats, and a sheet of notes."""
+    built = tuple(
+        tuple(values) for values in price_export.build_rows(rows, model['week_label'], model['previous_label'], scope)
+    )
+    notes = tuple(price_export.build_notes(model['week_label'], filters, updated, model, published))
+    with st.popover(tr('Descargar'), icon=':material/download:', disabled=not built):
+        if not built:
+            st.caption(tr('No hay precios que descargar con estos filtros.'))
+            return
+        st.caption(tr('{} precios, con los filtros de esta pantalla.').format(home_mockup.number(len(built))))
+        book, table = build_price_files(built, notes, i18n.get_language())
+        st.download_button(
+            tr('Excel (.xlsx)'),
+            book,
+            price_export.build_name(week, scope, 'xlsx'),
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            icon=':material/table_view:',
+            key=f'{prefix}_download_xlsx',
+            width='stretch',
+        )
+        st.download_button(
+            tr('CSV (.csv)'),
+            table,
+            price_export.build_name(week, scope, 'csv'),
+            'text/csv',
+            icon=':material/description:',
+            key=f'{prefix}_download_csv',
+            width='stretch',
+        )
+
+
+def describe_price_filters(region, channel, family, direction, query, alert):
+    """D-509: what the file holds, as the screen has it: the four steps, the order and the search."""
+    chosen = [
+        (
+            'Región',
+            tr('Todo Chile') if region in (None, ALL_VALUES) else home_mockup.short_region(region),
+        ),
+        ('Canal', data_terms.term(channel) if channel else tr('Todos los canales')),
+        ('Familia', tr('Toda la canasta') if family in (None, ALL_VALUES) else home_mockup.short_family(family)),
+    ]
+    if alert:
+        chosen.append(('Alertas', tr('Solo alzas fuertes') if alert == RISE else tr('Solo bajas fuertes')))
+    if direction and direction != PRODUCT_DIRECTIONS[0]:
+        chosen.append(('Mostrar', tr(direction)))
+    if query:
+        chosen.append(('Búsqueda', query))
+    return chosen
+
+
+@st.cache_data(show_spinner=False)
 def read_crossing_checks(database_version):
     """The live checks of the «Cruces entre bases» view (D-197)."""
     return database_crossings.read_checks()
@@ -3705,7 +3767,7 @@ def show_page_bar(view, title, description, chips=(), side=None, terms=()):
     """The header of a page (D-267, D-398): only «Volver», the path (the description on hover) and the time of the
     data. What the page says (its question when it is not just its name, its figures as chips, what it measures) and
     what it does (side: a button, a switch) go in a row of the content right under the bar. Links to other pages live
-    in the menu, never here. D-456: a page drawn as a tab of «Análisis BA y BI» keeps only that row, under the tabs."""
+    in the menu, never here. D-456: a page drawn as a tab of «Análisis» keeps only that row, under the tabs."""
     tab = DRAWN_TAB.get()
     if tab:
         show_title = tr(title) != tr(tab)
@@ -4612,6 +4674,17 @@ def show_market_overview(mode, prefix):
                     unsafe_allow_html=True,
                     width='stretch',
                 )
+                with st.container(key='home_products_tools'):
+                    show_price_download(
+                        rows,
+                        model,
+                        scope,
+                        week,
+                        updated,
+                        published,
+                        describe_price_filters(region, current_channel(), products_family, direction, query, alert),
+                        'home',
+                    )
                 enlarge = st.button(
                     tr('Ampliar'),
                     icon=':material/open_in_full:',
@@ -4655,11 +4728,12 @@ def show_market_overview(mode, prefix):
                     scope,
                     family_rows,
                     week,
-                    model['week_label'],
-                    model['previous_label'],
+                    model,
                     None if region == ALL_VALUES else region,
                     published,
                     note,
+                    updated,
+                    describe_price_filters(region, current_channel(), products_family, direction, query, alert),
                 )
 
     # D-494: the map gives a little room to the right side: steps 2 (the channels) and 3 (the families) side by side, of
@@ -4743,7 +4817,7 @@ def show_market_overview(mode, prefix):
 
 
 @st.dialog("Productos", width="large")
-def show_products_dialog(channel, *window):
+def show_products_dialog(channel, *window):  # noqa: D417
     """D-498: a press in the window reruns only the window, outside the scope of show_home_page, so it brings the
     channel of step 2 back: the alerts are read under it (D-405)."""
     token = PRICE_SCOPE.set(channel)
@@ -4754,11 +4828,13 @@ def show_products_dialog(channel, *window):
 
 
 def draw_products_window(
-    family, average, scope, family_rows, week, week_label, previous_label, region, published=None, note=""
+    family, average, scope, family_rows, week, model, region, published=None, note="", updated="", filters=()
 ):
     """The products table at the size of the window (D-317) with the same filters as the panel (D-322): it opens with the
     panel's search and direction (D-497), and filters on its own without closing. D-498: the same line as the panel,
-    with the alert buttons; the window remembers its alert, since a press in it reruns only the window."""
+    with the alert buttons; the window remembers its alert, since a press in it reruns only the window. D-509: and the
+    same «Descargar», beside the count of prices."""
+    week_label, previous_label = model["week_label"], model["previous_label"]
     alert = st.session_state.get("dialog_products_alert")
     if alert:
         st.session_state["dialog_products_direction"] = PRODUCT_DIRECTIONS[0]
@@ -4796,11 +4872,17 @@ def draw_products_window(
     if query.strip():
         rows = [row for row in rows if matches_product_search(row, query)]
     rows = sort_family_products(rows)
+    with st.container(key='dialog_products_head', horizontal=True, vertical_alignment='center'):
+        st.markdown(
+            '<div class="greenocean-mockup products-large">'
+            + home_mockup.products_heading(family, average, scope, len(rows), len(family_rows), note)
+            + '</div>',
+            unsafe_allow_html=True,
+            width='stretch',
+        )
+        show_price_download(rows, model, scope, week, updated, published, list(filters), 'dialog')
     st.markdown(
-        '<div class="greenocean-mockup products-large">'
-        + home_mockup.products_heading(family, average, scope, len(rows), len(family_rows), note)
-        + '</div>'
-        + '<div class="greenocean-mockup">'
+        '<div class="greenocean-mockup">'
         + home_mockup.products_table(
             rows,
             week_label,
@@ -5460,13 +5542,13 @@ def build_interest_map_html(rows, palette, address_of_view):
     return interest_map.build_map_html(rows, palette, link_of, tr, criterion=not DRAWN_TAB.get())
 
 
-# D-456: the tab of «Análisis BA y BI» being drawn, so the page it gathers draws only its own row under the tabs.
+# D-456: the tab of «Análisis» being drawn, so the page it gathers draws only its own row under the tabs.
 DRAWN_TAB = contextvars.ContextVar("drawn_tab", default="")
 BA_TAB_KEY = "ba_tab"
 
 
 def show_ba_page(mode):
-    """«Análisis BA y BI» (D-456): the BA and BI analysis in one page, in tabs. «Mensual» and «Histórico» (D-457) are the
+    """«Análisis» (D-456): the Analysis in one page, in tabs. «Mensual» and «Histórico» (D-457) are the
     history of the prices as a report, one period month by month and the whole history year by year; the other tabs
     are the pages it gathered, drawn by their own code, each under its tab."""
     show_page_bar(
@@ -5989,7 +6071,7 @@ def show_price_context_page(mode):
                 help=BASIS_HELP,
             )
         # D-458: what used to be the note under the cards, the months and what rising with the CPI means, is now
-        # in the green panel above the tabs of «Análisis BA y BI».
+        # in the green panel above the tabs of «Análisis».
         show_family_cards(rows, build_family_panel_titles(summary, ipc_total), mode, real, summary, last)
 
 
@@ -8164,7 +8246,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_DIAGRAMS: show_diagrams_page,
     PAGE_INSIGHTS: lambda mode: show_insights_page(mode),
     PAGE_STAKEHOLDERS: lambda mode: show_stakeholders_page(mode),
-    PAGE_ANALYSIS: lambda mode: show_ba_page(mode),  # D-456: its method is a tab of «Análisis BA y BI»
+    PAGE_ANALYSIS: lambda mode: show_ba_page(mode),  # D-456: its method is a tab of «Análisis»
     PAGE_BA: lambda mode: show_ba_page(mode),
     PAGE_SEASONALITY: show_price_context_page,
     PAGE_KPI: show_kpi_page,
@@ -8864,7 +8946,7 @@ MENU_BLOCKS = [
     (
         "negocio",
         "Negocio · BA y BI",
-        # D-453: the section opens with its dashboards as tiles; D-456: «Análisis BA y BI» gathers in its tabs the history
+        # D-453: the section opens with its dashboards as tiles; D-456: «Análisis» gathers in its tabs the history
         # of the prices and the former pages «Precios e inflación», «Insights» and «Interesados», with the method.
         # D-494: «Último dato por canal» became step 2 of «Semanal»: the section is two dashboards.
         [PAGE_HOME, PAGE_BA],
@@ -9210,7 +9292,7 @@ CHANNELS_TILE_SVG = (
     '<rect x="16" y="21" width="5" height="19" rx="1" fill="#8ac6f5"/><rect x="39" y="24" width="5" height="16" rx="1" '
     'fill="#8ac6f5"/><rect x="47" y="18" width="5" height="22" rx="1" fill="#8ac6f5"/></svg>'
 )
-# D-456: «Análisis BA y BI»: a report with a line over bars and a magnifier, the history read closely.
+# D-456: «Análisis»: a report with a line over bars and a magnifier, the history read closely.
 BA_TILE_SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 46"><rect x="1" y="1" width="62" height="44" rx="6" '
     'fill="#1d3557" stroke="#5aa9ea" stroke-width="1.5"/><rect x="7" y="27" width="5" height="12" rx="1" fill="#8ac6f5"/>'
@@ -9284,7 +9366,7 @@ def show_footer_tiles(windows_by_title, current_window, current_view):
 
 
 def show_dashboard_tile(windows_by_title, current_window, current_view, view):
-    """D-442: «Semanal», the weekly summary of prices, as a large tile, and «Análisis BA y BI» under it (D-456, D-494).
+    """D-442: «Semanal», the weekly summary of prices, as a large tile, and «Análisis» under it (D-456, D-494).
     D-453: they open the section «Negocio · BA y BI»; a tile stays lit while its page is open."""
     window = WINDOW_OF_VIEW[view]
     active = window == current_window and current_view == view
@@ -9567,7 +9649,7 @@ def main():
     # Views renamed since: old links open the new title (D-094).
     if st.query_params.get(VIEW_PARAMETER) in RETIRED_VIEWS:
         st.query_params[VIEW_PARAMETER] = RETIRED_VIEWS[st.query_params[VIEW_PARAMETER]]
-    if st.query_params.get(VIEW_PARAMETER) in BA_TAB_OF_VIEW:  # D-456: the page is now a tab of «Análisis BA y BI»
+    if st.query_params.get(VIEW_PARAMETER) in BA_TAB_OF_VIEW:  # D-456: the page is now a tab of «Análisis»
         st.query_params[BA_TAB_PARAMETER] = BA_TAB_OF_VIEW[st.query_params[VIEW_PARAMETER]]
         st.query_params[VIEW_PARAMETER] = PAGE_BA
     requested_view = user_view_page(st.query_params.get(VIEW_PARAMETER))  # D-502

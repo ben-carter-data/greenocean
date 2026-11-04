@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.49 |
+| Version | 3.51 |
 | Date | 2026-11-04 |
 | Status | Current |
 | Owner | The author |
@@ -50,7 +50,7 @@ GreenOcean does that work by itself, every Tuesday, and leaves each step in view
 
 ### 3.1 Stakeholders
 
-Each stakeholder has a question, a decision that depends on the answer and a page where they find it. In «BA and BI analysis», the tab [[vista:Insights]] answers their questions with today's figures and the tab [[vista:Stakeholders]] places them on the interest map (3.4).
+Each stakeholder has a question, a decision that depends on the answer and a page where they find it. In «Analysis», the tab [[vista:Insights]] answers their questions with today's figures and the tab [[vista:Stakeholders]] places them on the interest map (3.4).
 
 | Stakeholder | Who they are | What they ask | What decision it helps them make | Where the answer is |
 |---|---|---|---|---|
@@ -66,7 +66,7 @@ The panel has three profiles, the same as the window that asks for the view on e
 
 | Profile | What they use it for |
 |---|---|
-| User | The business, with no account: the section «Business · BA and BI», with its two dashboards: Weekly, guided in four steps, and BA and BI analysis, with its tabs Monthly, Historical, Prices and inflation, Insights, Stakeholders and Method |
+| User | The business, with no account: the section «Business · BA and BI», with its two dashboards: Weekly, guided in four steps, and Analysis, with its tabs Monthly, Historical, Prices and inflation, Insights, Stakeholders and Method |
 | Professional | The whole project, with no account, ordered by its role (Data Eng, BA, BI, DevOps or Security), with the read-only SQL queries |
 | Author | The same as Professional, plus «Operations center», «GitHub Actions» and «Settings», the «Action required» alert, the manual load and the links to the GitHub repository (D-500); it asks for the control code, which is never in the repository |
 
@@ -83,7 +83,7 @@ Real users made two reviews: one of usability and one of architecture. Each chan
 
 ### 3.4 Interest map
 
-Each stakeholder sits on a ring according to **how much their decision depends on these data and how often they use them**. GreenOcean is the center; ODEPA and the INE, which provide the data, sit on the outer ring. It is the map of the tab [[vista:Stakeholders]] of «BA and BI analysis» (D-444, D-456):
+Each stakeholder sits on a ring according to **how much their decision depends on these data and how often they use them**. GreenOcean is the center; ODEPA and the INE, which provide the data, sit on the outer ring. It is the map of the tab [[vista:Stakeholders]] of «Analysis» (D-444, D-456):
 
 [[diagrama:interes]]
 
@@ -106,7 +106,7 @@ Each question has the screen that answers it and a test that recomputes the answ
 | P-1 | Which prices changed this week, and which are unusual? | Weekly | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
 | P-2 | Is today's price normal for the season? | SQL queries · Price vs. season | `tests/test_sql_explorer.py::test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas` |
 | P-3 | How much does the consumer pay over the wholesale price? | SQL queries · Wholesale gap | `tests/test_sql_explorer.py::test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas` |
-| P-4 | Which foods rose more than inflation? | BA and BI analysis (Prices and inflation) | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
+| P-4 | Which foods rose more than inflation? | Analysis (Prices and inflation) | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
 | P-5 | Are the figures reliable? | Data controls | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price` |
 
 ## 5. Requirements
@@ -149,10 +149,10 @@ With the load of 2026-10-31, the database holds 821,072 weekly prices over 252 w
 
 These are six real captures, of 2026-11-02, of five main pages and in the four color themes. The Weekly dashboard appears twice: as the User sees it and as the Professional sees it. The dark theme is the one on entry.
 
-- **Menu:** five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first gathers, under the title «Dashboards», two tiles with a dashboard icon, which stay in sight even when the section folds: Weekly and BA and BI analysis (D-442, D-453, D-456, D-459, D-494). The app opens with the menu open; on going to a dashboard or a page of diagrams the menu folds to give them the width, and the button that opens it beats in green (D-462, D-463).
+- **Menu:** five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first gathers, under the title «Dashboards», two tiles with a dashboard icon, which stay in sight even when the section folds: Weekly and Analysis (D-442, D-453, D-456, D-459, D-494). The app opens with the menu open; on going to a dashboard or a page of diagrams the menu folds to give them the width, and the button that opens it beats in green (D-462, D-463).
 - **Weekly:** it reads in four numbered steps. First a region or all of Chile is chosen; then, if wished, a channel; then a family, and last its products are shown. Each step opens when the one before is done; the channel is optional and without it every channel is shown (D-494). The steps always stay together on one screen; the products table fills panel 4, scrolls by itself and is enlarged with its own button (D-446, D-447). With «The whole basket», the table names each product's family (D-478), and the «i» of each step says how each figure is computed: against which week, with which median, with which threshold and in which scope (D-480).
 - **Channel (step 2 of Weekly):** each channel with its 3D icon in its own colours (D-453) and the median of its change. On choosing one, Weekly shows only its prices and its latest published week, even if the other source has not published that week yet, and says which families that channel publishes (D-404 to D-406, D-494).
-- **BA and BI analysis:** six tabs (D-456, D-457). «Monthly» is one period, the last 12 months or one year, month by month: five key figures (price change, against the CPI, consumer–wholesale gap, price alerts and biggest monthly rise), three charts (price month by month, change of each month and price alerts by month) and the table by family. «Historical» is the whole history, from January 2022 to the last month the INE published: five key figures (change since January 2022, against the CPI, year of the biggest rise, cheapest month and price alerts), three charts (price since January 2022, change of each year and season) and the table by family. Each chart says which months it shows, and its green magnifier opens it large, with what it measures and what follows from it; each figure explains on hover how it is computed. The other four are Prices and inflation, Insights, Stakeholders and Method. Above the tabs, a green panel says what is being shown, from which month to which and why it starts and ends there; it follows the tab and the period (D-458). «Monthly» and «Historical» start by family, with «The whole basket» by default; the «Product» selector goes down to one of its products, computed with the family's rule, and the table shows the family with its products under it (D-478).
+- **Analysis:** six tabs (D-456, D-457). «Monthly» is one period, the last 12 months or one year, month by month: five key figures (price change, against the CPI, consumer–wholesale gap, price alerts and biggest monthly rise), three charts (price month by month, change of each month and price alerts by month) and the table by family. «Historical» is the whole history, from January 2022 to the last month the INE published: five key figures (change since January 2022, against the CPI, year of the biggest rise, cheapest month and price alerts), three charts (price since January 2022, change of each year and season) and the table by family. Each chart says which months it shows, and its green magnifier opens it large, with what it measures and what follows from it; each figure explains on hover how it is computed. The other four are Prices and inflation, Insights, Stakeholders and Method. Above the tabs, a green panel says what is being shown, from which month to which and why it starts and ends there; it follows the tab and the period (D-458). «Monthly» and «Historical» start by family, with «The whole basket» by default; the «Product» selector goes down to one of its products, computed with the family's rule, and the table shows the family with its products under it (D-478).
 - **Stack and evidence:** two views. «Tools» explains each tool; «Live system flow» shows the real pieces, what they say to each other and the running load (D-412).
 
 [[diagrama:mockups]]
@@ -241,11 +241,11 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.19 | 2026-11-02 | «Latest data by channel» is a second tile under the Dashboard, and each channel behaves exactly like the Dashboard, without folding its steps (7, D-447, D-452) |
 | 3.20 | 2026-11-02 | The two dashboards open the section «Business · BA and BI», and each channel card carries its 3D icon (7, D-453) |
 | 3.21 | 2026-11-02 | The diagrams are the app's: the weekly cycle of the «Process» block of «Business and systems analysis» (2) and the map of «Stakeholders» (3.4); «From data to decision» and the use cases, which named profiles the panel does not have, are retired; 3.2 is the panel's three profiles; «served database» becomes «DuckDB database» (D-455) |
-| 3.22 | 2026-11-02 | «BA and BI analysis» gathers in tabs the history of prices, Prices and inflation, Insights, Stakeholders and the method; P-4 is seen in its tab (3.1, 3.2, 3.4, 4, 7, D-456) |
-| 3.23 | 2026-11-02 | «BA and BI analysis» splits the history of prices into «Monthly», one period month by month, and «Historical», from January 2022 to the last month by year and season; each chart says its months and, on hover, what it measures and what follows from it (3.2, 7, D-457) |
-| 3.24 | 2026-11-02 | A green panel above the tabs of «BA and BI analysis» says what is shown, from which month to which and why, by tab and period (7, D-458) |
+| 3.22 | 2026-11-02 | «Analysis» gathers in tabs the history of prices, Prices and inflation, Insights, Stakeholders and the method; P-4 is seen in its tab (3.1, 3.2, 3.4, 4, 7, D-456) |
+| 3.23 | 2026-11-02 | «Analysis» splits the history of prices into «Monthly», one period month by month, and «Historical», from January 2022 to the last month by year and season; each chart says its months and, on hover, what it measures and what follows from it (3.2, 7, D-457) |
+| 3.24 | 2026-11-02 | A green panel above the tabs of «Analysis» says what is shown, from which month to which and why, by tab and period (7, D-458) |
 | 3.25 | 2026-11-02 | The three dashboards of «Business · BA and BI» go under the title «Dashboards», and the first, the week's, is called «Weekly» (3.1 to 3.4, 4, 6, 7, D-459) |
-| 3.26 | 2026-11-02 | In «BA and BI analysis» the cards are thinner, the months read in two short lines and a green magnifier opens each chart large (7, D-460) |
+| 3.26 | 2026-11-02 | In «Analysis» the cards are thinner, the months read in two short lines and a green magnifier opens each chart large (7, D-460) |
 | 3.27 | 2026-11-02 | The three dashboards open with the menu folded and the button that opens it beats in green (7, D-462) |
 | 3.28 | 2026-11-02 | The app opens with the menu open; it folds on going to a dashboard or a page of diagrams (7, D-463) |
 | 3.29 | 2026-11-03 | The quality plan grows to 14 indicators: missing regions or channels and atypical prices of the week (RNF-04, D-475) |
@@ -269,3 +269,5 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.47 | 2026-11-04 | The stylesheets travel in the first element of every page, so nothing shows unstyled when the page changes (RNF-06, D-505) |
 | 3.48 | 2026-11-04 | «The whole basket» explains its median behind an «i»: which way more prices moved and the three counts (RF-01, D-506) |
 | 3.49 | 2026-11-04 | The three pages of «Calidad» are «Quality plan», «Data controls» and «Changes and incidents», in that order (D-507) |
+| 3.50 | 2026-11-04 | The «Análisis BA y BI» dashboard is called «Análisis» (D-508) |
+| 3.51 | 2026-11-04 | «Descargar» in step 4 of Weekly: every filtered price in Excel (a table with filter, formats and notes) or CSV, in the language of the visit (RF-01, D-509) |

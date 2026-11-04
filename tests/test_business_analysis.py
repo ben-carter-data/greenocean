@@ -92,7 +92,7 @@ def test_d377_the_kpi_definitions_left_insights_for_the_analysis_page():
 
 @needs_database
 def test_d456_the_method_tab_draws_the_kpis_and_the_system_decisions_and_insights_links_to_it():
-    """The old page «Análisis de negocio y sistemas» is the tab «Método» of «Análisis BA y BI»: only what the PRD does
+    """The old page «Análisis de negocio y sistemas» is the tab «Método» of «Análisis»: only what the PRD does
     not hold, the KPIs and the system decisions; its address opens that tab, and so does the link from Insights."""
     for profile in ("consulta", "profesional"):
         app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)

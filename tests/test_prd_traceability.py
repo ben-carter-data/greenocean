@@ -93,7 +93,7 @@ def test_rf01_the_weekly_workflow_runs_on_tuesdays():
 
 
 def menu_labels():
-    """The pages of the menu, and each tab of «Análisis BA y BI» named «Análisis BA y BI (Pestaña)» (D-456)."""
+    """The pages of the menu, and each tab of «Análisis» named «Análisis (Pestaña)» (D-456)."""
     return (
         {
             dashboard.SIDEBAR_LABELS.get(view, view)

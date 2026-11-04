@@ -207,7 +207,7 @@ def screens():
             (dashboard.PAGE_SEASONALITY, {dashboard.FAMILY_FOCUS_KEY: family})
             for family in ("Frutas", inflation_view.IPC_NAME)
         ]
-        # D-457: each tab of «Análisis BA y BI», and «Mensual» on the first year (its first alert) and on one family
+        # D-457: each tab of «Análisis», and «Mensual» on the first year (its first alert) and on one family
         + [(dashboard.PAGE_BA, {dashboard.BA_TAB_KEY: tab}) for tab in dashboard.BA_TABS[1:]]
         + [
             (

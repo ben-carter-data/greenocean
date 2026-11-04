@@ -4131,3 +4131,19 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Lo que no se toca:** los incidentes y los informes ya registrados que nombran las páginas antiguas, porque son históricos; y el contenido de las tres páginas.
 - **Pruebas:** `tests/test_dashboard.py` (el menú, la ruta y los pasos «Anterior / Siguiente»), `tests/test_menu_order.py` (el mapa de la app y el README en el orden del menú), `tests/test_quality_method.py`, `tests/test_git_workflow.py` y `tests/test_i18n.py` (los tres nombres en inglés).
 
+## D-508 · El dashboard «Análisis BA y BI» se llama «Análisis»
+- **Pedido del autor:** un nombre más corto para el segundo dashboard. Se propuso «Histórico», pero la página ya tiene una pestaña con ese nombre (toda la historia por año y temporada) y la ruta habría dicho lo mismo que la pestaña; el autor decidió «Análisis», y la pestaña sigue «Histórico».
+- **Decisión:** «Análisis» (en inglés, «Analysis») en el menú, en la ruta, en el mapa de la app, en los diagramas y en los documentos; sus pestañas no cambian. Una pestaña se nombra «Análisis (Pestaña)».
+- **Las direcciones no cambian:** la página conserva su ruta (`analisis-ba-y-bi`); un enlace guardado con «Análisis BA y BI» abre la misma página (`RETIRED_VIEWS`). Los incidentes y los informes ya registrados no se tocan.
+- **Pruebas:** `tests/test_menu_order.py` (el mapa de la app y el README en el orden del menú), `tests/test_dashboard.py`, `tests/test_page_bar.py` y `tests/test_i18n.py`.
+
+## D-509 · «Descargar» en el paso 4: los precios filtrados, en Excel o en CSV
+- **Pedido del autor:** un ícono «Descargar» en el paso 4, junto a «Ampliar» y, en la tabla ampliada, junto al conteo de precios, con un menú de dos opciones: Excel y CSV. Baja todos los precios filtrados, no solo las filas a la vista, en el idioma de la app: encabezados, familias, canales y notas; el nombre de cada producto queda como lo publica ODEPA. Un dataset para BI, sin gráficos.
+- **Decisión:** `bi/price_export.py` arma las filas desde los mismos datos de la tabla: los dos precios de las mismas regiones (D-327), la variación como número, las regiones al alza y a la baja, y la marca de una sola cotización. Quince columnas: familia, producto, variedad, calidad, canal, unidad, alcance, semana anterior y su precio, semana y su precio, variación, regiones al alza, regiones a la baja y «una sola cotización».
+- **Excel:** hoja «Datos», una tabla de Excel («Precios») con autofiltro, encabezado congelado, formato de pesos en los precios, de porcentaje con signo en la variación y de entero en los conteos; sin celdas combinadas, porque rompen un filtro y una tabla dinámica. Hoja «Notas»: la semana, los filtros elegidos (región, canal, familia, alerta, orden y búsqueda), la fecha de la carga, la fuente ODEPA con su licencia, cómo se calcula la variación, cuántas regiones publica la fuente y cuántos precios quedaron fuera por no tener región comparable.
+- **CSV:** la misma tabla, con punto y coma y en UTF-8 con BOM, para que Excel la abra con sus acentos en su lugar.
+- **Dependencia nueva, con acuerdo del autor:** `openpyxl` (MIT, sin cuenta ni vencimiento), con tope de versión como las demás (D-435). Los dos archivos se construyen una vez por conjunto de precios e idioma (`st.cache_data`).
+- **El archivo se llama por lo que trae:** «greenocean-precios-2026-10-26-todo-chile.xlsx».
+- **De paso:** en la tabla ampliada la columna «Familia» se escribe entera; antes cortaba «Hortaliz…».
+- **Pruebas:** `tests/test_price_export.py` (las filas con las cifras de la tabla y el producto como ODEPA lo escribe, la tabla con su filtro, sus formatos y sus notas, sin celdas combinadas, el CSV con BOM, el archivo en inglés salvo el producto, cada texto con su inglés, y el menú en el panel y en la ventana con todos los precios filtrados).
+

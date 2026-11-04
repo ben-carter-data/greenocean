@@ -1,4 +1,4 @@
-"""«Análisis BA y BI» (D-456, D-457): the history of food prices, read two ways that never mix. «Mensual» is one
+"""«Análisis» (D-456, D-457): the history of food prices, read two ways that never mix. «Mensual» is one
 period, the last 12 months or one year, month by month; «Histórico» is the whole history, from January 2022 to the last
 month the INE published, year by year and by season. Each chart says which months it shows; on hover it grows and says
 what it measures and what follows from it, in words computed from the same figures it draws. Every figure comes from

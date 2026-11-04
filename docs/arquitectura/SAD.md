@@ -130,7 +130,7 @@ Al abrirse, el panel compara su base con el puntero de la rama `main`. Si su cop
 
 La entrada pide la vista en cada visita y en cada recarga que hace el lector:
 
-- **Usuario:** el negocio. Sus dos dashboards: Semanal, guiado en cuatro pasos (el canal es opcional), y Análisis BA y BI.
+- **Usuario:** el negocio. Sus dos dashboards: Semanal, guiado en cuatro pasos (el canal es opcional), y Análisis.
 - **Profesional:** todo el proyecto, ordenado según el perfil que elige (Data Eng, BA, BI, DevOps o Seguridad).
 - **Autor:** lo mismo que Profesional, más su parte, con la clave de control.
 
@@ -513,8 +513,8 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.12 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
 | 3.13 | 02-11-2026 | Los diagramas de la app en el documento, dibujados por el mismo código: herramientas (3.4), dónde viven los datos, modelo estrella, entidad-relación y cruces entre bases (6.1 a 6.4), y despliegue (7); el diccionario de datos pasa a 6.5 (D-448) |
 | 3.14 | 02-11-2026 | Los datos se dibujan con el recorrido por capas de «Pipeline y linaje», en vez de un dibujo propio (6, D-455) |
-| 3.15 | 02-11-2026 | La vista Usuario y los escenarios clave nombran «Análisis BA y BI», que reúne en pestañas Precios e inflación, Insights e Interesados (2.1, 5, D-456) |
-| 3.16 | 02-11-2026 | Los escenarios clave nombran las pestañas «Mensual» e «Histórico» de «Análisis BA y BI», que reemplazan a «Tendencias» (2.1, D-457) |
+| 3.15 | 02-11-2026 | La vista Usuario y los escenarios clave nombran «Análisis», que reúne en pestañas Precios e inflación, Insights e Interesados (2.1, 5, D-456) |
+| 3.16 | 02-11-2026 | Los escenarios clave nombran las pestañas «Mensual» e «Histórico» de «Análisis», que reemplazan a «Tendencias» (2.1, D-457) |
 | 3.17 | 02-11-2026 | El dashboard de la semana se llama «Semanal», bajo el título «Dashboards» (2.1, 5, 6.5, D-459) |
 | 3.18 | 03-11-2026 | El plan de calidad mide 14 indicadores (D-475); el diagrama entidad-relación nombra latest_by_source fuera del modelo (D-474) |
 | 3.19 | 03-11-2026 | La carga parte a las 12:17 UTC, con dos intentos más (D-485) |

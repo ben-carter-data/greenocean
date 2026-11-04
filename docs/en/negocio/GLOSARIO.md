@@ -34,23 +34,23 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 
 | Acronym or term | Meaning | Where it appears | Theme |
 |---|---|---|---|
-| KPI | Key performance indicator: each figure that measures something of the business. The technical indicators are numbered K1 to K8. | Weekly, BA and BI analysis (Monthly), BA and BI analysis (Historical), BA and BI analysis (Method) | Indicators |
+| KPI | Key performance indicator: each figure that measures something of the business. The technical indicators are numbered K1 to K8. | Weekly, Analysis (Monthly), Analysis (Historical), Analysis (Method) | Indicators |
 | BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
-| BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | BA and BI analysis (Stakeholders) | Indicators |
-| BSA | Business systems analysis: the role that decides how the system meets what the business asks: what is measured, what blocks publication and what warns. | BA and BI analysis (Method) | Indicators |
+| BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | Analysis (Stakeholders) | Indicators |
+| BSA | Business systems analysis: the role that decides how the system meets what the business asks: what is measured, what blocks publication and what warns. | Analysis (Method) | Indicators |
 | RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Data controls | Indicators |
 | Price alert | A weekly change outside the average ± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week (K6). It splits into sharp rises and sharp drops (D-477). In Weekly, with a region chosen, it is calculated with the price of that region (D-499). | Weekly | Indicators |
 | Sharp rise | A price alert for a rise, in red. Its level says how unusual it was: Extreme rise (4 deviations or more), Very sharp rise (3 or more) or Sharp rise (more than 2) (D-478, D-479). | Weekly | Indicators |
 | Sharp drop | A price alert for a drop, in green: good news for whoever buys. Its level: Extreme drop (4 deviations or more), Very sharp drop (3 or more) or Sharp drop (more than 2) (D-478, D-479). | Weekly | Indicators |
-| Real price | A price expressed in pesos of the last published month of the CPI. | BA and BI analysis (Prices and inflation) | Indicators |
-| Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | BA and BI analysis (Prices and inflation) | Indicators |
+| Real price | A price expressed in pesos of the last published month of the CPI. | Analysis (Prices and inflation) | Indicators |
+| Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | Analysis (Prices and inflation) | Indicators |
 | Data quality indicator | Each of the 11 indicators measured on every load on the published database, in five dimensions. | Data controls | Indicators |
 | Quality plan indicator | Each of the 14 indicators of the SQAP (8 of code and 6 of data) that the quality workflow measures every week. | Quality plan | Indicators |
 | Quality dimension | An aspect of quality that is measured: completeness, timeliness, validity, uniqueness, consistency and accuracy. | Data controls | Indicators |
 | DAMA-DMBOK | Data management guide of DAMA International (*Data Management Body of Knowledge*); the quality dimensions come from it. | — | Indicators |
 | ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Weekly, Pipeline and lineage | Sources |
-| INE | Chile's National Statistics Institute (*Instituto Nacional de Estadísticas*). It publishes the food CPI. | BA and BI analysis (Prices and inflation), Pipeline and lineage | Sources |
-| CPI (IPC) | Consumer price index (*índice de precios al consumidor*); here, the «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division published by the INE. | BA and BI analysis (Prices and inflation) | Sources |
+| INE | Chile's National Statistics Institute (*Instituto Nacional de Estadísticas*). It publishes the food CPI. | Analysis (Prices and inflation), Pipeline and lineage | Sources |
+| CPI (IPC) | Consumer price index (*índice de precios al consumidor*); here, the «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division published by the INE. | Analysis (Prices and inflation) | Sources |
 | CSV | Text file with comma-separated values: the format in which ODEPA publishes the prices. | Pipeline and lineage | Sources |
 | SHA-256 | Function that computes the fingerprint of a file; it changes if a single byte changes. It is used to verify the downloaded files and the DuckDB database. | Data controls | Sources |
 | JSON | Text format for structured data (*JavaScript Object Notation*); the download manifest and the original row of each rejection are stored in it. | — | Sources |
@@ -118,8 +118,8 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.5 | 2026-11-01 | «Served database» becomes «DuckDB database» (D-426) |
 | 2.6 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
 | 2.7 | 2026-11-02 | «Served database» becomes «DuckDB database» in the definitions too, which still used the former name (D-455) |
-| 2.8 | 2026-11-02 | The pages that became tabs of «BA and BI analysis» are named «BA and BI analysis (tab)» (D-456) |
-| 2.9 | 2026-11-02 | The «Trends» tab of «BA and BI analysis» becomes «Monthly» and «Historical» (D-457) |
+| 2.8 | 2026-11-02 | The pages that became tabs of «Analysis» are named «Analysis (tab)» (D-456) |
+| 2.9 | 2026-11-02 | The «Trends» tab of «Analysis» becomes «Monthly» and «Historical» (D-457) |
 | 2.10 | 2026-11-02 | The week's dashboard is called «Weekly» (D-459) |
 | 2.11 | 2026-11-03 | The quality plan has 14 indicators (D-475) |
 | 2.12 | 2026-11-03 | Sharp rise and sharp drop, the two kinds of price alert (D-477) |
