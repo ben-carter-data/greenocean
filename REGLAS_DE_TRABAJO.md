@@ -23,3 +23,12 @@ Al terminar, **un párrafo**: qué hizo, qué verificó y con qué resultado, y 
 ## 4. Siempre igual
 
 Sin push, sin forzar y sin borrar ramas ni archivos sin aprobación explícita del autor. Los pasos de aprobación que el autor define en cada pedido se respetan.
+
+## 5. Pruebas según el tipo de cambio
+
+- Textos, nombres, traducciones, estilos o documentos: solo lint y las pruebas del archivo tocado. Sin suite completa y sin revisión con agentes.
+- Lógica del panel (filtros, tablas, descargas): las pruebas de ese módulo.
+- Pipeline, reglas de datos o cualquier cosa que cambie cifras: suite completa con las dos bases (la publicada y la reconstruida, D-527). Revisión con agentes solo si el cambio es grande.
+- Antes de correr algo que tarde más de 5 minutos, Claude pregunta.
+- Claude no vigila el CI después de subir; el autor revisa Actions.
+- Reportes de máximo 5 líneas: qué hizo, qué falta, qué decide el autor.
