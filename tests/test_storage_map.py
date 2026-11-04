@@ -18,6 +18,7 @@ COUNTS = {
     "ine_ipc_source": 202,
     "weekly_same_package": 700000,
     "etl_run": 5,
+    "source_unit": 199,
     "dbt_node": 50,
     "dbt_result": 47,
 }
@@ -69,18 +70,18 @@ def test_every_line_is_one_straight_horizontal_or_vertical_segment_with_a_head()
     assert 'class="line check"' in markup
 
 
-def test_the_fourteen_served_tables_hang_inside_the_duckdb_card_in_three_groups():
+def test_the_fifteen_served_tables_hang_inside_the_duckdb_card_in_three_groups():
     from etl import pipeline
 
     markup = build()
     # D-389: every table the load copies, plus the load log and the two dbt traces.
-    assert sum(len(names) for *_, names, _, _ in database_map.ORIGINS) == len(pipeline.SERVING_TABLES) + 3 == 14
+    assert sum(len(names) for *_, names, _, _ in database_map.ORIGINS) == len(pipeline.SERVING_TABLES) + 4 == 15
     text = re.sub(r"<[^>]+>", " ", markup)
-    for group, count in (("Modelos dbt", 11), ("Registro de cargas", 1), ("Trazas de dbt", 2)):
+    for group, count in (("Modelos dbt", 11), ("Registro de cargas", 2), ("Trazas de dbt", 2)):
         assert re.search(rf"{group}\s+{count}\s", text), group
     for table in COUNTS:  # the hover lists every table with its rows
         assert f"<code>{table}</code>" in markup, table
-    assert "814.610" in text and "14 tablas" in text
+    assert "814.610" in text and "15 tablas" in text
     assert "staging 3, intermedio 4 y marts 9" in text and "31 pruebas" in text
 
 

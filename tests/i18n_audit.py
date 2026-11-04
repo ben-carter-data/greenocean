@@ -83,7 +83,7 @@ def read_data_values():
     from bi import sql_explorer
 
     # D-522: a package is written as ODEPA writes it
-    with (Path(__file__).parent / "fixtures" / "reviewed_units.csv").open(encoding="utf-8") as units:
+    with (Path(__file__).parents[1] / "etl" / "reviewed_units.csv").open(encoding="utf-8") as units:
         values |= {row.split(",")[0].strip('"').removeprefix("$/") for row in units.readlines()[1:]}
     # D-516: the name of a view of «Consultas SQL» is code, as the query writes it
     return (
@@ -214,7 +214,10 @@ def screens():
         + [(page, None) for page in dashboard.FOLDER_ORDER]
         # D-360: these pages draw only the tab in sight, so each tab is a screen of its own.
         + [(dashboard.PAGE_RUNS, {dashboard.RUNS_VIEW_KEY: tab} | author) for tab in list(dashboard.RUNS_VIEWS)[1:]]
-        + [(dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_VIEW_KEY: tab}) for tab in ("Auditoría", "Rechazos y cargas")]
+        + [
+            (dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_VIEW_KEY: tab})
+            for tab in ("Catálogo de controles", "Auditoría", "Rechazos y cargas")
+        ]
         + [
             (dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_OPEN_KEY: title})
             for title in quality_evidence.TITLES.values()

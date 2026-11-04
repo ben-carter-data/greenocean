@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.62 |
+| Versión | 3.63 |
 | Fecha | 04-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -282,3 +282,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.60 | 04-11-2026 | El precio mayorista semanal pesa los kilos o unidades que trae el volumen, no los envases contados (D-521) |
 | 3.61 | 04-11-2026 | Toda variación semanal compara solo el mismo envase, y el paso 4 y el Excel dicen cuál (D-522) |
 | 3.62 | 04-11-2026 | «Reglas de transformación»: qué se le hace a los datos y por qué, con un diagrama de dónde actúa cada regla (D-523) |
+| 3.63 | 04-11-2026 | «Controles de datos» suma «Catálogo de controles», con las unidades de venta nuevas a la vista (D-524) |

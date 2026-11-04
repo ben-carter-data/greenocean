@@ -46,6 +46,11 @@ SERVING_TABLES = [
     "latest_by_source",  # D-365: each source's own last two weeks, for «Último dato por canal»
     "weekly_same_package",  # D-522: every change of a price against the week before, in the same package
 ]
+SOURCE_UNIT_SQL = """CREATE TABLE source_unit AS
+SELECT source, unit, normalized_unit, unit_quantity, volume_quantity, count(*) AS row_count,
+       strftime(min(first_date), '%Y-%m-%d') AS first_date, strftime(max(first_date), '%Y-%m-%d') AS last_date
+FROM work.main.int_prices__units_normalized
+GROUP BY source, unit, normalized_unit, unit_quantity, volume_quantity"""
 DBT_TARGET_DIR = DBT_DIR / "target"
 # The lineage and the test results of the last dbt build travel with the serving file:
 # dbt/target is not committed, and the panel draws its DAG and quality matrix from them.
@@ -206,6 +211,8 @@ def write_serving_database(
         connection.execute(f"ATTACH '{work_file}' AS work (READ_ONLY)")
         for table in SERVING_TABLES:
             connection.execute(f"CREATE TABLE {table} AS SELECT * FROM work.main.{table}")
+        # D-524: the units this load saw, so a new one can be named where etl/raw.db does not exist.
+        connection.execute(SOURCE_UNIT_SQL)
         connection.execute("DETACH work")
         write_dbt_artifacts(connection, *(artifacts if artifacts is not None else read_dbt_artifacts()))
         connection.execute(ETL_RUN_SCHEMA)

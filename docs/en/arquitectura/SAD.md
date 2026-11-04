@@ -196,6 +196,7 @@ Each table of the DuckDB database, its role and its columns.
 | `etl_run` | Audit | One row per published load |
 | `rejection` | Audit | Rows rejected by the last load, with their reason |
 | `dbt_node` | Lineage | Models, sources and tests of the last `dbt build` |
+| `source_unit` | Log | The sale units the last load saw (D-524) |
 | `dbt_result` | Lineage | Result of each model and test of the last `dbt build` |
 
 **Facts and dimensions**
@@ -365,6 +366,21 @@ The last two weeks of each source, without the cut of D-356. Only step 2, Channe
 | `test_type` | VARCHAR | | Type of test, for the tests |
 | `column_name` | VARCHAR | | Column it tests, if any |
 | `description` | VARCHAR | | Description of the node in the dbt project |
+
+#### source_unit
+
+The sale units the last load saw (D-524). The pipeline writes it in Python, so that a new unit without classification shows in «Catálogo de controles» and in the «Informe semanal», also where `etl/raw.db` does not exist.
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `source` | VARCHAR |  | Source: `wholesale` or `consumer` |
+| `unit` | VARCHAR |  | The unit, as ODEPA writes it |
+| `normalized_unit` | VARCHAR |  | Normalized unit; empty if it cannot be converted |
+| `unit_quantity` | DOUBLE |  | What the price is divided by |
+| `volume_quantity` | DOUBLE |  | How many kilos or units each unit of volume brings (D-521) |
+| `row_count` | BIGINT |  | Valid rows with that unit |
+| `first_date` | VARCHAR |  | First date with that unit |
+| `last_date` | VARCHAR |  | Last date with that unit |
 
 #### dbt_result
 

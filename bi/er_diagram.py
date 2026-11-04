@@ -261,8 +261,10 @@ def build_er_svg(schema, counts, mode, tooltips=None):
         f'las 2 últimas semanas de cada fuente, ya con sus nombres y sin claves (D-365).</text>'
         f'<text x="{MARGIN}" y="{legend_y + 54}" font-size="12" fill="{shade["muted"]}">También fuera: weekly_same_package, '
         f'el cambio de cada precio contra la semana anterior en el mismo envase (D-522).</text>'
+        f'<text x="{MARGIN}" y="{legend_y + 72}" font-size="12" fill="{shade["muted"]}">También fuera: source_unit, '
+        f'las unidades de venta que vio la última carga (D-524).</text>'
     )
-    total = bottom + 92
+    total = bottom + 110
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {total}" width="100%" role="img" '
         f'aria-label="Modelo entidad-relación de datos.duckdb" font-family="{charts.CHART_FONT}">'

@@ -137,6 +137,10 @@ def work_database(path):
             connection.execute(f"INSERT INTO {table} VALUES (1)")
         connection.execute("CREATE TABLE int_prices__validated (reason VARCHAR)")
         connection.execute("INSERT INTO int_prices__validated VALUES (NULL), (NULL), ('precio cero')")
+        connection.execute(  # D-524: the source of the units the load saw
+            "CREATE TABLE int_prices__units_normalized AS SELECT 'wholesale' AS source, '$/kilo' AS unit, "
+            "'kilo' AS normalized_unit, 1.0 AS unit_quantity, 1.0 AS volume_quantity, DATE '2026-01-05' AS first_date"
+        )
 
 
 def test_d323_rows_are_counted_as_dbt_validated_them(tmp_path):

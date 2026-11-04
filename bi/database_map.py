@@ -45,8 +45,8 @@ ORIGINS = [
         "log",
         "Registro de cargas",
         "python",
-        ["etl_run"],
-        "Una fila por ejecución real: cuándo empezó, qué leyó, qué cargó y qué rechazó.",
+        ["etl_run", "source_unit"],
+        "Una fila por ejecución real: cuándo empezó, qué leyó, qué cargó y qué rechazó; y las unidades de venta que vio.",
         "La escribe el pipeline en Python al terminar. Una reconstrucción local no la toca, para no inventar cargas.",
     ),
     (
@@ -123,7 +123,7 @@ NODES = [
         "DuckDB",
         "etl/datos.duckdb",
         (755, MAIN_Y),
-        "La base que el panel lee: 14 tablas, agrupadas por quién las escribe (abajo).",
+        "La base que el panel lee: 15 tablas, agrupadas por quién las escribe (abajo).",
         "Es un solo archivo, rápido para consultas analíticas y de solo lectura para el panel.",
     ),
     (

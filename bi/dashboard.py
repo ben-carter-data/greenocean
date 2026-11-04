@@ -61,6 +61,7 @@ from bi import (
     architecture,
     buttons,
     charts,
+    control_catalog,
     control,
     documents_folder,
     i18n,
@@ -7393,7 +7394,9 @@ def show_operations_page(mode):
         )
     palette = charts.get_palette(mode)
     # D-360: only the tab in sight is drawn.
-    tab = show_view_tabs(QUALITY_VIEW_KEY, ["Calidad", "Auditoría", "Rechazos y cargas"], palette)
+    tab = show_view_tabs(
+        QUALITY_VIEW_KEY, ["Calidad", "Auditoría", "Rechazos y cargas", "Catálogo de controles"], palette
+    )
     if tab == "Calidad":
         # D-272: the frame takes the drawing's own height (a fixed one cut the gates on a wide window). D-273: the drawing
         # is HTML, so its words keep their size; past 1180 px it would only spread out, so it stops growing there.
@@ -7426,6 +7429,14 @@ def show_operations_page(mode):
                     'en manifest.json; los indicadores no cambian.</span>',
                     unsafe_allow_html=True,
                 )
+    elif tab == "Catálogo de controles":  # D-524: every control, and the sale units nobody has classified yet
+        st.markdown(
+            '<style>.st-key-controls_frame, .st-key-controls_frame [data-testid="stElementContainer"], '
+            ".st-key-controls_frame iframe { height:max(calc(100vh - 324px), 420px) !important; }</style>",
+            unsafe_allow_html=True,
+        )
+        with st.container(key="controls_frame"):
+            st.iframe(control_catalog.build_page_html(palette, i18n.get_language(), is_author()), height=420)
     else:
         st.iframe(
             quality_live.build_tables_html(palette, measures["runs"], measures["rejections"], measures["flags"]),

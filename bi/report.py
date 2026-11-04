@@ -12,7 +12,7 @@ from pathlib import Path
 # region Imports of the project
 # This file runs as a script, so the project folder is added to the import path.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import alerts, queries, weeks  # noqa: E402
+from bi import alerts, queries, unit_review, weeks  # noqa: E402
 from etl import etl  # noqa: E402
 # endregion
 
@@ -100,11 +100,26 @@ def build_alerts_section(database_file):
     return lines[:-1]
 
 
+def build_units_section(database_file):
+    """D-524: a new sale unit nobody has classified goes in the report, so it does not pile up in silence."""
+    new = unit_review.summarize(database_file)["new"]
+    if not new:
+        return []
+    listed = ", ".join(f"`{unit['unit']}`" for unit in new[:MAXIMUM_ALERTS_IN_REPORT])
+    return [
+        "",
+        f"## Unidades de venta sin clasificar ({len(new)})",
+        "",
+        f"{listed}. Revísalas en «Catálogo de controles».",
+    ]
+
+
 def build_report(database_file=queries.DATABASE_FILE):
     """Return the whole weekly report as one Markdown text."""
     lines = ["# Informe semanal del monitor de precios", ""]
     lines += build_load_section(database_file)
     lines += [""] + build_alerts_section(database_file)
+    lines += build_units_section(database_file)
     lines += ["", ATTRIBUTION_TEXT]
     return "\n".join(lines)
 

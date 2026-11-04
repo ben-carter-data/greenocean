@@ -1,31 +1,26 @@
 """D-520: every sale unit is read as it was reviewed by hand, the same by the ETL and by dbt.
 
-tests/fixtures/reviewed_units.csv holds every unit ODEPA has used, with the reading checked against the prices of the
+etl/reviewed_units.csv holds every unit ODEPA has used, with the reading checked against the prices of the
 same product. A reading is only as safe as this list. The weekly load runs this file (D-366), so it stops when a new
 unit gets a price without being a plain package, the one case that can publish a wrong figure. A new plain package,
 as «$/caja 110 unidades», or a new unit without a price cannot, and ODEPA adds about seven a year: those fail only in
 tests/test_unit_catalog.py, which the load does not run, so they do not stop the data (F-01).
 """
 
-import re
 from pathlib import Path
 
 import duckdb
 import pandas as pd
 import pytest
 
+from bi import unit_review
 from etl import etl
 
 REPOSITORY = Path(__file__).resolve().parent.parent
-REVIEWED_FILE = REPOSITORY / "tests" / "fixtures" / "reviewed_units.csv"
+REVIEWED_FILE = unit_review.REVIEWED_FILE
 MODEL_FILE = REPOSITORY / "dbt" / "models" / "intermediate" / "int_prices__units_normalized.sql"
 needs_raw = pytest.mark.skipif(not etl.RAW_DATABASE_FILE.exists(), reason="etl/raw.db is not in the repository")
-# One package and one quantity, or a price already per kilo, unit or liter: nothing that can be read two ways.
-PLAIN_PACKAGE = re.compile(
-    r"^\$/(?:(?:kilo|unidad|litro)\b.*"
-    r"|(?!docena|media|cien)[a-záéíóúñ]+(?: de)? \(?\d+(?:,\d+)? ?(?:kilos?|unidades|gramos|grs|litros?|ml)\)?"
-    r"(?: [a-záéíóúñ]+)?(?: \(volumen en unidades\))?)$"
-)
+PLAIN_PACKAGE = unit_review.PLAIN_PACKAGE
 
 
 def reviewed():

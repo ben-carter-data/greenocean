@@ -1113,10 +1113,12 @@ def test_d220_quality_and_audit_are_one_view_without_pickers():
     # sight is drawn, so there is one frame at a time.
     bars = app.get('segmented_control')
     assert (
-        not app.selectbox and len(bars) == 1 and list(bars[0].options) == ["Calidad", "Auditoría", "Rechazos y cargas"]
+        not app.selectbox
+        and len(bars) == 1
+        and list(bars[0].options) == ["Calidad", "Auditoría", "Rechazos y cargas", "Catálogo de controles"]
     )
     assert len(app.get('iframe')) == 1
-    for tab in ("Auditoría", "Rechazos y cargas"):
+    for tab in ("Auditoría", "Rechazos y cargas", "Catálogo de controles"):
         app.segmented_control(key="quality_audit_view").set_value(tab).run()
         assert not app.exception and len(app.get('iframe')) == 1
 

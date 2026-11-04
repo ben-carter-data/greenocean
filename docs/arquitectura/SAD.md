@@ -196,6 +196,7 @@ Cada tabla de la Base DuckDB, su función y sus columnas.
 | `etl_run` | Auditoría | Una fila por carga publicada |
 | `rejection` | Auditoría | Filas rechazadas por la última carga, con su motivo |
 | `dbt_node` | Linaje | Modelos, fuentes y pruebas del último `dbt build` |
+| `source_unit` | Registro | Las unidades de venta que vio la última carga (D-524) |
 | `dbt_result` | Linaje | Resultado de cada modelo y prueba del último `dbt build` |
 
 **Hechos y dimensiones**
@@ -365,6 +366,21 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee el p
 | `test_type` | VARCHAR | | Tipo de prueba, para las pruebas |
 | `column_name` | VARCHAR | | Columna que prueba, si aplica |
 | `description` | VARCHAR | | Descripción del nodo en el proyecto dbt |
+
+#### source_unit
+
+Las unidades de venta que vio la última carga (D-524). La escribe el pipeline en Python, para que una unidad nueva sin clasificar se vea en «Catálogo de controles» y en el «Informe semanal», también donde `etl/raw.db` no existe.
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `source` | VARCHAR |  | Fuente: `wholesale` (mayorista) o `consumer` (consumidor) |
+| `unit` | VARCHAR |  | La unidad, como la escribe ODEPA |
+| `normalized_unit` | VARCHAR |  | Unidad normalizada; vacía si no se puede convertir |
+| `unit_quantity` | DOUBLE |  | Por cuánto se divide el precio |
+| `volume_quantity` | DOUBLE |  | Cuántos kilos o unidades trae cada unidad de volumen (D-521) |
+| `row_count` | BIGINT |  | Filas válidas con esa unidad |
+| `first_date` | VARCHAR |  | Primera fecha con esa unidad |
+| `last_date` | VARCHAR |  | Última fecha con esa unidad |
 
 #### dbt_result
 

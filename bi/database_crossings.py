@@ -80,7 +80,7 @@ CROSSINGS = [
         "Base de trabajo",
         "datos.duckdb",
         "ATTACH de solo lectura y CREATE TABLE AS",
-        "las 14 tablas servidas",
+        "las 15 tablas servidas",
         "los mismos nombres de tabla",
         "Las once tablas del modelo, más la traza de dbt y el registro de cargas.",
         "Los mismos nombres de tabla; la Base DuckDB se reemplaza entera al final, nunca a medias.",

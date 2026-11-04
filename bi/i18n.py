@@ -146,6 +146,7 @@ EN = {
     "Operación": "Operations",
     "Auditoría": "Audit",
     "Rechazos y cargas": "Rejections and loads",
+    "Catálogo de controles": "Control catalog",
     "Despliegue": "Deployment",
     "Monitoreo": "Monitoring",
     "Abrir el job en GitHub": "Open the job in GitHub",
