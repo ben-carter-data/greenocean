@@ -1074,14 +1074,19 @@ def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
         values = [abs(value) for thin, value in shown if thin == group]
         assert values == sorted(values, reverse=True)
     largest = changes()
-    # D-495: «Nombre» is the other order; the rises, the falls and the unusual ones are the alert buttons (D-491)
+    # D-496: «Bajadas» sorts every product by its plain change, lowest first (the sharp ones are the alert buttons)
+    app.selectbox(key='home_products_order').set_value('Bajadas').run()
+    assert not app.exception
+    for group in (True, False):
+        values = [value for thin, value in rows() if thin == group]
+        assert values == sorted(values)
     app.selectbox(key='home_products_order').set_value('Nombre').run()
     assert not app.exception
     markup = ' '.join(block.value for block in app.markdown)
     table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
     products = [name.split(' · ')[0] for name in re.findall(r'<td><strong>([^<]+)</strong>', table)]
     assert products == sorted(products) and len(products) == len(largest)
-    assert set(app.selectbox(key='home_products_order').options) == {'Mayor cambio', 'Nombre'}
+    assert app.selectbox(key='home_products_order').options == ['Mayor cambio', 'Subidas', 'Bajadas', 'Nombre']
 
 
 @needs_database

@@ -208,7 +208,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .greenocean-mockup a:focus-visible,.mock-table-scroll:focus-visible {outline:2px solid #0783ff;outline-offset:3px;}
 /* Keep the complete executive overview inside short desktop viewports. The
    product tables remain below it and retain their own bounded scrolling. */
-@media(min-width:1101px) and (max-height:850px) {
+@media(min-width:901px) and (max-height:850px) {
  .stApp:has(.greenocean-mockup) [data-testid="stMainBlockContainer"] {padding:0 18px 12px!important;}
  .mock-intro {padding:3px 0 0;align-items:center;}
  .greenocean-mockup .mock-intro h1 {font-size:25px!important;line-height:1.08!important;letter-spacing:-.45px;}
@@ -383,7 +383,8 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-regions-tip li.rise b {color:var(--mock-rise);}.mock-regions-tip li.fall b {color:var(--mock-fall);}
 .mock-regions-tip li.chosen {background:color-mix(in srgb,var(--mock-fall) 16%,transparent);font-weight:600;}
 .mock-products-table td.link a {text-decoration:none!important;color:var(--mock-fall)!important;font-weight:600;}
-@media(max-width:1100px) {
+/* D-496: the panels stack only under 900 px (a phone); a tablet keeps the columns, as its width allows with the menu folded */
+@media(max-width:900px) {
  .greenocean-mockup .mock-intro {flex-direction:column;}.mock-head-side {align-items:flex-start;}.mock-head-chips {justify-content:flex-start;}
  .st-key-home_overview [data-testid="stHorizontalBlock"] {flex-direction:column;}
  .st-key-home_overview [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {width:100%!important;min-width:0!important;flex:0 0 auto!important;}
@@ -568,7 +569,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-dialog_products_filters [data-testid="stSelectbox"] .react-aria-ComboBox > div {border:1px solid color-mix(in srgb, __INK__ 45%, __PANEL__)!important;border-radius:6px!important;background:__PANEL__!important;}
 
 /* D-324: with the columns stacked (1100 px and under) the map has no column height to stretch to: it keeps its own. */
-@media(max-width:1100px) {
+@media(max-width:900px) {
  .st-key-home_overview .mock-chile-map {flex:0 0 auto!important;height:560px!important;min-height:560px!important;}
 }
 
@@ -625,7 +626,7 @@ ul.mock-calc-out li em {font-style:normal;}
 
 /* D-407: one screen down to 1280 x 800 (RNF-06). Under 860 px of height the family rows get thinner, the fixed line
    over the products table leaves (each row keeps its «Ver cálculo») and the table takes what the window leaves. */
-@media (max-height:860px) and (min-width:1101px) {
+@media (max-height:860px) and (min-width:901px) {
  .stApp .greenocean-mockup .mock-movement .mock-movement-row {min-height:26px!important;padding-top:0!important;padding-bottom:0!important;}
  .stApp .greenocean-mockup .mock-movement .mock-movement-row.mock-movement-axis {min-height:16px!important;}
  .stApp .greenocean-mockup .mock-movement .mock-movement-art {width:22px!important;height:22px!important;}
@@ -753,9 +754,38 @@ ul.mock-calc-out li em {font-style:normal;}
 
 /* D-495: on a narrow window the panels stack and the page scrolls: the products panel takes its natural height and its
    table is capped, so it never runs out of the panel over the note of coverage. */
-@media (max-width:1100px) {
+@media (max-width:900px) {
  .st-key-home_overview .st-key-home_products,.st-key-home_overview [data-testid="stLayoutWrapper"]:has(> .st-key-home_products) {flex:0 0 auto!important;min-height:0!important;}
  .st-key-home_overview .st-key-home_products [data-testid="stElementContainer"]:has(.mock-products-table),
  .st-key-home_overview .st-key-home_products [data-testid="stElementContainer"]:has(.mock-products-table) *:has(.mock-products-table) {flex:0 0 auto!important;}
  .st-key-home_overview .mock-products-table {flex:0 0 auto!important;max-height:420px!important;}
+}
+
+/* D-496: between 901 and 1150 px with the menu open, the families give up the word of their state and the name gets
+   narrower, so no figure is cut at the panel's edge. */
+@media (min-width:901px) and (max-width:1150px) {
+ .stApp .st-key-home_overview .greenocean-mockup .mock-movement-row {grid-template-columns:26px minmax(126px,1.2fr) minmax(36px,1fr) 52px 0 0 12px;gap:0 4px;}
+ .st-key-home_overview .mock-movement .mock-movement-state {display:none;}
+ .st-key-home_overview .mock-movement-value {font-size:11px;}
+ .stApp .st-key-home_overview .greenocean-mockup .mock-movement-row strong {white-space:normal;overflow:visible;line-height:1.1;}
+}
+/* D-496: the products table follows the width of its own panel, with the menu open or folded: smaller letter and padding,
+   «Ver cálculo» on its own line and, when it is narrower still, the headers in two lines, so no column is ever cut. */
+.st-key-home_overview .st-key-home_products {container:products / inline-size;}
+@container products (max-width:600px) {
+ .st-key-home_overview .mock-products-table table {font-size:11px;}
+ .st-key-home_overview .mock-products-table th,.st-key-home_overview .mock-products-table td {padding-left:5px;padding-right:5px;}
+ .st-key-home_overview .mock-products-table td:first-child .mock-calc {display:block;margin:0;}
+}
+@container products (max-width:530px) {
+ .st-key-home_overview .mock-products-table table {font-size:10.5px;}
+ .st-key-home_overview .mock-products-table th {white-space:normal;line-height:1.15;}
+ .st-key-home_overview .mock-products-table th,.st-key-home_overview .mock-products-table td {padding-left:4px;padding-right:4px;}
+}
+/* D-496: in a very narrow step 2, the blocks give up padding and what a channel holds may take two lines: no name is cut. */
+@container (max-width:175px) {
+ .mock-channel-grid {gap:3px;}
+ .mock-channel-tile {padding:3px 4px 4px;}
+ .mock-channel-tile strong {font-size:8px;letter-spacing:-.01em;}
+ .mock-channel-tile .mock-channel-change {white-space:normal;font-size:7.5px;}
 }

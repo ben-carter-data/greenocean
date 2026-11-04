@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.39 |
+| Versión | 3.40 |
 | Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -259,3 +259,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.37 | 03-11-2026 | El paso 3 se llama «Productos»; la búsqueda queda junto a las alertas y busca dentro de la que esté elegida (RF-05, D-492) |
 | 3.38 | 03-11-2026 | Semanal tiene cuatro pasos: el canal pasa a ser el paso 2, opcional, y la sección queda con dos dashboards (D-494) |
 | 3.39 | 03-11-2026 | La tabla de productos solo ordena por «Mayor cambio» o «Nombre»; el canal es el paso 2 y las alertas, sus botones (D-495) |
+| 3.40 | 03-11-2026 | Una tablet horizontal ve Semanal en columnas; «Orden» recupera «Subidas» y «Bajadas» (D-496) |

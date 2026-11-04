@@ -197,7 +197,7 @@ def test_d407_one_screen_down_to_1280_by_800_and_1024_by_768_scrolls_without_cut
     # the Dashboard bar keeps one line, and under 860 px of height its family rows get thinner
     css = (PROJECT_DIR / "bi" / "home_mockup.css").read_text(encoding="utf-8")
     assert ".stApp .st-key-home_bar {flex-wrap:nowrap!important;}" in css
-    assert "@media (max-height:860px) and (min-width:1101px)" in css
+    assert "@media (max-height:860px) and (min-width:901px)" in css  # D-496: a tablet keeps the columns
     # the pages sized by the window leave room for the content row of D-398
     assert "max-height:calc(100vh - 340px)" in dashboard.build_architecture_css(charts.MODE_DARK)
 

@@ -4232,7 +4232,8 @@ def alert_items(rows):
     return items
 
 
-PRODUCT_ORDERS = ('Mayor cambio', 'Nombre')  # D-495: the rises and the falls are the alert buttons; the channel, step 2
+# D-496: the order of every product by its plain change; the sharp rises and drops (K6) are the alert buttons (D-491)
+PRODUCT_ORDERS = ('Mayor cambio', 'Subidas', 'Bajadas', 'Nombre')
 
 
 normalize_search = overview.normalize_search
@@ -4324,6 +4325,10 @@ def sort_family_products(rows, order):
 
     if order == 'Nombre':
         return sorted(rows, key=names)
+    if order == 'Subidas':
+        return sorted(rows, key=lambda row: (thin(row), -row['variation'], names(row)))
+    if order == 'Bajadas':
+        return sorted(rows, key=lambda row: (thin(row), row['variation'], names(row)))
     return sorted(rows, key=lambda row: (thin(row), -abs(row['variation']), names(row)))
 
 
@@ -4537,7 +4542,7 @@ def show_market_overview(mode, prefix):
                 else next((value for name, value, _ in averages if name == products_family), None)
             )
             heading = st.empty()
-            # D-495: only the order; the channel is step 2 and the rises and falls are the alert buttons (D-491)
+            # D-495, D-496: only the order; the channel is step 2 and the sharp rises and drops are the alert buttons
             order_column, _, enlarge_column = st.columns([1.1, 1.65, 0.3], vertical_alignment='center')
             orders = PRODUCT_ORDERS
             if st.session_state.get('home_products_order') not in orders:
