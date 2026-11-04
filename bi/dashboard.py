@@ -164,10 +164,10 @@ PAGE_FOLDER = "Documentos"
 # D-285: the whole system in one view, next to the stack.
 PAGE_APP_MAP = "Mapa de la app"
 # D-320: how the project was assessed against software and data quality standards.
-PAGE_METHOD = "Método y calidad"
+PAGE_METHOD = "Plan de calidad"
 GIT_TAB_PARAMETER, GIT_TAB_LOG = "pestana", "registro"  # D-346: «Ver registro completo» opens the Incident log
 BA_TAB_PARAMETER = GIT_TAB_PARAMETER  # D-456: the tab of «Análisis BA y BI» an address opens
-PAGE_GIT = "Git workflow"  # D-344: how a change travels from an idea to a live deployment
+PAGE_GIT = "Cambios e incidentes"  # D-344: how a change travels from an idea to a live deployment
 PAGE_DECISION_INDEX = "Índice de decisiones"
 # D-290: the test plan and the security plan are one document; the scalability plan and the data dictionary live in the SAD.
 PAGE_TEST_PLAN = "Plan de pruebas y seguridad"
@@ -184,6 +184,10 @@ RETIRED_VIEWS.update(
         "Alertas": PAGE_HOME,
         "Reglas de calidad": PAGE_TEST_PLAN,
         "DevOps y seguridad": PAGE_RUNS,
+        # D-507: the three pages of «Calidad» say what each one does; an old address opens the same page
+        "Método y calidad": PAGE_METHOD,
+        "Git workflow": PAGE_GIT,
+        "Calidad y auditoría": PAGE_OPERATIONS,
     }
 )
 RETIRED_VIEWS.update(
@@ -4728,7 +4732,7 @@ def show_market_overview(mode, prefix):
         '<div class="greenocean-mockup">'
         + home_mockup.coverage_note(
             model,
-            # D-502: the Usuario view has no «Calidad y auditoría» nor «Método y calidad»: no link to them
+            # D-502: the Usuario view has no «Controles de datos» nor «Plan de calidad»: no link to them
             None if is_public_profile() else build_page_address(PAGE_OPERATIONS),
             None if is_public_profile() else build_page_address(PAGE_DOCUMENTATION),
             family,
@@ -5347,7 +5351,7 @@ def show_overview_insights(mode, version):
         (
             "¿Puedo confiar en estas cifras?",
             "Quien diseña los datos",
-            "Calidad y auditoría",
+            "Controles de datos",
             f"{green} de {len(indicators)} indicadores de calidad de los datos en su umbral y {tests[0]} de {tests[1]} pruebas de datos.",
         ),
     ]
@@ -7177,12 +7181,12 @@ def read_quality_measures(database_version):
 
 
 def show_operations_page(mode):
-    """Calidad y auditoría in one view (D-220): the quality measured on the real database, each
+    """Controles de datos in one view (D-220): the quality measured on the real database, each
     dimension under the pipeline stop where it is watched, and the audit controls that back it,
     each opening its evidence. The single-price trace and its pickers left (D-196 → D-220)."""
     show_page_bar(
         PAGE_OPERATIONS,
-        "Calidad y auditoría",
+        "Controles de datos",
         "La calidad medida en cada carga y los controles que demuestran que lo publicado se puede rastrear y repetir.",
         side=show_recheck_button,
     )
@@ -7832,7 +7836,7 @@ def filter_reports(reports, year, month, week, query):
 
 
 def show_git_page(mode):
-    """«Git workflow» (D-344): the map of the 15 stations from an idea to a live deployment, and the incident log.
+    """«Cambios e incidentes» (D-344): the map of the 15 stations from an idea to a live deployment, and the incident log.
     The professional and the author read it; the diagnoses of the log are the author's (D-345)."""
     author = bool(st.session_state.get(ADMIN_UNLOCKED))
     show_page_bar(
@@ -7864,7 +7868,7 @@ def show_git_page(mode):
 
 
 def show_method_page(mode):
-    """«Método y calidad» (D-320, D-323, D-330, D-332, D-333): how the quality of the published data and of the code is
+    """«Plan de calidad» (D-320, D-323, D-330, D-332, D-333): how the quality of the published data and of the code is
     managed. Two tabs: «Resumen» (each indicator against its acceptable) and «Informes» (the numbered reports)."""
     reports, goals, policy = quality_method.read_page()
     latest = reports[-1] if reports else None
@@ -8871,7 +8875,7 @@ MENU_BLOCKS = [
     (
         "calidad",
         "Calidad",
-        [PAGE_OPERATIONS, PAGE_METHOD, PAGE_GIT],
+        [PAGE_METHOD, PAGE_OPERATIONS, PAGE_GIT],  # D-507: the plan, the controls, the log
     ),  # D-343: quality and audit, and the method behind it
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
     ("documentos", "Documentos", [PAGE_FOLDER]),
@@ -8939,7 +8943,7 @@ SIDEBAR_LABELS = {
     PAGE_HOME: "Semanal",
     PAGE_SEASONALITY: "Precios e inflación",
     PAGE_DIAGRAMS: "Pipeline y linaje",
-    PAGE_OPERATIONS: "Calidad y auditoría",
+    PAGE_OPERATIONS: "Controles de datos",
     PAGE_RUNS: "Centro de operación",
     PAGE_ACTIONS: "GitHub Actions",
     PAGE_CONFIG: "Configuración",

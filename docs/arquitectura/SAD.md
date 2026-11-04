@@ -373,7 +373,7 @@ Es el mismo diagrama de la pestaña «Despliegue» de [[vista:Centro de operaci�
 
 ## 8. Calidad, seguridad y observabilidad
 
-**Calidad de los datos.** Hay tres puertas: el archivo (¿llegó completo y al día?), cada fila (¿es válida?) y la base (¿es coherente y pasó sus pruebas?). Once indicadores, en cinco dimensiones, son los indicadores de calidad de los datos: se miden en cada carga contra su umbral. La exactitud, la sexta dimensión, se mide con cuatro controles que comparan las cifras con la fuente. El detalle está en [[vista:Calidad y auditoría]].
+**Calidad de los datos.** Hay tres puertas: el archivo (¿llegó completo y al día?), cada fila (¿es válida?) y la base (¿es coherente y pasó sus pruebas?). Once indicadores, en cinco dimensiones, son los indicadores de calidad de los datos: se miden en cada carga contra su umbral. La exactitud, la sexta dimensión, se mide con cuatro controles que comparan las cifras con la fuente. El detalle está en [[vista:Controles de datos]].
 
 **Observabilidad.** Cada carga deja rastro en cuatro lugares:
 

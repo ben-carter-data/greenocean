@@ -261,10 +261,8 @@ def test_d332_the_page_has_two_tabs_and_the_quality_section_holds_it_in_both_lan
     markup = " ".join(block.value for block in app.sidebar.markdown)
     assert "Quality self-assessment" not in markup and "Autoevaluación de calidad ·" not in markup  # D-343: gone
     labels = [link.proto.label for link in app.sidebar.get("page_link")]
-    audit, method = (
-        ("Quality and audit", "Method and quality") if language == "en" else ("Calidad y auditoría", "Método y calidad")
-    )
-    assert labels.index(method) == labels.index(audit) + 1  # D-343: the two sit together in the section «Calidad»
+    audit, method = ("Data controls", "Quality plan") if language == "en" else ("Controles de datos", "Plan de calidad")
+    assert labels.index(audit) == labels.index(method) + 1  # D-343, D-507: the two sit together in «Calidad»
     page = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     page.query_params.update({"perfil": "profesional", "lang": language, "vista": "Método y calidad"})
     page.run()

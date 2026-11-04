@@ -102,7 +102,7 @@ MOCKUPS = [
     ("m3-analisis-darkgrey.jpg", "M-3 · Análisis BA y BI", "Dark Grey", "Profesional"),  # D-456
     ("m4-pipeline-bluelight.jpg", "M-4 · Pipeline y linaje", "Blue Light", "Profesional"),
     ("m5-sql-corporativo.jpg", "M-5 · Consultas SQL", "Corporativo", "Profesional"),
-    ("m6-calidad-vantablack.jpg", "M-6 · Calidad y auditoría", "Vantablack", "Profesional"),
+    ("m6-calidad-vantablack.jpg", "M-6 · Controles de datos", "Vantablack", "Profesional"),
 ]
 
 

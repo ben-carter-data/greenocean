@@ -1,7 +1,7 @@
 """The panel's own diagrams for the documents (D-448): the SAD draws the same star schema, entity-relation, storage map,
 database crossings, stack and deployment as the panel, from the same code, as a fixed picture without the live state.
 D-455: the other documents too: the journey by layers, the interest map, CI/CD, monitoring, the security architecture,
-the quality flow and «Git workflow»."""
+the quality flow and «Cambios e incidentes»."""
 
 import functools
 import json
@@ -235,7 +235,7 @@ def build_security_html(mode):
 
 @functools.lru_cache(maxsize=2)
 def read_quality(database_key):
-    """The measures and the evidence of «Calidad y auditoría», read once per database, as the page does (D-196)."""
+    """The measures and the evidence of «Controles de datos», read once per database, as the page does (D-196)."""
     measures = quality_live.read_measures()
     manifest = read_manifest()
     run = queries.run_query("quality_runs").iloc[0]
@@ -256,7 +256,7 @@ def read_quality(database_key):
 
 
 def build_quality_html(mode):
-    """[[diagrama:calidad]]: the quality flow of «Calidad y auditoría» (D-220, D-257): each dimension under the pipeline
+    """[[diagrama:calidad]]: the quality flow of «Controles de datos» (D-220, D-257): each dimension under the pipeline
     stop where it is watched, measured on the published database."""
     stat = queries.DATABASE_FILE.stat()
     measures, columns = read_quality((stat.st_size, stat.st_mtime_ns))
@@ -266,7 +266,7 @@ def build_quality_html(mode):
 
 
 def build_git_workflow_html(mode):
-    """[[diagrama:git_workflow]]: the flowchart of «Git workflow» (D-449), as a picture: the side panel of each station
+    """[[diagrama:git_workflow]]: the flowchart of «Cambios e incidentes» (D-449), as a picture: the side panel of each station
     lives on the page."""
     palette = charts.get_palette(mode)
     language = i18n.get_language()

@@ -990,11 +990,11 @@ def test_d250_the_path_and_the_footer_follow_the_menu():
     footer = app.main.get('page_link')
     assert [link.proto.label for link in footer] == [
         '← Anterior: Mapa de la app',
-        'Siguiente: Calidad y auditoría →',
+        'Siguiente: Plan de calidad →',
     ]
     assert [link.proto.icon for link in footer] == [
         dashboard.SIDEBAR_ICONS[dashboard.PAGE_APP_MAP],
-        dashboard.SIDEBAR_ICONS[dashboard.PAGE_OPERATIONS],
+        dashboard.SIDEBAR_ICONS[dashboard.PAGE_METHOD],
     ]
     author = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)  # the Autor's own path and neighbours
     author.session_state['admin_unlocked'] = True
@@ -1108,7 +1108,7 @@ def test_all_kpi_observations_have_real_results_and_explicit_periods():
 def test_d220_quality_and_audit_are_one_view_without_pickers():
     app = draw_page(dashboard.PAGE_OPERATIONS)
     assert not app.exception
-    assert read_page_title(app) == 'Calidad y auditoría'
+    assert read_page_title(app) == 'Controles de datos'
     # D-257: the diagram, the audit controls and what was set aside each have their own tab. D-360: only the tab in
     # sight is drawn, so there is one frame at a time.
     bars = app.get('segmented_control')
@@ -1161,7 +1161,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
         'Semanal',
         'Pipeline y linaje',
         'Modelo de datos',
-        'Calidad y auditoría',
+        'Controles de datos',
         'Arquitectura de seguridad',
         'Documentos',
     ]:
@@ -1463,7 +1463,7 @@ MENU_BLOCKS = {
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Consultas SQL'],
     # D-420: «DevOps y seguridad» is the Autor's; security reads in «Stack y evidencia»
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app', 'Arquitectura de seguridad'],
-    'Calidad': ['Calidad y auditoría', 'Método y calidad', 'Git workflow'],
+    'Calidad': ['Plan de calidad', 'Controles de datos', 'Cambios e incidentes'],  # D-507
 }
 
 

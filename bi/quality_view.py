@@ -1,4 +1,4 @@
-"""«Calidad y auditoría» as a story (D-176): the method (the six data quality dimensions
+"""«Controles de datos» as a story (D-176): the method (the six data quality dimensions
 of the DAMA-DMBOK), four stages of the pipeline (Fuentes → Transformación → Warehouse →
 Resultados), each with its role in quality, its figure, its verdict and the controls it
 runs as small glossy illustrations, then the anomalies box (the rejected rows) and the

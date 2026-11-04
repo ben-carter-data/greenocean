@@ -1,4 +1,4 @@
-"""«Método y calidad» (D-320, D-323, D-330, D-332): how the quality of the published data and of the code is managed.
+"""«Plan de calidad» (D-320, D-323, D-330, D-332): how the quality of the published data and of the code is managed.
 
 Two tabs. «Resumen» says in two sentences what is measured and how it is going, and shows each indicator's failure
 against its acceptable, data and code apart, with the insight of those out of their acceptable. «Informes» lists the
@@ -163,7 +163,7 @@ def build_overview(
             f"Report {name} measures the {len(rows)} data indicators of the quality plan, each against an acceptable "
             "set by the author; the code is checked by the CI of every push.",
         ),
-        # D-483: the report's own date, never «Hoy»: a closed report is read beside today's «Calidad y auditoría»
+        # D-483: the report's own date, never «Hoy»: a closed report is read beside today's «Controles de datos»
         t(
             f"El {day}: {within} de {measured} medidos dentro de lo aceptable · {nonconforming} {plural[0]}.",
             f"On {day}: {within} of {measured} measured within the acceptable · {nonconforming} {plural[1]}.",
@@ -173,9 +173,9 @@ def build_overview(
         lead.append(
             t(
                 f"{name} es un registro cerrado de la serie de construcción, medido con las reglas de entonces, y no se "
-                "reevalúa; el estado de los datos de hoy está en «Calidad y auditoría».",
+                "reevalúa; el estado de los datos de hoy está en «Controles de datos».",
                 f"{name} is a closed record of the construction series, measured with the rules of its time, and is not "
-                "re-evaluated; today's state of the data is in «Quality and audit».",
+                "re-evaluated; today's state of the data is in «Data controls».",
             )
         )
     counted = [row for row in code if row["clave"] in COUNTS]

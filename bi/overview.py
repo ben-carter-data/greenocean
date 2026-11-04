@@ -5,7 +5,7 @@ food CPI) and the data and its operation (the loads, the flags, the quality). Ea
 their trend and four charts: a combined bar and line chart, a donut, ranked bars and a heat table.
 
 Every figure is computed with the same definitions as the page it summarizes, so the dashboard and the Resumen, the
-Precios e inflación page and Calidad y auditoría never disagree: the weekly change of a series compares the same regions
+Precios e inflación page and Controles de datos never disagree: the weekly change of a series compares the same regions
 in both weeks (D-144), a family moves by the median of its series, «sin cambio» is below 0.05 % and a family is «al
 ritmo de la inflación» within ±2 points of the CPI. Pure functions: no Streamlit.
 """

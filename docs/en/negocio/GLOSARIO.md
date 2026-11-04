@@ -38,26 +38,26 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
 | BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | BA and BI analysis (Stakeholders) | Indicators |
 | BSA | Business systems analysis: the role that decides how the system meets what the business asks: what is measured, what blocks publication and what warns. | BA and BI analysis (Method) | Indicators |
-| RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
+| RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Data controls | Indicators |
 | Price alert | A weekly change outside the average ± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week (K6). It splits into sharp rises and sharp drops (D-477). In Weekly, with a region chosen, it is calculated with the price of that region (D-499). | Weekly | Indicators |
 | Sharp rise | A price alert for a rise, in red. Its level says how unusual it was: Extreme rise (4 deviations or more), Very sharp rise (3 or more) or Sharp rise (more than 2) (D-478, D-479). | Weekly | Indicators |
 | Sharp drop | A price alert for a drop, in green: good news for whoever buys. Its level: Extreme drop (4 deviations or more), Very sharp drop (3 or more) or Sharp drop (more than 2) (D-478, D-479). | Weekly | Indicators |
 | Real price | A price expressed in pesos of the last published month of the CPI. | BA and BI analysis (Prices and inflation) | Indicators |
 | Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | BA and BI analysis (Prices and inflation) | Indicators |
-| Data quality indicator | Each of the 11 indicators measured on every load on the published database, in five dimensions. | Quality and audit | Indicators |
-| Quality plan indicator | Each of the 14 indicators of the SQAP (8 of code and 6 of data) that the quality workflow measures every week. | Method and quality | Indicators |
-| Quality dimension | An aspect of quality that is measured: completeness, timeliness, validity, uniqueness, consistency and accuracy. | Quality and audit | Indicators |
+| Data quality indicator | Each of the 11 indicators measured on every load on the published database, in five dimensions. | Data controls | Indicators |
+| Quality plan indicator | Each of the 14 indicators of the SQAP (8 of code and 6 of data) that the quality workflow measures every week. | Quality plan | Indicators |
+| Quality dimension | An aspect of quality that is measured: completeness, timeliness, validity, uniqueness, consistency and accuracy. | Data controls | Indicators |
 | DAMA-DMBOK | Data management guide of DAMA International (*Data Management Body of Knowledge*); the quality dimensions come from it. | — | Indicators |
 | ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Weekly, Pipeline and lineage | Sources |
 | INE | Chile's National Statistics Institute (*Instituto Nacional de Estadísticas*). It publishes the food CPI. | BA and BI analysis (Prices and inflation), Pipeline and lineage | Sources |
 | CPI (IPC) | Consumer price index (*índice de precios al consumidor*); here, the «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division published by the INE. | BA and BI analysis (Prices and inflation) | Sources |
 | CSV | Text file with comma-separated values: the format in which ODEPA publishes the prices. | Pipeline and lineage | Sources |
-| SHA-256 | Function that computes the fingerprint of a file; it changes if a single byte changes. It is used to verify the downloaded files and the DuckDB database. | Quality and audit | Sources |
+| SHA-256 | Function that computes the fingerprint of a file; it changes if a single byte changes. It is used to verify the downloaded files and the DuckDB database. | Data controls | Sources |
 | JSON | Text format for structured data (*JavaScript Object Notation*); the download manifest and the original row of each rejection are stored in it. | — | Sources |
 | Pipeline | The whole flow of each Tuesday, from ODEPA to the panel: download, backup ETL, build with dbt, tests, publication and report. | Pipeline and lineage, Operations center | Pipeline |
 | Ingestion | The download of the ODEPA files; the ingestion agent (`agent/agent.py`) does it and checks that each file brings the expected columns. | Pipeline and lineage | Pipeline |
 | ETL | Extract, transform and load. `etl/etl.py` cleans the data and applies the rules for the backup `etl/datos.db`; the same rules run in dbt for the DuckDB database. | Pipeline and lineage, Operations center | Pipeline |
-| Quality gate | A check that stops the load if something does not comply: the file, each row or the database. | Quality and audit | Pipeline |
+| Quality gate | A check that stops the load if something does not comply: the file, each row or the database. | Data controls | Pipeline |
 | Job, workflow | Automated task of GitHub Actions; the weekly job (`semanal.yml`) runs the pipeline every Tuesday. | Operations center | Pipeline |
 | Cron | The schedule of the weekly job: every Tuesday at 12:07 UTC, with another attempt every 15 minutes until 14:52 and every hour until 02:07 if GitHub is late (D-485). | Operations center | Pipeline |
 | Run | One full pass of the weekly job. | Operations center | Pipeline |
@@ -66,12 +66,12 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | Release | A GitHub publication that keeps files outside the history; the «base-actual» release keeps the DuckDB database and each load replaces it. | Operations center (CI/CD) | Pipeline |
 | Database pointer | The `etl/datos.version` file: the fingerprint, the size and the date of the published DuckDB database. | Operations center (Deployment) | Pipeline |
 | Issue | A publication on GitHub; here, the weekly report each load leaves. | Operations center (Monitoring) | Pipeline |
-| Pull request | A proposed change on GitHub that the author reviews before accepting it; here, the quality report of each week. | Method and quality | Pipeline |
+| Pull request | A proposed change on GitHub that the author reviews before accepting it; here, the quality report of each week. | Quality plan | Pipeline |
 | Landing | The `etl/raw.db` database, with the ODEPA rows as they arrive; it is not versioned. | Pipeline and lineage | Database |
 | Bronze, silver, gold | The data layers: bronze (Parquet, exact copy), silver (dbt staging and intermediate: types, rules and flags) and gold (marts: the star schema the panel reads). | Pipeline and lineage | Database |
 | DuckDB database | `etl/datos.duckdb`: the database the panel reads, with the star schema; published in the «base-actual» release. It was called «DuckDB database» before (D-426). | Pipeline and lineage, Data model | Database |
 | Backup | `etl/datos.db`: the same prices computed without dbt, for the parity test. | Data model | Database |
-| Parity | Comparison between the backup and the DuckDB database: they must give the same figures. | Quality and audit | Database |
+| Parity | Comparison between the backup and the DuckDB database: they must give the same figures. | Data controls | Database |
 | Data warehouse | The database ready for analysis, with the star schema. | Pipeline and lineage, Data model | Database |
 | Star schema | A fact table (`weekly_price`) surrounded by its dimensions (product, region, channel, date). | Data model | Database |
 | PK, FK | Primary key: the column that identifies each row of a table. Foreign key: the column that points to the primary key of another table. | Data model | Database |
@@ -93,9 +93,9 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | UTC | Coordinated universal time; the job runs at 12:07 UTC: 09:07 in Chile in summer time and 08:07 in winter. | Operations center | Connections |
 | PRD | Product Requirements Document. | — | Documents |
 | SAD | Software Architecture Document. | — | Documents |
-| SQAP | Software Quality Assurance Plan: which quality is looked after, how it is measured and who decides. | Method and quality | Documents |
+| SQAP | Software Quality Assurance Plan: which quality is looked after, how it is measured and who decides. | Quality plan | Documents |
 | IEEE | Institute of Electrical and Electronics Engineers; it publishes the IEEE 730 standard, which gives the structure of the SQAP. | — | Documents |
-| IEC | International Electrotechnical Commission; with the ISO it signs the standards ISO/IEC 25010 (software quality) and ISO/IEC 25012 (data quality). | Method and quality | Documents |
+| IEC | International Electrotechnical Commission; with the ISO it signs the standards ISO/IEC 25010 (software quality) and ISO/IEC 25012 (data quality). | Quality plan | Documents |
 | ADR | Architecture Decision Record. | — | Documents |
 | MADR | Standard format for writing an ADR (*Markdown Architectural Decision Records*). | — | Documents |
 | arc42 | Standard template for software architecture documentation. | — | Documents |

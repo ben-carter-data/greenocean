@@ -141,7 +141,7 @@ El botón «Ejecutar pipeline ahora» no existe hasta que el autor escribe la cl
 
 ## 8. Un cambio de código, paso a paso
 
-El camino de un cambio es el de [[vista:Git workflow]]:
+El camino de un cambio es el de [[vista:Cambios e incidentes]]:
 
 [[diagrama:git_workflow]]
 
@@ -207,4 +207,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.2 | 31-10-2026 | Redacción revisada; el Usuario, el Profesional y el Autor (3); la carga semanal corre solo las pruebas de datos (2, 9, D-366); la salida de una carga con las fuentes retrasadas (10, D-356); el token lanza, sigue y cancela la carga (7, 11); el documento pasa a `docs/calidad/` (D-381, D-388) |
 | 3.3 | 01-11-2026 | S-12: la parte del autor no se abre con una dirección ni en una pestaña nueva; una recarga de la pestaña conserva la vista (D-430) |
 | 3.4 | 02-11-2026 | La prueba de idioma recorre toda la app en inglés (2, D-443) |
-| 3.5 | 02-11-2026 | Los diagramas son los de la app: CI/CD del «Centro de operación» (1), «Arquitectura de seguridad» (4) y «Git workflow» (8), en vez de dibujos propios; los secretos de Streamlit son los dos tokens y la clave de control (3); «base servida» pasa a «Base DuckDB» (D-455) |
+| 3.5 | 02-11-2026 | Los diagramas son los de la app: CI/CD del «Centro de operación» (1), «Arquitectura de seguridad» (4) y «Cambios e incidentes» (8), en vez de dibujos propios; los secretos de Streamlit son los dos tokens y la clave de control (3); «base servida» pasa a «Base DuckDB» (D-455) |

@@ -1,5 +1,5 @@
 """«Dashboard» (D-296): the macro view repeats no figure of its own; each one is the Resumen's, the Precios e inflación
-page's or Calidad y auditoría's, recomputed here from the same tables."""
+page's or Controles de datos's, recomputed here from the same tables."""
 
 import pytest
 

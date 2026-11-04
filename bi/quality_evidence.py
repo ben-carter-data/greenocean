@@ -1,4 +1,4 @@
-"""The evidence behind each card of «Calidad y auditoría» (D-171).
+"""The evidence behind each card of «Controles de datos» (D-171).
 
 Every card of the board can be opened: what it checks, the rows that prove it as a
 table, and the method (the SQL that runs, or the automated test). Nothing is drawn

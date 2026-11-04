@@ -18,7 +18,7 @@
 2. [Sources and ingestion](#2-sources-and-ingestion)
 3. [Data model and rules](#3-data-model-and-rules)
 4. [Pipeline and publication](#4-pipeline-and-publication)
-5. [Quality and audit](#5-quality-and-audit)
+5. [Data controls](#5-data-controls)
 6. [Security](#6-security)
 7. [Operations and observability](#7-operations-and-observability)
 8. [Panel](#8-panel)
@@ -88,7 +88,7 @@ Which tools build the database and when it is published.
 | Publication goes up to the last week complete in both sources, filling nothing in; a late source does not block the load | [Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass) | D-356 |
 | The weekly load runs only the data and pipeline tests; the screen tests run on every push | — | D-366 |
 
-## 5. Quality and audit
+## 5. Data controls
 
 What stops a load and how each figure is proven.
 

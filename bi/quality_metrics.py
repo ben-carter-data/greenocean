@@ -1,5 +1,5 @@
 """The quality indicators of GreenOcean (D-323): what each one is, how it is read from a measurement, its goal and the
-command that reproduces it. Shared by the page «Método y calidad» and scripts/verificar_calidad.py, so the page and the
+command that reproduces it. Shared by the page «Plan de calidad» and scripts/verificar_calidad.py, so the page and the
 check never disagree. Pure functions."""
 
 from __future__ import annotations

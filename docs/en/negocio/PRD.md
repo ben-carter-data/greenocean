@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.48 |
+| Version | 3.49 |
 | Date | 2026-11-04 |
 | Status | Current |
 | Owner | The author |
@@ -58,7 +58,7 @@ Each stakeholder has a question, a decision that depends on the answer and a pag
 | Restaurants and grocery stores | Whoever buys food to cook or to sell | When and where is it best to buy? | When and in which channel to buy | [[vista:Weekly]] |
 | Wholesalers, farmers and market vendors | Whoever sells wholesale or at the street market | How does the wholesale price compare with the consumer price? | At what price to sell | [[vista:Weekly]] |
 | Journalists and economists | Whoever reports on the economy or analyzes it | Which foods rise more than inflation, according to official data? | What to report, with figures that can be checked | [[vista:Prices and inflation]] · [[vista:Insights]] |
-| Technical teams and recruiters | Whoever designs data systems or evaluates who builds them | How is a reliable data pipeline built and operated? | Which practices to follow or whom to hire | [[vista:Pipeline and lineage]] · [[vista:Method and quality]] · [[vista:Git workflow]] |
+| Technical teams and recruiters | Whoever designs data systems or evaluates who builds them | How is a reliable data pipeline built and operated? | Which practices to follow or whom to hire | [[vista:Pipeline and lineage]] · [[vista:Quality plan]] · [[vista:Changes and incidents]] |
 
 ### 3.2 Usage profiles
 
@@ -107,7 +107,7 @@ Each question has the screen that answers it and a test that recomputes the answ
 | P-2 | Is today's price normal for the season? | SQL queries · Price vs. season | `tests/test_sql_explorer.py::test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas` |
 | P-3 | How much does the consumer pay over the wholesale price? | SQL queries · Wholesale gap | `tests/test_sql_explorer.py::test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas` |
 | P-4 | Which foods rose more than inflation? | BA and BI analysis (Prices and inflation) | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
-| P-5 | Are the figures reliable? | Quality and audit | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price` |
+| P-5 | Are the figures reliable? | Data controls | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price` |
 
 ## 5. Requirements
 
@@ -268,3 +268,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.46 | 2026-11-04 | The side menu no longer scrolls towards a void: the logo, the fold button and the footer stay in sight, and it scrolls only when its content does not fit (RNF-06, D-504) |
 | 3.47 | 2026-11-04 | The stylesheets travel in the first element of every page, so nothing shows unstyled when the page changes (RNF-06, D-505) |
 | 3.48 | 2026-11-04 | «The whole basket» explains its median behind an «i»: which way more prices moved and the three counts (RF-01, D-506) |
+| 3.49 | 2026-11-04 | The three pages of «Calidad» are «Quality plan», «Data controls» and «Changes and incidents», in that order (D-507) |

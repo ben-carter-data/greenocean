@@ -92,7 +92,7 @@ Valen en todo diagrama, tabla o texto de `docs/` y del panel.
      - Ingeniería de datos: «Pipeline y linaje», «Modelo de datos», «Consultas SQL».
      - DevOps y seguridad (solo el Autor): «Centro de operación», «GitHub Actions», «Configuración».
      - Stack y evidencia: «Stack y evidencia» (con el «Flujo del sistema en vivo»), «Mapa de la app», «Arquitectura de seguridad».
-     - Calidad: «Calidad y auditoría», «Método y calidad», «Git workflow».
+     - Calidad: «Controles de datos», «Plan de calidad», «Cambios e incidentes».
      - Pie del menú: «Documentos» (carpeta), «Fuentes», «Apariencia», ES/EN y, solo para el Autor, GitHub (D-500).
      - Ventanas, botones y avisos: «Elige tu vista», «Vista: … · Cambiar», «Volver», «Ejecutar pipeline ahora», «▲ n alzas fuertes» (rojo) y «▼ n bajas fuertes» (verde), las alertas de precio de la semana (D-477), «Recargar datos», «Cerrar acceso», «Acción requerida», «La carga del … falló».
    - **Fuentes:** ODEPA (precios mayoristas y al consumidor) e INE (IPC de alimentos).

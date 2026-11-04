@@ -44,11 +44,11 @@ Medimos dos calidades. La primera es la de los datos que publicamos, según la n
 
 [[diagrama:calidades]]
 
-Son los 14 indicadores del plan de calidad: 8 del código y 6 de los datos. Cada uno tiene escrito qué mide, por qué importa, cómo se mide y qué hacer si falla. Todo eso vive en `docs/calidad/metas.json`, y la página «Método y calidad» lo muestra.
+Son los 14 indicadores del plan de calidad: 8 del código y 6 de los datos. Cada uno tiene escrito qué mide, por qué importa, cómo se mide y qué hacer si falla. Todo eso vive en `docs/calidad/metas.json`, y la página «Plan de calidad» lo muestra.
 
-No hay que confundirlos con los 11 indicadores de calidad de los datos, que se miden en cada carga sobre la base publicada y se ven en «Calidad y auditoría». Esos protegen cada publicación; los del plan miden el proyecto semana a semana.
+No hay que confundirlos con los 11 indicadores de calidad de los datos, que se miden en cada carga sobre la base publicada y se ven en «Controles de datos». Esos protegen cada publicación; los del plan miden el proyecto semana a semana.
 
-Así se ven los 11 indicadores de los datos en [[vista:Calidad y auditoría]], cada uno bajo la parada del pipeline donde se vigila:
+Así se ven los 11 indicadores de los datos en [[vista:Controles de datos]], cada uno bajo la parada del pipeline donde se vigila:
 
 [[diagrama:calidad]]
 
@@ -132,7 +132,7 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.7 | 01-11-2026 | El pull request del informe se fusiona solo si el código está en su aceptable; uno abierto lo reemplaza el informe siguiente (8, 11, D-436) |
 | 1.8 | 01-11-2026 | Una no conformidad de la serie semanal se cierra sola cuando su indicador vuelve al aceptable (8, D-437) |
 | 1.9 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
-| 1.10 | 02-11-2026 | Los 11 indicadores de los datos se dibujan con el flujo de «Calidad y auditoría» (3), en vez de «El ciclo de cada semana» (D-455) |
+| 1.10 | 02-11-2026 | Los 11 indicadores de los datos se dibujan con el flujo de «Controles de datos» (3), en vez de «El ciclo de cada semana» (D-455) |
 | 1.11 | 02-11-2026 | El dashboard de la semana se llama «Semanal» (10, D-459) |
 | 1.12 | 03-11-2026 | Los precios comparables se miden sobre los que tenían precio la semana anterior, con aceptable 97 %; dos indicadores nuevos de datos: regiones o canales ausentes y precios atípicos de la semana (3, 6, 8, ADR-36, D-475) |
 | 1.13 | 03-11-2026 | La última semana de cada fuente se ve al elegir su canal en Semanal (D-494) |

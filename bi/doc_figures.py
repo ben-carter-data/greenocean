@@ -970,8 +970,8 @@ def sad_scenarios(mode):
                 tile(
                     say("Calidad", "Quality"),
                     say(
-                        "Calidad y auditoría · Método y calidad (ISO 25012, ISO 25010) · Git workflow e incidentes",
-                        "Quality and audit · Method and quality (ISO 25012, ISO 25010) · Git workflow and incidents",
+                        "Controles de datos · Plan de calidad (ISO 25012, ISO 25010) · Cambios e incidentes",
+                        "Data controls · Quality plan (ISO 25012, ISO 25010) · Cambios e incidentes and incidents",
                     ),
                     "P-5",
                 ),
@@ -1662,7 +1662,7 @@ INDEX_THEMES = [
     ("Fuentes e ingesta", "Sources and ingestion", GREEN),
     ("Modelo y reglas de datos", "Data model and rules", VIOLET),
     ("Pipeline y publicación", "Pipeline and publication", BLUE),
-    ("Calidad y auditoría", "Quality and audit", GREEN),
+    ("Controles de datos", "Data controls", GREEN),
     ("Seguridad", "Security", RED),
     ("Operación y observabilidad", "Operations and observability", AMBER),
     ("Panel", "Panel", BLUE),
@@ -1723,7 +1723,7 @@ def index_map(mode):
                 610,
                 30,
                 "icon:shield@#199e70",
-                say("Calidad y auditoría", "Quality and audit"),
+                say("Controles de datos", "Data controls"),
                 say("qué detiene una carga", "what stops a load"),
             ),
             "panel": (

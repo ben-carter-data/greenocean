@@ -57,7 +57,7 @@ After every load that ends in green, the quality workflow proposes the weekly qu
 |---|---|---|
 | Every Tuesday, after 12:07 UTC | That the run ended green | «Operations» tab of «Operations center», or the GitHub email if it failed |
 | Every Tuesday | That the issue «Informe semanal YYYY-MM-DD» (weekly report) exists, the only open one: the previous one is closed with a link to the new one (D-438) | Issues of the repository |
-| When in doubt about the figures | The quality verdict and the audit controls | «Quality and audit» |
+| When in doubt about the figures | The quality verdict and the audit controls | «Data controls» |
 | Every January | Add to `agent/input.csv` the two lines of the new year (wholesale and consumer), with the URL ODEPA publishes on the page of each dataset | `agent/input.csv` |
 | Periodically | Copy `agent/downloads` to another disk: the CSV files are not versioned ([ADR-04 · Do not commit the raw data to the repository](../arquitectura/ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository)) and the GitHub cache is deleted if it is not used for 7 days | Another disk of the author |
 | Before it expires | Renew the panel's two GitHub tokens; «Settings» marks them amber when 15 days or fewer are left, and the alert «Action required» warns on entering as Author (section 8.1) | App secrets on Streamlit |
@@ -175,7 +175,7 @@ Five cases, each with its steps in order. An automatic step is done by the syste
 
 ## 9. Failure register
 
-Every diagnosed and solved failure is recorded in `docs/calidad/plan_mitigacion.json` before the push that fixes it. Each occurrence has the date, what happened, the cause, what was done and a comment, in one line per field and in plain language; the long analysis goes in its decision D-xxx. The register reads in «Git workflow» → «Incident log». The Professional view shows what happened and how it was solved; only the Author sees the diagnosis.
+Every diagnosed and solved failure is recorded in `docs/calidad/plan_mitigacion.json` before the push that fixes it. Each occurrence has the date, what happened, the cause, what was done and a comment, in one line per field and in plain language; the long analysis goes in its decision D-xxx. The register reads in «Changes and incidents» → «Incident log». The Professional view shows what happened and how it was solved; only the Author sees the diagnosis.
 
 ## 10. Known limits
 
@@ -199,7 +199,7 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.2 | 2026-10-17 | Documentation and sources reorganized (D-105, D-106, D-110, D-118) |
 | 1.3 | 2026-10-19 | Operations center and operation of the load |
 | 1.4 | 2026-10-20 | SQL queries (D-184, D-185) |
-| 1.5 | 2026-10-21 | Quality and audit in one view (D-220) |
+| 1.5 | 2026-10-21 | Data controls in one view (D-220) |
 | 1.6 | 2026-10-23 | Security as a process and monitoring (D-249); download as the printed page (D-248) |
 | 1.7 | 2026-10-24 | Deployment and pipeline (D-251, D-255); Stack and evidence (D-266); served database in a release (D-270) |
 | 2.0 | 2026-10-25 | Runbook format: symptom, cause, action, recovery, periodic tasks and limits with their source (D-279, professional documentation) |

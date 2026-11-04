@@ -4124,3 +4124,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Lo que no cambia:** la fila se ve igual, con su cifra y su palabra; la «i» solo agrega 16 px. Quien no tenga la duda no ve nada nuevo.
 - **Pruebas:** `tests/test_panorama_steps.py` (los conteos cubren todas las filas comparables, cada frase en su caso, la razón solo con mediana cero, los colores y la canasta vacía). Medido en el navegador, en español y en inglés: la ventana queda dentro del panel y «Sin cambio» no se parte.
 
+## D-507 · Las tres páginas de «Calidad» dicen qué hace cada una
+- **Pedido del autor:** los nombres no describían la página. El plan fija qué es aceptable; los controles verifican cada carga; el registro anota qué falló y cómo se resolvió.
+- **Decisión:** la sección «Calidad» del menú se lee en ese orden, con estos nombres: «Plan de calidad» (antes «Método y calidad»), «Controles de datos» (antes «Calidad y auditoría») y «Cambios e incidentes» (antes «Git workflow»). El título de la sección no cambia. El nombre nuevo vale en el menú, en la ruta del encabezado, en «← Anterior» y «Siguiente →», en el mapa de la app, en los diagramas de los documentos y en inglés: «Quality plan», «Data controls» y «Changes and incidents».
+- **Las direcciones no cambian:** cada página conserva su ruta (`metodo-y-calidad`, `operaciones`, `git-workflow`). Un enlace guardado con el nombre antiguo abre la misma página, porque los tres nombres viejos entran en `RETIRED_VIEWS`.
+- **Lo que no se toca:** los incidentes y los informes ya registrados que nombran las páginas antiguas, porque son históricos; y el contenido de las tres páginas.
+- **Pruebas:** `tests/test_dashboard.py` (el menú, la ruta y los pasos «Anterior / Siguiente»), `tests/test_menu_order.py` (el mapa de la app y el README en el orden del menú), `tests/test_quality_method.py`, `tests/test_git_workflow.py` y `tests/test_i18n.py` (los tres nombres en inglés).
+

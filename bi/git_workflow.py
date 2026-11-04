@@ -1,4 +1,4 @@
-"""«Git workflow» (D-344): how a change travels from an idea to a live deployment, as a map of 15 stations.
+"""«Cambios e incidentes» (D-344): how a change travels from an idea to a live deployment, as a map of 15 stations.
 
 The map follows docs/referencia/ciclo_git.html: three lanes in a zigzag (Prepare, Commit and verify, Publish), generic
 icons, optional stations with a dashed border, checkpoints as yellow diamonds, «Deployed» in green. A click on a station
@@ -46,7 +46,7 @@ LABELS = {
     "legend_optional": ("se puede omitir en un repositorio pequeño", "skippable on a small repository"),
     "legend_checkpoint": ("el flujo se detiene hasta que se cumple", "the flow stops until it holds"),
     "legend_arrow": ("el camino del cambio", "the path of the change"),
-    "title": ("Git workflow", "Git workflow"),
+    "title": ("Cambios e incidentes", "Cambios e incidentes"),
     "lede": (
         "Cómo viaja un cambio desde la idea hasta el despliegue en un proyecto de datos con CI. Cada estación dice "
         "quién actúa y el comando. Abre una para ver por qué existe y dónde ocurrió en GreenOcean.",
@@ -556,7 +556,7 @@ def build_svg(data: dict[str, Any], language: str) -> str:
         for key, _ in LANES
     )
     return (
-        f'<svg class="flow" viewBox="0 0 {WIDTH} {height}" role="group" aria-label="Git workflow">'
+        f'<svg class="flow" viewBox="0 0 {WIDTH} {height}" role="group" aria-label="Cambios e incidentes">'
         f"<defs>{heads}</defs>{''.join(lanes)}{svg_paths(language)}{stations}</svg>"
     )
 

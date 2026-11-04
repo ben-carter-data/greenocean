@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.48 |
+| Versión | 3.49 |
 | Fecha | 04-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -58,7 +58,7 @@ Cada interesado tiene una pregunta, una decisión que depende de la respuesta y 
 | Restaurantes y almacenes | Quien compra alimentos para cocinar o para vender | ¿Cuándo y dónde conviene comprar? | Cuándo y en qué canal comprar | [[vista:Semanal]] |
 | Mayoristas, agricultores y feriantes | Quien vende al por mayor o en la feria | ¿Cómo está el precio mayorista frente al de consumidor? | A qué precio vender | [[vista:Semanal]] |
 | Periodistas y economistas | Quien informa sobre la economía o la analiza | ¿Qué alimentos suben más que la inflación, según datos oficiales? | Qué informar, con cifras que se pueden comprobar | [[vista:Precios e inflación]] · [[vista:Insights]] |
-| Equipos técnicos y reclutadores | Quien diseña sistemas de datos o evalúa a quien los construye | ¿Cómo se construye y se opera un pipeline de datos confiable? | Qué prácticas seguir o a quién contratar | [[vista:Pipeline y linaje]] · [[vista:Método y calidad]] · [[vista:Git workflow]] |
+| Equipos técnicos y reclutadores | Quien diseña sistemas de datos o evalúa a quien los construye | ¿Cómo se construye y se opera un pipeline de datos confiable? | Qué prácticas seguir o a quién contratar | [[vista:Pipeline y linaje]] · [[vista:Plan de calidad]] · [[vista:Cambios e incidentes]] |
 
 ### 3.2 Perfiles de uso
 
@@ -107,7 +107,7 @@ Cada pregunta tiene la pantalla que la responde y una prueba que recalcula la re
 | P-2 | ¿El precio de hoy es normal para la temporada? | Consultas SQL · Precio vs. época | `tests/test_sql_explorer.py::test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas` |
 | P-3 | ¿Cuánto paga el consumidor sobre el mayorista? | Consultas SQL · Brecha mayorista | `tests/test_sql_explorer.py::test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas` |
 | P-4 | ¿Qué alimentos subieron más que la inflación? | Análisis BA y BI (Precios e inflación) | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
-| P-5 | ¿Las cifras son confiables? | Calidad y auditoría | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price` |
+| P-5 | ¿Las cifras son confiables? | Controles de datos | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price` |
 
 ## 5. Requisitos
 
@@ -268,3 +268,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.46 | 04-11-2026 | El menú lateral ya no se desplaza hacia un vacío: el logo, el botón de plegar y el pie quedan siempre a la vista, y se desplaza solo si el contenido no cabe (RNF-06, D-504) |
 | 3.47 | 04-11-2026 | Los estilos viajan en el primer elemento de cada página, así nada se ve sin estilo al cambiar de página (RNF-06, D-505) |
 | 3.48 | 04-11-2026 | «Toda la canasta» explica su mediana tras una «i»: hacia dónde se movieron más precios y los tres conteos (RF-01, D-506) |
+| 3.49 | 04-11-2026 | Las tres páginas de «Calidad» se llaman «Plan de calidad», «Controles de datos» y «Cambios e incidentes», en ese orden (D-507) |

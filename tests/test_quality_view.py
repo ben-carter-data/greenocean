@@ -1,4 +1,4 @@
-"""The «Calidad y auditoría» overview draws the evidence it is given, nothing more."""
+"""The «Controles de datos» overview draws the evidence it is given, nothing more."""
 
 import re
 from datetime import datetime

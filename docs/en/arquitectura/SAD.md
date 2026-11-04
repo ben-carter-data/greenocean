@@ -373,7 +373,7 @@ It is the same diagram as the «Deployment» tab of [[vista:Operations center]],
 
 ## 8. Quality, security and observability
 
-**Data quality.** There are three gates: the file (did it arrive complete and on time?), each row (is it valid?) and the database (is it consistent, and did it pass its tests?). Eleven indicators, in five dimensions, are the data quality indicators: they are measured on each load against their threshold. Accuracy, the sixth dimension, is measured with four controls that compare the figures with the source. The detail is in [[vista:Quality and audit]].
+**Data quality.** There are three gates: the file (did it arrive complete and on time?), each row (is it valid?) and the database (is it consistent, and did it pass its tests?). Eleven indicators, in five dimensions, are the data quality indicators: they are measured on each load against their threshold. Accuracy, the sixth dimension, is measured with four controls that compare the figures with the source. The detail is in [[vista:Data controls]].
 
 **Observability.** Each load leaves a trace in four places:
 

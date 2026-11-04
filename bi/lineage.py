@@ -6,7 +6,7 @@ serving database (tables dbt_node and dbt_result). This module turns them into:
   → the gold datos.duckdb), each model as a tile with its materialization and the state
   of its tests, the links routed along buses between the columns; hovering a model
   follows only its inputs and outputs (LINEAGE_SCRIPT), a click pins them;
-- the matrix «business rule → dbt tests → state» of Calidad y auditoría;
+- the matrix «business rule → dbt tests → state» of Controles de datos;
 - the one-line lineage badge at the foot of every page.
 Nothing here is typed by hand: a new model or test appears on the next build.
 """

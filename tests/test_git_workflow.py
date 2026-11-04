@@ -93,16 +93,16 @@ def test_d344_the_page_is_in_the_quality_section_for_the_professional_and_the_au
         app = draw(profile, unlocked)
         assert not app.exception and len(app.tabs) == 2
         labels = [link.proto.label for link in app.sidebar.get("page_link")]
-        assert labels.index("Git workflow") == labels.index("Método y calidad") + 1
+        assert labels.index("Cambios e incidentes") == labels.index("Controles de datos") + 1
     user = draw("consulta")
-    assert "Git workflow" not in [link.proto.label for link in user.sidebar.get("page_link")]
+    assert "Cambios e incidentes" not in [link.proto.label for link in user.sidebar.get("page_link")]
 
 
 def test_d344_the_page_has_the_same_name_in_both_languages_and_its_tabs_in_each():
     es, en = draw(language="es"), draw(language="en")
     assert [tab.label for tab in es.tabs] == ["Mapa", "Registro de incidentes"]
     assert [tab.label for tab in en.tabs] == ["Map", "Incident log"]
-    assert "Git workflow" in [link.proto.label for link in en.sidebar.get("page_link")]
+    assert "Changes and incidents" in [link.proto.label for link in en.sidebar.get("page_link")]
 
 
 def test_d449_the_map_is_a_flowchart_of_fixed_shape_with_an_arrow_between_every_two_stations():

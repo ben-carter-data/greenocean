@@ -18,7 +18,7 @@
 2. [Fuentes e ingesta](#2-fuentes-e-ingesta)
 3. [Modelo y reglas de datos](#3-modelo-y-reglas-de-datos)
 4. [Pipeline y publicación](#4-pipeline-y-publicación)
-5. [Calidad y auditoría](#5-calidad-y-auditoría)
+5. [Controles de datos](#5-controles-de-datos)
 6. [Seguridad](#6-seguridad)
 7. [Operación y observabilidad](#7-operación-y-observabilidad)
 8. [Panel](#8-panel)
@@ -88,7 +88,7 @@ Con qué herramientas se construye la base y cuándo se publica.
 | Se publica hasta la última semana completa en ambas fuentes, sin rellenar; una fuente retrasada no bloquea la carga | [Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas) | D-356 |
 | La carga semanal corre solo las pruebas de datos y del pipeline; las de pantalla corren en cada push | — | D-366 |
 
-## 5. Calidad y auditoría
+## 5. Controles de datos
 
 Qué detiene una carga y cómo se demuestra cada cifra.
 

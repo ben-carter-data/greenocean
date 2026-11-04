@@ -191,7 +191,7 @@ NODES = {
                 "Páginas",
                 "Semanal, Análisis BA y BI (Mensual, Histórico, Precios e inflación, "
                 "Insights, Interesados y Método), Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, "
-                "Arquitectura de seguridad, Calidad y auditoría, Método y calidad, Git workflow y la carpeta de "
+                "Arquitectura de seguridad, Plan de calidad, Controles de datos, Cambios e incidentes y la carpeta de "
                 "documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.",
             ),
         ],
@@ -289,7 +289,7 @@ NODES = {
         "Mide los 14 indicadores del plan de calidad y, tras una carga en verde, propone el informe semanal como pull "
         "request, que se fusiona solo si el código está en su aceptable.",
         "En cada push y después de cada carga.",
-        "Método y calidad",
+        "Plan de calidad",
         [("bandit · pip-audit · detect-secrets", "las herramientas que alimentan tres indicadores de seguridad.")],
     ),
     "github": (
@@ -995,7 +995,7 @@ LINKS = [
         ["observabilidad"],
         "week",
         "Cada carga queda registrada con sus filas y el resultado de cada modelo.",
-        "Las cifras de «Calidad y auditoría».",
+        "Las cifras de «Controles de datos».",
     ),
     (
         "measurement",

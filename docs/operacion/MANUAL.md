@@ -57,7 +57,7 @@ Después de cada carga que termina en verde, el workflow de calidad propone el i
 |---|---|---|
 | Cada martes, después de las 12:07 UTC | Que la ejecución terminó en verde | Pestaña «Operación» de «Centro de operación», o el correo de GitHub si falló |
 | Cada martes | Que existe el issue «Informe semanal AAAA-MM-DD», el único abierto: el anterior queda cerrado con un enlace al nuevo (D-438) | Issues del repositorio |
-| Ante una duda sobre las cifras | El veredicto de calidad y los controles de auditoría | «Calidad y auditoría» |
+| Ante una duda sobre las cifras | El veredicto de calidad y los controles de auditoría | «Controles de datos» |
 | Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos | `agent/input.csv` |
 | Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](../arquitectura/ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días | Otro disco del autor |
 | Antes de su vencimiento | Renovar los dos tokens de GitHub del panel; «Configuración» los marca en ámbar cuando faltan 15 días o menos, y la alerta «Acción requerida» lo avisa al entrar como Autor (sección 8.1) | Secretos de la app en Streamlit |
@@ -175,7 +175,7 @@ Cinco casos, cada uno con sus pasos en orden. Un paso automático lo hace el sis
 
 ## 9. Registro de fallas
 
-Cada falla diagnosticada y resuelta se anota en `docs/calidad/plan_mitigacion.json` antes del push que la corrige. Cada ocurrencia lleva fecha, qué pasó, la causa, qué se hizo y un comentario, en una línea por campo y en lenguaje simple; el análisis largo va en su decisión D-xxx. El registro se lee en «Git workflow» → «Registro de incidentes». La vista Profesional muestra qué pasó y cómo se resolvió; el diagnóstico solo lo ve el Autor.
+Cada falla diagnosticada y resuelta se anota en `docs/calidad/plan_mitigacion.json` antes del push que la corrige. Cada ocurrencia lleva fecha, qué pasó, la causa, qué se hizo y un comentario, en una línea por campo y en lenguaje simple; el análisis largo va en su decisión D-xxx. El registro se lee en «Cambios e incidentes» → «Registro de incidentes». La vista Profesional muestra qué pasó y cómo se resolvió; el diagnóstico solo lo ve el Autor.
 
 ## 10. Límites conocidos
 
@@ -199,7 +199,7 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.2 | 17-10-2026 | Documentación y fuentes reorganizadas (D-105, D-106, D-110, D-118) |
 | 1.3 | 19-10-2026 | Centro de operación y operación de la carga |
 | 1.4 | 20-10-2026 | Consultas SQL (D-184, D-185) |
-| 1.5 | 21-10-2026 | Calidad y auditoría en una vista (D-220) |
+| 1.5 | 21-10-2026 | Controles de datos en una vista (D-220) |
 | 1.6 | 23-10-2026 | Seguridad como proceso y monitoreo (D-249); descarga como página impresa (D-248) |
 | 1.7 | 24-10-2026 | Despliegue y pipeline (D-251, D-255); Stack y evidencia (D-266); base servida en un release (D-270) |
 | 2.0 | 25-10-2026 | Formato de runbook: síntoma, causa, acción, recuperación, tareas periódicas y límites con su fuente (D-279, documentación profesional) |

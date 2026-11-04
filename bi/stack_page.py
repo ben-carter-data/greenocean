@@ -35,7 +35,7 @@ STACK = [
     ("sql", "SQL", "Lenguaje de consultas", "Consultas SQL"),
     ("duckdb", "DuckDB", "Base analítica", "Modelo de datos"),
     ("pytest", "pytest", "Pruebas en Python", "Monitoreo"),
-    ("github", "GitHub Actions", "CI/CD de GitHub", "Git workflow"),  # D-445: a page the Profesional opens
+    ("github", "GitHub Actions", "CI/CD de GitHub", "Cambios e incidentes"),  # D-445: a page the Profesional opens
     ("streamlit", "Streamlit", "Framework web", "Semanal"),
 ]
 SOURCES = [("odepa", "ODEPA", "Precios de alimentos"), ("ine", "INE", "IPC de alimentos")]

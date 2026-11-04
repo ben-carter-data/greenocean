@@ -44,11 +44,11 @@ We measure two qualities. The first is that of the data we publish, following th
 
 [[diagrama:calidades]]
 
-They are the 14 indicators of the quality plan: 8 of the code and 6 of the data. Each one has written down what it measures, why it matters, how it is measured and what to do if it fails. All of that lives in `docs/calidad/metas.json`, and the page «Method and quality» shows it.
+They are the 14 indicators of the quality plan: 8 of the code and 6 of the data. Each one has written down what it measures, why it matters, how it is measured and what to do if it fails. All of that lives in `docs/calidad/metas.json`, and the page «Quality plan» shows it.
 
-They are not the 11 data quality indicators, which are measured on every load on the published database and shown in «Quality and audit». Those protect each publication; the plan's indicators measure the project week by week.
+They are not the 11 data quality indicators, which are measured on every load on the published database and shown in «Data controls». Those protect each publication; the plan's indicators measure the project week by week.
 
-This is how the 11 data indicators look in [[vista:Quality and audit]], each one under the pipeline stop where it is watched:
+This is how the 11 data indicators look in [[vista:Data controls]], each one under the pipeline stop where it is watched:
 
 [[diagrama:calidad]]
 
@@ -132,7 +132,7 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.7 | 2026-11-01 | The report's pull request is merged by itself if the code is within its acceptable; an open one is replaced by the next report (8, 11, D-436) |
 | 1.8 | 2026-11-01 | A non-conformity of the weekly series closes by itself when its indicator is back within the acceptable (8, D-437) |
 | 1.9 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
-| 1.10 | 2026-11-02 | The 11 data indicators are drawn with the flow of «Quality and audit» (3), instead of «The cycle of each week» (D-455) |
+| 1.10 | 2026-11-02 | The 11 data indicators are drawn with the flow of «Data controls» (3), instead of «The cycle of each week» (D-455) |
 | 1.11 | 2026-11-02 | The week's dashboard is called «Weekly» (10, D-459) |
 | 1.12 | 2026-11-03 | The comparable prices are measured over those that had a price the week before, with a 97 % acceptable; two new data indicators: missing regions or channels and atypical prices of the week (3, 6, 8, ADR-36, D-475) |
 | 1.13 | 2026-11-03 | Each source's latest week is seen by choosing its channel in Weekly (D-494) |

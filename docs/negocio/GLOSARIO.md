@@ -38,26 +38,26 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | BI | Inteligencia de negocios (*business intelligence*): el análisis de datos para tomar decisiones; aquí, el panel. | — | Indicadores |
 | BA | Análisis de negocio (*business analysis*): el rol que traduce los datos en decisiones; una de las vistas profesionales del panel. | Análisis BA y BI (Interesados) | Indicadores |
 | BSA | Análisis de sistemas de negocio (*business systems analysis*): el rol que decide cómo el sistema cumple lo que el negocio pide: qué se mide, qué bloquea la publicación y qué avisa. | Análisis BA y BI (Método) | Indicadores |
-| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Calidad y auditoría | Indicadores |
+| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Controles de datos | Indicadores |
 | Alerta de precio | Cambio semanal fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con dos cotizaciones en cada semana (K6). Se separa en alzas fuertes y bajas fuertes (D-477). En Semanal, con una región elegida, se calcula con el precio de esa región (D-499). | Semanal | Indicadores |
 | Alza fuerte | Alerta de precio de una subida, en rojo. Su nivel dice cuán inusual fue: Alza extrema (4 desviaciones o más), Alza muy fuerte (3 o más) o Alza fuerte (más de 2) (D-478, D-479). | Semanal | Indicadores |
 | Baja fuerte | Alerta de precio de una bajada, en verde: una buena noticia para quien compra. Su nivel: Baja extrema (4 desviaciones o más), Baja muy fuerte (3 o más) o Baja fuerte (más de 2) (D-478, D-479). | Semanal | Indicadores |
 | Precio real | Precio expresado en pesos del último mes publicado del IPC. | Análisis BA y BI (Precios e inflación) | Indicadores |
 | Semana provisional | Semana de un mes cuyo IPC aún no se publica; usa el último mes disponible. | Análisis BA y BI (Precios e inflación) | Indicadores |
-| Indicador de calidad de los datos | Cada uno de los 11 indicadores que se miden en cada carga sobre la base publicada, en cinco dimensiones. | Calidad y auditoría | Indicadores |
-| Indicador del plan de calidad | Cada uno de los 14 indicadores del SQAP (8 de código y 6 de datos) que el workflow de calidad mide cada semana. | Método y calidad | Indicadores |
-| Dimensión de calidad | Aspecto de la calidad que se mide: completitud, actualidad, validez, unicidad, consistencia y exactitud. | Calidad y auditoría | Indicadores |
+| Indicador de calidad de los datos | Cada uno de los 11 indicadores que se miden en cada carga sobre la base publicada, en cinco dimensiones. | Controles de datos | Indicadores |
+| Indicador del plan de calidad | Cada uno de los 14 indicadores del SQAP (8 de código y 6 de datos) que el workflow de calidad mide cada semana. | Plan de calidad | Indicadores |
+| Dimensión de calidad | Aspecto de la calidad que se mide: completitud, actualidad, validez, unicidad, consistencia y exactitud. | Controles de datos | Indicadores |
 | DAMA-DMBOK | Guía de gestión de datos de DAMA International (*Data Management Body of Knowledge*); de ella vienen las dimensiones de calidad. | — | Indicadores |
 | ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Semanal, Pipeline y linaje | Fuentes |
 | INE | Instituto Nacional de Estadísticas de Chile. Publica el IPC de alimentos. | Análisis BA y BI (Precios e inflación), Pipeline y linaje | Fuentes |
 | IPC | Índice de precios al consumidor; aquí, la división «Alimentos y bebidas no alcohólicas» que publica el INE. | Análisis BA y BI (Precios e inflación) | Fuentes |
 | CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Pipeline y linaje | Fuentes |
-| SHA-256 | Función que calcula la huella de un archivo; cambia si cambia un solo byte. Se usa para verificar los archivos descargados y la Base DuckDB. | Calidad y auditoría | Fuentes |
+| SHA-256 | Función que calcula la huella de un archivo; cambia si cambia un solo byte. Se usa para verificar los archivos descargados y la Base DuckDB. | Controles de datos | Fuentes |
 | JSON | Formato de texto para datos estructurados (*JavaScript Object Notation*); así se guardan el manifiesto de descargas y la fila original de cada rechazo. | — | Fuentes |
 | Pipeline | El flujo completo de cada martes, de ODEPA al panel: descarga, ETL de respaldo, construcción con dbt, pruebas, publicación e informe. | Pipeline y linaje, Centro de operación | Pipeline |
 | Ingesta | La descarga de los archivos de ODEPA; la hace el agente de ingesta (`agent/agent.py`), que revisa que cada archivo traiga las columnas esperadas. | Pipeline y linaje | Pipeline |
 | ETL | Extraer, transformar y cargar. `etl/etl.py` limpia los datos y aplica las reglas para el respaldo `etl/datos.db`; las mismas reglas corren en dbt para la Base DuckDB. | Pipeline y linaje, Centro de operación | Pipeline |
-| Puerta de calidad | Control que detiene la carga si algo no cumple: el archivo, cada fila o la base. | Calidad y auditoría | Pipeline |
+| Puerta de calidad | Control que detiene la carga si algo no cumple: el archivo, cada fila o la base. | Controles de datos | Pipeline |
 | Job, workflow | Tarea automática de GitHub Actions; el job semanal (`semanal.yml`) ejecuta el pipeline cada martes. | Centro de operación | Pipeline |
 | Cron | La programación del job semanal: cada martes a las 12:07 UTC, con otro intento cada 15 minutos hasta las 14:52 y cada hora hasta las 02:07 si GitHub se atrasa (D-485). | Centro de operación | Pipeline |
 | Ejecución | Una pasada completa del job semanal. | Centro de operación | Pipeline |
@@ -66,12 +66,12 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | Release | Publicación de GitHub que guarda archivos fuera del historial; el release «base-actual» guarda la Base DuckDB y cada carga la reemplaza. | Centro de operación (CI/CD) | Pipeline |
 | Puntero de la base | El archivo `etl/datos.version`: la huella, el tamaño y la fecha de la Base DuckDB publicada. | Centro de operación (Despliegue) | Pipeline |
 | Issue | Publicación en GitHub; aquí, el informe semanal que deja cada carga. | Centro de operación (Monitoreo) | Pipeline |
-| Pull request | Propuesta de cambio en GitHub que el autor revisa antes de aceptarla; aquí, el informe de calidad de cada semana. | Método y calidad | Pipeline |
+| Pull request | Propuesta de cambio en GitHub que el autor revisa antes de aceptarla; aquí, el informe de calidad de cada semana. | Plan de calidad | Pipeline |
 | Aterrizaje | La base `etl/raw.db`, con las filas de ODEPA tal como llegan; no se versiona. | Pipeline y linaje | Base de datos |
 | Bronce, plata, oro | Las capas de los datos: bronce (Parquet, copia exacta), plata (staging e intermedio de dbt: tipos, reglas y marcas) y oro (marts: el modelo estrella que lee el panel). | Pipeline y linaje | Base de datos |
 | Base DuckDB | `etl/datos.duckdb`: la base que lee el panel, con el modelo estrella; se publica en el release «base-actual». Antes se llamaba «Base DuckDB» (D-426). | Pipeline y linaje, Modelo de datos | Base de datos |
 | Respaldo | `etl/datos.db`: los mismos precios calculados sin dbt, para la prueba de paridad. | Modelo de datos | Base de datos |
-| Paridad | Comparación entre el respaldo y la Base DuckDB: deben dar las mismas cifras. | Calidad y auditoría | Base de datos |
+| Paridad | Comparación entre el respaldo y la Base DuckDB: deben dar las mismas cifras. | Controles de datos | Base de datos |
 | Data warehouse | La base lista para analizar, con el modelo estrella. | Pipeline y linaje, Modelo de datos | Base de datos |
 | Modelo estrella | Una tabla de hechos (`weekly_price`) rodeada de sus dimensiones (producto, región, canal, fecha). | Modelo de datos | Base de datos |
 | PK, FK | Clave primaria: la columna que identifica cada fila de una tabla. Clave foránea: la columna que apunta a la clave primaria de otra tabla. | Modelo de datos | Base de datos |
@@ -93,9 +93,9 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | UTC | Tiempo universal coordinado; el job corre a las 12:07 UTC: las 09:07 en Chile en horario de verano y las 08:07 en invierno. | Centro de operación | Conexiones |
 | PRD | Documento de requisitos del producto (*Product Requirements Document*). | — | Documentos |
 | SAD | Documento de arquitectura de software (*Software Architecture Document*). | — | Documentos |
-| SQAP | Plan de calidad del software (*Software Quality Assurance Plan*): qué calidad se cuida, cómo se mide y quién decide. | Método y calidad | Documentos |
+| SQAP | Plan de calidad del software (*Software Quality Assurance Plan*): qué calidad se cuida, cómo se mide y quién decide. | Plan de calidad | Documentos |
 | IEEE | Instituto de Ingenieros Eléctricos y Electrónicos; publica el estándar IEEE 730, que da la estructura del SQAP. | — | Documentos |
-| IEC | Comisión Electrotécnica Internacional; firma con la ISO las normas ISO/IEC 25010 (calidad del software) e ISO/IEC 25012 (calidad de los datos). | Método y calidad | Documentos |
+| IEC | Comisión Electrotécnica Internacional; firma con la ISO las normas ISO/IEC 25010 (calidad del software) e ISO/IEC 25012 (calidad de los datos). | Plan de calidad | Documentos |
 | ADR | Registro de decisión de arquitectura (*Architecture Decision Record*). | — | Documentos |
 | MADR | Formato estándar para escribir un ADR (*Markdown Architectural Decision Records*). | — | Documentos |
 | arc42 | Plantilla estándar de documentación de arquitectura de software. | — | Documentos |
