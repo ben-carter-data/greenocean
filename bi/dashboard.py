@@ -66,6 +66,7 @@ from bi import (
     control,
     documents_folder,
     i18n,
+    source_study,
     home_mockup,
     weeks,
     lag,  # noqa: E402
@@ -166,8 +167,10 @@ PAGE_ADR = "ADR · Decisiones de arquitectura"
 PAGE_SECURITY = "Mapa de seguridad"
 # D-211: the stack in 30 seconds, for a recruiter.
 PAGE_STACK = "Stack y evidencia"
-# D-282: one folder holds every document; the documents added with it have their own page.
-PAGE_FOLDER = "Documentos"
+# D-282: one folder holds every document; the documents added with it have their own page. D-533: «del proyecto»,
+# beside the folder of the study of the source.
+PAGE_FOLDER = "Documentos del proyecto"
+PAGE_SOURCE_STUDY = "Análisis de la fuente de datos"  # D-533: the two notebooks that study ODEPA's raw file
 # D-285: the whole system in one view, next to the stack.
 PAGE_APP_MAP = "Mapa de la app"
 # D-320: how the project was assessed against software and data quality standards.
@@ -204,6 +207,7 @@ RETIRED_VIEWS.update(
         "Plan de pruebas": PAGE_TEST_PLAN,
         "Escalabilidad": PAGE_SAD,
         "Diccionario de datos": PAGE_SAD,
+        "Documentos": PAGE_FOLDER,  # D-533: its name until «Documentos del proyecto»
     }
 )
 SECTION_RESOURCES = "Enlaces"
@@ -245,6 +249,7 @@ WINDOWS = {
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
     SECTION_LINKS: [
         PAGE_FOLDER,
+        PAGE_SOURCE_STUDY,
         PAGE_PRD,
         PAGE_SAD,
         PAGE_ADR,
@@ -337,6 +342,7 @@ PAGE_ICONS = {
     PAGE_GLOSSARY: ":material/dictionary:",
     PAGE_LINKS: ":material/link:",
     PAGE_FOLDER: ":material/folder_open:",
+    PAGE_SOURCE_STUDY: ":material/manage_search:",
     PAGE_DECISION_INDEX: ":material/list_alt:",
     PAGE_APP_MAP: ":material/hub:",
     PAGE_METHOD: ":material/verified:",
@@ -371,6 +377,7 @@ PAGE_PATHS = {
     PAGE_GLOSSARY: "glosario",
     PAGE_LINKS: "enlaces",
     PAGE_FOLDER: "documentos",
+    PAGE_SOURCE_STUDY: "analisis-de-la-fuente",
     PAGE_APP_MAP: "mapa-de-la-app",
     PAGE_DECISION_INDEX: "indice-de-decisiones",
     PAGE_TEST_PLAN: "plan-de-pruebas",
@@ -2369,6 +2376,7 @@ BAR_VIEWS = {
     PAGE_SECURITY,
     PAGE_STACK,
     PAGE_FOLDER,
+    PAGE_SOURCE_STUDY,
     PAGE_APP_MAP,
     PAGE_METHOD,
     PAGE_GIT,
@@ -2398,6 +2406,8 @@ def build_view_path(window, view):
     if view in MENU_BLOCK_OF_VIEW:
         block = tr(MENU_BLOCK_OF_VIEW[view])
         path = label if block == label else f"{block} › {label}"
+    if view in FOLDER_TILES:  # D-533: a folder of the footer is its own path
+        path = label
     if view in FOLDER_ORDER:
         path = f"{tr(PAGE_FOLDER)} › {label}"
     if view in DOOR_PAGES:  # D-391: a page opened from a button sits in the menu section of the page it opens from
@@ -7736,7 +7746,7 @@ def read_folder_files():
 
 
 def show_documents_folder(mode):
-    """«Documentos» (D-282): the folder of docs/, as files in a grid or a list."""
+    """«Documentos del proyecto» (D-282, D-533): the folder of docs/, as files in a grid or a list."""
     files = read_folder_files()
     # D-288: the folder opens as a list, like a file explorer in detail view.
     st.session_state.setdefault(FOLDER_VIEW_KEY, documents_folder.VIEW_LIST)
@@ -7756,6 +7766,75 @@ def show_documents_folder(mode):
     st.markdown(documents_folder.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
     view = st.session_state.get(FOLDER_VIEW_KEY) or documents_folder.VIEW_LIST
     st.markdown(documents_folder.build_folder_html(files, view), unsafe_allow_html=True)
+
+
+def show_source_study(mode):
+    """«Análisis de la fuente de datos» (D-533): the folder of the two notebooks that study ODEPA's raw wholesale file.
+    The notebook in the language of the visit opens here, read only, with the outputs its file keeps; both download."""
+    files = source_study.read_files()
+    show_page_bar(
+        PAGE_SOURCE_STUDY,
+        PAGE_SOURCE_STUDY,
+        "El estudio del archivo mayorista de ODEPA: cada anomalía encontrada, con su decisión y su solución.",
+    )
+    palette = charts.get_palette(mode)
+    st.markdown(documents_folder.build_css(palette) + source_study.build_css(palette), unsafe_allow_html=True)
+    language = i18n.get_language()
+    opened = next(
+        (
+            file
+            for file in files
+            if file["language"] == language and st.query_params.get(source_study.NOTEBOOK_PARAMETER) == file["language"]
+        ),
+        None,
+    )
+    if opened:
+        show_notebook(opened)
+        return
+    st.markdown(source_study.build_head_html(files), unsafe_allow_html=True)
+    for file in files:
+        # Only the notebook of the visit's language opens here (D-443); the other one downloads.
+        address = (
+            build_page_address(PAGE_SOURCE_STUDY) + f"&{source_study.NOTEBOOK_PARAMETER}={file['language']}"
+            if file["language"] == language
+            else ""
+        )
+        with st.container(key=f"notebook_row_{file['language']}", horizontal=True, vertical_alignment="center"):
+            st.markdown(source_study.build_file_html(file, address), unsafe_allow_html=True, width="stretch")
+            show_notebook_download(file)
+
+
+def show_notebook_download(file):
+    st.download_button(
+        tr("Descargar"),
+        file["path"].read_bytes(),
+        file_name=file["file"],
+        mime="application/x-ipynb+json",
+        key=f"notebook_download_{file['language']}",
+        icon=":material/download:",
+        width="content",
+    )
+
+
+def show_notebook(file):
+    """One notebook, read only: its texts, its code and the outputs its file keeps; the panel never runs it."""
+    with st.container(key="notebook_path", horizontal=True, vertical_alignment="center"):
+        st.markdown(
+            source_study.build_path_html(build_page_address(PAGE_SOURCE_STUDY), tr(PAGE_SOURCE_STUDY), file["file"]),
+            unsafe_allow_html=True,
+            width="stretch",
+        )
+        show_notebook_download(file)
+    # The notebook is already in the visit's language: its texts and outputs are drawn verbatim, never translated.
+    for cell in source_study.read_notebook(file["path"])["cells"]:
+        source = source_study.text_of(cell["source"])
+        if cell["cell_type"] == "markdown":
+            st.markdown(i18n.Verbatim(source))
+            continue
+        st.code(source, language="python")
+        outputs = source_study.build_output_html(cell.get("outputs", []))
+        if outputs:
+            st.html(i18n.Verbatim(outputs))
 
 
 def build_folder_path_html(title):
@@ -8470,6 +8549,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_TEST_PLAN: lambda mode: show_project_document(mode, PAGE_TEST_PLAN),
     PAGE_QUALITY_PLAN: lambda mode: show_project_document(mode, PAGE_QUALITY_PLAN),
     PAGE_FOLDER: lambda mode: show_documents_folder(mode),
+    PAGE_SOURCE_STUDY: lambda mode: show_source_study(mode),
     PAGE_APP_MAP: lambda mode: show_app_map_page(mode),
     PAGE_METHOD: lambda mode: show_method_page(mode),
     PAGE_GIT: lambda mode: show_git_page(mode),
@@ -8859,6 +8939,7 @@ COMPACT_FOOTER_VIEWS = {
     PAGE_SECURITY,
     PAGE_STACK,
     PAGE_FOLDER,
+    PAGE_SOURCE_STUDY,
     PAGE_APP_MAP,
     PAGE_METHOD,
     PAGE_GIT,
@@ -9170,7 +9251,7 @@ MENU_BLOCKS = [
         [PAGE_METHOD, PAGE_OPERATIONS, PAGE_GIT],  # D-507: the plan, the controls, the log
     ),  # D-343: quality and audit, and the method behind it
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
-    ("documentos", "Documentos", [PAGE_FOLDER]),
+    ("documentos", "Documentos", [PAGE_FOLDER, PAGE_SOURCE_STUDY]),  # D-533: two folders
 ]
 # D-308: a page that opens from a button of another page and has no line of its own in the menu.
 DOOR_PAGES: dict[str, str] = {}  # D-398: «Precios e inflación», the only one, joined the menu
@@ -9195,6 +9276,7 @@ SIDEBAR_ICONS = {
     PAGE_METHOD: ":material/verified:",
     PAGE_GIT: ":material/alt_route:",
     PAGE_FOLDER: ":material/folder_open:",
+    PAGE_SOURCE_STUDY: ":material/manage_search:",
 }
 # (text, heading, icon, hover fill, current fill, accent bar, hairline) for dark and light sidebars.
 MENU_INK = {
@@ -9243,7 +9325,6 @@ SIDEBAR_LABELS = {
     PAGE_SECURITY: "Arquitectura de seguridad",
     PAGE_DOCUMENTATION: "Documentación",
     PAGE_MANUAL: "Manual de operación",
-    PAGE_FOLDER: "Carpeta de documentos",
 }
 
 
@@ -9430,10 +9511,16 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover::before {{transform:translateY(-2px);}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
         font-size:.71875rem !important; font-weight:400 !important; line-height:1.15 !important; margin:0 !important;}}
-    .st-key-nav_folder_tile_nav_current [data-testid="stPageLink"] a {{background:{MENU_INK[dark][4]} !important;
+    [class*="st-key-nav_folder_tile_"][class*="_nav_current"] [data-testid="stPageLink"] a {{background:{MENU_INK[dark][4]} !important;
         border-color:{MENU_INK[dark][5]};}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
     [class*="st-key-nav_folder_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
+    /* D-533: two folders side by side, each name inside its tile on two lines; the sources under them */
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a {{height:60px; min-height:60px !important;}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {{white-space:normal !important; text-align:center;}}
+    [class*="st-key-nav_folder_tile_1"] [data-testid="stPageLink"] a::before {{
+        background-image:url("data:image/svg+xml;base64,{base64.b64encode(STUDY_TILE_SVG.encode()).decode()}") !important;}}
+    .st-key-sidebar_sources_row {{margin:0 0 6px !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] {{margin:2px 0 2px !important;}}
     [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] {{margin:0 0 2px !important;}}
     [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] a::before {{
@@ -9470,6 +9557,7 @@ SIDEBAR_NAV_VERSION = 13  # D-453: the two dashboard tiles open «Negocio · BA 
 # D-286: the sources start folded; the documents are a folder at the end of the menu, not a section.
 FOLDED_BY_DEFAULT = {"fuentes"}
 FOLDER_TILE_BLOCK = "documentos"
+FOLDER_TILES = [PAGE_FOLDER, PAGE_SOURCE_STUDY]  # D-533: the project's documents, then the study of the source
 # D-287: the sources are a tile of their own beside the folder; their links open in a floating panel.
 SOURCES_TILE_BLOCK = "fuentes"
 # D-442, D-452, D-453: the two dashboards are tiles, not lines, at the head of «Negocio · BA y BI».
@@ -9524,6 +9612,12 @@ SOURCES_TILE_SVG = (
     'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 )
 # A Finder-like folder, two blues, drawn once as an image the menu shows above «Documentos».
+# D-533: the folder of the study of the source, in the green of its notebooks.
+STUDY_TILE_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><path d="M3 9a5 5 0 0 1 5-5h15.5'
+    'a4 4 0 0 1 3 1.3L30 9h26a5 5 0 0 1 5 5v4H3z" fill="#22b35a"/><rect x="3" y="14" width="58" height="33" '
+    'rx="5" fill="#5fd39b"/><rect x="3" y="14" width="58" height="3" fill="#8fe3b8"/></svg>'
+)
 FOLDER_TILE_SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><path d="M3 9a5 5 0 0 1 5-5h15.5'
     'a4 4 0 0 1 3 1.3L30 9h26a5 5 0 0 1 5 5v4H3z" fill="#5aa9ea"/><rect x="3" y="14" width="58" height="33" '
@@ -9566,10 +9660,12 @@ setTimeout(() => {
 
 
 def show_footer_tiles(windows_by_title, current_window, current_view):
-    """The two large tiles of the footer (D-287): the documents folder and the data sources, side by side."""
-    with st.container(key="sidebar_tiles", horizontal=True, gap="small"):
-        if not is_public_profile():
-            show_folder_tile(windows_by_title, current_window, current_view)
+    """The large tiles of the footer (D-287): the two folders side by side (D-533), and the data sources under them."""
+    if not is_public_profile():
+        with st.container(key="sidebar_tiles", horizontal=True, gap="small"):
+            for index, view in enumerate(FOLDER_TILES):
+                show_folder_tile(windows_by_title, current_window, current_view, view, index)
+    with st.container(key="sidebar_sources_row"):
         with st.container(key="sources_tile"):
             with st.popover(tr("Fuentes")):
                 st.markdown(f"**{tr('Fuentes de datos')}**")
@@ -9596,15 +9692,15 @@ def show_dashboard_tile(windows_by_title, current_window, current_view, view):
         )
 
 
-def show_folder_tile(windows_by_title, current_window, current_view):
-    """«Documentos» as a folder (D-286): a larger tile at the end of the menu that opens the documents folder; it stays
-    lit while a document of the folder is open."""
-    window = WINDOW_OF_VIEW[PAGE_FOLDER]
-    active = window == current_window and (current_view == PAGE_FOLDER or current_view in FOLDER_ORDER)
-    with st.container(key="nav_folder_tile" + ("_nav_current" if active else "")):
-        st.page_link(
-            windows_by_title[window], label=tr(PAGE_FOLDER), query_params=keep_context() | {VIEW_PARAMETER: PAGE_FOLDER}
-        )
+def show_folder_tile(windows_by_title, current_window, current_view, view, index):
+    """A folder of the footer (D-286, D-533): a larger tile with its name inside, at the end of the menu. «Documentos
+    del proyecto» stays lit while one of its documents is open."""
+    window = WINDOW_OF_VIEW[view]
+    active = window == current_window and (
+        current_view == view or (view == PAGE_FOLDER and current_view in FOLDER_ORDER)
+    )
+    with st.container(key=f"nav_folder_tile_{index}" + ("_nav_current" if active else "")):
+        st.page_link(windows_by_title[window], label=tr(view), query_params=keep_context() | {VIEW_PARAMETER: view})
 
 
 def show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open):

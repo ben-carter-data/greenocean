@@ -28,6 +28,8 @@ SCRIPT = re.compile(r"<script\b[^>]*>(.*?)</script>", re.DOTALL | re.IGNORECASE)
 JS_TEXT = re.compile(r"""(["'`])((?:(?!\1)[^\\\n]|\\.){3,}?)\1""")
 ATTRIBUTE = re.compile(r'\b(?:title|aria-label|alt|placeholder|data-tip|data-title|data-label|data-what)="([^"]*)"')
 CODE = re.compile(r"<(script|style|pre|code)\b[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE)
+# D-533: what a notebook of «Análisis de la fuente de datos» printed is ODEPA's raw data, as the source writes it.
+NOTEBOOK_OUTPUT = re.compile(r'<div class="nb-output">.*?</div><!--/nb-output-->', re.DOTALL)
 # The official name of a region, as the map of Chile writes it: «Región de Los Ríos».
 OFFICIAL_REGION = re.compile(r"^Región (?:de |del )?[^\n·]+$", re.MULTILINE)
 
@@ -112,7 +114,7 @@ def texts_of(markup):
         return []
     if "<" in markup and ">" in markup:
         scripted = script_texts(markup)
-        markup = CODE.sub("", markup)
+        markup = CODE.sub("", NOTEBOOK_OUTPUT.sub("", markup))
         return scripted + [
             html.unescape(text).strip() for text in TEXT_NODE.findall(markup) + ATTRIBUTE.findall(markup)
         ]
@@ -170,10 +172,13 @@ def chart_texts(spec):
 
 def spanish_left(view, data_values, theme=None, state=None):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
-    app.query_params.update({"lang": "en", "vista": view} | ({"tema": theme} if theme else {}))
+    # A key that starts with «?» is a parameter of the address, not of the session (D-533: «cuaderno»).
+    query = {key[1:]: value for key, value in (state or {}).items() if key.startswith("?")}
+    app.query_params.update({"lang": "en", "vista": view} | ({"tema": theme} if theme else {}) | query)
     app.session_state["visitor_profile"] = "profesional"
     for key, value in (state or {}).items():
-        app.session_state[key] = value
+        if not key.startswith("?"):
+            app.session_state[key] = value
     app.run()
     if app.exception:
         raise RuntimeError(app.exception)
@@ -201,7 +206,7 @@ def spanish_left(view, data_values, theme=None, state=None):
 def screens():
     """Every screen to audit: each page of the menu, the views a page shows only after a switch or a click, and the
     documents."""
-    from bi import dashboard, inflation_view, quality_evidence
+    from bi import dashboard, inflation_view, quality_evidence, source_study
 
     # D-420: the Autor's pages are read as the Autor reads them; anyone else only gets the no-access sentence.
     author = {"admin_unlocked": True, "quality_alert_seen": True}
@@ -212,6 +217,8 @@ def screens():
         + [(dashboard.PAGE_DIAGRAMS, {dashboard.PIPELINE_VIEW_KEY: dashboard.PIPELINE_LINEAGE})]
         + [(dashboard.PAGE_ARCHITECTURE, {dashboard.MODEL_VIEW_KEY: view}) for view in dashboard.MODEL_VIEWS[1:]]
         + [(page, None) for page in dashboard.FOLDER_ORDER]
+        # D-533: the English notebook, opened from «Análisis de la fuente de datos»
+        + [(dashboard.PAGE_SOURCE_STUDY, {"?" + source_study.NOTEBOOK_PARAMETER: "en"})]
         # D-360: these pages draw only the tab in sight, so each tab is a screen of its own.
         + [(dashboard.PAGE_RUNS, {dashboard.RUNS_VIEW_KEY: tab} | author) for tab in list(dashboard.RUNS_VIEWS)[1:]]
         + [

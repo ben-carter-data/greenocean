@@ -88,7 +88,7 @@ def test_d378_the_app_map_names_the_menu_pages_in_the_menu_order():
     menu = [
         view
         for view in dashboard.MENU_ORDER
-        if view not in dashboard.AUTHOR_ONLY_PAGES and view != dashboard.PAGE_FOLDER
+        if view not in dashboard.AUTHOR_ONLY_PAGES and view not in dashboard.FOLDER_TILES  # D-533: footer tiles
     ]
     expected = [dashboard.SIDEBAR_LABELS.get(view, view) for view in menu]  # D-456: «Análisis» names its tabs beside it
     positions = [pages.index(label) for label in expected]
@@ -107,7 +107,8 @@ def test_d387_the_readme_lists_every_page_of_the_menu_in_the_menu_order():
     ]
     positions = [line.index(label) for label in labels]
     assert positions == sorted(positions), labels
-    assert "carpeta de documentos" in line and "Precios e inflación" in line
+    assert "Documentos del proyecto" in line and "Análisis de la fuente de datos" in line  # D-533
+    assert "Precios e inflación" in line
 
 
 DEVOPS = [view for key, _, pages in dashboard.MENU_BLOCKS if key == "devops" for view in pages]

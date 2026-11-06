@@ -1168,7 +1168,8 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
         'Modelo de datos',
         'Controles de datos',
         'Arquitectura de seguridad',
-        'Documentos',
+        'Documentos del proyecto',
+        'Análisis de la fuente de datos',  # D-533
     ]:
         assert child in labels
     assert 'Centro de operación' not in labels  # D-420: the Autor's only
@@ -1379,8 +1380,9 @@ def test_d129_the_github_page_names_actions_so_it_is_not_confused_with_ejecucion
 
 @needs_database
 def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
-    assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:4] == [
+    assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:5] == [
         dashboard.PAGE_FOLDER,
+        dashboard.PAGE_SOURCE_STUDY,  # D-533
         dashboard.PAGE_PRD,
         dashboard.PAGE_SAD,
         dashboard.PAGE_ADR,
@@ -1484,10 +1486,12 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
     labels = [link.proto.label for link in app.sidebar.get('page_link')]
     # D-286: the documents folder closes the menu as a larger tile in the footer, always in sight; D-442: the
     # Dashboard opens it, a tile of its own over the sections; D-452: «Último dato por canal» is the tile under it.
+    # D-533: two folders, side by side.
     assert labels == ['Semanal', 'Análisis'] + [page for pages in MENU_BLOCKS.values() for page in pages] + [
-        'Documentos'
+        'Documentos del proyecto',
+        'Análisis de la fuente de datos',
     ]
-    assert all(link.proto.icon for link in app.sidebar.get('page_link')[:-1])
+    assert all(link.proto.icon for link in app.sidebar.get('page_link')[:-2])
     markup = " ".join(block.value for block in app.sidebar.markdown)
     assert 'class="nav-source-link"' not in markup  # the sources are a tile with a floating panel (D-287)
     # D-231: a flat menu: no card background, border, radius or shadow on the sections, only a hairline;
@@ -1504,7 +1508,7 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
     assert set(dashboard.SIDEBAR_ICONS) == {
         page for _, _, pages in dashboard.MENU_BLOCKS if pages is not dashboard.SOURCE_LINKS for page in pages
     }
-    icons = [link.proto.icon for link in app.sidebar.get('page_link')]
+    icons = [link.proto.icon for link in app.sidebar.get('page_link')[:-2]]  # the folders draw their own (D-533)
     assert len(set(icons)) == len(icons)
 
 
@@ -1597,7 +1601,10 @@ def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_me
     )
     assert {dashboard.PROJECT_DOCUMENTS[page][0] for page in dashboard.FOLDER_ORDER} == reading
     assert not set(dashboard.FOLDER_ORDER) & set(dashboard.MENU_ORDER)
-    assert [pages for key, _, pages in dashboard.MENU_BLOCKS if key == "documentos"] == [[dashboard.PAGE_FOLDER]]
+    # D-533: two folders, the project's documents and the study of the source
+    assert [pages for key, _, pages in dashboard.MENU_BLOCKS if key == "documentos"] == [
+        [dashboard.PAGE_FOLDER, dashboard.PAGE_SOURCE_STUDY]
+    ]
     assert all(pages for _, _, pages in dashboard.MENU_BLOCKS)  # no empty section is left
 
 
@@ -1656,7 +1663,7 @@ def test_d502_the_user_view_sees_its_two_dashboards_and_has_no_door_to_the_rest(
     labels = {link.proto.label for link in app.sidebar.get("page_link")}
     business = next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
     assert labels == {dashboard.SIDEBAR_LABELS.get(view, view) for view in business}  # only its two dashboards
-    assert "Documentos" not in labels  # the folder tile is for the professional view
+    assert not set(dashboard.FOLDER_TILES) & labels  # the folder tiles are for the professional view (D-533)
     app.query_params["perfil"] = dashboard.PROFILE_PROFESSIONAL  # the address cannot change a chosen view
     app.run()
     assert app.query_params["perfil"] == dashboard.PROFILE_PUBLIC

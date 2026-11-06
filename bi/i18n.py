@@ -286,6 +286,12 @@ EN = {
     "DevOps y seguridad": "DevOps and security",
     "Stack y evidencia": "Stack and evidence",
     "Documentos": "Documents",
+    # D-533: the two folders of the footer, and what the study's folder says
+    "Documentos del proyecto": "Project documents",
+    "Análisis de la fuente de datos": "Data source analysis",
+    "El estudio del archivo mayorista de ODEPA: cada anomalía encontrada, con su decisión y su solución.": "The study of ODEPA's wholesale file: every anomaly found, with its decision and its solution.",
+    "cuadernos de Jupyter · el mismo estudio en dos idiomas": "Jupyter notebooks · the same study in two languages",
+    "celdas": "cells",
     "Fuentes de datos": "Data sources",
     "Dashboard": "Dashboard",
     # D-459: the three dashboards of «Negocio · BA y BI», under their title

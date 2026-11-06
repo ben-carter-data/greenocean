@@ -450,10 +450,13 @@ NODES = {
         ["apoyo"],
         ("watch", 7),
         "La documentación del proyecto, en Markdown.",
-        "Ocho documentos en cuatro carpetas de docs/ y de docs/en/, cada uno con su página en el panel y su PDF.",
-        "Cuando alguien abre la carpeta Documentos.",
-        "Documentos",
-        [("Markdown", "el formato de los documentos, el mismo en GitHub y en el panel.")],
+        "Nueve documentos en cuatro carpetas de docs/ y de docs/en/, cada uno con su página en el panel y su PDF; aparte, el estudio de la fuente en dos cuadernos de Jupyter.",
+        "Cuando alguien abre la carpeta Documentos del proyecto o Análisis de la fuente de datos.",
+        "Documentos del proyecto",
+        [
+            ("Markdown", "el formato de los documentos, el mismo en GitHub y en el panel."),
+            ("Jupyter", "los dos cuadernos que estudian el archivo mayorista de ODEPA, en notebooks/."),
+        ],
     ),
     "measurement": (
         "Medición de pantallas",
@@ -477,7 +480,7 @@ NODES = {
         "etiquetas. El contexto del proyecto vive en archivos Markdown (CLAUDE.md y docs/), con un enfoque "
         "parecido a la recuperación de contexto, pero sin RAG: no hay base vectorial ni embeddings.",
         "Durante el desarrollo; nunca en la carga ni en el panel.",
-        "Documentos",
+        "Documentos del proyecto",
         [],
     ),
 }

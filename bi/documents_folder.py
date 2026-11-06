@@ -1,4 +1,4 @@
-"""The «Documentos» folder (D-282): every document of docs/ as a file, in a grid or a list.
+"""The «Documentos del proyecto» folder (D-282, D-533): every document of docs/ as a file, in a grid or a list.
 
 Each file shows its standard name, one line of content, its version and date (read from the header table of the file
 itself), its reading time and three actions: Abrir, PDF (the printed page, D-248) and GitHub. On hover, a preview with

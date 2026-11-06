@@ -150,7 +150,12 @@ def test_d283_the_language_follows_the_address_and_spanish_keeps_addresses_as_th
     app.run()
     assert not app.exception
     labels = [link.proto.label for link in app.sidebar.get("page_link")]
-    assert "Weekly" in labels and "Documents" in labels and "Price overview" not in labels  # D-442, D-459
+    assert (
+        "Weekly" in labels
+        and "Project documents" in labels
+        and "Data source analysis" in labels
+        and "Price overview" not in labels
+    )  # D-442, D-459
     toggles = [button.label for button in app.sidebar.button if str(button.key).startswith("nav_toggle_")]
     assert toggles[:2] == ["Business · BA and BI", "Data engineering"]
     assert [button.proto.type for button in app.sidebar.button if str(button.key).startswith("language_")] == [
@@ -163,7 +168,7 @@ def test_d283_the_language_follows_the_address_and_spanish_keeps_addresses_as_th
     ]
 
 
-@pytest.mark.parametrize("page", ["SAD · Arquitectura", "Glosario", "Documentos"])
+@pytest.mark.parametrize("page", ["SAD · Arquitectura", "Glosario", "Documentos del proyecto"])
 def test_d283_a_document_and_the_folder_open_in_english(page):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params.update({"lang": "en", "vista": page})
@@ -171,7 +176,7 @@ def test_d283_a_document_and_the_folder_open_in_english(page):
     app.run()
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    if page == "Documentos":
+    if page == "Documentos del proyecto":
         assert "Software Architecture Document (SAD)" in markup and "documents · last change" in markup
         assert "lang=en" in markup  # Open, PDF and the path keep the language
     else:
@@ -179,7 +184,7 @@ def test_d283_a_document_and_the_folder_open_in_english(page):
         assert 'class="doc-cover"' in markup and "<dt>Version</dt>" in markup and "<dt>Owner</dt>" in markup
         assert "| Campo |" not in markup and "| Field |" not in markup
         assert "docs/en/" in " ".join(block.value for block in app.markdown)
-        assert ">Documents</a>" in markup
+        assert ">Project documents</a>" in markup
 
 
 # D-284: the pages translate what they draw, at the boundary with Streamlit.
