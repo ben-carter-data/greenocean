@@ -7769,8 +7769,8 @@ def show_documents_folder(mode):
 
 
 def show_source_study(mode):
-    """«Análisis de la fuente de datos» (D-533): the folder of the two notebooks that study ODEPA's raw wholesale file.
-    The notebook in the language of the visit opens here, read only, with the outputs its file keeps; both download."""
+    """«Análisis de la fuente de datos» (D-533): the notebook that studies ODEPA's raw wholesale file. Only the one in the
+    language of the visit is listed (D-535); it opens here, read only, with the outputs its file keeps, and downloads."""
     files = source_study.read_files()
     show_page_bar(
         PAGE_SOURCE_STUDY,
@@ -7791,14 +7791,10 @@ def show_source_study(mode):
     if opened:
         show_notebook(opened)
         return
-    st.markdown(source_study.build_head_html(files), unsafe_allow_html=True)
-    for file in files:
-        # Only the notebook of the visit's language opens here (D-443); the other one downloads.
-        address = (
-            build_page_address(PAGE_SOURCE_STUDY) + f"&{source_study.NOTEBOOK_PARAMETER}={file['language']}"
-            if file["language"] == language
-            else ""
-        )
+    st.markdown(source_study.build_head_html(language), unsafe_allow_html=True)
+    # Only the notebook of the visit's language is listed (D-443, D-535); the head line names the other one.
+    for file in (file for file in files if file["language"] == language):
+        address = build_page_address(PAGE_SOURCE_STUDY) + f"&{source_study.NOTEBOOK_PARAMETER}={file['language']}"
         with st.container(key=f"notebook_row_{file['language']}", horizontal=True, vertical_alignment="center"):
             st.markdown(source_study.build_file_html(file, address), unsafe_allow_html=True, width="stretch")
             show_notebook_download(file)

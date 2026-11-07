@@ -33,16 +33,17 @@ def test_d533_the_two_notebooks_are_the_same_study_and_keep_their_outputs():
         assert all(output["output_type"] != "error" for cell in cells for output in cell.get("outputs", []))
 
 
-def test_d533_the_folder_lists_both_notebooks_and_opens_the_one_of_the_visit():
-    for language in ("es", "en"):
+def test_d535_the_folder_lists_only_the_notebook_of_the_visit_and_names_the_other_language():
+    notebooks = dict(source_study.NOTEBOOKS)
+    for language, other, note in (("es", "en", "también en inglés (EN)"), ("en", "es", "also in Spanish (ES)")):
         app = draw(language)
         assert not app.exception
         markup = " ".join(block.value for block in app.markdown)
-        assert markup.count('class="df-file nb-file"') == 2
-        assert len(app.get("download_button")) == 2
-        opens = f"{source_study.NOTEBOOK_PARAMETER}={language}"
-        other = "en" if language == "es" else "es"
-        assert opens in markup and f"{source_study.NOTEBOOK_PARAMETER}={other}" not in markup
+        assert markup.count('class="df-file nb-file"') == 1 and len(app.get("download_button")) == 1
+        assert f"{source_study.NOTEBOOK_PARAMETER}={language}" in markup
+        assert f"{source_study.NOTEBOOK_PARAMETER}={other}" not in markup
+        assert source_study.describe(other, notebooks[other])["title"] not in markup
+        assert note in markup
 
 
 def test_d533_an_opened_notebook_shows_its_code_and_its_saved_outputs_without_running():

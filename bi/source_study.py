@@ -1,8 +1,9 @@
 """«Análisis de la fuente de datos» (D-533): the study of ODEPA's raw wholesale file, as two Jupyter notebooks.
 
-The folder holds the same study twice, one notebook per language. Each one is listed with its title, its first line,
-its cells and its size; the one in the language of the visit opens read only in the panel, and both download as
-.ipynb. The panel draws what the file holds, outputs included: it never runs the notebook.
+The same study lives twice in notebooks/, one notebook per language. The folder lists only the one in the language of
+the visit (D-535), with its title, its cells and its size; it opens read only in the panel and downloads as .ipynb.
+The head line names the other language, where the same study also lives. The panel draws what the file holds,
+outputs included: it never runs the notebook.
 """
 
 import html
@@ -21,6 +22,11 @@ NOTEBOOKS = [
 ]
 NOTEBOOK_PARAMETER = "cuaderno"
 LANGUAGE_NAMES = {"es": "Español", "en": "English"}
+# The head line of the folder in each visit language: it names the version the folder does not list (D-535).
+OTHER_LANGUAGE_NOTES = {
+    "es": "Cuaderno de Jupyter · el mismo estudio está también en inglés (EN)",
+    "en": "Cuaderno de Jupyter · el mismo estudio está también en español (ES)",
+}
 NOTEBOOK_COLOR = "#22b35a"
 # The block of a notebook output: the source's raw data as the notebook printed it (tests/i18n_audit.py reads it as
 # data, not as a sentence of the panel).
@@ -88,11 +94,11 @@ def build_file_html(file, open_address):
     )
 
 
-def build_head_html(files):
+def build_head_html(language):
+    """The folder's head line: the path, and the other language where the same study also lives (D-535)."""
     return (
         f'<div class="df-head"><span class="df-path">GreenOcean <i>/</i> <b>notebooks</b></span>'
-        f'<span class="df-count">{len(files)} {esc(tr("cuadernos de Jupyter · el mismo estudio en dos idiomas"))}'
-        "</span></div>"
+        f'<span class="df-count">{esc(tr(OTHER_LANGUAGE_NOTES[language]))}</span></div>'
     )
 
 
