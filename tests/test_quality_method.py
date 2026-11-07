@@ -7,6 +7,7 @@ import json
 import re
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -488,7 +489,8 @@ def test_d335_the_alert_lists_the_critical_first_with_everything_the_author_need
     ]
     assert "Enlaces sin renombrar." in quality_method.build_alert([two], goals, policy, recorded)
     clean = dict(two, indicadores=[dict(row, estado="cumple") for row in two["indicadores"]])
-    assert quality_method.build_alert([clean], goals, policy, []) == ""  # all well: nothing
+    # all well: nothing; F-43: measured on the report's own day, so the test does not age with the calendar (D-361)
+    assert quality_method.build_alert([clean], goals, policy, [], today=date.fromisoformat(two["fecha"][:10])) == ""
     monkeypatch.setattr(i18n, "is_english", lambda: True)
     assert "Action required" not in html_text and "Why it matters" in quality_method.build_alert(
         [two], goals, policy, []

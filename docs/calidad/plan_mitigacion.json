@@ -2400,6 +2400,58 @@
           "referencia": "D-527"
         }
       ]
+    },
+    {
+      "id": "F-43",
+      "categoria": "código",
+      "falla": [
+        "Una prueba del aviso de calidad dependía de la fecha de hoy",
+        "A test of the quality alert depended on the current date"
+      ],
+      "deteccion": [
+        "Actions: pruebas.yml y calidad.yml en rojo, y la suite completa en local antes de subir",
+        "Actions: pruebas.yml and calidad.yml red, and the full suite run locally before pushing"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La prueba no fijaba el día: pasados 8 días del informe N° 2, el aviso lo leía como medición antigua",
+        "The test did not fix the day: 8 days after report No. 2, the alert read it as an old measurement"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: no toca la app ni los datos",
+        "None: it touches neither the app nor the data"
+      ],
+      "correctiva": [
+        "La prueba pasa a build_alert el día del informe",
+        "The test passes the day of the report to build_alert"
+      ],
+      "estacion": 8,
+      "caso_real": "D-540",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-07",
+          "ocurrencia": [
+            "pruebas.yml y calidad.yml en rojo en el commit e192a15, por test_d335 del aviso de calidad.",
+            "pruebas.yml and calidad.yml red at commit e192a15, because of test_d335 of the quality alert."
+          ],
+          "diagnostico": [
+            "La prueba usaba la fecha de hoy, y desde el 5 de noviembre el informe N° 2 cuenta como antiguo.",
+            "The test used the current date, and since 5 November report No. 2 counts as old."
+          ],
+          "solucion": [
+            "La prueba fija el día del informe; la regla de D-361 no cambia.",
+            "The test fixes the day of the report; the D-361 rule does not change."
+          ],
+          "comentario": [
+            "Una prueba que lee el reloj se vence sola: fijar la fecha.",
+            "A test that reads the clock expires on its own: fix the date."
+          ],
+          "estacion": 8,
+          "estado": "resuelta",
+          "referencia": "D-540"
+        }
+      ]
     }
   ]
 }

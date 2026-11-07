@@ -37,6 +37,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (
+    activity_bar,
     live_mark,
     price_export,
     actions_view,
@@ -9403,6 +9404,30 @@ def build_section_colors_css(dark):
 """
 
 
+def build_bar_icons_css(quiet, bright):
+    """D-540: the icon of each button of the activity bar, as a CSS mask in one tone, like VS Code's."""
+
+    def mask(name):
+        encoded = base64.b64encode(activity_bar.build_icon_svg(name).encode()).decode()
+        return f'url("data:image/svg+xml;base64,{encoded}")'
+
+    buttons = {
+        '[class*="st-key-nav_folder_tile_0"] [data-testid="stPageLink"] a': "documents",
+        '[class*="st-key-nav_folder_tile_1"] [data-testid="stPageLink"] a': "study",
+        ".st-key-sources_tile button": "sources",
+    } | {f".st-key-stack_tile_{key} button": icon for key, _, icon, _ in activity_bar.STACK_AREAS}
+    rules = [
+        f"{selector}::before {{content:\"\"; flex:none; width:22px !important; height:22px !important;"
+        f" background:{quiet} !important; -webkit-mask:{mask(icon)} center / contain no-repeat;"
+        f" mask:{mask(icon)} center / contain no-repeat; transition:background .15s ease;}}"
+        for selector, icon in buttons.items()
+    ]
+    lit = ", ".join(f"{selector}:hover::before" for selector in buttons)
+    current = '[class*="st-key-nav_folder_tile_"][class*="_nav_current"] [data-testid="stPageLink"] a::before'
+    rules.append(f"{lit}, {current} {{background:{bright} !important; transform:none;}}")
+    return "\n    ".join(rules)
+
+
 def build_sidebar_css(mode):
     palette = charts.get_palette(mode)
     # The sidebar is flat (D-231): one plain surface, no gradient, border or shadow. Its text
@@ -9592,6 +9617,26 @@ def build_sidebar_css(mode):
     .st-key-language_switch button {{width:34px !important; min-width:34px !important; height:26px !important;
         min-height:26px !important; padding:0 !important;}}
     .st-key-language_switch button p {{font-size:.6875rem !important;}}
+    /* D-540: line icons in one tone, like VS Code's: each shape is a mask painted in the menu's quiet ink, brighter on
+       hover or while its page is open; the stack of each area opens in a window, names only. */
+    {build_bar_icons_css(quiet, text)}
+    [class*="st-key-stack_tile_"], [class*="st-key-stack_tile_"] [data-testid="stLayoutWrapper"],
+    [class*="st-key-stack_tile_"] [data-testid="stPopover"], [class*="st-key-stack_tile_"] [data-testid="stPopover"] > div {{
+        width:auto !important;}}
+    [class*="st-key-nav_folder_tile"], [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] {{height:34px; min-height:34px;}}
+    [class*="st-key-stack_tile_"] button {{display:flex !important; flex-direction:column; align-items:center;
+        justify-content:center; gap:0 !important;
+        width:34px !important; height:34px !important; min-height:34px !important; padding:0 !important;
+        border:0 !important; border-radius:8px !important; background:transparent !important; box-shadow:none !important;}}
+    [class*="st-key-stack_tile_"] button:hover {{background:{MENU_INK[dark][3]} !important;}}
+    [class*="st-key-stack_tile_"] button p {{position:absolute !important; width:1px !important; height:1px !important;
+        overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important;}}
+    [class*="st-key-stack_tile_"] button [data-testid="stIconMaterial"],
+    [class*="st-key-stack_tile_"] button > div > div:has([data-testid="stIconMaterial"]) {{display:none !important;}}
+    [class*="st-key-stack_tile_"] button > div {{display:contents;}}
+    .stack-list .stack-title {{margin:0 0 6px !important; font-size:12px !important; font-weight:600; color:{text};}}
+    .stack-list ol {{margin:0; padding-left:22px; font-size:12.5px; line-height:1.6;}}
+    .stack-list li::marker {{color:{quiet}; font-variant-numeric:tabular-nums;}}
     </style>"""
 
 
@@ -9709,6 +9754,11 @@ def show_footer_tiles(windows_by_title, current_window, current_view):
         if not is_public_profile():
             for index, view in enumerate(FOLDER_TILES):
                 show_folder_tile(windows_by_title, current_window, current_view, view, index)
+        # D-540: the stack of each area, names only, for every view: it opens no other page.
+        for key, title, _, names in activity_bar.STACK_AREAS:
+            with st.container(key=f"stack_tile_{key}"):
+                with st.popover(tr(title), help=tr(title)):
+                    st.markdown(activity_bar.build_stack_html(title, names), unsafe_allow_html=True)
         with st.container(key="sources_tile"):
             with st.popover(tr("Fuentes"), help=tr("Fuentes de datos")):
                 st.markdown(f"**{tr('Fuentes de datos')}**")

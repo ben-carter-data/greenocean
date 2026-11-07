@@ -63,11 +63,11 @@ def read_all(app):
     return "\n".join(texts), codes
 
 
-def everything_drawn(app):
-    """Every text the page put on the screen, whatever the element."""
+def everything_drawn(app, area=None):
+    """Every text the page put on the screen, whatever the element; `area` (app.main) leaves the menu out."""
     parts = []
     for kind in ("markdown", "code", "caption", "info", "warning", "error", "success", "text", "exception", "title"):
-        parts += [str(getattr(element, "value", "")) for element in app.get(kind)]
+        parts += [str(getattr(element, "value", "")) for element in (area or app).get(kind)]
     return "\n".join(parts)
 
 
@@ -90,7 +90,7 @@ def test_d339_without_the_author_key_the_address_shows_one_line_and_nothing_is_a
     app = draw(unlocked=False)
     assert not app.exception
     assert [item.value for item in app.info] == [dashboard.NO_ACCESS]
-    page = everything_drawn(app)
+    page = everything_drawn(app, app.main)  # D-540: the menu's stack lists name pytest; the page itself must not
     assert "ga-table" not in page and "Abrir en GitHub" not in page and "pytest" not in page
     assert network.calls == []  # no request at all
 

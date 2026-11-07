@@ -83,3 +83,37 @@ def test_d539_each_icon_of_the_bar_is_named_on_hover():
     assert "help=tr(view)" in tiles[: tiles.index("\ndef ")]
     sources = source[source.index("def show_footer_tiles") :]
     assert 'help=tr("Fuentes de datos")' in sources[: sources.index("\ndef ")]
+
+
+@pytest.mark.parametrize("mode", sorted(charts.THEMES))
+def test_d540_every_button_of_the_bar_has_a_line_icon_in_one_tone(mode):
+    from bi import activity_bar
+
+    css = dashboard.build_sidebar_css(mode)
+    assert css.count(" mask:url(") == 3 + len(activity_bar.STACK_AREAS)  # documents, study, sources and the areas
+    for key, _, icon, _ in activity_bar.STACK_AREAS:
+        assert f".st-key-stack_tile_{key} button::before" in css and icon in activity_bar.ICONS
+
+
+def test_d540_the_stack_of_every_area_is_in_the_bar_for_every_view():
+    from streamlit.testing.v1 import AppTest
+
+    from bi import activity_bar
+
+    assert [title for _, title, _, _ in activity_bar.STACK_AREAS] == [
+        "Stack · Código",
+        "Stack · Ingeniería de datos",
+        "Stack · Calidad",
+        "Stack · DevOps y seguridad",
+        "Stack · Negocio · BA y BI",
+    ]
+    assert all(len(names) >= 7 and len(set(names)) == len(names) for _, _, _, names in activity_bar.STACK_AREAS)
+    for profile in (dashboard.PROFILE_PUBLIC, dashboard.PROFILE_PROFESSIONAL):
+        app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=90)
+        app.session_state[dashboard.PROFILE_STATE] = profile
+        app.run()
+        assert not app.exception
+        labels = [popover.proto.popover.label for popover in app.sidebar.get("popover")]
+        assert all(title in labels for _, title, _, _ in activity_bar.STACK_AREAS), (profile, labels)
+        lists = [block.value for block in app.sidebar.markdown if 'class="stack-list"' in block.value]
+        assert len(lists) == len(activity_bar.STACK_AREAS) and not any("<a " in block for block in lists)  # names only

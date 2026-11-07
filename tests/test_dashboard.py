@@ -123,7 +123,10 @@ def test_d295_a_first_visit_chooses_its_profile_before_anything_else():
     assert not [box for box in app.selectbox if box.label in ("Perfil", "Tema")]
     assert app.radio(key="theme_field").value == dashboard.DEFAULT_THEME
     assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
-    assert "Ingeniería de datos" not in " ".join(block.value for block in app.markdown)
+    # D-540: the stack windows of the bar name the areas; the menu's sections are what must not show yet
+    assert "Ingeniería de datos" not in " ".join(
+        block.value for block in app.markdown if 'class="stack-list"' not in block.value
+    )
 
 
 def test_hover_hint_is_plain_text_and_escaped():
@@ -843,8 +846,8 @@ def test_d070_a_profile_starts_its_visit_and_the_sidebar_does_not_show_it():
     assert not app.exception
     # The visit starts at the section of the profile: «Detalle técnico», its pipeline.
     assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
-    sidebar = " ".join(block.value for block in app.sidebar.markdown)
-    assert "Ingeniería de datos" not in sidebar
+    sidebar = " ".join(block.value for block in app.sidebar.markdown if 'class="stack-list"' not in block.value)
+    assert "Ingeniería de datos" not in sidebar  # D-540: the stack windows name the area, not the menu's section
     assert not [button for button in app.sidebar.button if "perfil" in button.label]
 
 
@@ -1246,7 +1249,7 @@ def test_d117_the_sidebar_github_entry_is_a_logo_not_a_word():
     assert markup.count('class="sidebar-github') == 1
     assert 'nav_toggle_enlaces' not in [str(button.key) for button in app.sidebar.button]
     assert dashboard.architecture.brand_icons.logo_body("github") in markup
-    assert '>GitHub<' not in markup
+    assert '>GitHub<' not in markup.split('<div class="stack-list">')[0]  # D-540: the DevOps stack names GitHub
     assert 'href="enlaces' in markup and 'target="_self"' in markup
 
 
