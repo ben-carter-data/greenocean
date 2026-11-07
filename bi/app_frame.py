@@ -3,7 +3,7 @@ sees, the addresses and windows of the pages with the history of «Volver», the
 cards, links and texts every page draws. Every page module reads them from here.
 """
 
-import bi
+import contextvars
 import html
 import json
 import re
@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo
 import streamlit as st
 import streamlit.components.v1 as components
 
+import bi
 from bi import (
     buttons,
     charts,
@@ -23,12 +24,12 @@ from bi import (
     control,
     home_mockup,
     i18n,
+    live_mark,
     overview,
+    page_bar,
     quality_method,
     quality_metrics,
     run_monitor,
-    live_mark,
-    page_bar,
 )
 from bi.app_style import (
     build_style_css,
@@ -41,6 +42,7 @@ from bi.constants import (
     BA_TAB_PARAMETER,
     BRAND_GREEN_DARK,
     BRAND_GREEN_LIGHT,
+    CHANNEL_PARAMETER,
     CHILE_TIME_ZONE,
     COMPACT_VIEW,
     DEFAULT_ROLE,
@@ -60,8 +62,10 @@ from bi.constants import (
     KPI_PARAMETER,
     KPI_PRESENTATION,
     LANDING_STATE,
-    MENU_BLOCKS,
+    LATE_SOURCE_NAMES,
     MENU_BLOCK_OF_VIEW,
+    MENU_BLOCKS,
+    MENU_ORDER,
     PAGE_ACTIONS,
     PAGE_ADR,
     PAGE_ANALYSIS,
@@ -95,21 +99,21 @@ from bi.constants import (
     PAGE_STACK,
     PAGE_STAKEHOLDERS,
     PAGE_TEST_PLAN,
-    PROFILES,
     PROFILE_PARAMETER,
     PROFILE_PROFESSIONAL,
     PROFILE_PUBLIC,
     PROFILE_STATE,
+    PROFILES,
     PUBLIC_BLOCKS,
     REPORT_PARAMETER,
     REPORT_WINDOW,
     RETIRED_THEMES,
     RETIRED_VIEWS,
     RETURN_TARGET,
-    ROLES,
     ROLE_ORDER,
     ROLE_PARAMETER,
     ROLE_STATE,
+    ROLES,
     RUN_WINDOW_OPEN,
     SECRET_CONTROL_CODE,
     SECRET_GITHUB_TOKEN,
@@ -121,24 +125,20 @@ from bi.constants import (
     THEME_PARAMETER,
     THEME_STATE,
     VIEW_PARAMETER,
-    WINDOWS,
     WINDOW_OF_VIEW,
     WINDOW_PATHS,
-    CHANNEL_PARAMETER,
-    LATE_SOURCE_NAMES,
-    MENU_ORDER,
+    WINDOWS,
 )
 from bi.data_access import (
-    get_secret,
-    read_cached_token_expiration,
-    read_pipeline_runs,
     format_chile_time,
+    get_secret,
     parse_run_start,
+    read_cached_token_expiration,
     read_latest_run,
+    read_pipeline_runs,
     to_chile_time,
 )
 from bi.i18n import tr
-import contextvars
 from etl import etl
 
 # region Constants

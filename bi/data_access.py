@@ -3,7 +3,9 @@ Chile time of the loads. Every read is cached by the version of the base, so a n
 """
 
 import contextvars
+import json
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import duckdb
@@ -15,14 +17,12 @@ from bi.constants import (
     ALL_VALUES,
     CHILE_TIME_ZONE,
     GITHUB_CACHE_SECONDS,
+    MANIFEST_FILE,
     RUN_HISTORY_COUNT,
     SECRET_GITHUB_TOKEN,
     UNSPECIFIED,
-    MANIFEST_FILE,
 )
 from etl import etl
-from pathlib import Path
-import json
 
 # region Constants
 NATIONAL_KEY = ["week_start", "product_group", "product", "variety", "quality", "channel", "normalized_unit"]

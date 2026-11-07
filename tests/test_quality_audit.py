@@ -241,9 +241,9 @@ def test_d380_the_parity_table_draws_when_the_databases_differ_in_both_languages
 def test_d380_the_names_of_the_changed_files_join_in_the_language_of_the_visit():
     import inspect
 
-    from bi import dashboard, i18n
+    from bi import i18n, page_quality
 
-    source = inspect.getsource(dashboard)
+    source = inspect.getsource(page_quality)  # D-541: the page left bi/dashboard.py
     assert '" y ".join(changed_files)' not in source and "i18n.join_names(changed_files)" in source
     assert i18n.join_names(["consumer_2026.csv", "wholesale_2026.csv"]) == "consumer_2026.csv y wholesale_2026.csv"
 
