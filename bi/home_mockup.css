@@ -395,7 +395,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
  .st-key-home_products [data-testid="stHorizontalBlock"] {flex-wrap:wrap;}
 }
 .mock-products-count {margin-left:auto;font-size:11px;color:var(--mock-muted);font-variant-numeric:tabular-nums;}
-.greenocean-mockup .mock-coverage-note {margin-top:6px!important;font-size:10.5px!important;line-height:1.4!important;color:var(--mock-muted);}
+.greenocean-mockup .mock-coverage-note {margin-top:0!important;font-size:10.5px!important;line-height:1.33!important;color:var(--mock-muted);}
 .mock-coverage-note a {color:var(--mock-fall)!important;}
 .st-key-home_products_search input {font-size:12.5px;}
 .st-key-home_products_search [data-baseweb="input"] {min-height:32px;}

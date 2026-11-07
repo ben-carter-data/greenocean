@@ -32,14 +32,21 @@ def test_d504_the_menu_column_is_the_window_and_no_padding_reserves_space_for_th
 
 
 @pytest.mark.parametrize("mode", sorted(charts.THEMES))
-def test_d504_the_footer_lives_in_the_flow_pushed_to_the_end_and_stuck_to_the_bottom(mode):
+def test_d539_the_footer_is_a_column_of_icons_on_the_menus_left_edge(mode):
+    """Like VS Code's activity bar: the footer leaves the end of the menu, which keeps the whole height of the window."""
     css = dashboard.build_sidebar_css(mode)
-    footer = rule_of(css, ".st-key-sidebar_footer")
-    assert "position:fixed" not in footer and "bottom:0" not in footer and "width:232px" not in footer
-    assert f"background:{charts.get_palette(mode)['sidebar']}" in footer and "border-top:1px solid" in footer
+    bar = dashboard.ACTIVITY_BAR
     wrapper = rule_of(css, FOOTER_WRAPPER)
-    assert "margin:auto -8px 0" in wrapper and "width:calc(100% + 16px)" in wrapper and "max-width:none" in wrapper
-    assert "position:sticky; bottom:0; z-index:5" in wrapper
+    assert "position:fixed !important; top:0 !important" in wrapper and f"width:{bar}px !important" in wrapper
+    assert "sticky" not in wrapper and "margin:auto" not in wrapper
+    footer = rule_of(css, ".st-key-sidebar_footer")
+    assert "justify-content:space-between" in footer and "border-right:1px solid" in footer
+    width = rule_of(css, '[data-testid="stSidebar"][data-collapsed="false"]')
+    assert f"min-width:{232 + bar}px" in width  # the menu keeps its 232 px beside the bar (D-501)
+    assert f"padding-left:{bar + 8}px !important" in css and f"padding-left:{bar + 16}px !important" in css
+    assert '[data-collapsed="true"] .st-key-sidebar_footer {display:none !important;}' in css
+    tile = rule_of(css, '[class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button')
+    assert "width:34px !important; height:34px" in tile
 
 
 @pytest.mark.parametrize("mode", sorted(charts.THEMES))
@@ -70,16 +77,9 @@ def test_d504_the_menu_never_moves_its_nodes_with_a_script():
     assert "st.html(" not in footer and "<script" not in footer and 'container(key="sidebar_footer")' in footer
 
 
-@pytest.mark.parametrize("mode", sorted(charts.THEMES))
-def test_d538_the_two_folders_and_the_sources_share_one_compact_row(mode):
-    """The footer's three tiles sit side by side in one row of 62 px, so «Calidad» is in sight when the app opens."""
-    css = dashboard.build_sidebar_css(mode)
-    tile = rule_of(css, '[class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button')
-    assert "height:62px" in tile and "sidebar_sources_row" not in css
+def test_d539_each_icon_of_the_bar_is_named_on_hover():
     source = Path(dashboard.__file__).read_text(encoding="utf-8")
-    tiles = source[source.index("def show_footer_tiles") :]
-    lines = tiles[: tiles.index("\ndef ")].splitlines()
-    row = next(line for line in lines if 'container(key="sidebar_tiles"' in line)
-    sources = next(line for line in lines if 'container(key="sources_tile")' in line)
-    indent = len(row) - len(row.lstrip())
-    assert len(sources) - len(sources.lstrip()) == indent + 4  # the sources tile lives inside the row
+    tiles = source[source.index("def show_folder_tile") :]
+    assert "help=tr(view)" in tiles[: tiles.index("\ndef ")]
+    sources = source[source.index("def show_footer_tiles") :]
+    assert 'help=tr("Fuentes de datos")' in sources[: sources.index("\ndef ")]

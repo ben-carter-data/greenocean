@@ -9417,7 +9417,8 @@ def build_sidebar_css(mode):
     view_ink = "#7dd3fc" if dark else palette["accent"]  # D-373: the view button reads on the sidebar's surface
     return f"""<style>
     [data-testid="stSidebar"] {{background:{palette['sidebar']}; border-right:0; box-shadow:none;}}
-    [data-testid="stSidebar"][data-collapsed="false"] {{min-width:232px !important; max-width:232px !important;}}
+    [data-testid="stSidebar"][data-collapsed="false"] {{min-width:{232 + ACTIVITY_BAR}px !important;
+        max-width:{232 + ACTIVITY_BAR}px !important;}}
     /* D-501: the menu keeps its width for its words: Streamlit's 20 px of margin leave. */
     [data-testid="stSidebarContent"] {{background:transparent; padding-left:0 !important; padding-right:0 !important;}}
     /* D-504: the logo and the fold button stay in sight, stuck to the top of the menu, when it scrolls. The header
@@ -9434,14 +9435,14 @@ def build_sidebar_css(mode):
     [data-testid="stSidebarContent"]:hover::-webkit-scrollbar {{width:6px;}}
     [data-testid="stSidebarContent"]:hover::-webkit-scrollbar-thumb {{background:{hairline}; border-radius:3px;}}
     [data-testid="stSidebarUserContent"] {{padding:0 8px !important;}}
-    /* D-504: the menu's column is as tall as the window under the 72 px header, no more: the footer, last in the
-       flow, is pushed to its end, so nothing scrolls towards a void when the menu fits. When it does not fit, the
-       footer stays stuck to the bottom and the menu scrolls under it (D-286). */
+    /* D-504: the menu's column is as tall as the window under the 72 px header, no more, so nothing scrolls towards
+       a void when the menu fits. D-539: the footer is no longer at its end but a column of icons on its left edge. */
     [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important;
         min-height:calc(100vh - 72px); padding-bottom:0;}}
     [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"]
-        > [data-testid="stLayoutWrapper"]:has(> .st-key-sidebar_footer) {{margin:auto -8px 0;
-        width:calc(100% + 16px); max-width:none; position:sticky; bottom:0; z-index:5;}}
+        > [data-testid="stLayoutWrapper"]:has(> .st-key-sidebar_footer) {{position:fixed !important; top:0 !important;
+        bottom:0 !important; left:0 !important; width:{ACTIVITY_BAR}px !important; max-width:none; margin:0 !important;
+        z-index:8;}}
     [data-testid="stSidebarNav"] {{display:none;}}
     {build_section_colors_css(dark)}
     /* GitHub's mark on a light pill in the footer (D-124): a near-black logo on a
@@ -9464,9 +9465,10 @@ def build_sidebar_css(mode):
     [data-testid="stSidebar"] .st-key-profile_indicator_top button [data-testid="stIconMaterial"] {{
         color:{view_ink} !important; font-weight:400; font-size:.71875rem; }}
     [data-testid="stSidebar"] .st-key-profile_indicator_top button:hover {{ border-color:{view_ink} !important; }}
-    /* D-504: the footer lives in the flow of the menu (its wrapper is stuck above); its surface hides what scrolls under. */
-    .st-key-sidebar_footer {{padding:10px 12px 10px; background:{palette['sidebar']}; gap:7px !important;
-        border-top:1px solid {hairline};}}
+    /* D-539: the footer is the activity bar: folders and sources at the top, appearance and language at the bottom. */
+    .st-key-sidebar_footer {{height:100%; padding:14px 0 12px !important; gap:4px !important; align-items:center;
+        justify-content:space-between; border-right:1px solid {hairline};
+        background:color-mix(in srgb, {palette['sidebar']} 92%, {text}) !important;}}
     /* The price alerts, a red chip in the Resumen's bar (D-169, D-264). */
     .st-key-home_alert_trigger button, .st-key-dialog_alert_trigger button {{border:0 !important; background:color-mix(in srgb,{alert_text} 14%,transparent) !important;
         color:{alert_text} !important; border-radius:8px; padding:3px 10px !important; min-height:28px; box-shadow:none !important;}}
@@ -9497,7 +9499,7 @@ def build_sidebar_css(mode):
     .st-key-sidebar_tiles > div {{flex:1 1 0 !important; min-width:0 !important;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button {{
         display:flex !important; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-        width:100% !important; height:62px; min-height:62px !important; padding:4px 3px !important; gap:3px !important;
+        width:34px !important; height:34px; min-height:34px !important; padding:0 !important; gap:0 !important;
         border-radius:6px; background:transparent !important;
         border:1px solid {MENU_INK[dark][6]} !important; box-shadow:none !important;}}
     .st-key-sources_tile, .st-key-sources_tile [data-testid="stLayoutWrapper"], .st-key-sources_tile [data-testid="stPopover"],
@@ -9524,10 +9526,6 @@ def build_sidebar_css(mode):
         border-color:{MENU_INK[dark][5]};}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
     [class*="st-key-nav_folder_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
-    /* D-538: the two folders (D-533) and the sources share one compact row, each official name inside its tile in
-       small letters, so the menu above keeps its height and «Calidad» is in sight when the app opens */
-    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {{white-space:normal !important; text-align:center;
-        hyphens:none;}}
     [class*="st-key-nav_folder_tile_1"] [data-testid="stPageLink"] a::before {{
         background-image:url("data:image/svg+xml;base64,{base64.b64encode(STUDY_TILE_SVG.encode()).decode()}") !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] {{margin:2px 0 2px !important;}}
@@ -9559,6 +9557,41 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_dashboard_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
     .st-key-sidebar_footer [data-testid="stCaptionContainer"] p {{color:{text} !important; opacity:.75;
         font-size:.69rem; line-height:1.35; padding:0 3px;}}
+    /* D-539: the footer is an activity bar, like VS Code's: a column of icons on the menu's left edge, the folders and
+       the sources at the top, appearance and language at the bottom, each named on hover. The menu keeps its 232 px
+       beside it and the whole height of the window, so «Calidad» is in sight when the app opens. */
+    [data-testid="stSidebar"][data-collapsed="false"] [data-testid="stSidebarUserContent"] {{
+        padding-left:{ACTIVITY_BAR + 8}px !important;}}
+    [data-testid="stSidebar"][data-collapsed="false"] [data-testid="stSidebarHeader"] {{
+        padding-left:{ACTIVITY_BAR + 16}px !important;}}
+    [data-testid="stSidebar"][data-collapsed="true"] .st-key-sidebar_footer {{display:none !important;}}
+    .st-key-sidebar_footer > div {{width:auto !important; flex:0 0 auto !important;}}
+    .st-key-sidebar_tiles, .st-key-sidebar_tools, .st-key-language_switch {{flex-direction:column !important;
+        align-items:center !important; gap:6px !important; margin:0 !important; width:auto !important;}}
+    .st-key-sidebar_tiles > div, .st-key-sidebar_tools > div, .st-key-language_switch > div {{flex:0 0 auto !important;
+        width:auto !important; min-width:0 !important;}}
+    .st-key-sources_tile, .st-key-sources_tile [data-testid="stLayoutWrapper"], .st-key-sources_tile [data-testid="stPopover"],
+    .st-key-sources_tile [data-testid="stPopover"] > div {{width:auto !important;}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button,
+    .st-key-sidebar_appearance [data-testid="stPopover"] button {{width:34px !important; height:34px !important;
+        min-height:34px !important; padding:0 !important; border:0 !important; border-radius:8px !important;
+        justify-content:center !important; align-items:center !important; background:transparent !important;}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before, .st-key-sources_tile button::before {{
+        width:22px !important; height:18px !important;}}
+    /* The names stay for screen readers and on hover; the bar shows only the icons. */
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p, .st-key-sources_tile button p,
+    .st-key-sidebar_appearance [data-testid="stPopover"] button p {{position:absolute !important; width:1px !important;
+        height:1px !important; overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important;}}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button div[aria-hidden="true"] {{display:none !important;}}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button [data-testid="stIconMaterial"] {{font-size:20px !important;
+        margin:0 !important; color:{quiet} !important;}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover, .st-key-sources_tile button:hover,
+    .st-key-sidebar_appearance [data-testid="stPopover"] button:hover {{background:{MENU_INK[dark][3]} !important;}}
+    [class*="st-key-nav_folder_tile_"][class*="_nav_current"] [data-testid="stPageLink"] a {{
+        background:{MENU_INK[dark][4]} !important; box-shadow:inset 2px 0 0 {palette['accent']} !important;}}
+    .st-key-language_switch button {{width:34px !important; min-width:34px !important; height:26px !important;
+        min-height:26px !important; padding:0 !important;}}
+    .st-key-language_switch button p {{font-size:.6875rem !important;}}
     </style>"""
 
 
@@ -9567,6 +9600,7 @@ SIDEBAR_NAV_VERSION = 13  # D-453: the two dashboard tiles open «Negocio · BA 
 FOLDED_BY_DEFAULT = {"fuentes"}
 FOLDER_TILE_BLOCK = "documentos"
 FOLDER_TILES = [PAGE_FOLDER, PAGE_SOURCE_STUDY]  # D-533: the project's documents, then the study of the source
+ACTIVITY_BAR = 40  # D-539: the width of the column of icons on the menu's left edge, like VS Code's activity bar
 # D-287: the sources are a tile of their own beside the folder; their links open in a floating panel.
 SOURCES_TILE_BLOCK = "fuentes"
 # D-442, D-452, D-453: the two dashboards are tiles, not lines, at the head of «Negocio · BA y BI».
@@ -9676,7 +9710,7 @@ def show_footer_tiles(windows_by_title, current_window, current_view):
             for index, view in enumerate(FOLDER_TILES):
                 show_folder_tile(windows_by_title, current_window, current_view, view, index)
         with st.container(key="sources_tile"):
-            with st.popover(tr("Fuentes")):
+            with st.popover(tr("Fuentes"), help=tr("Fuentes de datos")):
                 st.markdown(f"**{tr('Fuentes de datos')}**")
                 for name, url in SOURCE_LINKS:
                     st.markdown(
@@ -9709,7 +9743,12 @@ def show_folder_tile(windows_by_title, current_window, current_view, view, index
         current_view == view or (view == PAGE_FOLDER and current_view in FOLDER_ORDER)
     )
     with st.container(key=f"nav_folder_tile_{index}" + ("_nav_current" if active else "")):
-        st.page_link(windows_by_title[window], label=tr(view), query_params=keep_context() | {VIEW_PARAMETER: view})
+        st.page_link(
+            windows_by_title[window],
+            label=tr(view),
+            help=tr(view),
+            query_params=keep_context() | {VIEW_PARAMETER: view},
+        )
 
 
 def show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open):
