@@ -151,6 +151,9 @@ def build_file(file):
     return (
         f'<div class="df-file" data-family="{esc(file["family"])}">'
         f'<a class="df-body" href="{esc(file["open"])}" target="_self" title="{file["minutes"]} {tr("min de lectura")}">'
+        # D-537: the grid has no groups, so each card names its folder of docs/ (the list shows it in its group head)
+        f'<span class="df-family" style="--df-color:{FAMILY_COLORS[file["family"]]}">'
+        f'{esc(tr(FAMILY_TITLES[file["family"]]))}</span>'
         f'<span class="df-top">{build_file_glyph(FAMILY_COLORS[file["family"]])}<b class="df-name">{esc(file["name"])}</b></span>'
         f'<span class="df-purpose">{esc(file["purpose"])}</span>{build_preview(file)}</a>'
         f'{build_meta(file)}{build_actions(file)}</div>'
@@ -170,15 +173,16 @@ def build_group(family, files, kind):
 
 
 def build_folder_html(files, view):
-    """The folder: its path, how many documents and the last change, then its four folders, each with its files in the
-    chosen view."""
-    kind = "df-grid" if view == VIEW_GRID else "df-list"
+    """The folder: its path, how many documents and the last change, then its files. The list groups them by their
+    four folders of docs/; the grid lays them on one shelf that fills the width, like a library (D-537)."""
     head = (
         f'<div class="df-head"><span class="df-path">GreenOcean <i>/</i> <b>docs</b></span>'
         f'<span class="df-count">{len(files)} {tr("documentos · último cambio")} {esc(latest_date(files))}</span></div>'
     )
+    if view == VIEW_GRID:
+        return f'<div class="df-folder">{head}<div class="df-grid">{"".join(build_file(file) for file in files)}</div></div>'
     groups = "".join(
-        build_group(family, [file for file in files if file["family"] == family], kind)
+        build_group(family, [file for file in files if file["family"] == family], "df-list")
         for family in FAMILY_COLORS
         if any(file["family"] == family for file in files)
     )
@@ -207,7 +211,10 @@ def build_css(palette):
   font-size:19px; font-weight:400; line-height:1; font-feature-settings:"liga"; }}
 .df-group-path {{ font-size:12px; font-weight:400; color:{muted}; font-family:ui-monospace, Menlo, monospace; }}
 .df-group-count {{ margin-left:auto; font-size:12px; font-weight:400; color:{muted}; }}
-.df-grid {{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:12px; }}
+/* D-537: the cards share the whole row, however many there are; a narrow window moves the last ones down. */
+.df-grid {{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:14px; }}
+.df-family {{ font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--df-color); }}
+.df-list .df-family {{ display:none; }}
 .df-file {{ position:relative; display:flex; flex-direction:column; gap:8px; padding:12px; border:1px solid {border};
   border-radius:14px; background:color-mix(in srgb, {card} 70%, transparent); transition:border-color .18s ease, box-shadow .18s ease; }}
 .df-file:hover {{ z-index:5; border-color:color-mix(in srgb, {accent} 60%, {border}); box-shadow:0 10px 26px -18px {accent}; }}
@@ -229,7 +236,7 @@ def build_css(palette):
 .df-preview {{ position:absolute; left:calc(100% + 18px); top:-12px; width:250px; z-index:6; display:flex; flex-direction:column;
   gap:4px; padding:12px 14px; border-radius:12px; background:{card}; border:1px solid {border};
   box-shadow:0 18px 40px -18px rgba(0,0,0,.45); opacity:0; visibility:hidden; transition:opacity .16s ease; pointer-events:none; }}
-.df-grid .df-file:nth-child(5n) .df-preview, .df-grid .df-file:nth-child(5n-1) .df-preview {{ left:auto; right:calc(100% + 18px); }}
+.df-grid .df-file:nth-last-child(-n+2) .df-preview {{ left:auto; right:calc(100% + 18px); }}
 .df-preview em {{ font-style:normal; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
 .df-preview ol {{ margin:0; padding-left:18px; font-size:12px; line-height:1.45; color:{ink}; }}
 .df-more {{ margin:0; font-size:11.5px; color:{muted}; }}
@@ -243,9 +250,7 @@ def build_css(palette):
 .df-list .df-purpose {{ -webkit-line-clamp:1; min-height:0; flex:1; }}
 .df-list .df-meta {{ flex:none; width:170px; }}
 .df-list .df-preview {{ left:32px; top:calc(100% + 4px); }}
-@media (max-width:1100px) {{ .df-grid {{ grid-template-columns:repeat(3, minmax(0, 1fr)); }}
-  .df-grid .df-file:nth-child(n) .df-preview {{ left:0; right:auto; top:calc(100% + 6px); }} }}
-@media (max-width:700px) {{ .df-grid {{ grid-template-columns:repeat(2, minmax(0, 1fr)); }} }}
+@media (max-width:1100px) {{ .df-grid .df-file:nth-child(n) .df-preview {{ left:0; right:auto; top:calc(100% + 6px); }} }}
 @media (max-width:900px) {{ .df-list .df-file {{ flex-wrap:wrap; }} .df-list .df-meta {{ width:auto; }} }}
 /* D-324: the purpose needs about 130 px to be read; narrower than that it would be one letter, so the list drops it. */
 @container (max-width:920px) {{ .df-list .df-purpose {{ display:none; }} }}

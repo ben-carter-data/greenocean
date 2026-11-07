@@ -1592,6 +1592,21 @@ def test_d282_the_folder_shows_every_main_document_with_the_version_and_date_of_
     assert markup.count('class="go-icon go-icon-print"') == 5 and markup.count('class="df-preview"') == 5
 
 
+@needs_database
+def test_d537_the_grid_lays_the_documents_on_one_shelf_each_with_its_folder():
+    from bi import documents_folder
+
+    app = draw_page(dashboard.PAGE_FOLDER, state={dashboard.FOLDER_VIEW_KEY: documents_folder.VIEW_GRID})
+    assert not app.exception
+    markup = " ".join(block.value for block in app.markdown)
+    # One shelf that fills the row, like a library: no group leaves half a row empty.
+    assert markup.count('class="df-grid"') == 1 and 'class="df-group"' not in markup
+    assert markup.count('class="df-file"') == markup.count('class="df-family"') == len(dashboard.FOLDER_SHOWN)
+    assert "repeat(auto-fit, minmax(170px, 1fr))" in markup
+    for title in documents_folder.FAMILY_TITLES.values():
+        assert f">{title}</span>" in markup, title
+
+
 def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_menu():
     # D-381: the documents sit in four folders; the quality folder also holds the plan's data, which is not a document.
     docs = PROJECT_DIR / "docs"
