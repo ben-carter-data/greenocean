@@ -9497,39 +9497,39 @@ def build_sidebar_css(mode):
     .st-key-sidebar_tiles > div {{flex:1 1 0 !important; min-width:0 !important;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button {{
         display:flex !important; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-        width:100% !important; height:50px; min-height:50px !important; padding:4px !important; gap:2px !important;
+        width:100% !important; height:62px; min-height:62px !important; padding:4px 3px !important; gap:3px !important;
         border-radius:6px; background:transparent !important;
         border:1px solid {MENU_INK[dark][6]} !important; box-shadow:none !important;}}
     .st-key-sources_tile, .st-key-sources_tile [data-testid="stLayoutWrapper"], .st-key-sources_tile [data-testid="stPopover"],
     .st-key-sources_tile [data-testid="stPopover"] > div {{width:100% !important;}}
-    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] {{margin:4px 0 0 !important;}}
-    .st-key-sources_tile button::before {{content:""; flex:none; width:26px; height:19px;
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] {{margin:0 !important;}}
+    .st-key-sources_tile button::before {{content:""; flex:none; width:22px; height:16px;
         background:url("data:image/svg+xml;base64,{base64.b64encode(SOURCES_TILE_SVG.encode()).decode()}") center / contain no-repeat;
         transition:transform .18s ease;}}
     .st-key-sources_tile button:hover {{background:{MENU_INK[dark][3]} !important;}}
     .st-key-sources_tile button:hover::before {{transform:translateY(-2px);}}
     .st-key-sources_tile button p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:.71875rem !important; font-weight:400 !important; line-height:1.15 !important; white-space:nowrap; margin:0 !important;}}
+        font-size:.65rem !important; font-weight:400 !important; line-height:1.15 !important; white-space:nowrap; margin:0 !important;}}
     .st-key-sources_tile button [data-testid="stIconMaterial"], .st-key-sources_tile button svg {{display:none !important;}}
     .st-key-sources_tile button > div > div:has([data-testid="stIconMaterial"]) {{display:none !important;}}
     .st-key-sources_tile button > div {{display:contents;}}
-    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:26px; height:19px;
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:22px; height:16px;
         background:url("data:image/svg+xml;base64,{base64.b64encode(FOLDER_TILE_SVG.encode()).decode()}") center / contain no-repeat;
         transition:transform .18s ease;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover {{background:{MENU_INK[dark][3]} !important;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover::before {{transform:translateY(-2px);}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:.71875rem !important; font-weight:400 !important; line-height:1.15 !important; margin:0 !important;}}
+        font-size:.65rem !important; font-weight:400 !important; line-height:1.12 !important; margin:0 !important;}}
     [class*="st-key-nav_folder_tile_"][class*="_nav_current"] [data-testid="stPageLink"] a {{background:{MENU_INK[dark][4]} !important;
         border-color:{MENU_INK[dark][5]};}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
     [class*="st-key-nav_folder_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
-    /* D-533: two folders side by side, each name inside its tile on two lines; the sources under them */
-    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a {{height:60px; min-height:60px !important;}}
-    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {{white-space:normal !important; text-align:center;}}
+    /* D-538: the two folders (D-533) and the sources share one compact row, each official name inside its tile in
+       small letters, so the menu above keeps its height and «Calidad» is in sight when the app opens */
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {{white-space:normal !important; text-align:center;
+        hyphens:none;}}
     [class*="st-key-nav_folder_tile_1"] [data-testid="stPageLink"] a::before {{
         background-image:url("data:image/svg+xml;base64,{base64.b64encode(STUDY_TILE_SVG.encode()).decode()}") !important;}}
-    .st-key-sidebar_sources_row {{margin:0 0 6px !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] {{margin:2px 0 2px !important;}}
     [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] {{margin:0 0 2px !important;}}
     [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] a::before {{
@@ -9669,12 +9669,12 @@ setTimeout(() => {
 
 
 def show_footer_tiles(windows_by_title, current_window, current_view):
-    """The large tiles of the footer (D-287): the two folders side by side (D-533), and the data sources under them."""
-    if not is_public_profile():
-        with st.container(key="sidebar_tiles", horizontal=True, gap="small"):
+    """The tiles of the footer (D-287) in one compact row (D-538): the two folders (D-533), then the data sources. The
+    Usuario view has no folders (D-502): its row holds the sources alone."""
+    with st.container(key="sidebar_tiles", horizontal=True, gap="small"):
+        if not is_public_profile():
             for index, view in enumerate(FOLDER_TILES):
                 show_folder_tile(windows_by_title, current_window, current_view, view, index)
-    with st.container(key="sidebar_sources_row"):
         with st.container(key="sources_tile"):
             with st.popover(tr("Fuentes")):
                 st.markdown(f"**{tr('Fuentes de datos')}**")

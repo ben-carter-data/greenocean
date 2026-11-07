@@ -68,3 +68,18 @@ def test_d504_the_menu_never_moves_its_nodes_with_a_script():
     footer = source[source.index("def show_sidebar_footer") :]
     footer = footer[: footer.index("\ndef ")]
     assert "st.html(" not in footer and "<script" not in footer and 'container(key="sidebar_footer")' in footer
+
+
+@pytest.mark.parametrize("mode", sorted(charts.THEMES))
+def test_d538_the_two_folders_and_the_sources_share_one_compact_row(mode):
+    """The footer's three tiles sit side by side in one row of 62 px, so «Calidad» is in sight when the app opens."""
+    css = dashboard.build_sidebar_css(mode)
+    tile = rule_of(css, '[class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button')
+    assert "height:62px" in tile and "sidebar_sources_row" not in css
+    source = Path(dashboard.__file__).read_text(encoding="utf-8")
+    tiles = source[source.index("def show_footer_tiles") :]
+    lines = tiles[: tiles.index("\ndef ")].splitlines()
+    row = next(line for line in lines if 'container(key="sidebar_tiles"' in line)
+    sources = next(line for line in lines if 'container(key="sources_tile")' in line)
+    indent = len(row) - len(row.lstrip())
+    assert len(sources) - len(sources.lstrip()) == indent + 4  # the sources tile lives inside the row
