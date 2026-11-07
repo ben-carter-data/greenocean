@@ -10,7 +10,7 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
-from bi import alerts, channel_latest, control, queries, served_database
+from bi import alerts, channel_latest, control, home_mockup, lineage, live_flow, queries, served_database
 from bi.constants import (
     ALL_VALUES,
     CHILE_TIME_ZONE,
@@ -18,8 +18,11 @@ from bi.constants import (
     RUN_HISTORY_COUNT,
     SECRET_GITHUB_TOKEN,
     UNSPECIFIED,
+    MANIFEST_FILE,
 )
 from etl import etl
+from pathlib import Path
+import json
 
 # region Constants
 NATIONAL_KEY = ["week_start", "product_group", "product", "variety", "quality", "channel", "normalized_unit"]
@@ -358,6 +361,107 @@ def read_pipeline_runs():
 def read_cached_token_expiration(token):
     """Expiration of the token, asked to GitHub at most once an hour."""
     return control.read_token_expiration(token)
+
+
+# endregion
+
+
+# region Week snapshots, lineage and load facts
+@st.cache_data
+def read_lineage(database_version):
+    """(nodes, results) of the last dbt build, as the pipeline saved them."""
+    return lineage.read_tables(queries.run_sql)
+
+
+def read_download_manifest():
+    """Record of the downloaded files (agent/downloads/manifest.json), or {}."""
+    try:
+        return json.loads(MANIFEST_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+@st.cache_data(show_spinner=False)
+def read_cached_same_package_week(database_version, week):
+    """D-522: the changes of one week against the week before, by region and in the same package."""
+    sql = "SELECT * FROM (" + queries.read_query_body("same_package_changes") + ") WHERE week_start = ?"
+    return queries.run_sql(sql, parameters=(week,))
+
+
+def read_cached_week_snapshot(database_version, week):
+    """The regional index (K3) of one week; on a channel page, that channel's (D-405)."""
+    channel = current_channel()
+    if channel is not None:
+        return read_channel_week_snapshot(database_version, channel, week)
+    return read_cached_week_snapshot_all(database_version, week)
+
+
+@st.cache_data
+def read_cached_week_snapshot_all(database_version, week):
+    """The regional index (K3) of one week of valid observations."""
+    sql = "SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?"
+    return add_display_columns(queries.run_sql(sql, parameters=(week,)))
+
+
+def read_channel_same_package_week(database_version, channel, week):
+    """D-522: the same, for a channel page, from its own latest weeks; None on a base older than the rule."""
+    part = read_channel_frame(database_version, channel)
+    if "same_package_now" not in part:
+        return None
+    part = part[(part["week_start"] == week) & part["same_package_now"].notna()]
+    return part.rename(
+        columns={
+            "same_package_now": "price_now",
+            "same_package_before": "price_before",
+            "same_package_quotes_now": "quotes_now",
+            "same_package_quotes_before": "quotes_before",
+            "same_packages": "packages",
+        }
+    )
+
+
+def read_compared_weeks(database_version, week):
+    """D-522, RN-15: (regional prices of a week, of the week before), as every comparison of the page reads them: in
+    the same package. The prices of the week as they were published stay in read_cached_week_snapshot."""
+    previous_week = f"{pd.Timestamp(week) - pd.Timedelta(days=7):%Y-%m-%d}"
+    channel = current_channel()
+    changes = (
+        read_cached_same_package_week(database_version, week)
+        if channel is None
+        else read_channel_same_package_week(database_version, channel, week)
+    )
+    return home_mockup.same_package_pair(
+        read_cached_week_snapshot(database_version, week),
+        read_cached_week_snapshot(database_version, previous_week),
+        changes,
+        queries.KEY_COLUMNS + ["channel", "region"],
+    )
+
+
+def read_cached_market_snapshot(database_version):
+    """The regional index (K3) of the latest week."""
+    return read_cached_week_snapshot(database_version, f"{read_latest_week():%Y-%m-%d}")
+
+
+def read_all_families():
+    """Every family of the data, for the coverage of each channel (D-406)."""
+    return sorted(queries.run_sql("SELECT DISTINCT product_group FROM dim_product")["product_group"])
+
+
+@st.cache_data(show_spinner=False)
+def read_flow_facts(database_version, language):
+    """What travelled in the latest real load, from the files it leaves and the database (D-412)."""
+    root = Path(__file__).resolve().parent.parent
+    manifest = json.loads((root / "agent" / "downloads" / "manifest.json").read_text(encoding="utf-8"))
+    pointer = json.loads((root / "etl" / "datos.version").read_text(encoding="utf-8"))
+    months = int(queries.run_sql("SELECT COUNT(*) AS months FROM ipc_monthly")["months"].iloc[0])
+    packages = sum(
+        1
+        for name in ("requirements.txt", "requirements-pipeline.txt")
+        for line in (root / name).read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith(("#", "-"))
+    )
+    return live_flow.read_facts(manifest, pointer, months, packages)
 
 
 # endregion

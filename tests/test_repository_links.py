@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from bi import dashboard, live_flow, project, queries
+from bi import constants, dashboard, live_flow, project, queries
 from tests import i18n_audit
 
 DASHBOARD_FILE = str(Path(__file__).resolve().parents[1] / "bi" / "dashboard.py")
@@ -95,11 +95,11 @@ def test_d500_the_links_page_says_there_is_no_access_at_its_own_address():
 
 
 def test_d500_a_link_in_a_document_reads_as_plain_text(monkeypatch):
-    monkeypatch.setattr(dashboard, "is_author", lambda: False)
+    monkeypatch.setattr(dashboard.st, "session_state", {})
     text = f"| [Actions]({project.GITHUB_URL}/actions) | [ODEPA](https://www.odepa.gob.cl) |"
     linked = dashboard.link_document_views(text)
     assert "| Actions |" in linked and "github.com" not in linked and "[ODEPA](https://www.odepa.gob.cl)" in linked
-    monkeypatch.setattr(dashboard, "is_author", lambda: True)
+    monkeypatch.setattr(dashboard.st, "session_state", {constants.ADMIN_UNLOCKED: True})
     assert f"[Actions]({project.GITHUB_URL}/actions)" in dashboard.link_document_views(text)
 
 
@@ -109,17 +109,17 @@ def test_d500_the_live_flow_gives_the_link_of_the_run_only_to_the_autor(monkeypa
     monkeypatch.setattr(dashboard, "read_flow_without_token", lambda *_: ([run], [], ""))
     monkeypatch.setattr(dashboard, "read_flow_facts", lambda *_: {})
     monkeypatch.setattr(live_flow, "build_model", lambda *_: {"run_url": run["url"]})
-    monkeypatch.setattr(dashboard, "is_author", lambda: False)
+    monkeypatch.setattr(dashboard.st, "session_state", {})
     assert dashboard.read_flow_model()[0]["run_url"] is None
-    monkeypatch.setattr(dashboard, "is_author", lambda: True)
+    monkeypatch.setattr(dashboard.st, "session_state", {constants.ADMIN_UNLOCKED: True})
     assert dashboard.read_flow_model()[0]["run_url"] == run["url"]
 
 
 def test_d500_only_the_autor_gets_a_link_from_the_shared_builder(monkeypatch):
-    monkeypatch.setattr(dashboard, "is_author", lambda: False)
+    monkeypatch.setattr(dashboard.st, "session_state", {})
     assert dashboard.build_repository_link_html("x en GitHub", project.GITHUB_URL) == ""
     assert not any(re.search(r"github\.com", file["github"]) for file in dashboard.read_folder_files())
-    monkeypatch.setattr(dashboard, "is_author", lambda: True)
+    monkeypatch.setattr(dashboard.st, "session_state", {constants.ADMIN_UNLOCKED: True})
     assert project.GITHUB_URL in dashboard.build_repository_link_html("x en GitHub", project.GITHUB_URL)
     assert all(file["github"].startswith(project.GITHUB_URL) for file in dashboard.read_folder_files())
 

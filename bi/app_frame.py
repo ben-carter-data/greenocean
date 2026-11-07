@@ -27,6 +27,8 @@ from bi import (
     quality_method,
     quality_metrics,
     run_monitor,
+    live_mark,
+    page_bar,
 )
 from bi.app_style import (
     build_style_css,
@@ -122,13 +124,22 @@ from bi.constants import (
     WINDOWS,
     WINDOW_OF_VIEW,
     WINDOW_PATHS,
+    CHANNEL_PARAMETER,
+    LATE_SOURCE_NAMES,
+    MENU_ORDER,
 )
 from bi.data_access import (
     get_secret,
     read_cached_token_expiration,
     read_pipeline_runs,
+    format_chile_time,
+    parse_run_start,
+    read_latest_run,
+    to_chile_time,
 )
 from bi.i18n import tr
+import contextvars
+from etl import etl
 
 # region Constants
 CHANGE_VIEW = "profile_change_open"
@@ -294,6 +305,10 @@ COMPONENT_SYMBOLS = {
 # bi package outlives the script runs); D-428: a ticket may be redeemed again until it expires, as long as the Autor's
 # idle time, and leaving the Autor's view revokes it.
 AUTHOR_TICKETS = vars(bi).setdefault("AUTHOR_TICKETS", {})
+
+
+# D-456: the tab of «Análisis» being drawn, so the page it gathers draws only its own row under the tabs.
+DRAWN_TAB = contextvars.ContextVar("drawn_tab", default="")
 # endregion
 
 
@@ -1242,6 +1257,154 @@ def show_info_cards(cards_html, is_compact=False):
     cards keep their own height instead of the tallest one of their row."""
     kind = " is-compact" if is_compact else ""
     st.markdown(f'<div class="info-grid{kind}">{"".join(cards_html)}</div>', unsafe_allow_html=True)
+
+
+# endregion
+
+
+# region Page bar, tabs and shared helpers
+def show_page_bar(view, title, description, chips=(), side=None, terms=(), live=None):
+    """The header of a page (D-267, D-398): only «Volver», the path (the description on hover) and the time of the
+    data. What the page says (its question when it is not just its name, its figures as chips, what it measures) and
+    what it does (side: a button, a switch) go in a row of the content right under the bar. Links to other pages live
+    in the menu, never here. D-456: a page drawn as a tab of «Análisis» keeps only that row, under the tabs. D-510: «live»
+    names what the page's figures were read from, and the mark that beats goes beside them."""
+    tab = DRAWN_TAB.get()
+    if tab:
+        show_title = tr(title) != tr(tab)
+    else:
+        latest = read_latest_run()
+        path = build_view_path(WINDOW_OF_VIEW.get(view, view), view)
+        st.markdown(page_bar.build_css(charts.get_palette(get_mode())), unsafe_allow_html=True)
+        with st.container(key="page_bar", horizontal=True, vertical_alignment="center"):
+            show_return_button()
+            st.markdown(page_bar.build_bar_html(path, tr(description)), unsafe_allow_html=True, width="stretch")
+            st.markdown(
+                page_bar.build_updated_html(format_load_time(latest), latest["status"] == etl.STATUS_LOADED),
+                unsafe_allow_html=True,
+                width="content",
+            )
+            show_title = tr(title) != path.rpartition(" › ")[2]
+            if live and not (show_title or chips or side or terms):
+                # D-510: a page with no row of its own (its tabs draw theirs) carries the mark in the bar itself
+                st.markdown(live_mark.build_html(tr(live)), unsafe_allow_html=True, width="content")
+    if not (show_title or chips or side or terms):
+        return
+    with st.container(key="page_info", horizontal=True, vertical_alignment="center"):
+        st.markdown(
+            page_bar.build_info_html(tr(title), tr(description), chips, show_title, tr(live) if live else None),
+            unsafe_allow_html=True,
+            width="stretch",
+        )
+        if terms:
+            st.markdown(page_bar.build_terms_html(terms), unsafe_allow_html=True, width="content")
+        if side:
+            side()
+
+
+def show_compact_page_header(title, description):
+    """A one-line header, like the Dashboard's: title and freshness together; the
+    description shows on hover instead of taking a line of its own."""
+    latest_run = read_latest_run()
+    run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
+    run_text = tr("Carga correcta") if run_kind == "ok" else tr("Última carga con falla")
+    freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
+    st.markdown(
+        f'<div class="compact-header"><h1 title="{html.escape(tr(description), quote=True)}">'
+        f'{html.escape(tr(title))}</h1><span class="page-freshness">{tr("Datos al")} '
+        f'{freshness} {build_chip(run_text, run_kind)}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def format_load_time(latest):
+    """«20 oct · 12:54»: the time of a load, short, as the Resumen's bar shows it (D-264)."""
+    stamp = to_chile_time(parse_run_start(latest["started_at"]))
+    month = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][stamp.month - 1]
+    return f"{stamp.day} {month} · {stamp:%H:%M}"
+
+
+def build_external_link_html(text, address, variant="text"):
+    """A link that leaves the app, drawn as the shared component (D-281): it says where it goes and opens a new tab (↗)."""
+    return buttons.build_link_html(
+        text, address, icon="github" if "GitHub" in text else "external", variant=variant, external=True
+    )
+
+
+def build_repository_link_html(text, address, variant="text"):
+    """D-500: a link to the author's repository exists only for the Autor (D-420): anyone else gets nothing, from the
+    server, whatever the page."""
+    return build_external_link_html(text, address, variant) if is_author() else ""
+
+
+def show_view_tabs(key, labels, palette):
+    """D-360: tabs that draw only the one chosen. st.tabs draws every tab on each run (four diagrams at once in the
+    Operations center); this selector looks like tabs and draws only what is in sight. Returns the chosen label."""
+    if st.session_state.get(key) not in labels:
+        st.session_state[key] = labels[0]
+    ink, muted, line, accent = palette["strong_text"], palette["reference"], palette["card_border"], palette["accent"]
+    st.markdown(
+        f"""<style>
+    .st-key-{key} {{ border-bottom:1px solid {line}; margin-bottom:6px; }}
+    .st-key-{key} [data-testid="stButtonGroup"] > div {{ gap:18px !important; }}
+    .st-key-{key} button {{ background:transparent !important; border:0 !important; border-radius:0 !important;
+      box-shadow:none !important; padding:6px 0 8px !important; min-height:0 !important; border-bottom:2px solid transparent !important; }}
+    .st-key-{key} button p {{ color:{charts.legible(muted, palette["background"])} !important; font-size:15px !important; }}
+    .st-key-{key} button[kind$="Active"], .st-key-{key} button[aria-checked="true"] {{ border-bottom-color:{accent} !important; }}
+    .st-key-{key} button[kind$="Active"] p, .st-key-{key} button[aria-checked="true"] p {{ color:{ink} !important; }}
+    </style>""",
+        unsafe_allow_html=True,
+    )
+    choice = st.segmented_control(
+        tr("Vista"), labels, key=key, format_func=tr, required=True, label_visibility="collapsed", width="content"
+    )
+    return choice or labels[0]
+
+
+def find_menu_page(label):
+    """The page whose label in the menu, in the documents folder or on a page's door (D-376: «Precios e inflación»)
+    is `label`, or None."""
+    for view in MENU_ORDER + FOLDER_ORDER + list(DOOR_PAGES) + list(BA_TAB_OF_VIEW):  # D-456: and the tabs
+        name = SIDEBAR_LABELS.get(view, view)
+        if label in (name, i18n.EN.get(name), i18n.PAGES.get(name)):  # D-444: a page label from either dictionary
+            return view
+    return None
+
+
+def is_dark_theme(mode):
+    return charts.get_palette(mode)["base"] == charts.BASE_DARK
+
+
+def channel_address(channel):
+    address = build_page_address(PAGE_HOME)  # D-494: a channel is step 2 of «Semanal»
+    return address + ("&" if "?" in address else "?") + urlencode({CHANNEL_PARAMETER: channel})
+
+
+def describe_state_source(error_text, step_states, latest_load):
+    """Where the states come from when GitHub did not answer, and why it did not."""
+    if step_states:
+        source = tr("se muestra la última respuesta guardada")
+    else:
+        loaded_at = format_chile_time(parse_run_start(latest_load["started_at"]))
+        source = tr("los estados salen de la última carga guardada en la base ({})").format(loaded_at)
+    return tr("GitHub no respondió ({}); {}.").format(error_text, source)
+
+
+def describe_late_sources(message):
+    """D-356: «ODEPA aún no publica la semana 19–25 oct (mayorista)», from the notice the load left in its run; the week
+    as its range (D-374)."""
+    if not message or not str(message).startswith(etl.NOTICE_SOURCE_LATE):
+        return ""
+    parts = []
+    for item in str(message).split(":", 1)[1].split(","):
+        source, _, week = item.strip().partition(" ")
+        if week:
+            parts.append(
+                tr("ODEPA aún no publica la semana {} ({})").format(
+                    i18n.tr_week(week), tr(LATE_SOURCE_NAMES.get(source, source))
+                )
+            )
+    return " · ".join(parts)
 
 
 # endregion

@@ -666,8 +666,57 @@ SIDEBAR_LABELS = {
 
 
 FOLDER_TILES = [PAGE_FOLDER, PAGE_SOURCE_STUDY]  # D-533: the project's documents, then the study of the source
+
+
+# D-497: the way every product moved, the sharp ones included; the sharp ones alone are the alert buttons (K6, D-491)
+# and a name is typed in the search (D-492)
+PRODUCT_DIRECTIONS = ('Todo', 'Subidas', 'Bajadas')
+
+
+CHANNEL_PARAMETER = "canal"  # D-404: the channel a card opens
+
+
+QUALITY_VIEW_KEY = "quality_audit_view"
+
+
+LATE_SOURCE_NAMES = {etl.SOURCE_WHOLESALE: "mayorista", etl.SOURCE_CONSUMER: "consumidor"}
+
+
+# D-250: the breadcrumb and the footer follow the menu, in its order and with its names.
+MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages]
+
+
+# The menu's own glyphs, one per page, thin lines (Material Symbols).
+SIDEBAR_ICONS = {
+    PAGE_BA: ":material/query_stats:",
+    PAGE_HOME: ":material/grid_view:",
+    PAGE_DIAGRAMS: ":material/share:",
+    PAGE_ARCHITECTURE: ":material/database:",
+    PAGE_OPERATIONS: ":material/verified_user:",
+    PAGE_SQL: ":material/terminal:",
+    PAGE_RULES: ":material/rule:",
+    PAGE_RUNS: ":material/radio_button_checked:",
+    PAGE_ACTIONS: ":material/fact_check:",
+    PAGE_CONFIG: ":material/settings:",
+    PAGE_SECURITY: ":material/lock:",
+    PAGE_STACK: ":material/layers:",
+    PAGE_APP_MAP: ":material/hub:",
+    PAGE_METHOD: ":material/verified:",
+    PAGE_GIT: ":material/alt_route:",
+    PAGE_FOLDER: ":material/folder_open:",
+    PAGE_SOURCE_STUDY: ":material/manage_search:",
+}
 # endregion
 
 # region Variables
 MANIFEST_FILE = Path(__file__).resolve().parent.parent / "agent" / "downloads" / "manifest.json"
+
+
+QUERIES_PATH = "bi/queries.sql"
+
+
+CATALOG_FILES = {project.MATCH_COVERAGE_QUERY_NAME: "etl/etl.py"}
+
+
+WINDOW_PAGES = {}
 # endregion

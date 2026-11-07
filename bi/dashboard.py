@@ -9,7 +9,6 @@ The color modes and chart palettes live in bi/charts.py.
 """
 
 import base64
-import contextvars
 import hashlib
 import html
 import importlib
@@ -34,7 +33,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (
     activity_bar,
-    live_mark,
     price_export,
     actions_view,
     business_analysis,
@@ -71,7 +69,6 @@ from bi import (
     deployment,
     devops,
     monitoring,
-    page_bar,
     storage_map,
     doc_diagrams,
     er_diagram,
@@ -148,6 +145,17 @@ from bi.app_frame import (  # noqa: E402
     build_greenocean_logo,  # noqa: F401  read by the tests through this module
     build_hint_icon,  # noqa: F401  read by the tests through this module
     build_kpi_link,  # noqa: F401  read by the tests through this module
+    DRAWN_TAB,
+    show_page_bar,
+    show_compact_page_header,
+    build_external_link_html,
+    build_repository_link_html,
+    show_view_tabs,
+    find_menu_page,
+    is_dark_theme,
+    channel_address,
+    describe_state_source,
+    describe_late_sources,
 )
 from bi.app_style import (  # noqa: E402
     is_dark_surface,  # noqa: F401  read by the tests through this module
@@ -161,14 +169,11 @@ from bi.data_access import (  # noqa: E402
     PRICE_SCOPE,
     follow_published_database,
     get_database_version,
-    add_display_columns,
     read_indicator,
     read_indicator_for_key,
     read_latest_week,
     current_channel,
     scoped,
-    read_channel_frame,
-    read_channel_week_snapshot,
     describe_loaded_years,
     read_cached_price_alerts_all,
     read_price_alerts,
@@ -190,6 +195,13 @@ from bi.data_access import (  # noqa: E402
     fetch_pipeline_runs,
     read_pipeline_runs,
     read_cached_token_expiration,
+    read_lineage,
+    read_download_manifest,
+    read_cached_week_snapshot,
+    read_compared_weeks,
+    read_cached_market_snapshot,
+    read_all_families,
+    read_flow_facts,
 )
 from bi.constants import (  # noqa: E402  D-541: the fixed names live in bi/constants.py
     PAGE_HOME,
@@ -334,11 +346,19 @@ from bi.constants import (  # noqa: E402  D-541: the fixed names live in bi/cons
     HISTORY_LIMIT,
     HISTORY_STATE_KEYS,
     MENU_BLOCKS,
-    DOOR_PAGES,
+    DOOR_PAGES,  # noqa: F401  read by the tests through this module
     MENU_BLOCK_OF_VIEW,
     SIDEBAR_TOP_LABELS,  # noqa: F401  read by the tests through this module
     SIDEBAR_LABELS,
     FOLDER_TILES,
+    PRODUCT_DIRECTIONS,
+    CHANNEL_PARAMETER,
+    QUALITY_VIEW_KEY,
+    MENU_ORDER,  # noqa: F401  read by the tests through this module
+    SIDEBAR_ICONS,
+    QUERIES_PATH,
+    CATALOG_FILES,
+    WINDOW_PAGES,
 )
 
 # D-283: every text a reader sees goes through tr, which gives its English when the reader chose English.
@@ -359,14 +379,6 @@ tr = i18n.tr
 
 
 # region Project page
-def describe_state_source(error_text, step_states, latest_load):
-    """Where the states come from when GitHub did not answer, and why it did not."""
-    if step_states:
-        source = tr("se muestra la última respuesta guardada")
-    else:
-        loaded_at = format_chile_time(parse_run_start(latest_load["started_at"]))
-        source = tr("los estados salen de la última carga guardada en la base ({})").format(loaded_at)
-    return tr("GitHub no respondió ({}); {}.").format(error_text, source)
 
 
 # D-448: the tables' roles and definitions are shared with the SAD, which draws the same model.
@@ -1149,8 +1161,6 @@ def show_kpi_page(mode):
 # region «Código y resultados» (C03)
 CATALOG_TREND_WEEKS = 26
 CATALOG_BAR_COUNT = 12
-CATALOG_FILES = {project.MATCH_COVERAGE_QUERY_NAME: "etl/etl.py"}
-QUERIES_PATH = "bi/queries.sql"
 
 
 def build_query_address(name):
@@ -1179,143 +1189,7 @@ QUALITY_THEME = "Calidad de datos"
 LIMIT_NO_DATA = "Sin dato no significa precio cero: esa región, canal o semana no se informó."
 
 
-def build_external_link_html(text, address, variant="text"):
-    """A link that leaves the app, drawn as the shared component (D-281): it says where it goes and opens a new tab (↗)."""
-    return buttons.build_link_html(
-        text, address, icon="github" if "GitHub" in text else "external", variant=variant, external=True
-    )
-
-
-def build_repository_link_html(text, address, variant="text"):
-    """D-500: a link to the author's repository exists only for the Autor (D-420): anyone else gets nothing, from the
-    server, whatever the page."""
-    return build_external_link_html(text, address, variant) if is_author() else ""
-
-
-def show_compact_page_header(title, description):
-    """A one-line header, like the Dashboard's: title and freshness together; the
-    description shows on hover instead of taking a line of its own."""
-    latest_run = read_latest_run()
-    run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
-    run_text = tr("Carga correcta") if run_kind == "ok" else tr("Última carga con falla")
-    freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
-    st.markdown(
-        f'<div class="compact-header"><h1 title="{html.escape(tr(description), quote=True)}">'
-        f'{html.escape(tr(title))}</h1><span class="page-freshness">{tr("Datos al")} '
-        f'{freshness} {build_chip(run_text, run_kind)}</span></div>',
-        unsafe_allow_html=True,
-    )
-
-
-def format_load_time(latest):
-    """«20 oct · 12:54»: the time of a load, short, as the Resumen's bar shows it (D-264)."""
-    stamp = to_chile_time(parse_run_start(latest["started_at"]))
-    month = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][stamp.month - 1]
-    return f"{stamp.day} {month} · {stamp:%H:%M}"
-
-
-def show_page_bar(view, title, description, chips=(), side=None, terms=(), live=None):
-    """The header of a page (D-267, D-398): only «Volver», the path (the description on hover) and the time of the
-    data. What the page says (its question when it is not just its name, its figures as chips, what it measures) and
-    what it does (side: a button, a switch) go in a row of the content right under the bar. Links to other pages live
-    in the menu, never here. D-456: a page drawn as a tab of «Análisis» keeps only that row, under the tabs. D-510: «live»
-    names what the page's figures were read from, and the mark that beats goes beside them."""
-    tab = DRAWN_TAB.get()
-    if tab:
-        show_title = tr(title) != tr(tab)
-    else:
-        latest = read_latest_run()
-        path = build_view_path(WINDOW_OF_VIEW.get(view, view), view)
-        st.markdown(page_bar.build_css(charts.get_palette(get_mode())), unsafe_allow_html=True)
-        with st.container(key="page_bar", horizontal=True, vertical_alignment="center"):
-            show_return_button()
-            st.markdown(page_bar.build_bar_html(path, tr(description)), unsafe_allow_html=True, width="stretch")
-            st.markdown(
-                page_bar.build_updated_html(format_load_time(latest), latest["status"] == etl.STATUS_LOADED),
-                unsafe_allow_html=True,
-                width="content",
-            )
-            show_title = tr(title) != path.rpartition(" › ")[2]
-            if live and not (show_title or chips or side or terms):
-                # D-510: a page with no row of its own (its tabs draw theirs) carries the mark in the bar itself
-                st.markdown(live_mark.build_html(tr(live)), unsafe_allow_html=True, width="content")
-    if not (show_title or chips or side or terms):
-        return
-    with st.container(key="page_info", horizontal=True, vertical_alignment="center"):
-        st.markdown(
-            page_bar.build_info_html(tr(title), tr(description), chips, show_title, tr(live) if live else None),
-            unsafe_allow_html=True,
-            width="stretch",
-        )
-        if terms:
-            st.markdown(page_bar.build_terms_html(terms), unsafe_allow_html=True, width="content")
-        if side:
-            side()
-
-
 # endregion
-
-
-def read_cached_week_snapshot(database_version, week):
-    """The regional index (K3) of one week; on a channel page, that channel's (D-405)."""
-    channel = current_channel()
-    if channel is not None:
-        return read_channel_week_snapshot(database_version, channel, week)
-    return read_cached_week_snapshot_all(database_version, week)
-
-
-@st.cache_data
-def read_cached_week_snapshot_all(database_version, week):
-    """The regional index (K3) of one week of valid observations."""
-    sql = "SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?"
-    return add_display_columns(queries.run_sql(sql, parameters=(week,)))
-
-
-@st.cache_data(show_spinner=False)
-def read_cached_same_package_week(database_version, week):
-    """D-522: the changes of one week against the week before, by region and in the same package."""
-    sql = "SELECT * FROM (" + queries.read_query_body("same_package_changes") + ") WHERE week_start = ?"
-    return queries.run_sql(sql, parameters=(week,))
-
-
-def read_channel_same_package_week(database_version, channel, week):
-    """D-522: the same, for a channel page, from its own latest weeks; None on a base older than the rule."""
-    part = read_channel_frame(database_version, channel)
-    if "same_package_now" not in part:
-        return None
-    part = part[(part["week_start"] == week) & part["same_package_now"].notna()]
-    return part.rename(
-        columns={
-            "same_package_now": "price_now",
-            "same_package_before": "price_before",
-            "same_package_quotes_now": "quotes_now",
-            "same_package_quotes_before": "quotes_before",
-            "same_packages": "packages",
-        }
-    )
-
-
-def read_compared_weeks(database_version, week):
-    """D-522, RN-15: (regional prices of a week, of the week before), as every comparison of the page reads them: in
-    the same package. The prices of the week as they were published stay in read_cached_week_snapshot."""
-    previous_week = f"{pd.Timestamp(week) - pd.Timedelta(days=7):%Y-%m-%d}"
-    channel = current_channel()
-    changes = (
-        read_cached_same_package_week(database_version, week)
-        if channel is None
-        else read_channel_same_package_week(database_version, channel, week)
-    )
-    return home_mockup.same_package_pair(
-        read_cached_week_snapshot(database_version, week),
-        read_cached_week_snapshot(database_version, previous_week),
-        changes,
-        queries.KEY_COLUMNS + ["channel", "region"],
-    )
-
-
-def read_cached_market_snapshot(database_version):
-    """The regional index (K3) of the latest week."""
-    return read_cached_week_snapshot(database_version, f"{read_latest_week():%Y-%m-%d}")
 
 
 # region Report filters and cross filtering (D-069)
@@ -1822,9 +1696,6 @@ def alert_items(rows):
     return items
 
 
-# D-497: the way every product moved, the sharp ones included; the sharp ones alone are the alert buttons (K6, D-491)
-# and a name is typed in the search (D-492)
-PRODUCT_DIRECTIONS = ('Todo', 'Subidas', 'Bajadas')
 NOTHING_MOVED = {
     'Subidas': 'Ninguno de estos productos subió esta semana.',
     'Bajadas': 'Ninguno de estos productos bajó esta semana.',
@@ -1981,26 +1852,6 @@ def read_home_trends_in(database_version, week, channel, region=None):
     valid = overview.comparable(upto[upto["week_start"].isin(last)])
     basket = list(valid.groupby("week_start")["variation"].median().sort_index().mul(100))
     return by_family, basket
-
-
-LATE_SOURCE_NAMES = {etl.SOURCE_WHOLESALE: "mayorista", etl.SOURCE_CONSUMER: "consumidor"}
-
-
-def describe_late_sources(message):
-    """D-356: «ODEPA aún no publica la semana 19–25 oct (mayorista)», from the notice the load left in its run; the week
-    as its range (D-374)."""
-    if not message or not str(message).startswith(etl.NOTICE_SOURCE_LATE):
-        return ""
-    parts = []
-    for item in str(message).split(":", 1)[1].split(","):
-        source, _, week = item.strip().partition(" ")
-        if week:
-            parts.append(
-                tr("ODEPA aún no publica la semana {} ({})").format(
-                    i18n.tr_week(week), tr(LATE_SOURCE_NAMES.get(source, source))
-                )
-            )
-    return " · ".join(parts)
 
 
 def show_market_overview(mode, prefix):
@@ -2453,12 +2304,6 @@ def show_home_page(mode):
     finally:
         if token is not None:
             PRICE_SCOPE.reset(token)
-
-
-@st.cache_data
-def read_lineage(database_version):
-    """(nodes, results) of the last dbt build, as the pipeline saved them."""
-    return lineage.read_tables(queries.run_sql)
 
 
 # endregion
@@ -3034,8 +2879,6 @@ def build_interest_map_html(rows, palette, address_of_view):
     return interest_map.build_map_html(rows, palette, link_of, tr, criterion=not DRAWN_TAB.get())
 
 
-# D-456: the tab of «Análisis» being drawn, so the page it gathers draws only its own row under the tabs.
-DRAWN_TAB = contextvars.ContextVar("drawn_tab", default="")
 BA_TAB_KEY = "ba_tab"
 
 
@@ -3481,19 +3324,6 @@ def build_analysis_css(palette):
     </style>"""
 
 
-CHANNEL_PARAMETER = "canal"  # D-404: the channel a card opens
-
-
-def read_all_families():
-    """Every family of the data, for the coverage of each channel (D-406)."""
-    return sorted(queries.run_sql("SELECT DISTINCT product_group FROM dim_product")["product_group"])
-
-
-def channel_address(channel):
-    address = build_page_address(PAGE_HOME)  # D-494: a channel is step 2 of «Semanal»
-    return address + ("&" if "?" in address else "?") + urlencode({CHANNEL_PARAMETER: channel})
-
-
 def show_insights_page(mode):
     """Insights: the questions people ask, each with today's answer, and one reading per kind of reader (D-308)."""
     show_page_bar(
@@ -3887,30 +3717,6 @@ def build_runs_css(mode):
     </style>"""
 
 
-def show_view_tabs(key, labels, palette):
-    """D-360: tabs that draw only the one chosen. st.tabs draws every tab on each run (four diagrams at once in the
-    Operations center); this selector looks like tabs and draws only what is in sight. Returns the chosen label."""
-    if st.session_state.get(key) not in labels:
-        st.session_state[key] = labels[0]
-    ink, muted, line, accent = palette["strong_text"], palette["reference"], palette["card_border"], palette["accent"]
-    st.markdown(
-        f"""<style>
-    .st-key-{key} {{ border-bottom:1px solid {line}; margin-bottom:6px; }}
-    .st-key-{key} [data-testid="stButtonGroup"] > div {{ gap:18px !important; }}
-    .st-key-{key} button {{ background:transparent !important; border:0 !important; border-radius:0 !important;
-      box-shadow:none !important; padding:6px 0 8px !important; min-height:0 !important; border-bottom:2px solid transparent !important; }}
-    .st-key-{key} button p {{ color:{charts.legible(muted, palette["background"])} !important; font-size:15px !important; }}
-    .st-key-{key} button[kind$="Active"], .st-key-{key} button[aria-checked="true"] {{ border-bottom-color:{accent} !important; }}
-    .st-key-{key} button[kind$="Active"] p, .st-key-{key} button[aria-checked="true"] p {{ color:{ink} !important; }}
-    </style>""",
-        unsafe_allow_html=True,
-    )
-    choice = st.segmented_control(
-        tr("Vista"), labels, key=key, format_func=tr, required=True, label_visibility="collapsed", width="content"
-    )
-    return choice or labels[0]
-
-
 def show_runs_page(mode):
     """Centro de operación (D-165): the weekly run as a path of floating logos, each
     with what it does and where to act, and beside it the facts and the manual run."""
@@ -3929,7 +3735,6 @@ def show_runs_page(mode):
 
 
 RUNS_VIEW_KEY = "runs_view"
-QUALITY_VIEW_KEY = "quality_audit_view"
 RUNS_VIEWS = {
     "Despliegue": lambda mode: show_devops_tab(mode),
     "Operación": lambda mode: show_runs_tab(mode),
@@ -4329,12 +4134,6 @@ def build_operation_side_css(palette):
 
 
 # region Architecture page
-def read_download_manifest():
-    """Record of the downloaded files (agent/downloads/manifest.json), or {}."""
-    try:
-        return json.loads(MANIFEST_FILE.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
 
 
 @st.cache_data(ttl=GITHUB_CACHE_SECONDS, show_spinner=False)
@@ -4972,16 +4771,6 @@ DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 DOCUMENT_VIEW = re.compile(r"\[\[vista:([^\]]+)\]\]")
 
 
-def find_menu_page(label):
-    """The page whose label in the menu, in the documents folder or on a page's door (D-376: «Precios e inflación»)
-    is `label`, or None."""
-    for view in MENU_ORDER + FOLDER_ORDER + list(DOOR_PAGES) + list(BA_TAB_OF_VIEW):  # D-456: and the tabs
-        name = SIDEBAR_LABELS.get(view, view)
-        if label in (name, i18n.EN.get(name), i18n.PAGES.get(name)):  # D-444: a page label from either dictionary
-            return view
-    return None
-
-
 def build_print_address(page):
     """The address that opens a document and prints it (D-248), on a white sheet from any theme (D-280)."""
     path, _, query = build_page_address(page).partition("?")
@@ -5231,10 +5020,6 @@ AUTO_PRINT_SCRIPT = r"""<script>
 </script>"""
 
 
-def is_dark_theme(mode):
-    return charts.get_palette(mode)["base"] == charts.BASE_DARK
-
-
 def build_print_button_html(mode):
     """The print button; from a dark theme it prints the light version of the page (D-280)."""
     return PRINT_BUTTON_HTML.replace("Imprimir o guardar como PDF", tr("Imprimir o guardar como PDF")).replace(
@@ -5300,22 +5085,6 @@ def read_flow_with_token(_read_token, language=None):
 def read_flow_without_token(_read_token, language=None):
     """Without a token GitHub allows 60 requests an hour, shared: the answer is kept ten minutes."""
     return flow_fetch(_read_token)
-
-
-@st.cache_data(show_spinner=False)
-def read_flow_facts(database_version, language):
-    """What travelled in the latest real load, from the files it leaves and the database (D-412)."""
-    root = Path(__file__).resolve().parent.parent
-    manifest = json.loads((root / "agent" / "downloads" / "manifest.json").read_text(encoding="utf-8"))
-    pointer = json.loads((root / "etl" / "datos.version").read_text(encoding="utf-8"))
-    months = int(queries.run_sql("SELECT COUNT(*) AS months FROM ipc_monthly")["months"].iloc[0])
-    packages = sum(
-        1
-        for name in ("requirements.txt", "requirements-pipeline.txt")
-        for line in (root / name).read_text(encoding="utf-8").splitlines()
-        if line.strip() and not line.startswith(("#", "-"))
-    )
-    return live_flow.read_facts(manifest, pointer, months, packages)
 
 
 def read_flow_model():
@@ -6416,30 +6185,6 @@ RELOAD_HOME_SCRIPT = """<script>
 </script>""".replace("__HOME__", PAGE_HOME)
 
 
-# D-250: the breadcrumb and the footer follow the menu, in its order and with its names.
-MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages]
-# The menu's own glyphs, one per page, thin lines (Material Symbols).
-SIDEBAR_ICONS = {
-    PAGE_BA: ":material/query_stats:",
-    PAGE_HOME: ":material/grid_view:",
-    PAGE_DIAGRAMS: ":material/share:",
-    PAGE_ARCHITECTURE: ":material/database:",
-    PAGE_OPERATIONS: ":material/verified_user:",
-    PAGE_SQL: ":material/terminal:",
-    PAGE_RULES: ":material/rule:",
-    PAGE_RUNS: ":material/radio_button_checked:",
-    PAGE_ACTIONS: ":material/fact_check:",
-    PAGE_CONFIG: ":material/settings:",
-    PAGE_SECURITY: ":material/lock:",
-    PAGE_STACK: ":material/layers:",
-    PAGE_APP_MAP: ":material/hub:",
-    PAGE_METHOD: ":material/verified:",
-    PAGE_GIT: ":material/alt_route:",
-    PAGE_FOLDER: ":material/folder_open:",
-    PAGE_SOURCE_STUDY: ":material/manage_search:",
-}
-
-
 SOURCE_ICON_SVG = (
     '<svg class="nav-source-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">'
     '<path fill="currentColor" d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>'
@@ -6609,9 +6354,6 @@ def build_sidebar_github_html(is_current):
         f'target="_self" aria-label="{tr("GitHub del proyecto")}" title="{tr("GitHub del proyecto")}">'
         f'{build_github_icon_svg(20)}</a>'
     )
-
-
-WINDOW_PAGES = {}
 
 
 def show_alert_buttons(week, family, family_open, alert, prefix, region=None):
