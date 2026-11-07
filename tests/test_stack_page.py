@@ -6,9 +6,12 @@ import duckdb
 
 from bi import charts, project, queries, stack_page
 
+# region Constants
 FIGURES = {"prices": 1, "tests": 2, "loads": 3}
+# endregion
 
 
+# region «Stack y evidencia»
 def build(mode=charts.MODE_DARK):
     return stack_page.build_stack_html(
         charts.get_palette(mode), FIGURES, {page: f"./{index}" for index, (*_, page) in enumerate(stack_page.STACK)}
@@ -107,3 +110,6 @@ def test_d440_no_text_can_cover_its_neighbour_when_the_window_shrinks():
     assert "@container (max-width:700px) { .sk-node em, .sk-chip { visibility:hidden; } }" in css
     assert "@container (max-width:480px) { .sk-node small { display:none; } }" in css
     assert "white-space:nowrap" in rule(".sk-node b")  # the names always show, whole
+
+
+# endregion

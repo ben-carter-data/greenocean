@@ -5,6 +5,7 @@ import pytest
 from bi import charts, doc_views
 
 
+# region Test doc views build
 @pytest.mark.parametrize("name", list(doc_views.VIEWS))
 @pytest.mark.parametrize("mode", [charts.THEMES[0], charts.THEMES[1]])
 def test_d323_each_document_view_is_a_whole_page_with_its_nodes(name, mode):
@@ -12,3 +13,6 @@ def test_d323_each_document_view_is_a_whole_page_with_its_nodes(name, mode):
     page = builder(mode)
     assert page.startswith("<!doctype html>") and page.rstrip().endswith("</html>") and height > 0
     assert page.count("<div") == page.count("</div>")  # every block closes
+
+
+# endregion

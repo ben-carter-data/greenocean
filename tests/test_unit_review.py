@@ -16,13 +16,16 @@ import pytest
 from bi import unit_review
 from etl import etl
 
+# region Variables
 REPOSITORY = Path(__file__).resolve().parent.parent
 REVIEWED_FILE = unit_review.REVIEWED_FILE
 MODEL_FILE = REPOSITORY / "dbt" / "models" / "intermediate" / "int_prices__units_normalized.sql"
 needs_raw = pytest.mark.skipif(not etl.RAW_DATABASE_FILE.exists(), reason="etl/raw.db is not in the repository")
 PLAIN_PACKAGE = unit_review.PLAIN_PACKAGE
+# endregion
 
 
+# region Every sale unit is read as it was reviewed by hand, the same by the ETL and by dbt
 def reviewed():
     return pd.read_csv(REVIEWED_FILE, dtype=str, keep_default_na=False)
 
@@ -106,3 +109,6 @@ def test_d520_no_new_unit_gets_a_price_without_review_unless_it_is_a_plain_packa
         if etl.convert_unit(unit)[0] and not PLAIN_PACKAGE.match(unit.lower())
     )
     assert not risky, f"Add them to {REVIEWED_FILE.name} after checking the reading against the prices: {risky}"
+
+
+# endregion

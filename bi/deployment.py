@@ -16,7 +16,7 @@ import html
 from pathlib import Path
 from urllib.parse import urlparse
 
-from bi import architecture, charts, control, project, queries, quality_view
+from bi import architecture, charts, control, project, quality_view, queries, static_files
 
 # region Constants and variables
 WIDTH, HEIGHT = 1210, 566  # D-422: wider, not taller, so it keeps its height on screen
@@ -114,34 +114,24 @@ def build_css(palette):
         f"svg:has(#n-{key}:hover, #n-{key}:focus) #tip-{key} {{ opacity:1; }}"
         for key in list(NODES) + list(ENVIRONMENTS)
     )
-    return f"""<style>
-* {{ box-sizing:border-box; }}
-html, body {{ margin:0; background:transparent; color:{text}; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-svg.dep {{ display:block; width:100%; height:auto; overflow:visible; }}
-.front {{ fill:{'rgba(255,255,255,.04)' if dark else '#ffffff'}; stroke:{ink}; stroke-width:1.5; }}
-.top {{ fill:{'rgba(255,255,255,.06)' if dark else '#e3e9f2'}; stroke:{muted}; stroke-width:1.2; stroke-linejoin:round; }}
-.side {{ fill:{'rgba(255,255,255,.03)' if dark else '#dfe6f0'}; stroke:{muted}; stroke-width:1.2; stroke-linejoin:round; }}
-.env {{ fill:{card}; stroke:{muted}; stroke-width:1.2; }}
-.env.inner {{ fill:{'rgba(255,255,255,.05)' if dark else '#f4f7fb'}; stroke-dasharray:5 4; }}
-.node, .envg {{ outline:none; cursor:default; }}
-.node:hover .front, .node:focus .front, .envg:hover .env, .envg:focus .env {{ stroke:{accent}; }}
-.stereo {{ font-size:11.5px; font-style:italic; fill:{muted}; }}
-.name {{ font-size:13.5px; font-weight:700; fill:{ink}; }}
-.note {{ font-size:11.5px; fill:{muted}; }}
-.art {{ font:500 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill:{ink}; }}
-.live {{ font-size:12px; font-weight:600; fill:{accent}; }}
-.page {{ fill:{card}; stroke:{ink}; stroke-width:1.1; }}
-.fold {{ fill:none; stroke:{ink}; stroke-width:1.1; }}
-.path {{ fill:none; stroke:{accent}; stroke-width:1.8; }}
-.chip {{ font:600 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill:{ink}; paint-order:stroke; stroke:{palette['background']}; stroke-width:4px; }}
-.legend {{ font-size:11.5px; fill:{muted}; }}
-.tip {{ opacity:0; pointer-events:none; transition:opacity .15s ease; }}
-.tip div {{ position:absolute; width:300px; padding:12px 14px; border-radius:14px; background:{card}; border:1px solid {border};
-  box-shadow:0 18px 40px rgba(0,0,0,{'.55' if dark else '.2'}); color:{text}; font-size:12.5px; line-height:1.45; }}
-.tip b {{ display:block; margin-bottom:3px; font-size:13px; color:{ink}; }}
-@media print {{ .tip {{ display:none !important; }} }}
-{hovers}
-</style>"""
+    return static_files.style(
+        "deployment.css",
+        {
+            'var(--go-text)': text,
+            'var(--go-rgba-255-255-255-04-if-dark-else-ffffff)': 'rgba(255,255,255,.04)' if dark else '#ffffff',
+            'var(--go-ink)': ink,
+            'var(--go-rgba-255-255-255-06-if-dark-else-e3e9f2)': 'rgba(255,255,255,.06)' if dark else '#e3e9f2',
+            'var(--go-muted)': muted,
+            'var(--go-rgba-255-255-255-03-if-dark-else-dfe6f0)': 'rgba(255,255,255,.03)' if dark else '#dfe6f0',
+            'var(--go-card)': card,
+            'var(--go-rgba-255-255-255-05-if-dark-else-f4f7fb)': 'rgba(255,255,255,.05)' if dark else '#f4f7fb',
+            'var(--go-accent)': accent,
+            'var(--go-background)': palette['background'],
+            'var(--go-border)': border,
+            'var(--go-55-if-dark-else-2)': '.55' if dark else '.2',
+            'var(--go-hovers)': hovers,
+        },
+    )
 
 
 def box(x, y, width, height):

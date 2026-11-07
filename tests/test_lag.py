@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import lag  # noqa: E402
 
 
+# region Tests for K5, the lag between the wholesale and the consumer price (T-29)
 def make_series(wholesale_prices, consumer_prices, first_week="2026-01-05"):
     """One series of consecutive weeks with both prices."""
     weeks = pd.date_range(first_week, periods=len(wholesale_prices), freq="7D")
@@ -69,3 +70,6 @@ def test_k5_weak_correlation_is_not_a_clear_relation():
     assert lag.is_clear_relation(0.66, 37)
     # With more data a smaller correlation is already told apart from zero.
     assert lag.is_clear_relation(0.20, 240)
+
+
+# endregion

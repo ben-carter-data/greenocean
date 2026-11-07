@@ -1,0 +1,9 @@
+
+    .st-key-var(--go-key) { border-bottom:1px solid var(--go-line); margin-bottom:6px; }
+    .st-key-var(--go-key) [data-testid="stButtonGroup"] > div { gap:18px !important; }
+    .st-key-var(--go-key) button { background:transparent !important; border:0 !important; border-radius:0 !important;
+      box-shadow:none !important; padding:6px 0 8px !important; min-height:0 !important; border-bottom:2px solid transparent !important; }
+    .st-key-var(--go-key) button p { color:var(--go-charts-legible-muted-palette-background) !important; font-size:15px !important; }
+    .st-key-var(--go-key) button[kind$="Active"], .st-key-var(--go-key) button[aria-checked="true"] { border-bottom-color:var(--go-accent) !important; }
+    .st-key-var(--go-key) button[kind$="Active"] p, .st-key-var(--go-key) button[aria-checked="true"] p { color:var(--go-ink) !important; }
+    

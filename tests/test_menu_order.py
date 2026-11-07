@@ -10,13 +10,16 @@ from streamlit.testing.v1 import AppTest
 
 from bi import app_map, dashboard, i18n, queries
 
+# region Variables
 DASHBOARD_FILE = str(Path(dashboard.__file__))
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
 # D-456: the section is its three dashboards, as tiles; what were its other pages are tabs of the third.
 TILES = [dashboard.HOME_PAGE, dashboard.PAGE_BA]  # D-494
 TABS = ["Mensual", "Histórico", "Precios e inflación", "Insights", "Interesados", "Método"]  # D-457
+# endregion
 
 
+# region The section «Negocio · BA y BI»
 def draw(profile, view, language="es"):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
     app.session_state["visitor_profile"] = profile
@@ -204,3 +207,6 @@ def test_d462_a_dashboard_opens_with_the_menu_folded_and_its_button_beating_in_g
         assert ('"yes" === "yes"' in scripts[0]) is folds, view
         beat = "animation:go-menu-beat" in " ".join(block.value for block in app.markdown)
         assert beat is folds, view
+
+
+# endregion

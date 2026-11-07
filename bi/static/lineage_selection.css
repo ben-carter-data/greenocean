@@ -1,0 +1,21 @@
+
+    var(--go-graph) .lin-node, var(--go-graph) .lin-edge, var(--go-graph) .lin-joint { transition: opacity .18s ease, stroke .18s ease, fill .18s ease; }
+    var(--go-graph) .lin-node { cursor: pointer; }
+    var(--go-graph) .lin-node:focus { outline: none; }
+    var(--go-graph) .lin-edge.lin-extra, var(--go-graph) .lin-joint.lin-extra { opacity: 0; }
+    var(--go-graph).lin-active .lin-node { opacity: .2; }
+    var(--go-graph).lin-active .lin-node.lin-on { opacity: 1; }
+    var(--go-graph).lin-active .lin-edge { stroke: var(--go-dim); opacity: .2; marker-end: url(#lin-arrow-dim-var(--go-suffix)); }
+    var(--go-graph).lin-active .lin-edge.lin-on { stroke: var(--go-lit); opacity: 1; stroke-width: var(--go-lit-width);
+                                          marker-end: url(#lin-arrow-lit-var(--go-suffix)); filter: drop-shadow(var(--go-halo)); }
+    var(--go-graph).lin-active .lin-joint { fill: var(--go-dim); opacity: .2; }
+    var(--go-graph).lin-active .lin-joint.lin-on { fill: var(--go-lit); opacity: 1; r: 3.4px; }
+    var(--go-graph).lin-active .lin-extra:not(.lin-on) { opacity: 0; }
+    var(--go-graph).lin-active .lin-flow { display: none; }
+    var(--go-graph).lin-active .lin-flow.lin-on { display: inline; fill: var(--go-lit); opacity: 1; }
+    var(--go-graph) .lin-node.lin-focus .lin-face { stroke: var(--go-lit); stroke-width: 2.4; stroke-opacity: 1; }
+    @media (prefers-reduced-motion: reduce) {
+      var(--go-graph) .lin-flow { display: none !important; }
+      var(--go-graph) .lin-node, var(--go-graph) .lin-edge, var(--go-graph) .lin-joint { transition: none; }
+    }
+    

@@ -96,6 +96,7 @@ from bi.data_access import (
 )
 from bi.i18n import tr
 from etl import etl
+from bi import static_files
 
 # region Constants
 # D-448: the tables' roles and definitions are shared with the SAD, which draws the same model.
@@ -406,9 +407,7 @@ def show_diagrams_page(mode):
     title = "Dentro del tramo dbt: modelo por modelo" if lineage_view else "Recorrido completo por capas"
     # D-277: the switch sits on the card's title row, which had room for it, instead of a row of its own.
     st.markdown(
-        '<style>.st-key-card_pipeline_main {position:relative;} .st-key-card_pipeline_main .st-key-pipeline_view '
-        '{position:absolute; top:18px; right:24px; z-index:3; width:auto !important;} '
-        '.journey-legend {margin:0 !important; line-height:1.9;} .journey-legend span {margin-left:6px;}</style>',
+        static_files.style("pipeline_page.css"),
         unsafe_allow_html=True,
     )
     with open_card("pipeline_main", title, hint=LINEAGE_HINT if lineage_view else ARCHITECTURE_HINT):
@@ -597,38 +596,17 @@ def build_model_frame_html(svg):
 
 def build_architecture_css(mode):
     palette = charts.get_palette(mode)
-    return f"""<style>
-    .st-key-architecture_body [data-testid="stHorizontalBlock"] {{align-items:stretch; gap:14px;}}
-    .st-key-architecture_diagram {{border:1px solid {palette['card_border']}; border-radius:14px;
-        background:{palette['card']}; padding:14px 20px 18px;}}
-    .st-key-architecture_diagram svg {{display:block; width:100%; height:auto;}}
-    /* D-503: the star takes the height the window leaves. 331 px is what sits above and below it, measured:
-       the header, the chips, the tabs and a one-line phrase (219 px), the legend and the panel's padding
-       (60 px), the frame's two empty blocks and the page's padding (40 px), plus 12 px of margin. Under
-       1320 px of window the phrase takes two lines (19 px more). */
-    .st-key-architecture_diagram svg:not(.zoom-frame svg) {{max-height:calc(100vh - 331px);}}
-    @media (max-width:1320px) {{
-        .st-key-architecture_diagram svg:not(.zoom-frame svg) {{max-height:calc(100vh - 350px);}}
-    }}
-    /* The diagram always fits the window (D-232): the viewport is as wide as the height left
-       allows, by the drawing's own proportion; the zoom buttons bring it closer inside the panel. */
-    .fit-modelo {{position:relative;}}
-    /* D-464: 287 px, what the header, the chips, the tabs, the phrase and the zoom buttons take today (427 px left 166 px empty). */
-    .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 287px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
-    .fit-modelo .zoom-buttons {{position:absolute; bottom:-46px; right:0; margin:0; z-index:2;}}
-    .arch-legend {{display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
-        border-top:1px solid {palette['card_border']}; font-size:12px; line-height:1.5; color:{palette['text']};}}
-    .arch-phrase {{font-size:.85rem !important; line-height:1.4 !important; color:{palette['strong_text']}; margin:0 0 6px !important;}}
-    .st-key-architecture_detail, .st-key-architecture_tables {{border:1px solid {palette['card_border']};
-        border-radius:14px; background:{palette['card']}; padding:12px 16px 10px;}}
-    .arch-detail-head {{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}}
-    .arch-detail-head code {{font-size:1.05rem; font-weight:600; color:{palette['accent']};}}
-    .arch-detail-role {{font-size:11px; padding:2px 9px; border-radius:999px;
-        background:{palette['field']}; color:{palette['text']};}}
-    .arch-detail-rows {{margin-left:auto; font-size:12px; color:{palette['text']};}}
-    .arch-detail-text {{font-size:.86rem; line-height:1.5; color:{palette['strong_text']}; margin:7px 0 9px;}}
-    .st-key-architecture_tables_list label p {{font-size:.86rem !important;}}
-    </style>"""
+    return static_files.style(
+        "data_model.css",
+        {
+            'var(--go-card-border)': palette['card_border'],
+            'var(--go-card)': palette['card'],
+            'var(--go-text)': palette['text'],
+            'var(--go-strong-text)': palette['strong_text'],
+            'var(--go-accent)': palette['accent'],
+            'var(--go-field)': palette['field'],
+        },
+    )
 
 
 def show_architecture_page(mode):
@@ -658,11 +636,7 @@ def show_architecture_page(mode):
         counts, layers, tests = read_database_map(get_database_version())
         # D-236: the drawing scales to the height the window leaves: the iframe right after this marker takes it.
         st.markdown(
-            '<span class="fit-donde" aria-hidden="true"></span><style>'
-            '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"],'
-            '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"] iframe '
-            '{height:max(calc(100vh - 235px), 380px) !important; flex:none !important; min-height:0 !important;}'
-            '</style>',
+            static_files.read("data_model_storage_fit.html"),
             unsafe_allow_html=True,
         )
         st.iframe(
@@ -677,11 +651,7 @@ def show_architecture_page(mode):
         )
         # D-237: the page fits the height the window leaves: the iframe right after this marker takes it.
         st.markdown(
-            '<span class="fit-cruces" aria-hidden="true"></span><style>'
-            '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"],'
-            '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"] iframe '
-            '{height:max(calc(100vh - 249px), 380px) !important; flex:none !important; min-height:0 !important;}'
-            '</style>',
+            static_files.read("data_model_crossings_fit.html"),
             unsafe_allow_html=True,
         )
         st.iframe(
@@ -786,11 +756,7 @@ def show_live_flow(mode):
     goes on it follows its step, asking again every 30 s. Only the author gets the way to the logs."""
     model, error = read_flow_model()
     st.markdown(
-        '<span class="fit-flujo" aria-hidden="true"></span><style>'
-        '[data-testid="stElementContainer"]:has(.fit-flujo) + [data-testid="stElementContainer"],'
-        '[data-testid="stElementContainer"]:has(.fit-flujo) + [data-testid="stElementContainer"] iframe '
-        "{height:max(calc(100vh - 330px), 380px) !important; flex:none !important; min-height:0 !important;}"
-        "</style>",
+        static_files.read("live_flow_fit.html"),
         unsafe_allow_html=True,
     )
     st.iframe(live_flow.build_html(charts.get_palette(mode), model), height=600)
@@ -1074,80 +1040,41 @@ def build_kpi_module_css(mode):
     columns = " ".join(f"{width}%" for width in KPI_COLUMNS)
     # Columns start one flex gap (16 px) below the band: each top border crosses its node.
     offsets = [height - 16 for height in KPI_NODE_HEIGHTS]
-    return f"""<style>
-    .kpi-head .compact-header {{display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 18px; margin:0 0 12px;}}
-    .kpi-head h1 {{font-size:1.6rem !important; margin:0 !important; padding:0 !important;}}
-    .kpi-head .kpi-sub {{color:{palette['text']}; font-size:.9rem;}}
-    .kpi-head .page-freshness {{margin:0 0 0 auto; font-size:.82rem;}}
-    .st-key-kpi_module {{border:1px solid {palette['card_border']}; border-radius:18px; padding:16px 22px 26px;
-        background:{palette['card'] if not dark else f"radial-gradient(120% 90% at 50% 0%, {accent}14, transparent 60%), {palette['background']}"};}}
-    .st-key-kpi_question [data-testid="stHorizontalBlock"] {{align-items:center; gap:12px;}}
-    .kpi-question-label {{border:1px solid {palette['card_border']}; border-radius:10px; padding:9px 14px;
-        font:500 .9rem {sans}; color:{palette['strong_text']}; text-align:center; white-space:nowrap;}}
-    .st-key-kpi_path {{position:relative; margin-top:8px;}}
-    .kpi-band {{position:absolute; left:0; right:0; top:0; height:{KPI_BAND_HEIGHT}px; pointer-events:none;}}
-    .kpi-band svg {{position:absolute; inset:0; width:100%; height:100%; overflow:visible; filter:{glow};}}
-    .kpi-line {{fill:none; stroke:{accent}; stroke-width:3; stroke-linecap:round;}}
-    .kpi-line-next {{stroke-dasharray:7 9; stroke-width:2.4;}}
-    .kpi-start, .kpi-end {{position:absolute; top:{KPI_NODE_HEIGHTS[0] - 40}px; display:flex; align-items:center; gap:8px;
-        font:500 .78rem {sans}; color:{palette['strong_text']}; padding:4px 10px; border-radius:8px;
-        border:1px solid {palette['card_border']}; background:{palette['card']};}}
-    .kpi-start {{left:0;}} .kpi-end {{right:0; top:-8px;}}
-    .kpi-start i, .kpi-end i {{width:9px; height:9px; border-radius:50%; border:2px solid {accent};}}
-    .st-key-kpi_path > div > [data-testid="stHorizontalBlock"] {{display:grid !important;
-        grid-template-columns:{columns}; column-gap:{KPI_GAP}%; align-items:start;}}
-    .st-key-kpi_path [data-testid="stColumn"] {{width:auto !important; min-width:0;}}
-    .st-key-kpi_card_1 {{margin-top:{offsets[0]}px;}} .st-key-kpi_card_2 {{margin-top:{offsets[1]}px;}}
-    .st-key-kpi_card_3 {{margin-top:{offsets[2]}px;}}
-    .st-key-kpi_card_1, .st-key-kpi_card_2, .st-key-kpi_card_3 {{position:relative; overflow:visible;
-        border:1px solid {accent if dark else palette['card_border']}; border-color:{accent}55; border-radius:14px;
-        padding:40px 22px 20px; background:{palette['card']};
-        box-shadow:{f"0 0 0 1px {accent}12, 0 0 24px {accent}14" if dark else "0 10px 28px rgba(15,23,42,.07)"};}}
-    .sr-only {{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}}
-    .kpi-node {{position:absolute; transform:translate(-50%,-50%); width:52px; height:52px;
-        border-radius:50%; display:grid; place-items:center; z-index:2; font:600 1.35rem {sans};
-        color:{palette['strong_text']}; background:{palette['card'] if not dark else palette['background']};
-        border:3px solid {accent}; box-shadow:{f"0 0 14px {accent}, 0 0 30px {accent}55" if dark else f"0 0 0 5px {accent}22"};}}
-    .kpi-card-title {{font:700 .95rem {sans}; letter-spacing:.06em; text-transform:uppercase;
-        color:{palette['strong_text']}; margin-bottom:6px;}}
-    .kpi-figure {{font:700 clamp(2.8rem,4.6vw,4.4rem)/1.05 {sans}; letter-spacing:-.035em; white-space:nowrap;
-        color:{accent}; font-variant-numeric:tabular-nums; margin:4px 0 8px;
-        text-shadow:{f"0 0 22px {accent}55" if dark else "none"};}}
-    .kpi-figure-text {{white-space:normal; font-size:clamp(1.6rem,2.6vw,2.2rem);}}
-    .kpi-lead {{font:400 1rem/1.4 {sans}; color:{palette['strong_text']};}}
-    .kpi-rule {{height:1px; background:{palette['card_border']}; margin:14px 0 12px;}}
-    .kpi-line-text {{display:flex; align-items:flex-start; gap:10px; font:400 .86rem/1.45 {sans};
-        color:{palette['strong_text']}; margin:0 0 8px;}}
-    .kpi-status {{flex-wrap:wrap; gap:4px 8px;}}
-    .kpi-icon {{width:20px; height:20px; flex-shrink:0; stroke:{palette['text']};}}
-    .kpi-state {{display:inline-flex; align-items:center; gap:8px; white-space:nowrap;}}
-    .kpi-state i {{width:9px; height:9px; border-radius:50%; background:{palette['reference']};}}
-    .kpi-state-ok {{color:#34c759;}} .kpi-state-ok i {{background:#34c759; box-shadow:0 0 8px #34c75999;}}
-    .kpi-state-failed {{color:#ff9f0a;}} .kpi-state-failed i {{background:#ff9f0a;}}
-    .st-key-kpi_card_2 [data-baseweb="tab-list"] {{gap:18px;}}
-    .st-key-kpi_card_2 [data-baseweb="tab-panel"] {{padding-top:12px;}}
-    .kpi-chips {{display:flex; flex-wrap:wrap; gap:8px;}}
-    .kpi-chips span {{padding:5px 13px; border-radius:999px; font:400 .84rem {sans}; color:{palette['strong_text']};
-        border:1px solid {palette['card_border']}; background:{palette['field']};}}
-    .kpi-formula {{font:500 .84rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; padding:10px 12px;
-        border-radius:10px; background:{palette['field']}; color:{palette['strong_text']};
-        border:1px solid {palette['card_border']}; overflow-wrap:anywhere; margin-bottom:10px;}}
-    .kpi-query-name {{font:500 .95rem ui-monospace,SFMono-Regular,Menlo,monospace; color:{palette['strong_text']};
-        padding:11px 14px; border-radius:10px; background:{palette['field']}; border:1px solid {palette['card_border']};
-        margin:6px 0 12px; overflow-wrap:anywhere;}}
-    .st-key-kpi_query_open button {{width:100%; justify-content:flex-start; border:1.5px solid {accent} !important;
-        color:{accent} !important; background:transparent !important; border-radius:10px; min-height:46px;
-        font-weight:600;}}
-    .st-key-kpi_query_open button p {{color:{accent} !important; font-weight:600;}}
-    @media(max-width:900px) {{
-        .kpi-band {{display:none;}}
-        .st-key-kpi_path > div > [data-testid="stHorizontalBlock"] {{grid-template-columns:1fr; row-gap:14px;}}
-        .st-key-kpi_card_1, .st-key-kpi_card_2, .st-key-kpi_card_3 {{margin-top:0; padding-top:20px;}}
-        .kpi-card-title .sr-only {{position:static; width:auto; height:auto; clip:auto; color:{accent};}}
-        .kpi-head .page-freshness {{margin-left:0;}}
-        .kpi-card-title {{padding-left:0;}}
-    }}
-    </style>"""
+    return static_files.style(
+        "kpi.css",
+        {
+            'var(--go-text)': palette['text'],
+            'var(--go-card-border)': palette['card_border'],
+            'var(--go-palette-card-if-not-dark-else-f-radial-gradient)': palette['card']
+            if not dark
+            else f"radial-gradient(120% 90% at 50% 0%, {accent}14, transparent 60%), {palette['background']}",
+            'var(--go-sans)': sans,
+            'var(--go-strong-text)': palette['strong_text'],
+            'var(--go-kpi-band-height)': KPI_BAND_HEIGHT,
+            'var(--go-glow)': glow,
+            'var(--go-accent)': accent,
+            'var(--go-kpi-node-heights-0-40)': KPI_NODE_HEIGHTS[0] - 40,
+            'var(--go-card)': palette['card'],
+            'var(--go-columns)': columns,
+            'var(--go-kpi-gap)': KPI_GAP,
+            'var(--go-offsets-0)': offsets[0],
+            'var(--go-offsets-1)': offsets[1],
+            'var(--go-offsets-2)': offsets[2],
+            'var(--go-accent-if-dark-else-palette-card-border)': accent if dark else palette['card_border'],
+            'var(--go-f-0-0-0-1px-accent-12-0-0-24px-accent-14-if-dark)': f"0 0 0 1px {accent}12, 0 0 24px {accent}14"
+            if dark
+            else "0 10px 28px rgba(15,23,42,.07)",
+            'var(--go-palette-card-if-not-dark-else-palette-background)': palette['card']
+            if not dark
+            else palette['background'],
+            'var(--go-f-0-0-14px-accent-0-0-30px-accent-55-if-dark-els)': f"0 0 14px {accent}, 0 0 30px {accent}55"
+            if dark
+            else f"0 0 0 5px {accent}22",
+            'var(--go-f-0-0-22px-accent-55-if-dark-else-none)': f"0 0 22px {accent}55" if dark else "none",
+            'var(--go-reference)': palette['reference'],
+            'var(--go-field)': palette['field'],
+        },
+    )
 
 
 def show_kpi_tab(mode):

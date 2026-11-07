@@ -11,7 +11,7 @@ import json
 import re
 from pathlib import Path
 
-from bi import buttons
+from bi import buttons, static_files
 from bi.i18n import tr
 
 # region Constants and variables
@@ -137,23 +137,17 @@ def build_css(palette):
         palette["card_border"],
         palette["accent"],
     )
-    return f"""<style>
-.nb-file .df-glyph b {{ font-size:5.5px !important; letter-spacing:0; }}
-.nb-file .df-actions {{ flex:none; width:60px; }}
-.nb-file .df-top {{ width:auto !important; flex:1 1 auto !important; min-width:0; }}
-.nb-file .nb-file-name {{ flex:none !important; font-family:ui-monospace, Menlo, monospace; font-size:11.5px; color:{muted}; }}
-.nb-path {{ display:flex; gap:6px; align-items:baseline; font-size:13px; color:{muted}; margin:0 0 6px; }}
-.nb-path a {{ color:{accent} !important; text-decoration:none; }} .nb-path i {{ font-style:normal; }}
-.nb-path span {{ color:{ink}; font-family:ui-monospace, Menlo, monospace; font-size:12.5px; }}
-.nb-output {{ margin:-6px 0 10px; padding:10px 12px; border:1px solid {border}; border-radius:10px;
-  background:color-mix(in srgb, {card} 70%, transparent); color:{text}; font-size:12.5px; }}
-.nb-stream {{ margin:0 0 6px; padding:0; background:transparent !important; border:0; white-space:pre-wrap;
-  font-family:ui-monospace, Menlo, monospace; font-size:12.5px; line-height:1.5; color:{ink}; }}
-.nb-table {{ max-height:360px; overflow:auto; }}
-.nb-table table {{ border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums; color:{ink}; }}
-.nb-table th, .nb-table td {{ padding:4px 9px; border-bottom:1px solid {border}; text-align:left; white-space:nowrap; }}
-.nb-table thead th {{ position:sticky; top:0; background:{card}; color:{muted}; font-weight:600; }}
-</style>"""
+    return static_files.style(
+        "source_study.css",
+        {
+            'var(--go-muted)': muted,
+            'var(--go-accent)': accent,
+            'var(--go-ink)': ink,
+            'var(--go-border)': border,
+            'var(--go-card)': card,
+            'var(--go-text)': text,
+        },
+    )
 
 
 # endregion

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+# region Constants
 # The data and the pipeline: ingestion, ETL rules, dbt figures, the served database, the publication gate and the audit.
 DATA_FILES = {
     "test_agent",
@@ -32,8 +33,10 @@ DATA_FILES = {
     "test_same_package",
     "test_unit_review",
 }
+# endregion
 
 
+# region Which tests guard the data
 @pytest.fixture(autouse=True)
 def open_the_attempt_gate():
     """D-393: the control code's gate is shared by the whole process; each test starts with it open."""
@@ -48,3 +51,6 @@ def pytest_collection_modifyitems(items):
     for item in items:
         if Path(str(item.fspath)).stem in DATA_FILES:
             item.add_marker(pytest.mark.datos)
+
+
+# endregion

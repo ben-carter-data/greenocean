@@ -9,6 +9,7 @@ import pytest
 
 from bi import queries, security_map, sql_explorer
 
+# region Variables
 REPOSITORY = Path(__file__).resolve().parent.parent
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.duckdb is not built")
 SECRET_TEXT = 'CONTROL_CODE = "secreto-de-prueba"'
@@ -44,8 +45,10 @@ ENGINE_ATTACKS = [
     "CREATE TABLE t AS SELECT 1",
     "DELETE FROM weekly_price",
 ]
+# endregion
 
 
+# region The attacks of the security review, kept as permanent tests
 @pytest.fixture
 def secret_file(tmp_path):
     path = tmp_path / "secrets.toml"
@@ -166,3 +169,6 @@ def test_d249_the_map_says_what_the_author_decided_about_the_code_and_the_sql_st
     assert sql_explorer.TIMEOUT_SECONDS == 10 and sql_explorer.ROW_LIMIT == 5000 and sql_explorer.MEMORY_LIMIT == "1GB"
     declared = controls["Inicio de sesión externo"]
     assert not declared[7] and "no verificable" in declared[2]
+
+
+# endregion

@@ -9,6 +9,7 @@ from streamlit.testing.v1 import AppTest
 
 from bi import dashboard, documents_folder, i18n
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 BI_DIR = ROOT / "bi"
 DOCS_DIR = ROOT / "docs"
@@ -28,8 +29,10 @@ ENGLISH_FIELDS = (
     "Audience",
     "Related documents",
 )
+# endregion
 
 
+# region Spanish and English for the whole panel and its documents
 def read(path):
     return path.read_text(encoding="utf-8")
 
@@ -322,3 +325,6 @@ def test_d443_the_texts_a_script_writes_are_whole_strings_with_their_english():
     for text in ("Acercar", "Alejar", "Volver al tamaño original", "En este proyecto:"):
         assert i18n.lookup(text), text
     assert "(?:Aquí|Here):" in zoom.TIP_SCRIPT  # the role of a term splits off in both languages
+
+
+# endregion

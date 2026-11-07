@@ -10,9 +10,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from etl import etl  # noqa: E402
 
+# region Variables
 needs_database = pytest.mark.skipif(not etl.DATABASE_FILE.exists(), reason="Requires etl/datos.db")
+# endregion
 
 
+# region dim_date
 def test_weeks_are_consecutive_mondays_without_gaps():
     weeks = etl.build_dim_date("2024-11-25", "2025-02-03")
     days = pd.to_datetime(weeks["week_start"])
@@ -88,3 +91,6 @@ def test_every_week_of_weekly_price_exists_in_dim_date():
     ).fetchone()
     assert (first, last) == connection.execute("SELECT MIN(week_start), MAX(week_start) FROM weekly_price").fetchone()
     assert weeks == (pd.Timestamp(last) - pd.Timestamp(first)).days // 7 + 1
+
+
+# endregion

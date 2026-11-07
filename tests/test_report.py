@@ -11,10 +11,13 @@ from etl import etl  # noqa: E402
 from tests.test_etl import make_raw_consumer_rows  # noqa: E402
 from tests.test_etl_run import open_test_databases, replace_raw_rows  # noqa: E402
 
+# region Constants
 # Thirteen steady weekly prices: twelve small variations.
 STEADY_PRICES = [1000, 1010] * 6 + [1000]
+# endregion
 
 
+# region Tests for the weekly report
 def build_database(tmp_path, weekly_prices):
     """Indicator database with one consumer price per consecutive week, quoted by two
     markets: a K6 alert needs at least two quotes in each week (D-158)."""
@@ -66,3 +69,6 @@ def test_report_says_so_when_no_product_is_out_of_range(tmp_path):
     database_file = build_database(tmp_path, STEADY_PRICES + [1010])
     report_text = report.build_report(database_file)
     assert "Ningún producto se movió fuera de su rango habitual." in report_text
+
+
+# endregion

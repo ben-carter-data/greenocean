@@ -7,9 +7,12 @@ import pytest
 
 from bi import charts, control, monitoring, queries
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
+# endregion
 
 
+# region Monitoreo y observabilidad
 def test_every_signal_names_a_file_that_exists_and_produces_it():
     evidence = {
         "etl_run": "INSERT INTO etl_run",
@@ -53,3 +56,6 @@ def test_d275_each_signal_hangs_from_the_stage_where_it_is_born_on_the_side_of_i
     assert set(monitoring.STAGE_OF_SIGNAL) | {monitoring.EVERY_STEP} == {signal[0] for signal in monitoring.SIGNALS}
     assert {signal[6] for signal in monitoring.SIGNALS} == {"panel", "autor"}
     assert "<script" not in page and page.count('class="stage"') == len(monitoring.STAGES)
+
+
+# endregion

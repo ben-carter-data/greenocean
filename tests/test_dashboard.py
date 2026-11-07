@@ -14,6 +14,7 @@ from streamlit.testing.v1 import AppTest
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
 from bi import github_page, charts, control, dashboard, i18n, project, queries, stack_page  # noqa: E402
+from tests import code_shape  # noqa: E402
 
 DASHBOARD_FILE = str(PROJECT_DIR / "bi" / "dashboard.py")
 # These tests draw the real dashboard, so they need the committed database.
@@ -431,8 +432,8 @@ def test_d421_there_is_one_key_only_and_every_author_action_checks_the_session(m
     state[dashboard.ADMIN_UNLOCKED] = True
     dashboard.reload_panel_data()
     assert state[dashboard.RELOADED_NOTICE] is True
-    cancel = inspect.getsource(dashboard.render_run_window)
-    assert "if is_author():" in cancel.split("run_monitor.cancel(")[0].rsplit("\n", 3)[-2]
+    # R-004: read in the shape of the code, not in its lines: every cancel sits inside `if is_author():`
+    assert code_shape.guarded_by(code_shape.tree_of(dashboard.render_run_window), "run_monitor.cancel", "is_author")
 
 
 @needs_database
@@ -483,7 +484,6 @@ def test_d149_a_failed_run_says_it_did_not_complete_and_can_be_closed():
 
 @needs_database
 def test_d351_the_window_cannot_be_dismissed_minimizing_does_not_cancel_and_cancel_asks_first():
-    import inspect
 
     from bi import page_devops
 

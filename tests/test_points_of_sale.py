@@ -9,6 +9,7 @@ from bi import overview, queries
 from etl import points_of_sale
 
 
+# region Where the products are sold
 def test_d306_every_region_of_the_file_exists_in_the_database_and_none_carries_a_price():
     points = overview.read_points()
     assert points and all(set(data) == {"wholesale", "consumer", "sectors"} for data in points.values())
@@ -49,3 +50,6 @@ def test_d306_the_builder_reads_odepa_files_also_where_the_real_ones_are_not():
         "sectors": [],
     }  # «Chillán» is no sector
     assert points["Región de Valparaíso"]["consumer"] == []
+
+
+# endregion

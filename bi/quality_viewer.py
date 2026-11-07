@@ -14,7 +14,7 @@ import html
 import json
 from typing import Any
 
-from bi import quality_metrics, weeks
+from bi import quality_metrics, static_files, weeks
 
 # region Constants
 SKY = "#38bdf8"
@@ -308,104 +308,19 @@ def build_viewer_html(
     )
 
 
-CSS = f"""
-*{{box-sizing:border-box}} html,body{{margin:0;background:{DEEP};color:#d7dee9;
-font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-.deck{{height:100vh;display:flex;flex-direction:column}}
-.main{{flex:1;min-height:0;display:grid;grid-template-columns:168px minmax(0,1fr)}}
-.thumbs{{overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;border-right:1px solid #141b27;background:#070a10}}
-.thumb{{position:relative;flex:none;width:100%;aspect-ratio:16/9;padding:0;overflow:hidden;border:2px solid #1d2738;border-radius:6px;background:{DEEP}}}
-.thumb.current{{border-color:{SKY};box-shadow:0 0 0 1px {SKY}}}
-.thumb .mini{{position:absolute;left:0;top:0;width:960px;height:540px;transform-origin:0 0;pointer-events:none}}
-.thumb .mini .slide{{opacity:1;visibility:visible;overflow:hidden}}
-.thumb i{{position:absolute;left:4px;bottom:3px;font:600 10px/1 ui-monospace,Menlo,monospace;font-style:normal;color:#f3f7fc;background:rgba(5,7,11,.8);padding:2px 4px;border-radius:3px}}
-.stage{{position:relative;overflow:hidden;background:#04060a}}
-.canvas{{position:absolute;left:50%;top:50%;width:960px;height:540px;margin:-270px 0 0 -480px;transform-origin:center;background:{DEEP};
-box-shadow:0 0 0 1px #1d2738,0 12px 40px rgba(0,0,0,.5)}}
-.bar{{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:10px 56px 10px 18px;background:{DEEP};
-border-bottom:1px solid color-mix(in srgb,{SKY} 35%,#1b2433)}}
-.bar b{{color:#f3f7fc}} #pos{{color:{SKY};font-variant-numeric:tabular-nums}} .grow{{flex:1}}
-button{{font:inherit;color:#e6edf6;background:#0d1320;border:1px solid #243046;border-radius:8px;padding:5px 12px;cursor:pointer}}
-button:hover,button:focus-visible{{border-color:{SKY};outline:none}} button.primary{{background:{SKY};color:#04121c;border-color:{SKY};font-weight:600}}
-.slide{{position:absolute;inset:0;padding:20px 28px 24px;overflow:auto;opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}}
-.slide.active{{opacity:1;visibility:visible}}
-@media (prefers-reduced-motion:reduce){{.slide{{transition:none}}}}
-h1{{font-size:34px;margin:6px 0 18px;color:#f3f7fc}} h2{{font-size:22px;margin:0 0 14px;color:{SKY};letter-spacing:.01em}}
-h3{{font-size:14px;margin:0 0 8px;color:#f3f7fc}} .kicker{{color:{SKY};font-size:12px;letter-spacing:.14em;text-transform:uppercase}}
-.cover{{padding-top:60px}} .cover dl{{display:grid;grid-template-columns:max-content 1fr;gap:6px 22px;margin:0 0 22px}}
-.cover dt{{color:#8b97aa}} .cover dd{{margin:0;color:#f3f7fc}}
-.muted{{color:#8b97aa}} code{{color:{SKY};font-family:ui-monospace,Menlo,monospace;font-size:12.5px}}
-.card{{border:1px solid #1d2738;border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#0a0f18}}
-.two{{display:grid;grid-template-columns:1fr 1fr;gap:14px}} .three{{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}}
-ul{{margin:4px 0 0;padding-left:18px}} ul.code{{list-style:none;padding:0}}
-table{{width:100%;border-collapse:collapse;font-size:13px}}
-th{{text-align:left;color:{SKY};font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;
-border-bottom:1px solid color-mix(in srgb,{SKY} 40%,transparent)}}
-td{{padding:8px 10px;border-bottom:1px solid #141b27;vertical-align:top}} td b{{color:#f3f7fc}} .num{{text-align:right;white-space:nowrap}}
-.bar{{}} .bar{{position:relative}} span.bar{{display:block;position:relative;height:6px;min-width:110px;margin-top:7px;border-radius:3px;background:#1d2738}}
-span.bar i{{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:{SKY}}}
-span.bar b{{position:absolute;top:-4px;width:2px;height:14px;background:#f3f7fc}} span.bar.empty{{background:none}}
-.state{{font-weight:700;white-space:nowrap}} .small{{font-size:12px;margin-top:10px}}
-.warn{{color:#fbbf24;margin:0 0 10px}} table.issues td{{font-size:12px}} a{{color:{SKY}}} .big{{font-size:22px;color:#f3f7fc;margin:30px 0 8px}}
-.pickers{{display:flex;gap:18px;margin-bottom:14px}} select{{font:inherit;color:#e6edf6;background:#0d1320;border:1px solid #243046;border-radius:8px;padding:4px 8px}}
-.pair{{display:grid;gap:3px}} .pair i{{display:block;height:6px;border-radius:3px}}
-.up{{color:#f87171}} .down{{color:#34d399}}
-@media (max-width:760px){{.main{{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}}
-.stage{{order:1}} .thumbs{{order:2;flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-top:1px solid #141b27;padding:8px}}
-.thumb{{width:112px}} .bar button#full{{display:none}} .bar{{padding-right:56px;flex-wrap:wrap}}}}
-@media print{{.bar,.thumbs{{display:none}} .deck{{height:auto}} .main{{display:block}} .stage{{overflow:visible;background:none}}
-.canvas{{position:static;width:auto;height:auto;margin:0;transform:none!important;box-shadow:none}}
-.slide{{position:static;opacity:1!important;visibility:visible!important;display:block;page-break-after:always;overflow:visible;transition:none}}
-html,body{{background:{DEEP}!important}} @page{{margin:12mm}}
-table{{font-size:11.5px}} th{{padding:5px 8px}} td{{padding:4px 8px}} .slide{{padding:14px 20px 16px}} h2{{margin-bottom:8px}}}}
-"""
+CSS = static_files.fill(
+    "quality_viewer.css",
+    {
+        'var(--go-deep)': DEEP,
+        'var(--go-sky)': SKY,
+    },
+)
 
-SCRIPT = f"""
-const slides=[...document.querySelectorAll('.slide')];let at=0;
-const pos=document.getElementById('pos');
-const thumbs=document.getElementById('thumbs'),stage=document.getElementById('stage'),canvas=document.getElementById('canvas');
-let tiles=[];
-function show(i){{at=Math.max(0,Math.min(slides.length-1,i));slides.forEach((s,k)=>s.classList.toggle('active',k===at));
-tiles.forEach((t,k)=>t.classList.toggle('current',k===at));
-if(tiles[at])tiles[at].scrollIntoView({{block:'nearest',inline:'nearest'}});
-pos.textContent=(at+1)+' / '+slides.length;}}
-function fit(){{const s=Math.min(stage.clientWidth/960,stage.clientHeight/540);canvas.style.transform='scale('+s+')';
-tiles.forEach(t=>{{t.firstChild.style.transform='scale('+(t.clientWidth/960)+')';}});}}
-document.getElementById('prev').onclick=()=>show(at-1);document.getElementById('next').onclick=()=>show(at+1);
-document.addEventListener('keydown',e=>{{if(e.key==='ArrowRight'||e.key==='PageDown')show(at+1);
-if(e.key==='ArrowLeft'||e.key==='PageUp')show(at-1);if(e.key==='Home')show(0);if(e.key==='End')show(slides.length-1);}});
-const full=document.getElementById('full');
-if(!document.fullscreenEnabled){{full.style.display='none';}}
-full.onclick=()=>{{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}};
-document.getElementById('print').onclick=()=>window.print();
-const fmt=v=>v===null||v===undefined?'—':Number(v).toLocaleString(DATA.lang,{{maximumFractionDigits:2}});
-const unit=u=>u?' '+(DATA.units[u]||u):'';
-const a=document.getElementById('cmp-a'),b=document.getElementById('cmp-b'),out=document.getElementById('cmp');
-a.value=DATA.a;b.value=DATA.b;
-function compare(){{const ra=DATA.reports.find(r=>r.n==a.value),rb=DATA.reports.find(r=>r.n==b.value);
-const top=Math.max(1,...ra.rows.concat(rb.rows).map(r=>r[1]||0));
-const t=document.createElement('table');const head=document.createElement('tr');
-[DATA.head[0],DATA.codes[ra.n],DATA.codes[rb.n],DATA.head[3]].forEach(h=>{{const th=document.createElement('th');th.textContent=h;head.appendChild(th);}});
-const thead=document.createElement('thead');thead.appendChild(head);t.appendChild(thead);const body=document.createElement('tbody');
-const keys=r=>r.rows.filter(x=>x[1]!==null).map(x=>x[3]).sort().join();const warn=document.getElementById('cmp-warn');
-warn.hidden=keys(ra)===keys(rb);warn.textContent=DATA.warn;
-rb.rows.filter(row=>ra.rows.some(x=>x[3]===row[3])).forEach(row=>{{const before=(ra.rows.find(x=>x[3]===row[3])||[])[1];const tr=document.createElement('tr');
-const name=document.createElement('td');const strong=document.createElement('b');strong.textContent=row[0];name.appendChild(strong);
-const bars=document.createElement('div');bars.className='pair';
-[[before,'{BEFORE}'],[row[1],'{SKY}']].forEach(([v,c])=>{{const i=document.createElement('i');i.style.background=c;
-i.style.width=(v===null||v===undefined?0:Math.max(2,v/top*100))+'%';bars.appendChild(i);}});name.appendChild(bars);
-const ca=document.createElement('td');ca.className='num';ca.textContent=fmt(before)+unit(row[2]);
-const cb=document.createElement('td');cb.className='num';cb.textContent=fmt(row[1])+unit(row[2]);
-const d=document.createElement('td');d.className='num';
-if(before===null||before===undefined||row[1]===null){{d.textContent='—';}}else{{const diff=row[1]-before;
-d.textContent=(diff>0?'+':'')+fmt(diff)+unit(row[2]);d.className='num '+(diff>0?'up':diff<0?'down':'');}}
-[name,ca,cb,d].forEach(c=>tr.appendChild(c));body.appendChild(tr);}});t.appendChild(body);out.replaceChildren(t);}}
-a.onchange=compare;b.onchange=compare;compare();
-slides.forEach((s,k)=>{{const tile=document.createElement('button');tile.className='thumb';tile.setAttribute('aria-label',(k+1)+' / '+slides.length);
-const mini=document.createElement('div');mini.className='mini';const copy=s.cloneNode(true);
-copy.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));copy.setAttribute('aria-hidden','true');copy.classList.add('active');
-mini.appendChild(copy);const number=document.createElement('i');number.textContent=k+1;tile.append(mini,number);
-tile.onclick=()=>show(k);thumbs.appendChild(tile);tiles.push(tile);}});
-new ResizeObserver(fit).observe(stage);new ResizeObserver(fit).observe(thumbs);fit();show(0);
-"""
+SCRIPT = static_files.fill(
+    "quality_viewer.js",
+    {
+        '__GO_BEFORE__': BEFORE,
+        '__GO_SKY__': SKY,
+    },
+)
 # endregion

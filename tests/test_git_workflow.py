@@ -8,11 +8,14 @@ from streamlit.testing.v1 import AppTest
 
 from bi import git_workflow
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
 REFERENCE = ROOT / "docs" / "referencia" / "ciclo_git.html"
+# endregion
 
 
+# region «Git workflow»
 def draw(profile="profesional", unlocked=False, language="es", view="Git workflow"):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
     app.query_params.update({"lang": language, "vista": view})
@@ -119,3 +122,6 @@ def test_d449_the_map_is_a_flowchart_of_fixed_shape_with_an_arrow_between_every_
     places = [git_workflow.place(item) for item in git_workflow.STATIONS]
     for (x1, y1), (x2, y2) in zip(places, places[1:]):
         assert abs(x1 - x2) >= 216 or abs(y1 - y2) >= 168
+
+
+# endregion

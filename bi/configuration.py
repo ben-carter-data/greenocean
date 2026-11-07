@@ -15,7 +15,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from bi import business_analysis, charts, control, i18n, quality_method, quality_metrics
+from bi import business_analysis, charts, control, i18n, quality_method, quality_metrics, static_files
 
 OK, WARN, FAIL, UNKNOWN = "ok", "warn", "fail", "unknown"
 STATE_COLORS = {
@@ -426,48 +426,19 @@ def build_css(palette: dict[str, str]) -> str:
         f"background:color-mix(in srgb,{color} 14%,transparent);}} .cf-tasks li.cf-{state} i {{background:{color};}}"
         for state, color in STATE_COLORS.items()
     )
-    return f"""<style>
-.cf-band {{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:{text};margin:2px 0 6px;}}
-.cf-icon {{font-family:'Material Symbols Rounded';font-size:18px;line-height:1;color:{accent};font-weight:400;}}
-.cf-cards {{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 10px;}}
-.cf-card {{border:1px solid {border};border-top:3px solid {border};border-radius:12px;background:{card_bg};padding:6px 12px 7px;
-  display:flex;flex-direction:column;gap:2px;min-width:0;}}
-.cf-card-head {{display:flex;align-items:center;gap:7px;font-size:12.5px;color:{text};}}
-.cf-card-head span:not(.cf-icon) {{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
-.cf-card em {{font-style:normal;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;}}
-.cf-card b {{font-size:19px;font-weight:700;color:{strong};line-height:1.25;}}
-.cf-card small {{font-size:11.5px;color:{text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
-{states}
-.cf-case-title {{margin:0 0 4px!important;font-size:17px!important;color:{strong};}}
-[class*="st-key-cf_step_"] {{border:1px solid {border};border-radius:10px;background:{card_bg};padding:8px 12px;gap:10px!important;}}
-[class*="st-key-cf_step_"] [data-testid="stMarkdownContainer"] {{margin-bottom:0!important;}}
-.cf-step {{display:grid;grid-template-columns:28px 92px 1fr auto;align-items:center;gap:10px;}}
-.cf-step > b {{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;
-  background:{accent};color:#fff;font-size:13px;}}
-.cf-step p {{margin:0!important;font-size:13.5px;line-height:1.45;color:{strong};}}
-.cf-kind {{font-size:11px;font-weight:700;text-align:center;padding:2px 8px;border-radius:999px;}}
-.cf-auto .cf-kind {{color:{charts.STATUS_COLORS["running"]};background:color-mix(in srgb,{charts.STATUS_COLORS["running"]} 15%,transparent);}}
-.cf-manual .cf-kind {{color:{charts.STATUS_COLORS["warning"]};background:color-mix(in srgb,{charts.STATUS_COLORS["warning"]} 15%,transparent);}}
-.cf-step a {{font-size:12.5px;white-space:nowrap;color:{accent}!important;}}
-.cf-tasks {{list-style:none;margin:0;padding:0;}}
-.cf-tasks li {{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:baseline;padding:5px 2px;
-  border-bottom:1px solid {border};font-size:12.5px;color:{strong};}}
-.cf-tasks li i {{width:9px;height:9px;border-radius:50%;align-self:center;}}
-.cf-tasks li b {{font-weight:600;color:{text};white-space:nowrap;}}
-.cf-guide {{display:flex;flex-direction:column;gap:5px;}}
-.cf-guide-row {{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}}
-.cf-guide-row span {{width:108px;font-size:11.5px;font-weight:700;color:{text};}}
-.cf-guide-row a {{font-size:12px;padding:2px 9px;border:1px solid {border};border-radius:999px;text-decoration:none!important;
-  color:{strong}!important;background:{card_bg};}}
-.cf-guide-row a:hover {{border-color:{accent};}}
-.st-key-config_cases {{gap:10px!important;flex-wrap:wrap;}}
-.st-key-config_page {{gap:10px!important;}}
-.cf-band.cf-next {{margin:10px 0 -4px!important;}}
-.st-key-config_cases {{flex-wrap:nowrap!important;}}
-.st-key-config_cases button {{min-height:42px;padding:4px 10px!important;border-radius:12px!important;}}
-.st-key-config_cases button p {{white-space:normal;line-height:1.2;}}
-.st-key-config_lower [data-testid="stColumn"] > div {{border:1px solid {border};border-radius:14px;background:{card_bg};padding:10px 14px;}}
-</style>"""
+    return static_files.style(
+        "configuration.css",
+        {
+            'var(--go-text)': text,
+            'var(--go-accent)': accent,
+            'var(--go-border)': border,
+            'var(--go-card-bg)': card_bg,
+            'var(--go-strong)': strong,
+            'var(--go-states)': states,
+            'var(--go-charts-status-colors-running)': charts.STATUS_COLORS["running"],
+            'var(--go-charts-status-colors-warning)': charts.STATUS_COLORS["warning"],
+        },
+    )
 
 
 # endregion

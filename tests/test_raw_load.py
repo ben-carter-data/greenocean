@@ -13,6 +13,7 @@ from tests.test_agent import (
 )
 
 
+# region Tests for the raw table load
 def download_into(tmp_path, monkeypatch, content):
     monkeypatch.setattr(agent, "DOWNLOAD_DIR", tmp_path)
     monkeypatch.setattr(agent, "MANIFEST_FILE", tmp_path / "manifest.json")
@@ -48,3 +49,6 @@ def test_updated_file_replaces_the_rows_of_its_year(tmp_path, monkeypatch):
     download_into(tmp_path, monkeypatch, two_row_csv)
     etl.load_raw_files(connection, tmp_path)
     assert count_wholesale_rows(connection) == 2
+
+
+# endregion

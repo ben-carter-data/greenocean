@@ -10,9 +10,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import architecture, charts, control, devops, lineage, queries, tech_glossary  # noqa: E402
 from tests.test_architecture import FIGURES, make_states  # noqa: E402
 
+# region Constants
 SVG = "{http://www.w3.org/2000/svg}"
+# endregion
 
 
+# region Test tech glossary
 def parse(svg):
     """The SVG tree and a {child: parent} map (ElementTree has no parent links)."""
     root = ET.fromstring(
@@ -132,3 +135,6 @@ def test_lineage_layer_headers_and_materializations_explain_themselves():
         assert tech_glossary.describe(key) in {
             nearest_title(element, parents)[0] for element in root.iter() if tag(element) == "text"
         }
+
+
+# endregion

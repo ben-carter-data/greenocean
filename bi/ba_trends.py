@@ -15,7 +15,7 @@ from typing import Any
 import altair as alt
 import pandas as pd
 
-from bi import charts, home_mockup, i18n, inflation_view, interest_map, overview, weeks
+from bi import charts, home_mockup, i18n, inflation_view, interest_map, overview, static_files, weeks
 
 BASKET = inflation_view.BASKET_NAME
 IPC = inflation_view.IPC_NAME
@@ -1298,19 +1298,16 @@ def build_context_css(palette: dict[str, str], green: str) -> str:
     """The panel in the fluorescent green of GreenOcean (D-450): a green edge and a light green ground, the text in the
     ink of the theme so it reads on every theme. It keeps the height of two lines on every tab, so the tabs below it
     never jump. It ends in a div, so its bottom margin makes up for the -1rem of the block (D-173)."""
-    return f"""<style>
-.ba-context {{ display:flex; gap:10px; align-items:center; padding:7px 14px; margin:-12px 0 6px; font-size:13px;
-  min-height:calc(2.9em + 16px); box-sizing:border-box; border:1px solid {green}; border-radius:12px;
-  background:color-mix(in srgb, {green} 11%, transparent); }}
-.ba-context-icon {{ font-family:"Material Symbols Rounded"; font-feature-settings:"liga"; font-size:20px;
-  line-height:1; color:{green}; }}
-.ba-context p {{ margin:0 !important; font-size:13px !important; line-height:1.45 !important;
-  color:{palette["text"]} !important; }}
-.ba-context b {{ color:{palette["strong_text"]}; }}
-.ba-insight {{ min-height:0; padding:5px 14px; margin:0 0 20px; cursor:help; }}
-[data-testid="stMain"]:has(.ba-insight) .ba-table {{ max-height:max(calc(100vh - {TABLE_RESERVED + INSIGHT_ROOM}px),
-  {TABLE_FLOOR}px); }}
-</style>"""
+    return static_files.style(
+        "ba_context.css",
+        {
+            'var(--go-green)': green,
+            'var(--go-text)': palette["text"],
+            'var(--go-strong_text)': palette["strong_text"],
+            'var(--go-table-reserved-insight-room)': TABLE_RESERVED + INSIGHT_ROOM,
+            'var(--go-table-floor)': TABLE_FLOOR,
+        },
+    )
 
 
 # endregion
@@ -1334,70 +1331,26 @@ def build_css(palette: dict[str, str], green: str) -> str:
         palette["card_border"],
     )
     rise, fall, accent = palette["rise"], palette["fall"], palette["accent"]
-    return f"""<style>
-.ba-cards {{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; margin:0 0 6px; }}
-.st-key-ba_head {{ justify-content:space-between; gap:12px; flex-wrap:wrap; }}
-.st-key-ba_filters [data-testid="stWidgetLabel"] p {{ font-size:12px !important; }}
-/* D-460: thin cards, one line each: the label, the figure and its note, so the charts get the height. */
-.ba-card {{ display:flex; flex-direction:column; gap:0; padding:6px 11px 7px; border:1px solid {border}; border-radius:12px;
-  background:{card_color}; cursor:help; outline:none; min-width:0; }}
-.ba-card:hover, .ba-card:focus-visible {{ border-color:{accent}; }}
-.ba-card-label {{ font-size:11px; line-height:1.3; color:{muted}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.ba-card-value {{ font-size:20px; font-weight:700; color:{ink}; font-variant-numeric:tabular-nums; line-height:1.2; }}
-.ba-card-value.rise {{ color:{rise}; }} .ba-card-value.fall {{ color:{fall}; }}
-.ba-card-note {{ font-size:11px; line-height:1.3; color:{text}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.ba-chart-title {{ margin:0 !important; font-size:13.5px !important; font-weight:600; color:{ink} !important;
-  line-height:1.3 !important; }}
-.ba-chart-title span {{ display:block; font-weight:400; color:{muted}; font-size:11.5px; }}
-/* D-458: the three charts take the height the window leaves, above a floor, so a tall window shows them larger. */
-[class*="st-key-ba_tile_"] {{ min-height:max(calc(100vh - {TILES_RESERVED}px), {TILES_FLOOR}px); }}
-[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"]:has([data-testid="stVegaLiteChart"]) {{
-  flex:1 1 0; min-height:0; display:flex; flex-direction:column; }}
-[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
-[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"] > div,
-[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stVegaLiteChart"] {{
-  flex:1 1 auto; height:100%; min-height:0; }}
-/* D-460: the green magnifier of a chart opens it large in a window; it glows in the green of GreenOcean (D-450). */
-[class*="st-key-ba_tile_"] [data-testid="stElementToolbar"] {{ display:none !important; }}
-[class*="st-key-ba_chart_head_"] {{ gap:4px !important; flex-wrap:nowrap !important; }}
-[class*="st-key-ba_chart_head_"] > [data-testid="stElementContainer"]:first-child {{ flex:1 1 auto; min-width:0; }}
-[class*="st-key-ba_enlarge_"] button {{ min-height:24px !important; padding:0 2px !important; background:transparent !important;
-  border:0 !important; box-shadow:none !important; }}
-[class*="st-key-ba_enlarge_"] button [data-testid="stMarkdownContainer"] {{ position:absolute !important; width:1px;
-  height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }}
-[class*="st-key-ba_enlarge_"] button [data-testid="stIconMaterial"] {{ color:{green} !important; font-size:22px !important;
-  filter:drop-shadow(0 0 3px {green}) drop-shadow(0 0 7px color-mix(in srgb, {green} 55%, transparent));
-  transition:transform .15s ease; }}
-[class*="st-key-ba_enlarge_"] button:hover [data-testid="stIconMaterial"] {{ transform:scale(1.18); }}
-.ba-zoom-line {{ margin:0 0 3px !important; font-size:13px !important; line-height:1.45 !important;
-  color:{text} !important; }}
-.ba-zoom-line b {{ color:{ink}; margin-right:4px; }}
-.ba-zoom-title {{ margin:0 40px 8px 0 !important; font-size:17px !important; font-weight:700; color:{ink} !important;
-  line-height:1.3 !important; }}
-.ba-zoom-title span {{ display:block; font-weight:400; font-size:12.5px; color:{muted}; }}
-[role="dialog"]:has(.ba-zoom-title) [data-testid="stElementToolbar"] {{ display:none !important; }}
-.ba-table {{ max-height:max(calc(100vh - {TABLE_RESERVED}px), {TABLE_FLOOR}px); overflow:auto; }}
-.ba-table table {{ width:100%; border-collapse:collapse; font-size:12.5px; }}
-.ba-table th {{ text-align:left; font-weight:600; color:{muted}; padding:4px 8px; border-bottom:1px solid {border};
-  cursor:help;  position:sticky; top:0; z-index:1; background:{card_color};}}
-.ba-table td {{ padding:2px 8px; border-bottom:1px solid {border}; color:{text}; }}
-.ba-table td.num {{ text-align:right; font-variant-numeric:tabular-nums; }}
-.ba-table td.rise {{ color:{rise}; }} .ba-table td.fall {{ color:{fall}; }}
-.ba-table td.ba-product {{ padding-left:22px; }}
-.ba-table tr.ba-chosen td {{ background:color-mix(in srgb, {accent} 10%, transparent); color:{ink}; font-weight:600; }}
-@media (max-width:1100px) {{ .ba-cards {{ grid-template-columns:repeat(3, minmax(0, 1fr)); }} }}
-/* D-458: under 1400 px the filters wrap under the six tabs; the green panel already names the period, so they drop
-   their labels, and the charts accept a lower floor. */
-@media (max-width:1399px) {{ .st-key-ba_filters [data-testid="stWidgetLabel"] {{ display:none !important; }}
-  [class*="st-key-ba_tile_"] {{ min-height:max(calc(100vh - {TILES_RESERVED}px), {NARROW_FLOOR}px); }}
-  /* D-460: the tabs and the filters keep one row down to 1250 px, so the charts keep that height. */
-  .st-key-ba_tab [data-testid="stButtonGroup"] > div {{ gap:12px !important; }}
-  .st-key-ba_tab button p {{ font-size:13.5px !important; }}
-  .st-key-ba_filters [data-testid="stElementContainer"] {{ width:166px !important; max-width:166px !important; }}
-  .st-key-ba_filters [data-testid="stElementContainer"]:last-child {{ width:172px !important; max-width:172px !important; }}
-  .ba-context p {{ font-size:12.5px !important; }}
-  .ba-table {{ max-height:max(calc(100vh - {TABLE_RESERVED - 35}px), {TABLE_FLOOR}px); }} }}
-</style>"""
+    return static_files.style(
+        "ba_trends.css",
+        {
+            'var(--go-border)': border,
+            'var(--go-card-color)': card_color,
+            'var(--go-accent)': accent,
+            'var(--go-muted)': muted,
+            'var(--go-ink)': ink,
+            'var(--go-rise)': rise,
+            'var(--go-fall)': fall,
+            'var(--go-text)': text,
+            'var(--go-tiles-reserved)': TILES_RESERVED,
+            'var(--go-tiles-floor)': TILES_FLOOR,
+            'var(--go-green)': green,
+            'var(--go-table-reserved)': TABLE_RESERVED,
+            'var(--go-table-floor)': TABLE_FLOOR,
+            'var(--go-narrow-floor)': NARROW_FLOOR,
+            'var(--go-table-reserved-35)': TABLE_RESERVED - 35,
+        },
+    )
 
 
 # endregion

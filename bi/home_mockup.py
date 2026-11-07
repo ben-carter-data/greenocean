@@ -12,7 +12,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-from bi import data_terms, i18n
+from bi import data_terms, i18n, static_files
 
 # region Constants
 PACKAGE_SEPARATOR = ' · '  # as dbt/models/intermediate/int_prices__same_package.sql joins them
@@ -109,19 +109,7 @@ def style(mode, palette):
     for key, value in colors.items():
         css = css.replace('__' + key + '__', value)
     if dark:
-        css += """
-        .greenocean-mockup{--mock-rise:#ff8a96;--mock-fall:#83baff;}
-        .greenocean-mockup .mock-metric:nth-child(1){--metric:#ff8a96!important;}
-        .greenocean-mockup .mock-metric:nth-child(2){--metric:#83baff!important;}
-        .greenocean-mockup .mock-metric:nth-child(3){--metric:#d4d8df!important;}
-        .greenocean-mockup .mock-metric:nth-child(4){--metric:#eec16e!important;}
-        .greenocean-mockup .mock-badge{background:#ff8a9620;}
-        .greenocean-mockup .mock-badge.down{background:#83baff20;}
-        .greenocean-mockup .mock-badge.equal{background:#d4d8df20;}
-        .greenocean-mockup .mock-badge.alert{background:#eec16e20;}
-        .greenocean-mockup .mock-table-link,.st-key-mock_data_link a{color:#83baff!important;}
-        .greenocean-mockup .mock-last-price{fill:#83baff;}
-        """
+        css += static_files.read("mockup_colors.css")
     return '<style>' + css + '</style>'
 
 

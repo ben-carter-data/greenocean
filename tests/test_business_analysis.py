@@ -9,11 +9,14 @@ from streamlit.testing.v1 import AppTest
 from bi import business_analysis as ba
 from bi import charts, dashboard, doc_figures, i18n, overview, queries
 
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(Path(dashboard.__file__))
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
+# endregion
 
 
+# region «Análisis de negocio y sistemas»
 def test_d377_the_case_has_ten_blocks_in_reading_order_each_with_its_english():
     assert ba.BLOCKS == [
         "El problema",
@@ -145,3 +148,6 @@ def test_d455_the_problem_block_reads_whole_sentences_and_never_points_at_itself
         problem = ba.read_problem(language)
         assert problem and all(paragraph.endswith(".") for paragraph in problem), problem
         assert not any(page in paragraph for paragraph in problem)
+
+
+# endregion

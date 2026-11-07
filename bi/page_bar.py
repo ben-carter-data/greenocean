@@ -10,7 +10,7 @@ Pure functions: no Streamlit. bi/dashboard.py lays the Streamlit elements around
 
 import html
 
-from bi import charts, live_mark
+from bi import charts, live_mark, static_files
 
 
 # region The thin header bar of the panel's pages
@@ -24,49 +24,19 @@ def build_css(palette):
     ink, muted, card, border = palette["strong_text"], palette["reference"], palette["card"], palette["card_border"]
     soft = palette["grid"] if dark else "#f1f5f9"
     rise, fall = ("#ff8a96", "#83baff") if dark else ("#c81e3a", "#1d5fbf")
-    return f"""<style>
-/* D-513: the bar of a page with the measure of Apple's: 36 px, thin letters, the page's name only a step heavier. */
-.stApp .st-key-page_bar {{ background:{card}; border:1px solid {border}; border-radius:10px; padding:2px 12px 2px 4px !important;
-  margin:2px 0 6px !important; gap:4px 8px !important; flex-wrap:nowrap !important; align-items:center !important; min-height:36px; }}
-.stApp .st-key-page_bar > * {{ flex:0 0 auto; min-width:0; width:auto !important; }}
-/* D-398: the path takes the room left and is cut with «…» before anything can overlap; the time never moves. */
-.stApp .st-key-page_bar > :has(.page-bar-main) {{ flex:1 1 0 !important; min-width:0 !important; }}
-.stApp .st-key-page_bar [data-testid="stMarkdownContainer"] {{ margin-bottom:0 !important; }}
-.stApp .st-key-page_bar .st-key-return_to_previous button {{ border:0 !important; background:transparent !important;
-  box-shadow:none !important; min-height:28px; width:28px; padding:0 !important; color:{ink}; }}
-.stApp .st-key-page_bar .st-key-return_to_previous button:hover {{ background:{soft} !important; }}
-.stApp .st-key-page_bar .st-key-return_to_previous button [data-testid="stMarkdownContainer"] {{ position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap; }}
-.stApp .st-key-page_bar p {{ margin:0 !important; }}
-.page-bar-main {{ display:flex; align-items:center; min-width:0; white-space:nowrap; font-size:12.5px; color:{ink}; }}
-.page-bar-path {{ min-width:0; overflow:hidden; text-overflow:ellipsis; color:{muted}; font-size:12.5px; font-weight:400;
-  letter-spacing:-.005em; cursor:default; }}
-.page-bar-path b {{ color:{ink}; font-weight:500; }}
-.page-bar-updated {{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; font-size:11.5px; color:{muted}; }}
-.page-bar-updated i {{ width:7px; height:7px; border-radius:50%; background:#529e57; flex:none; }}
-.page-bar-updated i.failed {{ background:#e62035; }}
-{live}
-/* The row of the content under the bar: the page's question, its chips, its terms and its controls. It wraps. */
-.stApp .st-key-page_info {{ gap:4px 8px !important; flex-wrap:wrap !important; align-items:center !important;
-  margin:-2px 0 6px !important; }}
-.stApp .st-key-page_info > * {{ min-width:0; width:auto !important; }}
-.stApp .st-key-page_info > :has(.page-info) {{ flex:1 1 auto !important; }}
-.stApp .st-key-page_info [data-testid="stMarkdownContainer"] {{ margin-bottom:0 !important; }}
-.stApp .st-key-page_info p {{ margin:0 !important; }}
-.stApp .st-key-page_info button {{ min-height:26px !important; padding:1px 10px !important; }}
-.stApp .st-key-page_info button p {{ font-size:12px !important; }}
-.page-info {{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; min-width:0; }}
-.page-info-title {{ margin:0 6px 0 2px; font-size:13px; font-weight:500; line-height:1.3; letter-spacing:-.005em; color:{ink}; cursor:default; }}
-/* D-513: a chip of 22 px, its figure a step heavier than its words, nothing bold. */
-.page-chip {{ flex:none; display:inline-flex; align-items:baseline; gap:5px; padding:2px 8px; border-radius:7px; background:{soft};
-  color:{ink}; font-size:12px; line-height:1.4; font-variant-numeric:tabular-nums; cursor:default; }}
-.page-chip b {{ font-weight:500; }}
-.page-chip small {{ font-size:11px; color:color-mix(in srgb, {muted} 45%, {ink}); }}
-.page-chip em {{ font-style:normal; font-size:9.5px; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:color-mix(in srgb, {muted} 45%, {ink}); }}
-.page-chip b.rise {{ color:{rise}; }} .page-chip b.fall {{ color:{fall}; }}
-.page-bar-terms {{ display:grid; grid-template-columns:auto auto; gap:0 6px; align-items:baseline; padding-left:10px;
-  border-left:1px solid {border}; font-size:11px; line-height:1.3; white-space:nowrap; color:{ink}; cursor:default; }}
-.page-bar-terms em {{ font-style:normal; font-size:9.5px; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
-</style>"""
+    return static_files.style(
+        "page_bar.css",
+        {
+            'var(--go-card)': card,
+            'var(--go-border)': border,
+            'var(--go-ink)': ink,
+            'var(--go-soft)': soft,
+            'var(--go-muted)': muted,
+            'var(--go-live)': live,
+            'var(--go-rise)': rise,
+            'var(--go-fall)': fall,
+        },
+    )
 
 
 def build_bar_html(path, description=""):

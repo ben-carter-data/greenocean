@@ -12,9 +12,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from etl import etl, pipeline  # noqa: E402
 
+# region Constants
 HISTORY = [(5, "2026-10-13T12:00:00", etl.STATUS_LOADED, 2_500_000, 2_499_800, 200, "")]
+# endregion
 
 
+# region RF-03
 @pytest.fixture
 def steps(tmp_path, monkeypatch):
     """Every side effect of main() captured; raw.db is an empty stand-in."""
@@ -63,3 +66,6 @@ def test_rf03_a_good_load_is_the_only_one_that_replaces_the_served_database(step
     assert calls["failed"] == [] and len(calls["written"]) == 1
     run = calls["written"][0][1]
     assert run[2] == etl.STATUS_LOADED and run[3] == run[4] + run[5]  # read = loaded + rejected
+
+
+# endregion

@@ -9,10 +9,13 @@ import pytest
 
 from bi import charts, quality_live, quality_view, queries
 
+# region Variables
 needs_database = pytest.mark.skipif(not Path(queries.DATABASE_FILE).exists(), reason="datos.duckdb is not here")
 NOW = datetime(2026, 10, 20, tzinfo=timezone.utc)
+# endregion
 
 
+# region Calidad (live measures) and its audit controls, D-196 and D-220
 @pytest.fixture(scope="module")
 def measures():
     return quality_live.read_measures()
@@ -269,3 +272,6 @@ def test_d391_the_quality_pipeline_reads_in_english_down_to_its_kickers_and_lege
         "Volver a medir",
     ]:
         assert i18n.translate_text(text) != text, text
+
+
+# endregion

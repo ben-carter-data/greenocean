@@ -10,6 +10,7 @@ from tests.test_actions_page import draw, everything_drawn, menu_labels, network
 from tests.test_github_actions import READ_TOKEN, TOKEN
 
 
+# region «Configuración»
 def draw_author(language):
     """The page as the author opens it, with both tokens and the view already chosen: each case opens its window
     without the window «Elige tu vista» asking first."""
@@ -193,3 +194,6 @@ def test_d410_the_alert_opens_with_the_tokens_first_and_never_their_value(networ
     if shown and 'class="qm-alert-foot"' in page:  # the report's part, when it has one, comes after the tokens
         assert page.index("Token de lanzamiento") < page.index('class="qm-alert-foot"')
     assert TOKEN not in page and READ_TOKEN not in page
+
+
+# endregion

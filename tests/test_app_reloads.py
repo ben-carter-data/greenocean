@@ -8,9 +8,12 @@ from streamlit.testing.v1 import AppTest
 
 from bi import dashboard
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
+# endregion
 
 
+# region App reloads
 def reload_page(kept, view="SQAP · Plan de calidad del software"):
     """A fresh session on a document's address, whose browser tab kept «kept» (or nothing) before the reload."""
     script = (
@@ -161,3 +164,6 @@ def test_d541_a_changed_module_reloads_with_every_module_that_imports_it_depende
     assert dashboard.order_reloads(["bi.charts"], imports) == ["bi.charts"]
     # the real modules: the frame's dependents are found in their sources
     assert "bi.app_frame" in dashboard.read_bi_imports(ROOT / "bi" / "page_weekly.py")
+
+
+# endregion

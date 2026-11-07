@@ -8,10 +8,13 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import alerts  # noqa: E402
 
+# region Constants
 # Thirteen weeks that go up and down 1 %, so twelve small variations.
 STEADY_PRICES = [1000, 1010] * 6 + [1000]
+# endregion
 
 
+# region Tests for the K6 price alerts
 def make_price_series(prices, first_week="2026-01-05"):
     """National weekly prices of one product, one row per consecutive week."""
     return pd.DataFrame(
@@ -62,3 +65,6 @@ def test_k6_each_product_is_judged_with_its_own_history():
     jumping_series = make_price_series(STEADY_PRICES + [1300]).assign(product="Palta")
     alert_rows = alerts.find_price_alerts(pd.concat([steady_series, jumping_series]))
     assert list(alert_rows["product"]) == ["Palta"]
+
+
+# endregion

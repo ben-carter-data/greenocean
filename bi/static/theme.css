@@ -1,0 +1,84 @@
+
+    /* D-501: without this, a Mac thickens light text on a dark background. */
+    html, body, .stApp { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+    .stApp { background: var(--go-background); color:var(--go-text);
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    [data-testid="stMain"] p, [data-testid="stMain"] h1, [data-testid="stMain"] h2,
+    [data-testid="stMain"] h3, [data-testid="stMain"] label, [data-testid="stMain"] input {
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    [data-testid="stMain"] h1 {font-weight:500 !important; letter-spacing:-.035em;}
+    [data-testid="stMain"] h2, [data-testid="stMain"] h3 {font-weight:500 !important; letter-spacing:-.02em;}
+    [data-testid="stMain"], [data-testid="stMainBlockContainer"] { color:var(--go-text); }
+    [data-testid="stMarkdownContainer"], [data-testid="stWidgetLabel"],
+    [data-testid="stWidgetLabel"] p, [data-testid="stCaptionContainer"],
+    [data-testid="stCaptionContainer"] p { color:var(--go-text); }
+    [data-testid="stHeading"] h1, [data-testid="stHeading"] h2,
+    [data-testid="stHeading"] h3, [data-testid="stHeading"] h4 {color:var(--go-strong-text);}
+    [data-testid="stExpander"] details {background:var(--go-card); border-color:var(--go-card-border);}
+    [data-testid="stExpander"] summary, [data-testid="stExpander"] summary p,
+    [data-baseweb="tab"] p {color:var(--go-text);}
+    [data-testid="stPopoverBody"], [data-testid="stDialog"] [role="dialog"] {
+        background:var(--go-card); color:var(--go-text);}
+    [data-testid="stRadio"] p {color:var(--go-text);}
+    [data-baseweb="select"] > div, [data-baseweb="input"],
+    [data-baseweb="input"] input, [data-baseweb="textarea"] textarea {
+        background:var(--go-field); color:var(--go-strong-text); border-color:var(--go-card-border);}
+    [data-baseweb="select"] input {color:var(--go-strong-text);}
+    [data-baseweb="popover"] [role="listbox"], [data-baseweb="popover"] [role="option"] {
+        background:var(--go-field); color:var(--go-strong-text);}
+    [data-baseweb="popover"] [role="option"]:hover {background:var(--go-card);}
+    button[kind="secondary"], button[kind="secondaryFormSubmit"] {
+        background:var(--go-card); color:var(--go-strong-text); border-color:var(--go-card-border);}
+
+    /* Desktop navigation stays in normal flow. On mobile the fixed logo bar
+       needs an opaque surface so scrolling text never crosses the logo. */
+    [data-testid="stHeader"] { background: transparent; }
+    @media(max-width:800px) {
+        [data-testid="stHeader"] {background:var(--go-background-2);}
+    }
+    /* The app owns its four themes; hide Streamlit's duplicate theme/utility menu.
+       Keep the header itself so the sidebar toggle and GreenOcean logo still work. */
+    [data-testid="stMainMenu"] { display:none !important; }
+    /* D-328: Streamlit Cloud draws its owner actions (Share, star, edit) over the page bar's right end. */
+    [data-testid="stToolbarActions"], [data-testid="stToolbarActionButton"] { display:none !important; }
+    [data-testid="stHeader"], [data-testid="stHeader"] * {pointer-events:none !important;}
+    [data-testid="stHeader"] button, [data-testid="stHeader"] button *,
+    [data-testid="stHeader"] a, [data-testid="stHeader"] a * {pointer-events:auto !important;}
+    [data-testid="stSidebar"] { background: var(--go-sidebar); }
+    /* Streamlit's local file watcher is a floating developer control. It can
+       cover report content when the viewport is narrow, so it is never part
+       of the presentation UI. */
+    [data-testid="stStatusWidget"] { display: none !important; }
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] span,
+    [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+        color: var(--go-sidebar-text);
+    }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stSidebar"] [data-testid="stPageLink"] p,
+    [data-testid="stSidebar"] [data-testid="stPageLink"] span { color:var(--go-sidebar-text); }
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a { background:transparent !important; }
+    [data-testid="stSidebarNavLink"][aria-current="page"] {
+        box-shadow: inset 2px 0 0 var(--go-accent), 0 0 14px var(--go-glow);
+    }
+    [data-testid="stSidebarNavLink"] [data-testid="stIconMaterial"] {
+        color: var(--go-accent);
+    }
+    [data-testid="stMain"] a { color: var(--go-accent); }
+    /* Text on the accent color (the chips of a multiple choice), always readable. */
+    [data-testid="stToolbar"] button, [data-testid="stToolbar"] button p,
+    [data-testid="stToolbar"] svg { color:var(--go-strong-text); fill:var(--go-strong-text); }
+    [data-testid="stCode"] pre, [data-testid="stCode"] code {
+        background:var(--go-field) !important; color:var(--go-strong-text);
+    }
+    [data-baseweb="tag"] span, [data-baseweb="tag"] svg {
+        color: var(--go-on-accent); fill: var(--go-on-accent);
+    }
+    button[kind="primary"], button[kind="primaryFormSubmit"] {
+        background:var(--go-accent); color:var(--go-on-accent);
+    }
+    button[kind="primary"] p, button[kind="primaryFormSubmit"] p {
+        color:var(--go-on-accent) !important;
+    }
+    .hint { color: var(--go-accent) !important; }
+    

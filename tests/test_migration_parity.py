@@ -16,6 +16,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from etl import etl  # noqa: E402
 
+# region Constants and variables
 SQLITE_FILE = etl.DATABASE_FILE
 DUCKDB_FILE = etl.BASE_DIR / "datos.duckdb"
 pytestmark = pytest.mark.skipif(
@@ -35,8 +36,10 @@ KEY = [
     "source",
     "normalized_unit",
 ]
+# endregion
 
 
+# region Parity between the Python ETL (SQLite, backup) and dbt (DuckDB, panel)
 def read_both(sql):
     with sqlite3.connect(f"file:{SQLITE_FILE}?mode=ro", uri=True) as connection:
         old = pd.read_sql(sql, connection)
@@ -83,3 +86,6 @@ def test_rejected_rows_are_the_same_rows_with_the_same_reason():
         )
 
     assert canonical(old) == canonical(new)
+
+
+# endregion

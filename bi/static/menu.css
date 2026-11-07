@@ -1,0 +1,198 @@
+
+    [data-testid="stSidebar"] {background:var(--go-sidebar); border-right:0; box-shadow:none;}
+    [data-testid="stSidebar"][data-collapsed="false"] {min-width:var(--go-232-activity-bar)px !important;
+        max-width:var(--go-232-activity-bar)px !important;}
+    /* D-501: the menu keeps its width for its words: Streamlit's 20 px of margin leave. */
+    [data-testid="stSidebarContent"] {background:transparent; padding-left:0 !important; padding-right:0 !important;}
+    /* D-504: the logo and the fold button stay in sight, stuck to the top of the menu, when it scrolls. The header
+       owns the 20 px of air under the logo (Streamlit's 16 px margin plus 4 px), so its surface paints that band. */
+    [data-testid="stSidebarHeader"] {height:72px; padding:12px 10px 26px 16px !important; margin-bottom:0 !important;
+        border-bottom:0; position:sticky; top:0; z-index:6; background:var(--go-sidebar);}
+    [data-testid="stSidebarHeader"] img {max-width:148px !important; height:28px !important;}
+    [data-testid="stSidebarCollapseButton"] button {width:32px; height:32px; min-height:32px;
+        border:0 !important; border-radius:8px !important; background:transparent !important; box-shadow:none;}
+    /* The menu is the only thing that scrolls when it does not fit; its bar shows on hover. */
+    [data-testid="stSidebarContent"] {overflow-y:auto; scrollbar-width:none;}
+    [data-testid="stSidebarContent"]:hover {scrollbar-width:thin; scrollbar-color:var(--go-hairline) transparent;}
+    [data-testid="stSidebarContent"]::-webkit-scrollbar {width:0;}
+    [data-testid="stSidebarContent"]:hover::-webkit-scrollbar {width:6px;}
+    [data-testid="stSidebarContent"]:hover::-webkit-scrollbar-thumb {background:var(--go-hairline); border-radius:3px;}
+    [data-testid="stSidebarUserContent"] {padding:0 8px !important;}
+    /* D-504: the menu's column is as tall as the window under the 72 px header, no more, so nothing scrolls towards
+       a void when the menu fits. D-539: the footer is no longer at its end but a column of icons on its left edge. */
+    [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {gap:0 !important;
+        min-height:calc(100vh - 72px); padding-bottom:0;}
+    [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"]
+        > [data-testid="stLayoutWrapper"]:has(> .st-key-sidebar_footer) {position:fixed !important; top:0 !important;
+        bottom:0 !important; left:0 !important; width:var(--go-activity-bar)px !important; max-width:none; margin:0 !important;
+        z-index:8;}
+    [data-testid="stSidebarNav"] {display:none;}
+    /* insert: section-colors-dark */
+    /* GitHub's mark on a light pill in the footer (D-124): a near-black logo on a
+       near-white background reads on every sidebar, where the blue mark almost vanished. */
+    .st-key-sidebar_tools {gap:3px !important; justify-content:flex-start !important;}
+    .st-key-sidebar_tools > div {flex:0 0 auto !important; width:auto !important;}
+    .sidebar-github {display:inline-flex; align-items:center; justify-content:center;
+        width:28px; height:28px; border-radius:7px; background:#f6f8fa;
+        border:1px solid rgba(255,255,255,.55); color:#1f2328 !important; transition:transform .12s ease;}
+    .sidebar-github svg {fill:#1f2328; width:16px; height:16px;}
+    .sidebar-github:hover {transform:translateY(-1px);}
+    .sidebar-github-current {outline:2px solid var(--go-accent); outline-offset:2px;}
+    /* D-373: the view button, under the logo, before the menu: visible, with its profile icon. */
+    .st-key-profile_indicator_top { padding:0 0 10px; }
+    [data-testid="stSidebarLogo"], [data-testid="stHeaderLogo"] { cursor:pointer; }
+    [data-testid="stSidebar"] .st-key-profile_indicator_top button { min-height:28px; justify-content:flex-start;
+        border-radius:10px !important; border:1px solid color-mix(in srgb, var(--go-view-ink) 55%, transparent) !important;
+        background:color-mix(in srgb, var(--go-view-ink) 12%, transparent) !important; }
+    [data-testid="stSidebar"] .st-key-profile_indicator_top button p,
+    [data-testid="stSidebar"] .st-key-profile_indicator_top button [data-testid="stIconMaterial"] {
+        color:var(--go-view-ink) !important; font-weight:400; font-size:.71875rem; }
+    [data-testid="stSidebar"] .st-key-profile_indicator_top button:hover { border-color:var(--go-view-ink) !important; }
+    /* D-539: the footer is the activity bar: folders and sources at the top, appearance and language at the bottom. */
+    .st-key-sidebar_footer {height:100%; padding:14px 0 12px !important; gap:4px !important; align-items:center;
+        justify-content:space-between; border-right:1px solid var(--go-hairline);
+        background:color-mix(in srgb, var(--go-sidebar) 92%, var(--go-text)) !important;}
+    /* The price alerts, a red chip in the Resumen's bar (D-169, D-264). */
+    .st-key-home_alert_trigger button, .st-key-dialog_alert_trigger button {border:0 !important; background:color-mix(in srgb,var(--go-alert-text) 14%,transparent) !important;
+        color:var(--go-alert-text) !important; border-radius:8px; padding:3px 10px !important; min-height:28px; box-shadow:none !important;}
+    .st-key-home_alert_trigger button:hover, .st-key-dialog_alert_trigger button:hover {background:color-mix(in srgb,var(--go-alert-text) 24%,transparent) !important;}
+    .st-key-home_alert_trigger button p, .st-key-dialog_alert_trigger button p {color:var(--go-alert-text) !important; -webkit-text-fill-color:var(--go-alert-text) !important;
+        font-weight:600; font-size:13.5px; letter-spacing:0; font-variant-numeric:tabular-nums;}
+    /* D-478: a chip's help never stays over the window it opened. */
+    body:has([data-testid="stDialog"]) [data-baseweb="tooltip"] {display:none !important;}
+    /* D-477: the sharp drops, a green chip beside it: good news for whoever buys. */
+    .st-key-home_drop_trigger button, .st-key-dialog_drop_trigger button {border:0 !important; background:color-mix(in srgb,var(--go-drop-text) 14%,transparent) !important;
+        color:var(--go-drop-text) !important; border-radius:8px; padding:3px 10px !important; min-height:28px; box-shadow:none !important;}
+    .st-key-home_drop_trigger button:hover, .st-key-dialog_drop_trigger button:hover {background:color-mix(in srgb,var(--go-drop-text) 24%,transparent) !important;}
+    .st-key-home_drop_trigger button p, .st-key-dialog_drop_trigger button p {color:var(--go-drop-text) !important; -webkit-text-fill-color:var(--go-drop-text) !important;
+        font-weight:600; font-size:13.5px; letter-spacing:0; font-variant-numeric:tabular-nums;}
+    /* D-491: the one shown in step 3 is outlined; both wait, faded, until a family is chosen. */
+    .st-key-home_alert_trigger [data-testid="stBaseButton-primary"], .st-key-dialog_alert_trigger [data-testid="stBaseButton-primary"] {box-shadow:inset 0 0 0 1.5px var(--go-alert-text) !important;}
+    .st-key-home_drop_trigger [data-testid="stBaseButton-primary"], .st-key-dialog_drop_trigger [data-testid="stBaseButton-primary"] {box-shadow:inset 0 0 0 1.5px var(--go-drop-text) !important;}
+    .st-key-home_alert_trigger button:disabled, .st-key-home_drop_trigger button:disabled, .st-key-dialog_alert_trigger button:disabled, .st-key-dialog_drop_trigger button:disabled {opacity:.45;}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button {background:transparent !important;
+        box-shadow:none !important; color:var(--go-quiet) !important; padding:6px 8px !important;}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button p {color:var(--go-quiet) !important; font-size:.71875rem !important;}
+    [data-testid="stSidebar"] .st-key-language_switch button p {color:var(--go-text) !important; -webkit-text-fill-color:var(--go-text) !important;}
+    .st-key-language_switch {gap:3px !important;}
+    .st-key-profile_indicator_top button p {white-space:nowrap !important;}
+    .st-key-sidebar_tools {flex-wrap:nowrap !important; gap:3px !important;}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button {padding:4px 5px !important;}
+    .st-key-sidebar_tiles {margin:0 0 6px !important;}
+    .st-key-sidebar_tiles > div {flex:1 1 0 !important; min-width:0 !important;}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button {
+        display:flex !important; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+        width:34px !important; height:34px; min-height:34px !important; padding:0 !important; gap:0 !important;
+        border-radius:6px; background:transparent !important;
+        border:1px solid var(--go-menu-ink-6) !important; box-shadow:none !important;}
+    .st-key-sources_tile, .st-key-sources_tile [data-testid="stLayoutWrapper"], .st-key-sources_tile [data-testid="stPopover"],
+    .st-key-sources_tile [data-testid="stPopover"] > div {width:100% !important;}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] {margin:0 !important;}
+    .st-key-sources_tile button::before {content:""; flex:none; width:22px; height:16px;
+        background:url("data:image/svg+xml;base64,var(--go-sources-tile-svg)") center / contain no-repeat;
+        transition:transform .18s ease;}
+    .st-key-sources_tile button:hover {background:var(--go-menu-ink-3) !important;}
+    .st-key-sources_tile button:hover::before {transform:translateY(-2px);}
+    .st-key-sources_tile button p {color:var(--go-text) !important; -webkit-text-fill-color:var(--go-text) !important;
+        font-size:.65rem !important; font-weight:400 !important; line-height:1.15 !important; white-space:nowrap; margin:0 !important;}
+    .st-key-sources_tile button [data-testid="stIconMaterial"], .st-key-sources_tile button svg {display:none !important;}
+    .st-key-sources_tile button > div > div:has([data-testid="stIconMaterial"]) {display:none !important;}
+    .st-key-sources_tile button > div {display:contents;}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before {content:""; flex:none; width:22px; height:16px;
+        background:url("data:image/svg+xml;base64,var(--go-folder-tile-svg)") center / contain no-repeat;
+        transition:transform .18s ease;}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover {background:var(--go-menu-ink-3) !important;}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover::before {transform:translateY(-2px);}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {color:var(--go-text) !important; -webkit-text-fill-color:var(--go-text) !important;
+        font-size:.65rem !important; font-weight:400 !important; line-height:1.12 !important; margin:0 !important;}
+    [class*="st-key-nav_folder_tile_"][class*="_nav_current"] [data-testid="stPageLink"] a {background:var(--go-menu-ink-4) !important;
+        border-color:var(--go-menu-ink-5);}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
+    [class*="st-key-nav_folder_tile"] [data-testid="stIconMaterial"] {display:none !important;}
+    [class*="st-key-nav_folder_tile_1"] [data-testid="stPageLink"] a::before {
+        background-image:url("data:image/svg+xml;base64,var(--go-study-tile-svg)") !important;}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] {margin:2px 0 2px !important;}
+    [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] {margin:0 0 2px !important;}
+    [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] a::before {
+        background-image:url("data:image/svg+xml;base64,var(--go-channels-tile-svg)") !important;}
+    [class*="st-key-nav_dashboard_tile_2"] [data-testid="stPageLink"] {margin:0 0 10px !important;}
+    [class*="st-key-nav_dashboard_tile_2"] [data-testid="stPageLink"] a::before {
+        background-image:url("data:image/svg+xml;base64,var(--go-ba-tile-svg)") !important;}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a {display:flex !important; flex-direction:row;
+        align-items:center; gap:8px !important; width:100% !important; min-height:36px !important; padding:4px 8px !important;
+        border-radius:6px; background:var(--go-menu-ink-3) !important; border:1px solid var(--go-menu-ink-6) !important;
+        box-shadow:none !important;}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a::before {content:""; flex:none; width:30px; height:22px;
+        background:url("data:image/svg+xml;base64,var(--go-dashboard-tile-svg)") center / contain no-repeat;
+        transition:transform .18s ease;}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a:hover {background:var(--go-menu-ink-4) !important;}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a:hover::before {transform:translateY(-2px);}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] p {color:var(--go-text) !important; -webkit-text-fill-color:var(--go-text) !important;
+        font-size:.8125rem !important; font-weight:400 !important; margin:0 !important;}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a span:has(> div > p),
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a span:has(> div > p) *,
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] p {white-space:normal !important;
+        overflow:visible !important; text-overflow:clip !important; line-height:1.2 !important;}
+    [class*="st-key-nav_dashboard_tile"][class*="_lit"] [data-testid="stPageLink"] a {border-color:var(--go-menu-ink-5) !important;
+        background:var(--go-menu-ink-4) !important;
+        box-shadow:inset 3px 0 0 #5aa9ea !important;}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stIconMaterial"] {display:none !important;}
+    .st-key-sidebar_footer [data-testid="stCaptionContainer"] p {color:var(--go-text) !important; opacity:.75;
+        font-size:.69rem; line-height:1.35; padding:0 3px;}
+    /* D-539: the footer is an activity bar, like VS Code's: a column of icons on the menu's left edge, the folders and
+       the sources at the top, appearance and language at the bottom, each named on hover. The menu keeps its 232 px
+       beside it and the whole height of the window, so «Calidad» is in sight when the app opens. */
+    [data-testid="stSidebar"][data-collapsed="false"] [data-testid="stSidebarUserContent"] {
+        padding-left:var(--go-activity-bar-8)px !important;}
+    [data-testid="stSidebar"][data-collapsed="false"] [data-testid="stSidebarHeader"] {
+        padding-left:var(--go-activity-bar-16)px !important;}
+    [data-testid="stSidebar"][data-collapsed="true"] .st-key-sidebar_footer {display:none !important;}
+    .st-key-sidebar_footer > div {width:auto !important; flex:0 0 auto !important;}
+    .st-key-sidebar_tiles, .st-key-sidebar_tools, .st-key-language_switch {flex-direction:column !important;
+        align-items:center !important; gap:6px !important; margin:0 !important; width:auto !important;}
+    .st-key-sidebar_tiles > div, .st-key-sidebar_tools > div, .st-key-language_switch > div {flex:0 0 auto !important;
+        width:auto !important; min-width:0 !important;}
+    .st-key-sources_tile, .st-key-sources_tile [data-testid="stLayoutWrapper"], .st-key-sources_tile [data-testid="stPopover"],
+    .st-key-sources_tile [data-testid="stPopover"] > div {width:auto !important;}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button,
+    .st-key-sidebar_appearance [data-testid="stPopover"] button {width:34px !important; height:34px !important;
+        min-height:34px !important; padding:0 !important; border:0 !important; border-radius:8px !important;
+        justify-content:center !important; align-items:center !important; background:transparent !important;}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before, .st-key-sources_tile button::before {
+        width:22px !important; height:18px !important;}
+    /* The names stay for screen readers and on hover; the bar shows only the icons. */
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p, .st-key-sources_tile button p,
+    .st-key-sidebar_appearance [data-testid="stPopover"] button p {position:absolute !important; width:1px !important;
+        height:1px !important; overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important;}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button div[aria-hidden="true"] {display:none !important;}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button [data-testid="stIconMaterial"] {font-size:20px !important;
+        margin:0 !important; color:var(--go-quiet) !important;}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover, .st-key-sources_tile button:hover,
+    .st-key-sidebar_appearance [data-testid="stPopover"] button:hover {background:var(--go-menu-ink-3) !important;}
+    [class*="st-key-nav_folder_tile_"][class*="_nav_current"] [data-testid="stPageLink"] a {
+        background:var(--go-menu-ink-4) !important; box-shadow:inset 2px 0 0 var(--go-accent) !important;}
+    .st-key-language_switch button {width:34px !important; min-width:34px !important; height:26px !important;
+        min-height:26px !important; padding:0 !important;}
+    .st-key-language_switch button p {font-size:.6875rem !important;}
+    /* D-540: line icons in one tone, like VS Code's: each shape is a mask painted in the menu's quiet ink, brighter on
+       hover or while its page is open; the stack of each area opens in a window, names only. */
+    /* insert: bar-icons-quiet-text */
+    [class*="st-key-stack_tile_"], [class*="st-key-stack_tile_"] [data-testid="stLayoutWrapper"],
+    [class*="st-key-stack_tile_"] [data-testid="stPopover"], [class*="st-key-stack_tile_"] [data-testid="stPopover"] > div {
+        width:auto !important;}
+    [class*="st-key-nav_folder_tile"], [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] {height:34px; min-height:34px;}
+    [class*="st-key-stack_tile_"] button {display:flex !important; flex-direction:column; align-items:center;
+        justify-content:center; gap:0 !important;
+        width:34px !important; height:34px !important; min-height:34px !important; padding:0 !important;
+        border:0 !important; border-radius:8px !important; background:transparent !important; box-shadow:none !important;}
+    [class*="st-key-stack_tile_"] button:hover {background:var(--go-menu-ink-3) !important;}
+    [class*="st-key-stack_tile_"] button p {position:absolute !important; width:1px !important; height:1px !important;
+        overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important;}
+    [class*="st-key-stack_tile_"] button [data-testid="stIconMaterial"],
+    [class*="st-key-stack_tile_"] button > div > div:has([data-testid="stIconMaterial"]) {display:none !important;}
+    [class*="st-key-stack_tile_"] button > div {display:contents;}
+    .stack-list .stack-title {margin:0 0 6px !important; font-size:12px !important; font-weight:600; color:var(--go-text);}
+    .stack-list ol {margin:0; padding-left:22px; font-size:12.5px; line-height:1.6;}
+    .stack-list li::marker {color:var(--go-quiet); font-variant-numeric:tabular-nums;}
+    

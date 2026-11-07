@@ -1,0 +1,32 @@
+
+    .st-key-architecture_body [data-testid="stHorizontalBlock"] {align-items:stretch; gap:14px;}
+    .st-key-architecture_diagram {border:1px solid var(--go-card-border); border-radius:14px;
+        background:var(--go-card); padding:14px 20px 18px;}
+    .st-key-architecture_diagram svg {display:block; width:100%; height:auto;}
+    /* D-503: the star takes the height the window leaves. 331 px is what sits above and below it, measured:
+       the header, the chips, the tabs and a one-line phrase (219 px), the legend and the panel's padding
+       (60 px), the frame's two empty blocks and the page's padding (40 px), plus 12 px of margin. Under
+       1320 px of window the phrase takes two lines (19 px more). */
+    .st-key-architecture_diagram svg:not(.zoom-frame svg) {max-height:calc(100vh - 331px);}
+    @media (max-width:1320px) {
+        .st-key-architecture_diagram svg:not(.zoom-frame svg) {max-height:calc(100vh - 350px);}
+    }
+    /* The diagram always fits the window (D-232): the viewport is as wide as the height left
+       allows, by the drawing's own proportion; the zoom buttons bring it closer inside the panel. */
+    .fit-modelo {position:relative;}
+    /* D-464: 287 px, what the header, the chips, the tabs, the phrase and the zoom buttons take today (427 px left 166 px empty). */
+    .fit-modelo .zoom-viewport {max-width:calc(max(100vh - 287px, 280px) * var(--ratio, 1.45)); margin:0 auto;}
+    .fit-modelo .zoom-buttons {position:absolute; bottom:-46px; right:0; margin:0; z-index:2;}
+    .arch-legend {display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
+        border-top:1px solid var(--go-card-border); font-size:12px; line-height:1.5; color:var(--go-text);}
+    .arch-phrase {font-size:.85rem !important; line-height:1.4 !important; color:var(--go-strong-text); margin:0 0 6px !important;}
+    .st-key-architecture_detail, .st-key-architecture_tables {border:1px solid var(--go-card-border);
+        border-radius:14px; background:var(--go-card); padding:12px 16px 10px;}
+    .arch-detail-head {display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+    .arch-detail-head code {font-size:1.05rem; font-weight:600; color:var(--go-accent);}
+    .arch-detail-role {font-size:11px; padding:2px 9px; border-radius:999px;
+        background:var(--go-field); color:var(--go-text);}
+    .arch-detail-rows {margin-left:auto; font-size:12px; color:var(--go-text);}
+    .arch-detail-text {font-size:.86rem; line-height:1.5; color:var(--go-strong-text); margin:7px 0 9px;}
+    .st-key-architecture_tables_list label p {font-size:.86rem !important;}
+    

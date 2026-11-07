@@ -8,7 +8,7 @@ import base64
 import html
 from pathlib import Path
 
-from bi import brand_icons, charts, database_map, i18n
+from bi import brand_icons, charts, database_map, i18n, static_files
 
 # Disc colors (light top, dark bottom, glyph) of the brands the actors view needs, as in
 # database_map.BRANDS.
@@ -126,18 +126,14 @@ def build_mockups_html(mode):
         image = f'<img src="data:image/jpeg;base64,{data}" alt="{esc(title)}">'
         frame = f'<div class="screen">{image}</div><div class="base"></div>'
         figures.append(f'<figure>{frame}<figcaption><b>{esc(title)}</b> · {esc(detail)}</figcaption></figure>')
-    css = f"""<style>
-* {{ box-sizing:border-box; }}
-html, body {{ margin:0; background:transparent; font:300 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:{palette['text']}; }}
-.grid {{ display:grid; grid-template-columns:1fr 1fr; gap:26px 30px; align-items:end; padding:6px 4px; }}
-figure {{ margin:0; text-align:center; }}
-figcaption {{ margin-top:10px; color:{palette['reference']}; }} figcaption b {{ color:{palette['strong_text']}; font-weight:500; }}
-.screen {{ width:88%; margin:0 auto; border:9px solid #1d2229; border-bottom-width:11px; border-radius:12px 12px 3px 3px;
-  background:#000; box-shadow:0 22px 40px rgba(0,0,0,.45); }}
-.screen img {{ display:block; width:100%; }}
-.base {{ width:100%; height:11px; background:linear-gradient(#c3c9d2,#7d8590); border-radius:0 0 14px 14px; }}
-@media (max-width:640px) {{ .grid {{ grid-template-columns:1fr; }} }}
-</style>"""
+    css = static_files.style(
+        "mockups.css",
+        {
+            'var(--go-text)': palette['text'],
+            'var(--go-reference)': palette['reference'],
+            'var(--go-strong-text)': palette['strong_text'],
+        },
+    )
     return (
         '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         + css

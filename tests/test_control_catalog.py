@@ -5,10 +5,13 @@ import pytest
 
 from bi import charts, control_catalog, queries, report, transformation_rules, unit_review
 
+# region Constants and variables
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
 PALETTE = charts.get_palette(charts.MODE_DARK)
+# endregion
 
 
+# region Control catalog
 def units(*rows):
     return pd.DataFrame(rows, columns=["source", "unit", "normalized_unit", "unit_quantity", "row_count", "first_date"])
 
@@ -101,3 +104,6 @@ def test_d524_every_unit_of_the_last_load_was_reviewed():
     assert summary_now["seen"] > 150 and summary_now["new"] == []
     page = control_catalog.build_page_html(PALETTE, "es", False)
     assert "Ninguna unidad nueva sin clasificar" in page
+
+
+# endregion

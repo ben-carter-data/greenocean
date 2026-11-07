@@ -9,10 +9,13 @@ from streamlit.testing.v1 import AppTest
 
 from bi import business_analysis, dashboard, interest_map, queries
 
+# region Variables
 DASHBOARD_FILE = str(Path(dashboard.__file__))
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
+# endregion
 
 
+# region «Interesados»
 def test_d376_the_prd_names_five_stakeholders_in_both_languages_and_each_page_exists():
     spanish, english = business_analysis.read_stakeholders("es"), business_analysis.read_stakeholders("en")
     assert [row["name"] for row in spanish] == [
@@ -83,3 +86,6 @@ def test_d444_the_map_reads_in_english_and_keeps_its_places():
         == 7
     )
     assert places
+
+
+# endregion

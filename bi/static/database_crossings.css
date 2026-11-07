@@ -1,0 +1,32 @@
+
+* { box-sizing:border-box; }
+html, body { margin:0; height:100%; background:transparent; color:var(--go-text);
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+var(--go-rules)
+svg.map { display:block; width:100%; height:100vh; overflow:visible; }
+.layer { fill:var(--go-rgba-255-255-255-03-if-dark-else-rgba-15-39-71-0); stroke:var(--go-border); stroke-width:1; }
+.layer.served { stroke:var(--go-accent); stroke-opacity:.55; fill:color-mix(in srgb, var(--go-accent) 5%, transparent); }
+.layer-name { font-size:14.5px; font-weight:600; fill:var(--go-ink); }
+.layer-file { font-size:var(--go-small)px; fill:var(--go-muted); }
+.chip { fill:var(--go-card); stroke:var(--go-border); stroke-width:1; filter:drop-shadow(0 4px 6px var(--go-shadow)); }
+.chip-text { font:400 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill:var(--go-ink); text-anchor:middle; }
+.source .chip { stroke-dasharray:4 4; }
+.source-text { font-size:12.5px; font-weight:500; fill:var(--go-ink); }
+.note { font-size:var(--go-small)px; fill:var(--go-muted); }
+.zone-label { font-size:var(--go-small)px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; fill:var(--go-muted); }
+.line { fill:none; stroke:var(--go-accent); stroke-width:2; stroke-linecap:round; }
+.line.check { stroke-dasharray:5 5; }
+.line.join { stroke-width:1.6; stroke:var(--go-ink); opacity:.7; }
+.line-label { font-size:var(--go-small)px; fill:var(--go-ink); paint-order:stroke; stroke:var(--go-background); stroke-width:5px; }
+.line-label.mid { text-anchor:middle; }
+.badge circle { fill:var(--c); stroke:var(--go-background); stroke-width:3; }
+.badge text { font-size:12px; font-weight:700; fill:#fff; text-anchor:middle; }
+.badge { cursor:default; outline:none; }
+.badge:hover circle, .badge:focus circle { stroke:var(--go-accent); }
+.tip { opacity:0; pointer-events:none; transition:opacity .15s ease; }
+.tip div { position:absolute; width:290px; padding:12px 14px; border-radius:14px; background:var(--go-card); border:1px solid var(--go-border);
+  box-shadow:0 18px 40px rgba(0,0,0,var(--go-55-if-dark-else-2)); color:var(--go-text); font-size:12.5px; line-height:1.45; }
+.tip b { display:block; margin:8px 0 2px; font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--go-muted); }
+.tip b:first-child { margin-top:0; }
+.tip em { font-style:normal; font-weight:600; color:var(--c); }
+var(--go-tips)

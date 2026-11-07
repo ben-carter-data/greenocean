@@ -13,7 +13,7 @@ build_security_html() returns one HTML document for st.iframe (CSS only, no scri
 
 import html
 
-from bi import charts, doc_views, quality_view, storage_map
+from bi import charts, doc_views, quality_view, static_files, storage_map
 
 # region Constants
 # Controls: (number, title, short line, what it protects, how, files, tests, verifiable in the repository).
@@ -331,49 +331,29 @@ def build_css(palette):
         f"svg:has(#loop-{index}:hover, #loop-{index}:focus) #tip-loop-{index} {{ opacity:1; }}"
         for index in range(len(LOOP))
     )
-    return f"""<style>
-* {{ box-sizing:border-box; }}
-html, body {{ margin:0; background:transparent; color:{text}; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-svg.sec {{ display:block; width:100%; height:auto; overflow:visible; }}
-.zone {{ fill:{'rgba(255,255,255,.03)' if dark else 'rgba(15,39,71,.035)'}; stroke:{border}; stroke-width:1.4; }}
-.zone.sub {{ fill:{'rgba(255,255,255,.035)' if dark else 'rgba(255,255,255,.55)'}; stroke-dasharray:6 5; }}
-.zone.author {{ stroke:#d9a400; }}
-.zone.public {{ stroke:#22b35a; }}
-.zone-title {{ font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; fill:{ink}; }}
-.zone-sub {{ font-size:11.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; fill:{muted}; }}
-.node {{ outline:none; cursor:default; }}
-.node:hover .halo, .node:focus .halo {{ stroke:{accent}; }}
-.halo {{ fill:none; stroke:transparent; stroke-width:2; }}
-.title {{ font-size:13.5px; font-weight:600; fill:{ink}; }}
-.detail {{ font-size:12px; fill:{muted}; }}
-.case {{ font:600 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill:{accent}; }}
-.chip {{ font:500 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill:{muted}; paint-order:stroke; stroke:{palette['background']}; stroke-width:4px; }}
-.line {{ fill:none; stroke:{accent}; stroke-width:1.8; }}
-.line.dashed {{ stroke:#8a94a6; stroke-dasharray:5 4; }}
-.num circle {{ fill:#22b35a; stroke:{palette['background']}; stroke-width:2; }}
-.num.declared circle {{ fill:{card}; stroke:#8a94a6; stroke-width:1.6; stroke-dasharray:3 2; }}
-.num text {{ font-size:11.5px; font-weight:700; fill:#fff; text-anchor:middle; }}
-.num.declared text {{ fill:{ink}; }}
-.threat {{ outline:none; cursor:default; }}
-.threat text {{ font-size:11.5px; font-weight:700; fill:#e0703a; }}
-.threat:hover text, .threat:focus text {{ fill:{ink}; }}
-.band {{ fill:{'rgba(255,255,255,.025)' if dark else 'rgba(15,39,71,.03)'}; stroke:{border}; stroke-dasharray:6 6; }}
-.band-title {{ font-size:12.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; fill:{ink}; }}
-.band-sub {{ font-size:12px; fill:{muted}; }}
-.step {{ outline:none; cursor:default; }}
-.step .card {{ fill:{card}; stroke:{border}; stroke-width:1.1; }}
-.step:hover .card, .step:focus .card {{ stroke:{accent}; }}
-.step-n {{ font-size:12px; font-weight:700; fill:{accent}; }}
-.loop-label {{ font-size:12px; fill:{ink}; paint-order:stroke; stroke:{palette['background']}; stroke-width:5px; }}
-.tip {{ opacity:0; pointer-events:none; transition:opacity .15s ease; }}
-.tip div {{ position:absolute; width:330px; padding:12px 14px; border-radius:14px; background:{card}; border:1px solid {border};
-  box-shadow:0 18px 40px rgba(0,0,0,{'.55' if dark else '.2'}); color:{text}; font-size:12.5px; line-height:1.45; }}
-.tip b {{ display:block; margin:8px 0 2px; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
-.tip b:first-child {{ margin-top:0; font-size:13px; letter-spacing:0; text-transform:none; color:{ink}; }}
-.tip code {{ font:400 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; overflow-wrap:anywhere; }}
-@media print {{ .tip {{ display:none !important; }} }}
-{hovers}
-</style>"""
+    return static_files.style(
+        "security_map.css",
+        {
+            'var(--go-text)': text,
+            'var(--go-rgba-255-255-255-03-if-dark-else-rgba-15-39-71-0)': 'rgba(255,255,255,.03)'
+            if dark
+            else 'rgba(15,39,71,.035)',
+            'var(--go-border)': border,
+            'var(--go-rgba-255-255-255-035-if-dark-else-rgba-255-255-2)': 'rgba(255,255,255,.035)'
+            if dark
+            else 'rgba(255,255,255,.55)',
+            'var(--go-ink)': ink,
+            'var(--go-muted)': muted,
+            'var(--go-accent)': accent,
+            'var(--go-background)': palette['background'],
+            'var(--go-card)': card,
+            'var(--go-rgba-255-255-255-025-if-dark-else-rgba-15-39-71)': 'rgba(255,255,255,.025)'
+            if dark
+            else 'rgba(15,39,71,.03)',
+            'var(--go-55-if-dark-else-2)': '.55' if dark else '.2',
+            'var(--go-hovers)': hovers,
+        },
+    )
 
 
 def number_mark(number, x, y, declared):

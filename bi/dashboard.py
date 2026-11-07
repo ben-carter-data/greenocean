@@ -26,6 +26,7 @@ import sys
 from pathlib import Path
 
 import streamlit as st
+from bi import static_files
 
 # region Imports of the project
 # Streamlit runs this file as a script, so the project folder is added to the
@@ -520,51 +521,7 @@ DASHBOARD_FOLD_SCRIPT = r"""<script>
 # the computer layout in miniature, every page whole, and no empty band on top.
 # Tablets and computers never match these queries. Plain fills only: st.html strips
 # SVG gradients.
-PHONE_LAYOUT_HTML = """<style>
-.go-rotate {display:none;}
-@media (max-width:600px) and (orientation:portrait) {
-  .go-rotate {display:flex; position:fixed; inset:0; z-index:2147483647; flex-direction:column;
-    align-items:center; justify-content:center; gap:10px; padding:48px 32px 72px; text-align:center;
-    background:radial-gradient(120% 70% at 50% 30%, #17406f 0%, #0f2747 55%, #0a1b33 100%);
-    color:#cfd6e2; font-family:"Source Sans Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-  .go-rotate .go-brand {font-size:26px; font-weight:600; color:#6ee7b7;}
-  .go-rotate .go-brand span {color:#7dd3fc;}
-  .go-rotate .go-sub {font-size:13px; color:#98a2b3;}
-  .go-rotate .go-phone {position:relative; width:80px; height:150px; margin:56px 0 44px; border-radius:16px;
-    background:#174a7c; border:5px solid #c3ccd8; box-shadow:0 24px 30px rgba(0,0,0,.45);
-    animation:go-turn 3.2s cubic-bezier(.65,0,.35,1) infinite;}
-  .go-rotate .go-phone i {position:absolute; display:block; border-radius:3px;}
-  .go-rotate h2 {margin:0; font-size:30px; font-weight:600; color:#ffffff; line-height:1.2;}
-  .go-rotate p {margin:0; max-width:300px; font-size:16px; line-height:1.45;}
-  @keyframes go-turn {0%,18% {transform:rotate(0deg);} 45%,72% {transform:rotate(-90deg);} 100% {transform:rotate(0deg);}}
-}
-@media (orientation:landscape) and (max-height:500px) {
-  /* The computer layout drawn at 1/0.62 the width, then shrunk back to the screen. */
-  .stApp {transform:scale(.62); transform-origin:0 0; width:161.3vw !important; height:161.3vh !important;}
-  /* Streamlit sizes its scrolling area to the screen height: it must grow with the scale. */
-  [data-testid="stAppViewContainer"] > div, [data-testid="stMain"], [data-testid="stSidebar"] {height:161.3vh !important; max-height:none !important;}
-  /* D-504: the menu's column grows with its sidebar, so its footer still ends at the bottom of the screen. */
-  [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {min-height:calc(161.3vh - 72px) !important;}
-  [data-testid="stHeader"] {display:none !important;}
-  [data-testid="stMainBlockContainer"] {padding-top:.4rem !important;}
-}
-</style>
-<div class="go-rotate" role="alertdialog" aria-label="Gira tu teléfono">
-  <div class="go-brand">Green<span>Ocean</span></div>
-  <div class="go-sub">Monitor de precios de alimentos</div>
-  <div class="go-phone" aria-hidden="true">
-    <i style="left:24px;top:4px;width:22px;height:5px;background:#0a1b33"></i>
-    <i style="left:7px;top:18px;width:10px;height:110px;background:#6ee7b7;opacity:.6"></i>
-    <i style="left:23px;top:18px;width:40px;height:9px;background:#ffffff;opacity:.5"></i>
-    <i style="left:25px;top:44px;width:12px;height:12px;border-radius:50%;background:#7dd3fc"></i>
-    <i style="left:45px;top:44px;width:12px;height:12px;border-radius:50%;background:#6ee7b7"></i>
-    <i style="left:25px;top:66px;width:12px;height:12px;border-radius:50%;background:#fda4af"></i>
-    <i style="left:45px;top:66px;width:12px;height:12px;border-radius:50%;background:#fde68a"></i>
-    <i style="left:23px;top:94px;width:40px;height:6px;background:#ffffff;opacity:.35"></i>
-  </div>
-  <h2>Gira tu teléfono</h2>
-  <p>El panel se lee en horizontal: así ves el pipeline completo y el menú de un vistazo.</p>
-</div>"""
+PHONE_LAYOUT_HTML = static_files.read("phone_layout.html")
 
 # D-233: the pages that fit the window close with one short footer instead of the two long ones.
 COMPACT_FOOTER_VIEWS = {
@@ -845,15 +802,12 @@ def show_dashboard_menu_fold(view, mode):
     if is_dashboard:
         green = ba_green(mode)
         st.markdown(
-            f"""<style>
-@keyframes go-menu-beat {{ 0%, 100% {{ filter:drop-shadow(0 0 2px {green}); opacity:1; }}
-  50% {{ filter:drop-shadow(0 0 9px {green}); opacity:.55; }} }}
-[data-testid="stSidebarCollapseButton"] button, [data-testid="stExpandSidebarButton"] {{ color:{green} !important;
-  animation:go-menu-beat 1.6s ease-in-out infinite; }}
-[data-testid="stSidebarCollapseButton"] button *, [data-testid="stExpandSidebarButton"] * {{ color:{green} !important; }}
-@media (prefers-reduced-motion:reduce) {{ [data-testid="stSidebarCollapseButton"] button,
-  [data-testid="stExpandSidebarButton"] {{ animation:none; filter:drop-shadow(0 0 4px {green}); }} }}
-</style>""",
+            static_files.style(
+                "menu_fold.css",
+                {
+                    'var(--go-green)': green,
+                },
+            ),
             unsafe_allow_html=True,
         )
     # the page as a neutral key: a page name in a script reads as Spanish text to the English layer (D-443)

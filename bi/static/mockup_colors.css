@@ -1,0 +1,13 @@
+
+        .greenocean-mockup{--mock-rise:#ff8a96;--mock-fall:#83baff;}
+        .greenocean-mockup .mock-metric:nth-child(1){--metric:#ff8a96!important;}
+        .greenocean-mockup .mock-metric:nth-child(2){--metric:#83baff!important;}
+        .greenocean-mockup .mock-metric:nth-child(3){--metric:#d4d8df!important;}
+        .greenocean-mockup .mock-metric:nth-child(4){--metric:#eec16e!important;}
+        .greenocean-mockup .mock-badge{background:#ff8a9620;}
+        .greenocean-mockup .mock-badge.down{background:#83baff20;}
+        .greenocean-mockup .mock-badge.equal{background:#d4d8df20;}
+        .greenocean-mockup .mock-badge.alert{background:#eec16e20;}
+        .greenocean-mockup .mock-table-link,.st-key-mock_data_link a{color:#83baff!important;}
+        .greenocean-mockup .mock-last-price{fill:#83baff;}
+        

@@ -6,20 +6,26 @@ import inspect
 import pytest
 
 from bi import dashboard, queries, run_monitor
+from tests import code_shape  # noqa: E402
 from tests.test_dashboard import FAKE_TOKEN, button_keys, draw_control_page, open_run_dialog
 
+# region Variables
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
+# endregion
 
 
+# region Closing the window of the manual run
 def test_d379_the_two_actions_that_close_the_window_are_callbacks_not_inline_reruns():
     window = inspect.getsource(dashboard.render_run_window)
-    assert "on_click=minimize_run_window" in window and "on_click=close_run_window" in window
-    assert (
-        'if st.button(tr("Minimizar")' not in window and 'if st.button(\n                    tr("Cerrar")' not in window
-    )
+    shape = code_shape.tree_of(dashboard.render_run_window)  # R-004: the shape of the code, not its text
+    clicks = {code_shape.keyword(call, "on_click") for call in code_shape.calls(shape, "st.button")}
+    assert {"minimize_run_window", "close_run_window"} <= clicks
+    inline = set(code_shape.buttons_tested_inline(shape))
+    assert not {code_shape.normal('tr("Minimizar")'), code_shape.normal('tr("Cerrar")')} & inline
     assert "del st.session_state" not in window  # forgetting the run happens in the callback, before the refresh
     # Cancelling still asks first and reruns only the window (nothing to close yet).
-    assert window.count('st.rerun(scope="fragment")') == 3
+    reruns = code_shape.calls(shape, "st.rerun")
+    assert sum(code_shape.keyword(call, "scope") == code_shape.normal('"fragment"') for call in reruns) == 3
 
 
 def test_d379_the_window_is_held_by_a_keyed_shell_that_closes_the_page_without_drawing_the_refreshing_part():
@@ -69,4 +75,7 @@ def test_d379_a_finished_run_closes_with_cerrar_and_a_running_one_minimizes_and_
     running.button(key="run_minimize").click().run().run()
     watch = running.session_state["run_watch"]
     assert not running.exception and watch["minimized"] and watch["phase"] == "running"
-    # (The run goes on in GitHub and the menu's indicator brings the window back, D-351: see its own tests.)
+
+
+# endregion
+# (The run goes on in GitHub and the menu's indicator brings the window back, D-351: see its own tests.)

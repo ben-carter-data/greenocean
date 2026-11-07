@@ -1,0 +1,29 @@
+
+    /* D-271: the path keeps its proportion (740 × 640) and takes the height the window leaves: the tabs above, the
+       short footer below. Its frame follows the drawing's height, so a narrower path is also a shorter page. */
+    .st-key-oc_stage_column iframe {display:block; margin:0 auto; max-width:max(420px, calc((100vh - 270px) * 740 / 640));}
+    /* On a tablet the facts go under the path, which then takes the whole width. */
+    @media (max-width:1100px) {
+        [data-testid="stHorizontalBlock"]:has(.st-key-oc_stage_column) {flex-wrap:wrap !important;}
+        [data-testid="stHorizontalBlock"]:has(.st-key-oc_stage_column) > [data-testid="stColumn"] {flex:1 1 100% !important; min-width:100% !important;}
+    }
+    .oc-runs .oc-run {max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block;}
+    .oc-runs .oc-run .oc-dot {vertical-align:middle;}
+    .oc-fact {display:flex; flex-direction:column; gap:1px; padding:10px 0;
+        border-bottom:1px solid var(--go-card-border);}
+    .oc-fact-label {font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+        color:var(--go-reference);}
+    .oc-fact-value {font-size:1.15rem; font-weight:600; color:var(--go-strong-text);
+        font-variant-numeric:tabular-nums;}
+    .oc-fact-note {font-size:.8rem; color:var(--go-text);}
+    .oc-runs {display:flex; flex-wrap:wrap; align-items:center; gap:4px 20px; padding-top:10px;
+        border-top:1px solid var(--go-card-border);}
+    .oc-runs .oc-fact-label {flex-basis:100%;}
+    .oc-run {display:flex; align-items:center; font-size:.82rem; color:var(--go-text) !important;
+        text-decoration:none !important; padding:2px 0;}
+    .oc-run:hover {color:var(--go-strong-text) !important;}
+    .oc-dot {display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; flex-shrink:0;}
+    .st-key-runs_admin {padding:14px 0 6px;}
+    .st-key-runs_admin .st-key-runs_run_now {margin:0 6px 0 4px; flex:none;}
+    .st-key-runs_admin .run-now-label, .st-key-runs_admin .run-now-note {text-align:left; margin:0;}
+    

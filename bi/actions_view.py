@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from bi import charts, control
+from bi import charts, control, static_files
 from bi.i18n import tr
 
 # region Constants
@@ -128,21 +128,17 @@ def build_css(palette: dict[str, str]) -> str:
     soft = charts.legible(muted, palette["background"])
     colors = {state: charts.legible(color or palette["rise"], card) for state, color in STATE_COLORS.items()}
     states = "".join(f".ga-state.ga-{state} {{ color:{color}; }}\n" for state, color in colors.items())
-    return f"""<style>
-.ga-note {{ font-size:13px; color:{soft}; margin:2px 0 8px; }}
-.ga-table {{ overflow:auto; border:1px solid {border}; border-radius:12px; background:{card}; margin:4px 0 10px; }}
-.ga-table table {{ width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; margin:0; }}
-.ga-table th {{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:{soft};
-  padding:8px 12px !important; border:0 !important; border-bottom:1px solid {border} !important; white-space:nowrap; }}
-.ga-table td {{ padding:7px 12px !important; border:0 !important; border-bottom:1px solid color-mix(in srgb, {border} 60%, transparent) !important;
-  color:{text}; vertical-align:top; background:transparent !important; }}
-.ga-table tr:last-child td {{ border-bottom:0 !important; }}
-.ga-num {{ font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right; }}
-.ga-state {{ font-weight:700; white-space:nowrap; }}
-{states}.ga-job {{ font-size:13px; color:{ink}; margin:6px 0 2px !important; }}
-.ga-label {{ font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:{soft}; margin:8px 0 2px !important; }}
-.ga-failure ul {{ margin:0 0 4px; padding-left:18px; font-size:12.5px; color:{text}; }}
-</style>"""
+    return static_files.style(
+        "actions_view.css",
+        {
+            'var(--go-soft)': soft,
+            'var(--go-border)': border,
+            'var(--go-card)': card,
+            'var(--go-text)': text,
+            'var(--go-states)': states,
+            'var(--go-ink)': ink,
+        },
+    )
 
 
 # endregion

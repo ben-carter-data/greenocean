@@ -5,10 +5,13 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
+# region Constants and variables
 DASHBOARD_FILE = str(Path(__file__).resolve().parent.parent / "bi" / "dashboard.py")
 KEY = "clave-larga"
+# endregion
 
 
+# region The view indicator under the logo
 def draw(profile=None, unlocked=False, language="es"):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
     app.secrets["CONTROL_CODE"] = KEY
@@ -138,3 +141,6 @@ def test_d395_the_author_view_closes_after_thirty_idle_minutes(monkeypatch):
     assert dashboard.ADMIN_UNLOCKED not in state and dashboard.AUTHOR_SEEN not in state and toasts
     assert not dashboard.expire_idle_author(start + 200 * 60)  # without the key there is nothing to close
     assert dashboard.AUTHOR_SEEN not in state
+
+
+# endregion

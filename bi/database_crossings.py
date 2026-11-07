@@ -12,7 +12,7 @@ where each one lives; this view shows how their tables meet."""
 
 import html
 
-from bi import charts, database_map, queries, storage_map
+from bi import charts, database_map, queries, static_files, storage_map
 
 # region Constants
 BACKUP_TABLES = ["dim_product", "dim_region", "dim_channel", "dim_date", "weekly_price", "rejection", "etl_run"]
@@ -301,39 +301,26 @@ def build_css(palette):
     shadow = "rgba(0,0,0,.45)" if dark else "rgba(15,39,71,.15)"
     rules = "".join(f".s-{key} {{ --c:{value}; }}" for key, value in STATUS_COLORS.items())
     tips = "".join(f"svg:has(#x-{row[0]}:hover, #x-{row[0]}:focus) #t-{row[0]} {{ opacity:1; }}" for row in CROSSINGS)
-    return f"""<style>
-* {{ box-sizing:border-box; }}
-html, body {{ margin:0; height:100%; background:transparent; color:{text};
-  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }}
-{rules}
-svg.map {{ display:block; width:100%; height:100vh; overflow:visible; }}
-.layer {{ fill:{'rgba(255,255,255,.03)' if dark else 'rgba(15,39,71,.035)'}; stroke:{border}; stroke-width:1; }}
-.layer.served {{ stroke:{accent}; stroke-opacity:.55; fill:color-mix(in srgb, {accent} 5%, transparent); }}
-.layer-name {{ font-size:14.5px; font-weight:600; fill:{ink}; }}
-.layer-file {{ font-size:{SMALL}px; fill:{muted}; }}
-.chip {{ fill:{card}; stroke:{border}; stroke-width:1; filter:drop-shadow(0 4px 6px {shadow}); }}
-.chip-text {{ font:400 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill:{ink}; text-anchor:middle; }}
-.source .chip {{ stroke-dasharray:4 4; }}
-.source-text {{ font-size:12.5px; font-weight:500; fill:{ink}; }}
-.note {{ font-size:{SMALL}px; fill:{muted}; }}
-.zone-label {{ font-size:{SMALL}px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; fill:{muted}; }}
-.line {{ fill:none; stroke:{accent}; stroke-width:2; stroke-linecap:round; }}
-.line.check {{ stroke-dasharray:5 5; }}
-.line.join {{ stroke-width:1.6; stroke:{ink}; opacity:.7; }}
-.line-label {{ font-size:{SMALL}px; fill:{ink}; paint-order:stroke; stroke:{palette['background']}; stroke-width:5px; }}
-.line-label.mid {{ text-anchor:middle; }}
-.badge circle {{ fill:var(--c); stroke:{palette['background']}; stroke-width:3; }}
-.badge text {{ font-size:12px; font-weight:700; fill:#fff; text-anchor:middle; }}
-.badge {{ cursor:default; outline:none; }}
-.badge:hover circle, .badge:focus circle {{ stroke:{accent}; }}
-.tip {{ opacity:0; pointer-events:none; transition:opacity .15s ease; }}
-.tip div {{ position:absolute; width:290px; padding:12px 14px; border-radius:14px; background:{card}; border:1px solid {border};
-  box-shadow:0 18px 40px rgba(0,0,0,{'.55' if dark else '.2'}); color:{text}; font-size:12.5px; line-height:1.45; }}
-.tip b {{ display:block; margin:8px 0 2px; font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
-.tip b:first-child {{ margin-top:0; }}
-.tip em {{ font-style:normal; font-weight:600; color:var(--c); }}
-{tips}
-</style>"""
+    return static_files.style(
+        "database_crossings.css",
+        {
+            'var(--go-text)': text,
+            'var(--go-rules)': rules,
+            'var(--go-rgba-255-255-255-03-if-dark-else-rgba-15-39-71-0)': 'rgba(255,255,255,.03)'
+            if dark
+            else 'rgba(15,39,71,.035)',
+            'var(--go-border)': border,
+            'var(--go-accent)': accent,
+            'var(--go-ink)': ink,
+            'var(--go-small)': SMALL,
+            'var(--go-muted)': muted,
+            'var(--go-card)': card,
+            'var(--go-shadow)': shadow,
+            'var(--go-background)': palette['background'],
+            'var(--go-55-if-dark-else-2)': '.55' if dark else '.2',
+            'var(--go-tips)': tips,
+        },
+    )
 
 
 def build_chip(layer, row, column, name):

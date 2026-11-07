@@ -12,9 +12,12 @@ from etl import etl  # noqa: E402
 from tests.test_etl import make_raw_consumer_rows, make_raw_wholesale_rows  # noqa: E402
 from tests.test_etl_run import open_test_databases, replace_raw_rows  # noqa: E402
 
+# region Constants
 VALPARAISO = {"region_id": "5", "region": "Región de Valparaíso"}
+# endregion
 
 
+# region Tests for bi/queries.sql (K1 to K4, K8)
 @pytest.fixture
 def database_file(tmp_path):
     """Indicator database built by the ETL from a few hand-made rows.
@@ -187,3 +190,6 @@ def test_every_github_link_of_the_panel_points_to_a_file_in_the_repository():
         assert (root / path).exists(), path
     for name in ("PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md", "DECISIONES.md"):
         assert i18n.document_path(name, "es").exists(), name
+
+
+# endregion

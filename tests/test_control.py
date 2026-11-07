@@ -292,7 +292,9 @@ def test_d350_a_right_key_closes_the_window_with_a_full_rerun_because_the_window
 
     body = inspect.getsource(dashboard.show_profile_dialog)
     assert "AUTHOR_ENTERED" in body and "st.rerun()" in body.split("AUTHOR_ENTERED")[1]
-    assert "AUTHOR_ENTERED] = True" in inspect.getsource(dashboard.submit_author_code)
+    from tests import code_shape
+
+    assert code_shape.sets_true(code_shape.tree_of(dashboard.submit_author_code), "AUTHOR_ENTERED")  # R-004
 
 
 def test_d369_the_entry_window_offers_two_views_and_the_author_only_as_a_corner_link():
@@ -319,7 +321,11 @@ def test_d369_the_entry_window_offers_two_views_and_the_author_only_as_a_corner_
         p.read_text(encoding="utf-8") for p in (Path(__file__).resolve().parent.parent / "bi").glob("*.py")
     )
     assert "profile_side_autor" not in source
-    assert 'div[data-testid="stDialog"]:has(.st-key-profile_choices) {{ background:rgba(4, 8, 16, .97)' in source
+    # R-004: the window's dark backdrop is read in the stylesheet the page receives, not in the code that builds it
+    from bi import app_style, charts
+
+    css = app_style.build_style_css(charts.MODE_DARK)
+    assert 'div[data-testid="stDialog"]:has(.st-key-profile_choices) { background:rgba(4, 8, 16, .97)' in css
 
 
 def open_entry_window(view, language="es"):

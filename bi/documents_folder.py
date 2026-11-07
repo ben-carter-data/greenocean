@@ -9,7 +9,7 @@ import html
 import math
 import re
 
-from bi import buttons, i18n
+from bi import buttons, i18n, static_files
 from bi.i18n import tr
 
 VIEW_GRID, VIEW_LIST = "Cuadrícula", "Lista"
@@ -198,64 +198,17 @@ def build_css(palette):
         palette["card_border"],
         palette["accent"],
     )
-    return f"""<style>
-.df-folder {{ display:flex; flex-direction:column; gap:14px; }}
-.df-head {{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }}
-.df-path {{ font-size:15px; color:{muted}; }} .df-path b {{ color:{ink}; font-weight:500; }} .df-path i {{ font-style:normal; margin:0 4px; }}
-.df-count {{ font-size:12.5px; color:{muted}; }}
-.df-group {{ display:flex; flex-direction:column; gap:7px; }}
-.df-group-head {{ display:flex; align-items:center; gap:10px; margin:6px 0 0; font-size:15px; font-weight:600; color:{ink}; }}
-.df-folder {{ padding-bottom:14px; }}
-.df-group-icon {{ display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%;
-  background:color-mix(in srgb, var(--df-color) 16%, transparent); color:var(--df-color); font-family:"Material Symbols Rounded";
-  font-size:19px; font-weight:400; line-height:1; font-feature-settings:"liga"; }}
-.df-group-path {{ font-size:12px; font-weight:400; color:{muted}; font-family:ui-monospace, Menlo, monospace; }}
-.df-group-count {{ margin-left:auto; font-size:12px; font-weight:400; color:{muted}; }}
-/* D-537: the cards share the whole row, however many there are; a narrow window moves the last ones down. */
-.df-grid {{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:14px; }}
-.df-family {{ font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--df-color); }}
-.df-list .df-family {{ display:none; }}
-.df-file {{ position:relative; display:flex; flex-direction:column; gap:8px; padding:12px; border:1px solid {border};
-  border-radius:14px; background:color-mix(in srgb, {card} 70%, transparent); transition:border-color .18s ease, box-shadow .18s ease; }}
-.df-file:hover {{ z-index:5; border-color:color-mix(in srgb, {accent} 60%, {border}); box-shadow:0 10px 26px -18px {accent}; }}
-.df-body {{ position:relative; display:flex; flex-direction:column; gap:7px; color:inherit !important; text-decoration:none !important; }}
-.df-top {{ display:flex; align-items:center; gap:10px; min-height:49px; }}
-.df-glyph {{ position:relative; flex:none; display:inline-flex; align-items:flex-end; justify-content:center; width:28px; height:34px;
-  padding-bottom:4px; box-sizing:border-box; border:1.5px solid var(--df-color); border-radius:5px 12px 5px 5px;
-  background:color-mix(in srgb, var(--df-color) 10%, transparent); }}
-.df-glyph b {{ font-size:8.5px; font-weight:600; letter-spacing:.06em; color:var(--df-color); }}
-.df-fold {{ position:absolute; top:-1.5px; right:-1.5px; width:9px; height:9px; border-left:1.5px solid var(--df-color);
-  border-bottom:1.5px solid var(--df-color); border-radius:0 0 0 4px; background:{card}; }}
-.df-name {{ font-size:12.5px; font-weight:500; line-height:1.3; color:{ink}; display:-webkit-box; -webkit-line-clamp:3;
-  -webkit-box-orient:vertical; overflow:hidden; }}
-.df-purpose {{ font-size:12px; line-height:1.4; min-height:2.8em; color:{text}; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }}
-.df-meta {{ display:flex; flex-wrap:wrap; gap:4px 10px; font-size:11.5px; color:{muted}; font-variant-numeric:tabular-nums; }}
-.df-actions {{ display:flex; flex-wrap:wrap; gap:4px; align-items:center; }}
-.df-grid .df-actions .go-btn--secondary .go-icon {{ display:none; }}
-.df-grid .df-actions .go-btn--text span:not(.go-icon) {{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }}
-.df-preview {{ position:absolute; left:calc(100% + 18px); top:-12px; width:250px; z-index:6; display:flex; flex-direction:column;
-  gap:4px; padding:12px 14px; border-radius:12px; background:{card}; border:1px solid {border};
-  box-shadow:0 18px 40px -18px rgba(0,0,0,.45); opacity:0; visibility:hidden; transition:opacity .16s ease; pointer-events:none; }}
-.df-grid .df-file:nth-last-child(-n+2) .df-preview {{ left:auto; right:calc(100% + 18px); }}
-.df-preview em {{ font-style:normal; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
-.df-preview ol {{ margin:0; padding-left:18px; font-size:12px; line-height:1.45; color:{ink}; }}
-.df-more {{ margin:0; font-size:11.5px; color:{muted}; }}
-.df-body:hover .df-preview, .df-body:focus-visible .df-preview {{ opacity:1; visibility:visible; }}
-.df-list {{ display:flex; flex-direction:column; gap:5px; container-type:inline-size; }}
-.df-list .df-file {{ flex-direction:row; align-items:center; gap:18px; padding:4px 14px; }}
-.df-list .df-body {{ flex-direction:row; align-items:center; gap:14px; flex:1; min-width:0; }}
-.df-list .df-top {{ flex:none; width:330px; min-height:0; }}
-.df-list .df-glyph {{ width:22px; height:27px; padding-bottom:2px; }}
-.df-list .df-glyph b {{ font-size:7px; }}
-.df-list .df-purpose {{ -webkit-line-clamp:1; min-height:0; flex:1; }}
-.df-list .df-meta {{ flex:none; width:170px; }}
-.df-list .df-preview {{ left:32px; top:calc(100% + 4px); }}
-@media (max-width:1100px) {{ .df-grid .df-file:nth-child(n) .df-preview {{ left:0; right:auto; top:calc(100% + 6px); }} }}
-@media (max-width:900px) {{ .df-list .df-file {{ flex-wrap:wrap; }} .df-list .df-meta {{ width:auto; }} }}
-/* D-324: the purpose needs about 130 px to be read; narrower than that it would be one letter, so the list drops it. */
-@container (max-width:920px) {{ .df-list .df-purpose {{ display:none; }} }}
-@media (prefers-reduced-motion:reduce) {{ .df-file, .df-preview {{ transition:none; }} }}
-</style>"""
+    return static_files.style(
+        "documents_folder.css",
+        {
+            'var(--go-muted)': muted,
+            'var(--go-ink)': ink,
+            'var(--go-border)': border,
+            'var(--go-card)': card,
+            'var(--go-accent)': accent,
+            'var(--go-text)': text,
+        },
+    )
 
 
 # region Cover (D-288)
@@ -314,41 +267,17 @@ def build_cover_css(palette):
         palette["card_border"],
         palette["accent"],
     )
-    return f"""<style>
-.doc-cover {{ position:relative; overflow:hidden; margin:-44px -60px 30px; padding:40px 60px 30px;
-  border-radius:16px 16px 0 0; border-bottom:1px solid {border};
-  background:linear-gradient(135deg, color-mix(in srgb, {accent} 13%, {card}) 0%, {card} 62%); }}
-.doc-cover::before {{ content:""; position:absolute; inset:0; pointer-events:none; opacity:.08;
-  background-image:linear-gradient({accent} 1px, transparent 1px), linear-gradient(90deg, {accent} 1px, transparent 1px);
-  background-size:26px 26px; -webkit-mask-image:radial-gradient(ellipse at 85% 0%, #000 0%, transparent 70%);
-  mask-image:radial-gradient(ellipse at 85% 0%, #000 0%, transparent 70%); }}
-.doc-cover::after {{ content:""; position:absolute; left:0; right:0; top:0; height:3px;
-  background:linear-gradient(90deg, {accent}, #22b35a 60%, transparent); }}
-.doc-cover > * {{ position:relative; }}
-.doc-cover-mark {{ margin:0 0 18px !important; font-size:.72rem !important; font-weight:600; letter-spacing:.2em;
-  text-transform:uppercase; color:{accent} !important; }}
-.doc-cover-mark i {{ font-style:normal; margin:0 6px; color:{muted}; }}
-.doc-cover-kind {{ display:inline-block; margin:0 0 10px !important; padding:3px 11px; border-radius:999px;
-  border:1px solid color-mix(in srgb, {accent} 45%, transparent); font-size:.78rem !important; color:{ink} !important; }}
-.doc-cover-title {{ margin:0 0 10px !important; padding:0 !important; border:0 !important; font-size:2.15rem !important;
-  font-weight:600 !important; letter-spacing:-.03em; line-height:1.15; color:{ink} !important; }}
-.doc-cover-purpose {{ max-width:660px; margin:0 0 24px !important; font-size:1.04rem !important; line-height:1.55 !important;
-  color:{text} !important; }}
-.doc-cover-meta {{ display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:10px 18px; margin:0; }}
-.doc-cover-meta div {{ padding-left:10px; border-left:2px solid color-mix(in srgb, {accent} 55%, transparent); }}
-.doc-cover-meta dt {{ font-size:.68rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:{muted}; }}
-.doc-cover-meta dd {{ margin:2px 0 0; font-size:.92rem; color:{ink}; font-weight:500; }}
-.doc-cover-related {{ margin:20px 0 0 !important; font-size:.84rem !important; color:{text} !important; }}
-.doc-cover-related span {{ display:block; font-size:.68rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
-  color:{muted}; margin-bottom:4px; }}
-.doc-cover-related a {{ color:{accent} !important; }}
-@media (max-width:900px) {{ .doc-cover {{ margin:-22px -18px 24px; padding:26px 18px 20px; }} }}
-@media print {{
-  .doc-cover {{ margin:-40px -50px 0; min-height:255mm; display:flex; flex-direction:column; justify-content:center;
-    padding:0 50px; border-radius:0; border-bottom:0; break-after:page; page-break-after:always; }}
-  .doc-cover-title {{ font-size:2.6rem !important; }}
-}}
-</style>"""
+    return static_files.style(
+        "document_cover.css",
+        {
+            'var(--go-border)': border,
+            'var(--go-accent)': accent,
+            'var(--go-card)': card,
+            'var(--go-muted)': muted,
+            'var(--go-ink)': ink,
+            'var(--go-text)': text,
+        },
+    )
 
 
 # endregion

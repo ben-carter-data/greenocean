@@ -5,7 +5,10 @@ from pathlib import Path
 
 import pytest
 
+# region Constants and variables
 PROJECT_DIR = Path(__file__).resolve().parent.parent
+# endregion
+# region The menu does not scroll towards a void
 sys.path.insert(0, str(PROJECT_DIR))
 from bi import charts, dashboard  # noqa: E402
 
@@ -78,11 +81,12 @@ def test_d504_the_menu_never_moves_its_nodes_with_a_script():
 
 
 def test_d539_each_icon_of_the_bar_is_named_on_hover():
-    source = Path(dashboard.__file__).read_text(encoding="utf-8")
-    tiles = source[source.index("def show_folder_tile") :]
-    assert "help=tr(view)" in tiles[: tiles.index("\ndef ")]
-    sources = source[source.index("def show_footer_tiles") :]
-    assert 'help=tr("Fuentes de datos")' in sources[: sources.index("\ndef ")]
+    from tests import code_shape  # R-004: the shape of the code, not its text
+
+    links = code_shape.calls(code_shape.tree_of(dashboard.show_folder_tile), "st.page_link")
+    assert "tr(view)" in {code_shape.keyword(call, "help") for call in links}
+    popovers = code_shape.calls(code_shape.tree_of(dashboard.show_footer_tiles), "st.popover")
+    assert code_shape.normal('tr("Fuentes de datos")') in {code_shape.keyword(call, "help") for call in popovers}
 
 
 @pytest.mark.parametrize("mode", sorted(charts.THEMES))
@@ -117,3 +121,6 @@ def test_d540_the_stack_of_every_area_is_in_the_bar_for_every_view():
         assert all(title in labels for _, title, _, _ in activity_bar.STACK_AREAS), (profile, labels)
         lists = [block.value for block in app.sidebar.markdown if 'class="stack-list"' in block.value]
         assert len(lists) == len(activity_bar.STACK_AREAS) and not any("<a " in block for block in lists)  # names only
+
+
+# endregion

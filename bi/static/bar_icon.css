@@ -1,0 +1,1 @@
+var(--go-button)::before {content:""; flex:none; width:22px !important; height:22px !important; background:var(--go-quiet) !important; -webkit-mask:var(--go-mask) center / contain no-repeat; mask:var(--go-mask) center / contain no-repeat; transition:background .15s ease;}

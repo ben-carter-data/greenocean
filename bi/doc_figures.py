@@ -8,7 +8,7 @@ states are the ones of the code and the workflows; tests/test_doc_figures.py che
 
 import html
 
-from bi import charts, doc_views, i18n, queries
+from bi import charts, doc_views, i18n, queries, static_files
 
 
 def say(spanish, english):
@@ -34,45 +34,17 @@ def page(mode, body, label):
         palette["card_border"],
         palette["accent"],
     )
-    css = f"""<style>
-* {{ box-sizing:border-box; }}
-html, body {{ margin:0; background:transparent; color:{text}; font:400 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }}
-.fig {{ padding:4px 2px 8px; }}
-.fig-title {{ margin:0 0 10px; font-size:11px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:{muted}; }}
-.fig-note {{ margin:8px 0 0; font-size:12px; color:{muted}; }}
-svg {{ display:block; width:100%; height:auto; overflow:visible; }}
-svg text {{ font-family:inherit; }}
-.ink {{ fill:{ink}; }} .txt {{ fill:{text}; }} .mut {{ fill:{muted}; }}
-.box {{ fill:color-mix(in srgb, {accent} 7%, transparent); stroke:color-mix(in srgb, {border} 90%, transparent); }}
-.life {{ stroke:color-mix(in srgb, {border} 95%, transparent); stroke-dasharray:4 5; }}
-.gate {{ fill:color-mix(in srgb, #e5484d 9%, transparent); stroke:#e5484d; stroke-dasharray:5 4; }}
-.cols {{ display:grid; gap:10px; align-items:stretch; }}
-.col {{ display:flex; flex-direction:column; gap:7px; padding:10px; border-radius:14px; min-width:0;
-  border:1px solid color-mix(in srgb, {border} 90%, transparent); background:color-mix(in srgb, var(--c) 6%, transparent);
-  border-top:3px solid var(--c); }}
-.col h4 {{ margin:0 0 2px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--c); }}
-.item {{ padding:7px 9px; border-radius:10px; background:color-mix(in srgb, {card} 70%, transparent);
-  border:1px solid color-mix(in srgb, {border} 70%, transparent); }}
-.item b {{ display:block; color:{ink}; font-weight:600; font-size:13px; }}
-.item span {{ display:block; font-size:12px; color:{text}; }}
-.arrow {{ align-self:center; color:{muted}; font-size:20px; text-align:center; }}
-.bars {{ display:grid; grid-template-columns:minmax(120px, 30%) 1fr auto; gap:6px 12px; align-items:center; }}
-.bar {{ height:14px; border-radius:7px; background:var(--c); opacity:.85; }}
-.bars b {{ color:{ink}; font-weight:600; }} .bars em {{ font-style:normal; color:{ink}; font-weight:600; }}
-.tree {{ display:grid; grid-template-columns:minmax(150px, 24%) 1fr; gap:10px 16px; align-items:start; }}
-.root {{ padding:12px; border-radius:14px; border:2px solid {accent}; color:{ink}; font-weight:600;
-  background:color-mix(in srgb, {accent} 8%, transparent); }}
-.branches {{ display:flex; flex-direction:column; gap:8px; border-left:2px solid color-mix(in srgb, {accent} 45%, transparent);
-  padding-left:14px; }}
-.branch {{ display:grid; grid-template-columns:minmax(150px, 34%) 1fr; gap:10px; align-items:start; position:relative; }}
-.branch::before {{ content:""; position:absolute; left:-15px; top:16px; width:12px; border-top:2px solid color-mix(in srgb, {accent} 45%, transparent); }}
-.when {{ padding:7px 9px; border-radius:10px; border:1px solid color-mix(in srgb, #c98500 55%, transparent);
-  background:color-mix(in srgb, #c98500 8%, transparent); color:{ink}; font-weight:600; font-size:12.5px; }}
-.then {{ padding:7px 9px; border-radius:10px; border:1px solid color-mix(in srgb, {border} 80%, transparent); font-size:12.5px; }}
-.then b {{ color:{ink}; }}
-.compare {{ display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:stretch; }}
-@media (max-width:640px) {{ .cols, .compare, .tree, .branch {{ grid-template-columns:1fr !important; }} .arrow {{ transform:rotate(90deg); }} }}
-</style>"""
+    css = static_files.style(
+        "document_figure.css",
+        {
+            'var(--go-text)': text,
+            'var(--go-muted)': muted,
+            'var(--go-ink)': ink,
+            'var(--go-accent)': accent,
+            'var(--go-border)': border,
+            'var(--go-card)': card,
+        },
+    )
     return (
         f'<!doctype html><html lang="{i18n.get_language()}"><head><meta charset="utf-8">'
         f'<meta name="viewport" content="width=device-width,initial-scale=1">{css}</head>'
@@ -771,74 +743,16 @@ def scenario_css(palette):
         palette["card"],
         palette["card_border"],
     )
-    return f"""<style>
-.sc {{ display:grid; grid-template-columns:84px 44px minmax(0, 1fr); column-gap:0; row-gap:6px; }}
-.sc-frame {{ grid-column:3; grid-row:1 / 6; border:1.5px solid {border}; border-radius:16px; }}
-.sc-head {{ grid-column:3; grid-row:1; display:flex; gap:9px; align-items:center; padding:7px 12px 0; }}
-.sc-head b, .sc-head span {{ display:inline !important; }}
-.sc-head span::before {{ content:" · "; }}
-.sc-head svg {{ width:24px; height:24px; flex:none; }}
-.sc-head b, .sc-db b, .sc-gh-title b {{ display:block; color:{ink}; font-size:13.5px; line-height:1.25; }}
-.sc-head span, .sc-db span, .sc-gh-title span {{ display:block; font-size:11.5px; color:{text}; line-height:1.3; }}
-.sc-sec {{ grid-column:3; margin:0 10px; padding:6px 9px 7px; border-radius:10px;
-  border:1.3px solid color-mix(in srgb, var(--c) 55%, transparent); background:color-mix(in srgb, var(--c) 6%, transparent); }}
-.sc-sec:last-of-type {{ margin-bottom:10px; }}
-.sc-sec.all {{ border-style:dashed; border-color:{border}; background:transparent; }}
-.sc-sec h4 {{ margin:0 0 4px; font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--c); }}
-.sc-sec.all h4 {{ color:{muted}; display:inline; margin-right:6px; }}
-.sc-sec.all p {{ display:inline; }}
-.sc-sec p {{ margin:0; font-size:11.5px; line-height:1.35; color:{text}; }}
-.sc-grid {{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:4px; }}
-.sc-grid.flow {{ display:flex; flex-wrap:wrap; }}
-.sc-grid.flow > .sc-tile {{ flex:1 1 auto; }}
-.sc-tile {{ padding:3px 7px 4px; border-radius:7px; font-size:11.5px; line-height:1.35; color:{text}; background:color-mix(in srgb, {card} 80%, transparent);
-  border:1px solid color-mix(in srgb, {border} 60%, transparent); min-width:0; }}
-.sc-tile b {{ color:{ink}; font-size:12px; font-weight:600; }}
-.sc-tile > span {{ font-size:11.5px; color:{text}; }}
-.sc-tile b .ref {{ color:{muted}; font-size:11px; font-weight:400; white-space:nowrap; }}
-.sc-warn {{ margin-top:4px !important; color:var(--c) !important; }}
-.sc-actor {{ grid-column:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:2px; }}
-.sc-actor svg {{ width:32px; height:32px; }}
-.sc-actor b {{ color:{ink}; font-size:13px; line-height:1.2; }}
-.sc-actor span {{ font-size:11px; line-height:1.25; color:{text}; }}
-.sc-up {{ font-size:10.5px; line-height:1.3; color:{muted}; border:1px solid {border}; border-radius:999px; padding:0 7px; margin-bottom:4px; }}
-.sc-arrow {{ align-self:center; position:relative; height:2px; background:var(--c); margin:0 10px 0 4px; }}
-.sc-arrow.back {{ background:transparent; border-top:2px dashed var(--c); height:0; }}
-.sc-arrow::after {{ content:""; position:absolute; top:-6px; border:6px solid transparent; }}
-.sc-arrow.right::after {{ right:-8px; border-left:9px solid var(--c); border-right:0; }}
-.sc-arrow.left::after {{ left:-8px; border-right:9px solid var(--c); border-left:0; }}
-.sc-arrow.back::after {{ top:-8px; }}
-.sc-arrow em {{ position:absolute; bottom:5px; left:-4px; right:-4px; text-align:center; font-style:normal; font-size:10.5px;
-  color:var(--c); line-height:1.25; }}
-.sc-arrow em.under {{ bottom:auto; top:7px; }}
-.sc-conn {{ grid-column:3; grid-row:6; display:grid; grid-template-columns:200px 56px minmax(0, 1fr); height:40px; margin-top:-6px; }}
-.sc-ups {{ position:relative; }}
-.sc-ups > .sc-v {{ position:absolute; top:0; bottom:0; left:50%; }}
-.sc-ups > .sc-v + .sc-v {{ left:54%; }}
-.sc-ups > .sc-v:first-child:not(:last-child) {{ left:16%; }}
-.sc-v {{ position:relative; width:0; border-left:2px solid var(--c); }}
-.sc-v.back {{ border-left-style:dashed; }}
-.sc-v::after {{ content:""; position:absolute; left:-7px; border:6px solid transparent; }}
-.sc-v.up::after {{ top:-6px; border-bottom:9px solid var(--c); border-top:0; }}
-.sc-v.down::after {{ bottom:-6px; border-top:9px solid var(--c); border-bottom:0; }}
-.sc-v em {{ position:absolute; left:8px; top:50%; transform:translateY(-50%); width:max-content; max-width:180px; font-style:normal;
-  font-size:10.5px; line-height:1.25; color:var(--c); }}
-.sc-v em small {{ display:block; font-size:10px; }}
-.sc-gh-title b, .sc-gh-title span {{ display:inline !important; }}
-.sc-gh-title span::before {{ content:" · "; }}
-.sc-bottom {{ grid-column:3; grid-row:7; display:grid; grid-template-columns:200px 56px minmax(0, 1fr); align-items:stretch; }}
-.sc-db {{ display:flex; gap:8px; padding:7px 10px; border-radius:12px; align-self:start;
-  border:1.5px solid var(--c); background:color-mix(in srgb, var(--c) 8%, transparent); }}
-.sc-db svg, .sc-gh-title svg {{ width:22px; height:22px; flex:none; }}
-.sc-gh {{ display:flex; flex-direction:column; gap:4px; padding:6px 8px 7px; border-radius:12px; border:1.5px dashed var(--c); }}
-.sc-gh .sc-grid {{ grid-template-columns:1fr; gap:3px; }}
-.sc-gh-title {{ display:flex; gap:8px; align-items:center; }}
-.sc-pub {{ align-self:start; margin-top:14px; position:relative; height:0; border-top:2px solid var(--c); }}
-.sc-pub::after {{ content:""; position:absolute; top:-7px; left:-6px; border:6px solid transparent; border-right:9px solid var(--c); border-left:0; }}
-.sc-pub em {{ position:absolute; bottom:4px; left:0; right:0; text-align:center; font-style:normal; font-size:10.5px; color:var(--c); }}
-.sc-legend {{ grid-column:1 / 3; grid-row:6 / 8; align-self:end; display:flex; flex-direction:column; gap:1px; font-size:11px; line-height:1.35; color:{text}; }}
-.sc-legend i {{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--c); margin-right:5px; }}
-</style>"""
+    return static_files.style(
+        "sad_scenarios.css",
+        {
+            'var(--go-border)': border,
+            'var(--go-ink)': ink,
+            'var(--go-text)': text,
+            'var(--go-muted)': muted,
+            'var(--go-card)': card,
+        },
+    )
 
 
 def _sad_scenarios_icon(name, color):

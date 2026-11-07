@@ -7,6 +7,7 @@ from pathlib import Path
 from bi import quality
 
 
+# region Evidence must distinguish passed checks, missing files and actual failures
 def test_source_manifest_is_not_a_verified_file(tmp_path):
     expected = hashlib.sha256(b'original').hexdigest()
     manifest = {'source.csv': {'hash': expected, 'downloaded_at': '2026-10-13'}}
@@ -36,3 +37,6 @@ def test_database_checks_detect_bad_values_duplicate_keys_and_broken_references(
     assert result['duplicates'] == 1 and result['invalid'] == 2
     # Two rows × four missing parents: product, region, channel and, since D-095, the week.
     assert result['foreign_keys'] == 8
+
+
+# endregion

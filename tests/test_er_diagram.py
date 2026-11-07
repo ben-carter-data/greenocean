@@ -7,10 +7,13 @@ import pytest
 
 from bi import charts, er_diagram, queries
 
+# region Variables
 REPOSITORY = Path(__file__).resolve().parent.parent
 needs_database = pytest.mark.skipif(not Path(queries.DATABASE_FILE).exists(), reason="datos.duckdb is not here")
+# endregion
 
 
+# region Entity-relationship diagram
 @needs_database
 def test_every_drawn_table_column_and_key_exists_in_the_database_with_its_real_type():
     schema = er_diagram.read_schema()
@@ -116,3 +119,6 @@ def test_d526_the_logical_key_reads_in_english(monkeypatch):
     english = i18n.translate_html(f"<svg><text>{er_diagram.logical_key_note(12185)}</text></svg>")
     assert "weekly_price: logical key" in english and "rows and a strict primary key" in english
     assert "clave" not in english and "filas" not in english
+
+
+# endregion

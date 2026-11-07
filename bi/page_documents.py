@@ -51,6 +51,7 @@ from bi.constants import (
     THEME_PARAMETER,
 )
 from bi.i18n import tr
+from bi import static_files
 
 # region Constants
 PROJECT_DOCUMENTS = {
@@ -99,28 +100,7 @@ CODE_SPAN = re.compile(r"`([^`\n]+)`")
 
 # D-248: the downloadable document is the page itself, printed by the browser: the same text, diagrams and order.
 # Only the document pages carry this stylesheet; it hides the menu and the navigation and lets the page run on.
-PRINT_DOCUMENT_CSS = """<style>
-@media print {
-  /* D-358: every sheet says its number, and the cover has a sheet of its own. */
-  @page { size: A4; margin: 12mm 12mm 16mm;
-    @bottom-center { content: "__PAGE__ " counter(page) " __OF__ " counter(pages); font: 9pt -apple-system, "Segoe UI", sans-serif; color: #5f6b7c; } }
-  .doc-cover { break-after: page; }
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
-  .st-key-app_header, .st-key-doc_actions, .st-key-compact_footer, .st-key-route_footer, .doc-path,
-  [data-testid="stElementContainer"]:has(.page-lineage), [data-testid="stCaptionContainer"],
-  hr { display: none !important; }
-  html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"] {
-    height: auto !important; min-height: 0 !important; overflow: visible !important; position: static !important; }
-  /* The page is laid out at its screen width and scaled to the sheet, so the paper shows the same lines as the screen. */
-  [data-testid="stMainBlockContainer"] { padding: 0 !important; max-width: none !important; zoom: 0.86; }
-  .st-key-project_document { max-width: none !important; margin: 0 !important; box-shadow: none !important;
-    padding: 40px 50px 44px !important; }
-  [data-testid="stIFrame"], figure, tr { break-inside: avoid; }
-  thead { display: table-header-group; }
-  h2, h3 { break-after: avoid; }
-}
-</style>"""
+PRINT_DOCUMENT_CSS = static_files.style("print_document.css")
 
 
 # D-280: the PDF is always a white sheet. From a dark theme the button reopens the page in the light theme with

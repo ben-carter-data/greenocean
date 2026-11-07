@@ -1,0 +1,16 @@
+
+.nb-file .df-glyph b { font-size:5.5px !important; letter-spacing:0; }
+.nb-file .df-actions { flex:none; width:60px; }
+.nb-file .df-top { width:auto !important; flex:1 1 auto !important; min-width:0; }
+.nb-file .nb-file-name { flex:none !important; font-family:ui-monospace, Menlo, monospace; font-size:11.5px; color:var(--go-muted); }
+.nb-path { display:flex; gap:6px; align-items:baseline; font-size:13px; color:var(--go-muted); margin:0 0 6px; }
+.nb-path a { color:var(--go-accent) !important; text-decoration:none; } .nb-path i { font-style:normal; }
+.nb-path span { color:var(--go-ink); font-family:ui-monospace, Menlo, monospace; font-size:12.5px; }
+.nb-output { margin:-6px 0 10px; padding:10px 12px; border:1px solid var(--go-border); border-radius:10px;
+  background:color-mix(in srgb, var(--go-card) 70%, transparent); color:var(--go-text); font-size:12.5px; }
+.nb-stream { margin:0 0 6px; padding:0; background:transparent !important; border:0; white-space:pre-wrap;
+  font-family:ui-monospace, Menlo, monospace; font-size:12.5px; line-height:1.5; color:var(--go-ink); }
+.nb-table { max-height:360px; overflow:auto; }
+.nb-table table { border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums; color:var(--go-ink); }
+.nb-table th, .nb-table td { padding:4px 9px; border-bottom:1px solid var(--go-border); text-align:left; white-space:nowrap; }
+.nb-table thead th { position:sticky; top:0; background:var(--go-card); color:var(--go-muted); font-weight:600; }

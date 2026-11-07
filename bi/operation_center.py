@@ -14,7 +14,7 @@ of the panel and opens in a new tab.
 
 import html
 
-from bi import control, project
+from bi import control, project, static_files
 
 # region Constants
 # The stage is drawn on a 740 x 640 grid and scales with the width of the column.
@@ -238,54 +238,25 @@ def pick_pinned_step(states):
 def build_css(palette):
     dark = palette["base"] == "dark"
     shadow = "rgba(0,0,0,.55)" if dark else "rgba(15,39,71,.22)"
-    return f"""<style>
-* {{box-sizing:border-box;}}
-body {{margin:0; background:transparent; color:{palette['text']};
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;}}
-a {{color:{palette['accent']}; text-decoration:none;}} a:hover {{text-decoration:underline;}}
-.oc-stage {{position:relative; width:100%; max-width:{STAGE_WIDTH}px; aspect-ratio:{STAGE_WIDTH}/{STAGE_HEIGHT};
-  margin:0 auto; container-type:inline-size; --u:calc(100cqw / {STAGE_WIDTH});}}
-/* D-271: the logos and their words shrink with the stage (never grow past their size), so a narrow window shows the
-   same path smaller instead of logos piled on each other. */
-.oc-stage > svg {{position:absolute; inset:0; width:100%; height:100%;}}
-.oc-phase {{position:absolute; left:{PHASE_LEFT / STAGE_WIDTH * 100:.2f}%; font-size:11px; font-weight:600; letter-spacing:1.4px;
-  text-transform:uppercase; color:{palette['reference']};}}
-.oc-phase b {{color:{palette['accent']}; margin-right:6px;}}
-.oc-node {{position:absolute; width:min(132px, calc(132 * var(--u))); margin-left:max(-66px, calc(-66 * var(--u)));
-  margin-top:max(-38px, calc(-38 * var(--u))); display:flex;
-  flex-direction:column; align-items:center; text-align:center;}}
-.oc-node > a {{display:block; border-radius:50%;}}
-.oc-node > a:focus-visible {{outline:2px solid {palette['accent']}; outline-offset:4px;}}
-.oc-logo {{display:block; width:min(76px, calc(76 * var(--u))); height:min(76px, calc(76 * var(--u))); filter:drop-shadow(0 16px 14px {shadow});
-  transition:transform .25s ease;}}
-.oc-node:hover .oc-logo {{transform:translateY(-6px) scale(1.04);}}
-.oc-halo {{width:min(62px, calc(62 * var(--u))); height:12px; border-radius:50%; margin-top:4px; filter:blur(4px);
-  background:{'rgba(255,255,255,.12)' if dark else 'rgba(15,39,71,.16)'};}}
-.ok .oc-halo {{background:rgba(34,179,90,.6);}}
-.fail .oc-halo {{background:rgba(220,38,38,.7);}}
-.run .oc-halo {{background:rgba(59,130,246,.75); animation:oc-pulse 1.3s ease-in-out infinite;}}
-.skip .oc-logo, .wait .oc-logo, .none .oc-logo {{opacity:.4; filter:grayscale(1) drop-shadow(0 12px 12px {shadow});}}
-@keyframes oc-pulse {{0%,100% {{opacity:.35; transform:scaleX(.8);}} 50% {{opacity:1; transform:scaleX(1.15);}}}}
-.oc-label {{margin-top:min(8px, calc(8 * var(--u))); font-weight:600; font-size:max(11px, min(14px, calc(14 * var(--u)))); color:{palette['strong_text']};}}
-.oc-state {{margin-top:1px; font-size:max(10.5px, min(12px, calc(12 * var(--u)))); color:{palette['reference']};}}
-.fail .oc-state {{color:#e5484d; font-weight:600;}}
-.run .oc-state {{color:#3b82f6; font-weight:600;}}
-.oc-tip {{position:absolute; bottom:calc(100% + 4px); left:50%; width:276px; padding:14px 16px 12px;
-  border-radius:14px; background:{palette['card']}; border:1px solid {palette['card_border']};
-  box-shadow:0 18px 40px rgba(0,0,0,{'.45' if dark else '.18'}); text-align:left; z-index:5;
-  opacity:0; pointer-events:none; transform:translate(-50%,8px); transition:opacity .18s ease, transform .18s ease;}}
-.oc-tip.below {{bottom:auto; top:calc(100% + 4px);}}
-.oc-tip.start {{left:0; transform:translate(0,8px);}}
-.oc-tip.end {{left:auto; right:0; transform:translate(0,8px);}}
-.oc-stage:hover .oc-tip.pinned {{opacity:0; pointer-events:none;}}
-.oc-tip.pinned, .oc-node:hover .oc-tip, .oc-node:focus-within .oc-tip {{opacity:1; pointer-events:auto; transform:translate(-50%,0);}}
-.oc-node:hover .oc-tip.start, .oc-node:focus-within .oc-tip.start, .oc-tip.start.pinned,
-.oc-node:hover .oc-tip.end, .oc-node:focus-within .oc-tip.end, .oc-tip.end.pinned {{transform:translate(0,0);}}
-.oc-tip h4 {{margin:0 0 4px; font-size:14px; color:{palette['strong_text']};}}
-.oc-tip p {{margin:0; font-size:13px; line-height:1.45;}}
-.oc-links {{display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:10px; font-size:12.5px; font-weight:600;}}
-.oc-lock {{color:{palette['reference']};}} .oc-lock svg {{vertical-align:-2px; margin-right:3px;}}
-</style>"""
+    return static_files.style(
+        "operation_center.css",
+        {
+            'var(--go-text)': palette['text'],
+            'var(--go-accent)': palette['accent'],
+            'var(--go-stage-width)': STAGE_WIDTH,
+            'var(--go-stage-height)': STAGE_HEIGHT,
+            'var(--go-format-phase-left-stage-width-100-2f)': format(PHASE_LEFT / STAGE_WIDTH * 100, '.2f'),
+            'var(--go-reference)': palette['reference'],
+            'var(--go-shadow)': shadow,
+            'var(--go-rgba-255-255-255-12-if-dark-else-rgba-15-39-71-1)': 'rgba(255,255,255,.12)'
+            if dark
+            else 'rgba(15,39,71,.16)',
+            'var(--go-strong-text)': palette['strong_text'],
+            'var(--go-card)': palette['card'],
+            'var(--go-card-border)': palette['card_border'],
+            'var(--go-45-if-dark-else-18)': '.45' if dark else '.18',
+        },
+    )
 
 
 def build_links_html(step, log_url, unlocked):

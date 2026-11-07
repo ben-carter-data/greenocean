@@ -9,10 +9,13 @@ import pytest
 
 from bi import home_mockup, i18n, queries, weeks
 
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
+# endregion
 
 
+# region Weeks as their Monday-to-Sunday range
 def test_d374_a_week_inside_one_month_reads_as_its_range():
     assert weeks.week_range("2026-10-19") == "19–25 oct"
     assert weeks.week_range(date(2026, 10, 19), year=True) == "19–25 oct 2026"
@@ -110,3 +113,6 @@ def test_d375_the_next_week_never_widens_the_bar_and_the_section_name_gives_way_
         ".stApp .st-key-home_bar {flex-wrap:nowrap!important;}",  # D-407: one line at any width
     ):
         assert rule in css, rule
+
+
+# endregion

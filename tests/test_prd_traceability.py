@@ -8,11 +8,14 @@ from pathlib import Path
 
 from bi import business_analysis, dashboard, doc_views, sql_explorer, i18n
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 PRD = i18n.document_path("PRD.md", "es").read_text(encoding="utf-8")
 REFERENCE = re.compile(r"`([^`]+)`")
+# endregion
 
 
+# region The PRD says where each question is answered and how each requirement is checked
 def read_table(section):
     """The rows of the table under «## <n>. <section>» as lists of cells, whatever the number of the section."""
     body = re.split(rf"^## \d+\. {re.escape(section)}$", PRD, flags=re.MULTILINE)[1].split("\n## ", 1)[0]
@@ -115,3 +118,6 @@ def test_rf08_the_new_weekly_report_closes_the_previous_ones():
     assert '{ grep -vx "${new##*/}" || true; }' in step  # pipefail: no earlier report is not a failure
     assert "Reemplazado por el informe de esta semana: $new" in step
     assert "permissions:\n  contents: write\n  issues: write\n" in workflow  # no new permission
+
+
+# endregion

@@ -1,0 +1,20 @@
+
+    /* the list of blocks: a menu, not radio dots (Streamlit paints the selected dot red, which the app never uses) */
+    .st-key-analysis_menu [data-testid="stRadioGroup"] { gap:2px !important; width:100%; }
+    .st-key-analysis_menu [data-testid="stRadioGroup"] > div { width:100%; }
+    .st-key-analysis_menu [data-testid="stRadioOption"] { width:100%; margin:0; padding:7px 10px; border-radius:9px; cursor:pointer; }
+    .st-key-analysis_menu [data-testid="stRadioOption"] > div { width:100%; margin:0; }
+    .st-key-analysis_menu [data-testid="stRadioOption"] > div > div:first-child { display:none; }
+    .st-key-analysis_menu [data-testid="stRadioOption"] p { font-size:14px; font-weight:500; color:var(--go-text); }
+    .st-key-analysis_menu [data-testid="stRadioOption"]:hover { background:color-mix(in srgb, var(--go-accent) 7%, transparent); }
+    .st-key-analysis_menu [data-testid="stRadioOption"]:has(input:checked) { background:color-mix(in srgb, var(--go-accent) 14%, transparent);
+        box-shadow:inset 3px 0 0 var(--go-accent); }
+    .st-key-analysis_menu [data-testid="stRadioOption"]:has(input:checked) p { color:var(--go-ink); font-weight:600; }
+    .an-text p, .an-lead { font-size:14.5px; line-height:1.6; color:var(--go-text); margin:0 0 10px !important; }
+    .an-lead { color:var(--go-ink); font-weight:500; }
+    .an-decision { font-size:13.5px; line-height:1.5; color:var(--go-text); margin:0 !important; padding:8px 0; border-bottom:1px solid var(--go-line); }
+    .an-decision b { color:var(--go-ink); }
+    .st-key-analysis_body .ov-it { max-height:calc(100vh - 300px); }
+    .an-ids td:first-child { white-space:nowrap; }
+    .st-key-analysis_body [data-testid="stPageLink"] a { padding:3px 6px; }
+    

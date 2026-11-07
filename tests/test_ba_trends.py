@@ -11,10 +11,13 @@ from streamlit.testing.v1 import AppTest
 
 from bi import alerts, ba_trends, charts, dashboard, inflation_view, overview, queries, weeks
 
+# region Constants and variables
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
 IPC = inflation_view.IPC_NAME
+# endregion
 
 
+# region «Análisis» · «Mensual» and «Histórico»
 @pytest.fixture(scope="module")
 def history():
     rows, last = inflation_view.build_family_index(
@@ -516,3 +519,6 @@ def test_d518_the_box_shows_only_in_historico_with_figures_recomputed_from_the_b
     years = ba_trends.yearly_changes(rows, ba_trends.IPC, last).set_index("year")
     if changes.idxmax() == ba_trends.BASE[0]:
         assert ba_trends.percent(years.loc[str(ba_trends.BASE[0]), "ipc"]) in hover
+
+
+# endregion

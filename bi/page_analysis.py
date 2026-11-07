@@ -72,6 +72,7 @@ from bi.data_access import (
     read_price_alerts,
 )
 from bi.i18n import tr
+from bi import static_files
 
 # region Constants
 CONTEXT_CHANNELS = list(charts.CONTEXT_CHANNELS)
@@ -437,139 +438,27 @@ def build_interest_css(palette):
 # region Price context and family cards
 def build_context_css(mode):
     palette = charts.get_palette(mode)
-    return f"""<style>
-    .ctx-crumb {{font-size:12.5px;color:{palette['text']};}} .ctx-crumb a {{color:{palette['accent']}!important;text-decoration:none;}}
-    .ctx-crumb b {{color:{palette['strong_text']};}}
-    .ctx-back {{display:inline-flex;float:right;padding:5px 12px;border:1px solid {palette['card_border']};border-radius:8px;
-        font-size:12.5px;color:{palette['strong_text']}!important;text-decoration:none!important;background:{palette['card']};}}
-    .ctx-answer b {{font-weight:500;color:{palette['strong_text']};}}
-    [class*="st-key-inf_card_"] {{gap:2px!important;border:1px solid {palette['card_border']};border-radius:16px;padding:10px 12px 2px;
-        background:linear-gradient(180deg,color-mix(in srgb,{palette['card']} 92%,{'#fff' if palette['base'] != charts.BASE_DARK else '#000'}) 0%,{palette['card']} 100%);
-        box-shadow:{'0 1px 0 rgba(255,255,255,.07) inset, 0 22px 40px -28px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03)' if palette['base'] == charts.BASE_DARK else '0 1px 0 #fff inset, 0 22px 40px -30px rgba(15,27,45,.45), 0 6px 14px -10px rgba(15,27,45,.18)'};
-        transition:transform .25s ease,box-shadow .25s ease;}}
-    [class*="st-key-inf_card_"]:hover {{transform:translateY(-3px);
-        box-shadow:{'0 1px 0 rgba(255,255,255,.09) inset, 0 30px 50px -28px rgba(0,0,0,.95), 0 0 0 1px rgba(255,255,255,.05)' if palette['base'] == charts.BASE_DARK else '0 1px 0 #fff inset, 0 30px 50px -28px rgba(15,27,45,.5), 0 10px 18px -10px rgba(15,27,45,.2)'};}}
-    .inf-panel-head {{display:flex;flex-direction:column;gap:1px;line-height:1.25;}}
-    .inf-panel-head b {{font-size:14px;font-weight:400;color:{palette['strong_text']};letter-spacing:-.01em;}}
-    .inf-panel-head span {{font-size:12px;font-weight:400;}}
-    [class*="st-key-inf_card_"] [data-testid="stMarkdownContainer"] {{margin-bottom:0!important;}}
-    [class*="st-key-inf_card_"] [data-testid="stElementToolbar"] {{display:none!important;}}
-    [class*="st-key-inf_card_"] [class*="st-key-inf_zoom_"] button, .st-key-inf_unfocus button {{min-height:26px!important;padding:0 12px!important;}}
-    [class*="st-key-inf_card_"] [class*="st-key-inf_zoom_"] button p, .st-key-inf_unfocus button p {{font-size:12px!important;font-weight:300!important;}}
-    .st-key-inf_card_focus {{border:1px solid {palette['card_border']};border-radius:18px;padding:18px 22px 10px;gap:14px!important;
-        background:{palette['card']};box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 28px 50px -32px rgba(0,0,0,.6);}}
-    /* D-316: Streamlit caps a chart's box at the window's height; the enlarged one keeps its years and axis, whatever the window. */
-    .st-key-inf_card_focus [data-testid="stVegaLiteChart"], .st-key-inf_card_focus [data-testid="stFullScreenFrame"] {{
-        max-height:none !important; overflow:visible !important; }}
-    .st-key-inf_card_focus .inf-panel-head b {{font-size:20px;}} .st-key-inf_card_focus .inf-panel-head span {{font-size:14px;}}
-    .st-key-ctx_main .ctx-head h3 {{margin:8px 0 6px!important;}}
-    .st-key-ctx_main p.ctx-reading {{margin:0 0 20px!important;}}
-    .st-key-ctx_main {{gap:16px!important;}}
-    /* Precios e inflación (D-233): the two rows of cards take the height the window leaves, and each
-       chart fills its card; below a floor the page scrolls rather than squash the charts. */
-    [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) {{min-height:max(calc((100vh - 374px) / 2), 165px);}}
-    /* D-407: under 1366 px the controls above the cards take more height, so the two rows leave it (RNF-06). */
-    @media (max-width:1366px) {{[class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) {{min-height:max(calc((100vh - 456px) / 2), 165px);}}}}
-    [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stElementContainer"]:has([data-testid="stVegaLiteChart"]) {{
-        flex:1 1 0; min-height:0; display:flex; flex-direction:column;}}
-    [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stFullScreenFrame"],
-    [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stFullScreenFrame"] > div,
-    [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stVegaLiteChart"] {{flex:1 1 auto; height:100%; min-height:0;}}
-    [class*="st-key-inf_card_"] [data-testid="stVegaLiteChart"] {{margin-top:2px;}}
-    /* D-267: the reading of an enlarged family, beside its chart. */
-    .inf-insights {{border-left:3px solid var(--c);padding:2px 0 2px 14px;}}
-    .inf-insights h4 {{margin:0 0 8px!important;padding:0!important;font-size:12px!important;font-weight:600!important;
-        letter-spacing:.08em;text-transform:uppercase;color:{palette['reference']};}}
-    .inf-insights p {{margin:0 0 7px!important;font-size:13px;line-height:1.4;color:{palette['text']};}}
-    .inf-insights em {{display:block;font-style:normal;font-size:11px;font-weight:600;color:{palette['strong_text']};}}
-    .ctx-split {{margin-top:5px;}}
-    .ctx-split small {{display:block;font-size:11px!important;}}
-    .ctx-split-bar {{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:3px;max-width:190px;
-        background:{palette['grid']};}}
-    .ctx-split-bar b {{display:block;height:100%;}}
-    .ctx-split-bar b.inf {{background:{palette['reference']};}}
-    .ctx-split-bar b.up {{background:#e66767;}} .ctx-split-bar b.down {{background:#3987e5;}}
-    .ctx-table-lead {{font-size:12px!important;color:{palette['text']};margin:-4px 0 8px!important;}}
-    .inf-card {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:14px 16px;}}
-    .inf-card h3 {{font-size:15px!important;font-weight:600;margin:0!important;padding:0!important;color:{palette['strong_text']};}}
-    .inf-lead {{font-size:12px!important;color:{palette['text']};margin:2px 0 10px!important;}}
-    .inf-row {{display:grid;grid-template-columns:10px 1fr 78px;grid-template-areas:"dot name total" ". bar bar" ". chip year";
-        column-gap:8px;row-gap:3px;padding:7px 0;border-top:1px solid {palette['card_border']};align-items:center;}}
-    .inf-row > i {{grid-area:dot;width:9px;height:9px;border-radius:50%;}}
-    .inf-name {{grid-area:name;font-weight:500;font-size:13px;color:{palette['strong_text']};}}
-    .inf-total {{grid-area:total;text-align:right;font-weight:600;font-size:13px;color:{palette['strong_text']};}}
-    .inf-bar {{grid-area:bar;position:relative;height:6px;border-radius:3px;background:{palette['grid']};}}
-    .inf-bar b {{display:block;height:100%;border-radius:3px;}}
-    .inf-bar em {{position:absolute;top:-3px;width:2px;height:12px;background:{palette['strong_text']};}}
-    .inf-row .chip {{grid-area:chip;justify-self:start;font-size:10.5px;}}
-    .inf-year {{grid-area:year;text-align:right;font-size:11.5px;color:{palette['text']};white-space:nowrap;}}
-    .st-key-ctx_main .ctx-head h3 {{margin-bottom:4px!important;}}
-    .st-key-ctx_main p.ctx-reading {{margin:0 0 8px!important;}}
-    .st-key-ctx_product {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:10px 16px 6px;margin-top:6px;}}
-    .ctx-ipc-note {{display:block;margin-top:4px;font-size:13px;color:{palette['text']};}}
-    .ctx-ipc-note b:first-child {{display:inline-block;font-size:10.5px;letter-spacing:.06em;padding:1px 7px;
-        margin-right:6px;border-radius:999px;color:{palette['accent']};
-        background:color-mix(in srgb,{palette['accent']} 12%,transparent);vertical-align:1px;}}
-    .st-key-ctx_main p.ctx-reading {{font-size:12.5px!important;line-height:1.45!important;font-weight:300;color:{palette['text']};margin:0 0 20px!important;}}
-    .st-key-ctx_main {{gap:10px!important;padding:2px 0 0;}}
-    .st-key-ctx_main [data-testid="stHorizontalBlock"] {{gap:14px;}}
-    .st-key-ctx_side {{gap:10px;}}
-    .st-key-ctx_bottom {{margin-top:10px;}}
-    .ctx-head h3, .ctx-card h3 {{font-size:15px!important;font-weight:500;margin:0!important;padding:0!important;
-        color:{palette['strong_text']};display:flex;align-items:center;gap:6px;}}
-    .ctx-head {{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}}
-    .ctx-keys {{display:flex;gap:14px;font-size:11px;color:{palette['text']};white-space:nowrap;}}
-    .ctx-keys i {{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle;}}
-    .ctx-keys i.band {{height:9px;background:{palette['grid']};}}
-    .st-key-ctx_main .ctx-head h3 {{white-space:nowrap;}}
-    .st-key-ctx_main .ctx-keys {{flex-wrap:wrap;justify-content:flex-end;row-gap:2px;gap:4px 12px;}}
-    .ctx-keys i.nominal {{height:0;border-top:2px dashed {palette['reference']};border-radius:0;}}
-    .st-key-ctx_main [data-testid="stButtonGroup"] {{justify-content:flex-end;display:flex;flex-wrap:nowrap;}}
-    .st-key-ctx_main [data-testid="stButtonGroup"] button {{min-height:26px!important;padding:0 10px!important;}}
-    .st-key-ctx_main [data-testid="stButtonGroup"] button p {{font-size:12px!important;}}
-    .ctx-card {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:12px 16px;}}
-    /* The chart and the two side cards end on the same line (D-150): the cards share
-       the chart's height. */
-    [data-testid="stHorizontalBlock"]:has(.st-key-ctx_main) {{align-items:stretch;}}
-    [data-testid="stColumn"]:has(.st-key-ctx_side) > [data-testid="stVerticalBlock"],
-    .st-key-ctx_side {{height:100%;}}
-    [data-testid="stColumn"]:has(.st-key-ctx_side) [data-testid="stLayoutWrapper"] {{height:100%;flex:1 1 auto;}}
-    .st-key-ctx_side {{display:flex;flex-direction:column;}}
-    .st-key-ctx_side > [data-testid="stElementContainer"] {{flex:1 1 0;display:flex;}}
-    .st-key-ctx_side [data-testid="stMarkdown"], .st-key-ctx_side [data-testid="stMarkdown"] > div,
-    .st-key-ctx_side [data-testid="stMarkdownContainer"] {{height:100%;width:100%;margin:0 !important;}}
-    .st-key-ctx_side [data-testid="stMarkdown"] > div {{align-items:stretch !important;}}
-    .st-key-ctx_side .ctx-card {{height:100%;margin:0 !important;box-sizing:border-box;display:flex;flex-direction:column;
-        justify-content:space-around;}}
-    .ctx-card-wide {{padding-bottom:6px;}}
-    .ctx-price-row {{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid {palette['card_border']};}}
-    .ctx-price-row i {{width:9px;height:9px;border-radius:50%;}}
-    .ctx-price-row strong {{display:block;font-size:13px;color:{palette['strong_text']};}}
-    .ctx-price-row small {{font-size:11px;color:{palette['text']};}}
-    .ctx-price {{text-align:right;}} .ctx-price b {{display:block;font-size:20px;color:{palette['strong_text']};font-variant-numeric:tabular-nums;}}
-    .ctx-state {{font-size:11px;font-weight:600;}} .ctx-state.rise {{color:#c0392b;}} .ctx-state.fall {{color:#1f7a4d;}} .ctx-state.neutral {{color:{palette['text']};}}
-    .ctx-note {{font-size:12px!important;line-height:1.45;color:{palette['strong_text']};margin:6px 0 0!important;}}
-    .ctx-next-table {{width:100%;border-collapse:collapse;margin-top:4px;font-size:12.5px;}}
-    .ctx-next-table th, .ctx-next-table td {{padding:6px 4px;text-align:center;border-top:1px solid {palette['card_border']};}}
-    .ctx-next-table thead th {{border-top:0;color:{palette['text']};font-weight:500;font-size:11px;}}
-    .ctx-next-table tbody th {{text-align:left;font-weight:600;color:{palette['strong_text']};white-space:nowrap;}}
-    .ctx-next-table tbody th i {{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}}
-    .ctx-next-table td.rise {{color:#c0392b;}} .ctx-next-table td.fall {{color:#1f7a4d;}}
-    .ctx-next-empty {{color:{palette['text']};font-style:italic;}}
-    .ctx-next-unclear {{color:{palette['text']};font-size:.75rem;font-style:italic;}}
-    .ctx-foot {{font-size:10.5px;color:{palette['text']};margin:8px 0 0!important;}}
-    .ctx-outlier-scroll {{overflow:auto;max-height:230px;}}
-    .ctx-outlier-table {{width:100%;min-width:640px;border-collapse:collapse;font-size:12.5px;}}
-    .ctx-outlier-table th {{text-align:left;padding:6px 10px;color:{palette['text']};font-weight:500;font-size:11px;
-        border-bottom:1px solid {palette['card_border']};}}
-    .ctx-outlier-table td {{padding:7px 10px;border-bottom:1px solid {palette['card_border']};color:{palette['strong_text']};}}
-    .ctx-outlier-table td a {{color:{palette['accent']}!important;text-decoration:none;font-weight:600;}}
-    .ctx-outlier-table td small {{display:block;font-size:10.5px;color:{palette['text']};font-weight:400;}}
-    .ctx-outlier-table td.num {{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}}
-    .st-key-ctx_links button {{padding:0 4px!important;min-height:0!important;}}
-    .st-key-ctx_links button p {{font-size:12px!important;color:{palette['accent']}!important;font-weight:600;}}
-    .st-key-ctx_links [data-testid="stCaptionContainer"] p {{font-size:11px!important;}}
-    </style>"""
+    return static_files.style(
+        "analysis_context.css",
+        {
+            'var(--go-text)': palette['text'],
+            'var(--go-accent)': palette['accent'],
+            'var(--go-strong-text)': palette['strong_text'],
+            'var(--go-card-border)': palette['card_border'],
+            'var(--go-card)': palette['card'],
+            'var(--go-fff-if-palette-base-charts-base-dark-else-000)': '#fff'
+            if palette['base'] != charts.BASE_DARK
+            else '#000',
+            'var(--go-0-1px-0-rgba-255-255-255-07-inset-0-22px-40px-28)': '0 1px 0 rgba(255,255,255,.07) inset, 0 22px 40px -28px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03)'
+            if palette['base'] == charts.BASE_DARK
+            else '0 1px 0 #fff inset, 0 22px 40px -30px rgba(15,27,45,.45), 0 6px 14px -10px rgba(15,27,45,.18)',
+            'var(--go-0-1px-0-rgba-255-255-255-09-inset-0-30px-50px-28)': '0 1px 0 rgba(255,255,255,.09) inset, 0 30px 50px -28px rgba(0,0,0,.95), 0 0 0 1px rgba(255,255,255,.05)'
+            if palette['base'] == charts.BASE_DARK
+            else '0 1px 0 #fff inset, 0 30px 50px -28px rgba(15,27,45,.5), 0 10px 18px -10px rgba(15,27,45,.2)',
+            'var(--go-reference)': palette['reference'],
+            'var(--go-grid)': palette['grid'],
+        },
+    )
 
 
 @st.cache_data
@@ -832,19 +721,16 @@ def build_insight_table_html(head, rows, extra_class="", markup_columns=()):
 
 def build_insight_table_css(palette):
     """The look of the text tables of Insights, shared with «Análisis de negocio y sistemas» (D-377)."""
-    return f"""
-    .ov-it {{ overflow:auto; max-height:calc(100vh - 305px); }}  /* D-458: and the green panel above the tabs */
-    .ov-it table {{ width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:12.5px; }}
-    .ov-it thead th {{ position:sticky; top:0; background:{palette['accent']} !important; color:{charts.readable_on(palette['accent'])} !important; font-size:11px;
-        font-weight:600; text-transform:uppercase; letter-spacing:.05em; padding:7px 10px !important; text-align:left; border:0 !important; }}
-    .ov-it thead th:first-child {{ border-radius:10px 0 0 0; }} .ov-it thead th:last-child {{ border-radius:0 10px 0 0; }}
-    .ov-it td {{ padding:6px 10px !important; color:{palette['text']}; border:0 !important;
-        border-bottom:1px solid {palette['card_border']} !important; vertical-align:top; line-height:1.4; background:transparent !important; }}
-    .ov-it tbody tr:nth-child(even) td {{ background:color-mix(in srgb, {palette['accent']} 5%, transparent) !important; }}
-    .ov-it td:first-child {{ font-weight:600; color:{palette['strong_text']}; }}
-    /* D-173: the table's block ends in a div, so it gets no bottom margin and what follows rode over it. */
-    [data-testid="stElementContainer"]:has(.ov-it) [data-testid="stMarkdownContainer"] {{ margin-bottom:0 !important; }}
-    .ov-it {{ margin-bottom:12px; }}"""
+    return static_files.fill(
+        "analysis_insights.css",
+        {
+            'var(--go-accent)': palette['accent'],
+            'var(--go-charts-readable-on-palette-accent)': charts.readable_on(palette['accent']),
+            'var(--go-text)': palette['text'],
+            'var(--go-card-border)': palette['card_border'],
+            'var(--go-strong-text)': palette['strong_text'],
+        },
+    )
 
 
 def build_insight_card_html(kind, title, who, icon, lines):
@@ -947,16 +833,18 @@ def show_overview_insights(mode, version):
         ),
     ]
     st.markdown(
-        f"""<style>{build_insight_table_css(palette)}
-    .ov-insights {{ overflow:auto; max-height:calc(100vh - 230px); }}
-    .ov-insight {{ border-radius:14px; padding:14px 16px; margin:0 0 10px; border:1px solid {palette['card_border']};
-        background:linear-gradient(135deg, color-mix(in srgb, var(--c) 12%, {palette['card']}), {palette['card']}); }}
-    .ov-insight-buyer {{ --c:{palette['rise']}; }} .ov-insight-wholesale {{ --c:#199e70; }} .ov-insight-architect {{ --c:{palette['accent']}; }}
-    .ov-insight-who {{ display:flex; align-items:center; gap:10px; font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--c); }}
-    .ov-insight-who .ov-icon {{ width:38px; height:38px; }}
-    .ov-insight h4 {{ margin:2px 0 10px !important; padding:0 !important; font-size:19px !important; color:{palette['strong_text']}; }}
-    .ov-insight p {{ margin:0 0 8px !important; font-size:13.5px; line-height:1.55; color:{palette['text']}; }}
-    </style>""",
+        static_files.style(
+            "overview_insights.css",
+            {
+                'var(--go-build-insight-table-css-palette)': build_insight_table_css(palette),
+                'var(--go-card_border)': palette['card_border'],
+                'var(--go-card)': palette['card'],
+                'var(--go-rise)': palette['rise'],
+                'var(--go-accent)': palette['accent'],
+                'var(--go-strong_text)': palette['strong_text'],
+                'var(--go-text)': palette['text'],
+            },
+        ),
         unsafe_allow_html=True,
     )
     left, right = st.columns([1.35, 1], gap="medium")
@@ -1152,26 +1040,15 @@ def show_analysis_block(block, mode):
 def build_analysis_css(palette):
     """D-377: the list of blocks on the left, the block on the right; texts and tables sized to fit one screen."""
     ink, text, accent, line = palette["strong_text"], palette["text"], palette["accent"], palette["card_border"]
-    return f"""<style>
-    /* the list of blocks: a menu, not radio dots (Streamlit paints the selected dot red, which the app never uses) */
-    .st-key-analysis_menu [data-testid="stRadioGroup"] {{ gap:2px !important; width:100%; }}
-    .st-key-analysis_menu [data-testid="stRadioGroup"] > div {{ width:100%; }}
-    .st-key-analysis_menu [data-testid="stRadioOption"] {{ width:100%; margin:0; padding:7px 10px; border-radius:9px; cursor:pointer; }}
-    .st-key-analysis_menu [data-testid="stRadioOption"] > div {{ width:100%; margin:0; }}
-    .st-key-analysis_menu [data-testid="stRadioOption"] > div > div:first-child {{ display:none; }}
-    .st-key-analysis_menu [data-testid="stRadioOption"] p {{ font-size:14px; font-weight:500; color:{text}; }}
-    .st-key-analysis_menu [data-testid="stRadioOption"]:hover {{ background:color-mix(in srgb, {accent} 7%, transparent); }}
-    .st-key-analysis_menu [data-testid="stRadioOption"]:has(input:checked) {{ background:color-mix(in srgb, {accent} 14%, transparent);
-        box-shadow:inset 3px 0 0 {accent}; }}
-    .st-key-analysis_menu [data-testid="stRadioOption"]:has(input:checked) p {{ color:{ink}; font-weight:600; }}
-    .an-text p, .an-lead {{ font-size:14.5px; line-height:1.6; color:{text}; margin:0 0 10px !important; }}
-    .an-lead {{ color:{ink}; font-weight:500; }}
-    .an-decision {{ font-size:13.5px; line-height:1.5; color:{text}; margin:0 !important; padding:8px 0; border-bottom:1px solid {line}; }}
-    .an-decision b {{ color:{ink}; }}
-    .st-key-analysis_body .ov-it {{ max-height:calc(100vh - 300px); }}
-    .an-ids td:first-child {{ white-space:nowrap; }}
-    .st-key-analysis_body [data-testid="stPageLink"] a {{ padding:3px 6px; }}
-    </style>"""
+    return static_files.style(
+        "analysis.css",
+        {
+            'var(--go-text)': text,
+            'var(--go-accent)': accent,
+            'var(--go-ink)': ink,
+            'var(--go-line)': line,
+        },
+    )
 
 
 # endregion

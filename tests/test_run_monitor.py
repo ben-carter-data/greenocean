@@ -7,12 +7,15 @@ from streamlit.testing.v1 import AppTest
 
 from bi import control, run_monitor
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
 TOKEN = "github_pat_" + "FAKE0123456789ABCDEFGHIJKLMNOP"
 NOW = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
+# endregion
 
 
+# region The manual run followed from the panel
 def running_data():
     step = {"name": "Run the ETL", "status": "in_progress", "conclusion": None, "started_at": "2026-10-30T12:00:00Z"}
     job = {"id": 70, "name": "weekly-load", "status": "in_progress", "conclusion": None, "steps": [step]}
@@ -134,3 +137,6 @@ def test_d367_a_failed_job_shows_the_log_of_its_failed_step_with_the_failing_tes
     assert "weekly-load · paso que falló: Run pytest" in log and "ERROR: Process completed" in log
     success = run_monitor.read_tail({"id": 1, "conclusion": "success"}, TOKEN)
     assert success[-1] == "Cleaning up orphan processes"  # a job that passed keeps its last lines
+
+
+# endregion

@@ -7,10 +7,13 @@ from streamlit.testing.v1 import AppTest
 
 from bi import charts, dashboard, er_diagram, i18n, queries, sql_explorer, sql_relations
 
+# region Variables
 DASHBOARD_FILE = str(Path(__file__).resolve().parents[1] / "bi" / "dashboard.py")
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
+# endregion
 
 
+# region «Relaciones» in «Consultas SQL» draws how the views join, and every join it draws is real
 @needs_database
 def test_d515_every_view_key_and_join_column_exists_in_the_views():
     schema, counts = sql_relations.read_schema()
@@ -229,3 +232,6 @@ def test_d515_the_button_opens_the_window_with_the_drawing_and_the_joins():
     assert 'class="sqlx-relations"' in markup and "Relaciones entre las vistas de Consultas SQL" in markup
     assert [tab.label for tab in app.tabs][-2:] == ["Diagrama", "JOIN listos para copiar"]  # D-516
     assert any("JOIN semanas AS s ON s.semana = p.semana" in block.value for block in app.code)
+
+
+# endregion

@@ -13,13 +13,16 @@ from streamlit.testing.v1 import AppTest
 
 from bi import charts, control, github_actions, i18n, live_flow
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
 PALETTE = charts.get_palette(charts.MODE_DARK)
 STARTED = datetime(2026, 10, 31, 4, 38, tzinfo=timezone.utc)
 FACTS = {"odepa": "2 archivos · 63,1 MB · 2026-10-31 04:40"}
+# endregion
 
 
+# region «Flujo del sistema en vivo»
 def run(state):
     return {"id": 9, "state": state, "started_at": STARTED, "url": "https://github.com/x/y/actions/runs/9"}
 
@@ -259,3 +262,6 @@ def test_d414_the_sad_carries_the_fixed_picture_in_both_languages():
     assert "<script" not in page and doc_diagrams.PRINT_STYLE in page and 'id="arrow-deploy"' in page
     published = json.loads(live_flow.POINTER.read_text(encoding="utf-8"))["published_at"]
     assert "Última carga real publicada:" in page and published[:4] in page
+
+
+# endregion

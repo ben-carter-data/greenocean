@@ -7,7 +7,10 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
+# region Constants and variables
 PROJECT_DIR = Path(__file__).resolve().parent.parent
+# endregion
+# region The thin header bar of the main pages and the reading of an enlarged family
 sys.path.insert(0, str(PROJECT_DIR))
 from bi import charts, dashboard, inflation_view, page_bar, queries  # noqa: E402
 from tests.test_dashboard import DASHBOARD_FILE, draw_page, needs_database  # noqa: E402
@@ -270,3 +273,6 @@ def test_d423_the_history_kept_across_a_reload_takes_only_well_formed_steps(monk
     state[dashboard.PAGE_HISTORY] = [opened]
     dashboard.restore_kept_history({"p": "profesional", "h": [good]})
     assert state[dashboard.PAGE_HISTORY] == [good, opened]
+
+
+# endregion

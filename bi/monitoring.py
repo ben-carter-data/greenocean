@@ -10,7 +10,7 @@ build_monitoring_html() returns one HTML document for st.iframe (CSS only, no sc
 
 import html
 
-from bi import charts, doc_views
+from bi import charts, doc_views, static_files
 
 # region Constants
 # Signals: (key, origin mark, origin, signal, what it records, where it is read, who reads it, file that produces it).
@@ -142,54 +142,22 @@ def build_css(palette):
         else "0 8px 18px -14px rgba(15,40,90,.35)"
     )
     panel, author = "#22b35a", "#d9a400"
-    return f"""<style>
-* {{ box-sizing:border-box; }}
-html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-.mo {{ padding:11px 20px 13px; border:1px solid {border}; border-radius:18px; background-color:{surface};
-  background-image:linear-gradient({grid} 1px, transparent 1px), linear-gradient(90deg, {grid} 1px, transparent 1px); background-size:30px 30px; }}
-.mo-head {{ display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 14px; margin-bottom:6px; }}
-.mo-head h2 {{ margin:0; font-size:20px; font-weight:700; color:{ink}; }}
-.mo-head p {{ margin:0; font:400 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
-.mo-grid {{ display:grid; align-items:stretch;
-  grid-template-columns:74px minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr);
-  grid-template-rows:auto 20px auto 20px auto 12px auto; }}
-.mo .lane {{ align-self:center; padding-right:8px; font:700 10px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing:.14em; text-transform:uppercase; color:var(--c); }}
-.mo .lane.panel {{ --c:{panel}; }} .mo .lane.autor {{ --c:{author}; }} .mo .lane.run {{ --c:{accent}; }}
-.mo .card {{ padding:8px 10px 9px; border:1px solid {border}; border-left:3px solid var(--c); border-radius:12px;
-  background:color-mix(in srgb, {card} 92%, transparent); cursor:default; }}
-.mo .card.panel {{ --c:{panel}; }} .mo .card.autor {{ --c:{author}; }}
-.mo .card b {{ display:block; font-size:14px; font-weight:700; line-height:1.25; color:{ink}; }}
-/* What a signal records is on hover: the card says what it is and where it is read. The band keeps it, on its one line. */
-.mo .card small {{ display:none; }}
-.mo .card.band small {{ display:inline; margin:0; font-size:12px; color:{muted}; }}
-.mo .card em {{ display:block; margin-top:4px; font-style:normal; font-size:12px; line-height:1.3; color:var(--c); }}
-.mo .card:hover {{ border-color:var(--c); }}
-.mo .stage {{ display:flex; align-items:center; gap:7px; padding:8px 8px; border:1px solid {accent}; border-radius:14px;
-  background:color-mix(in srgb, {card} 92%, transparent); box-shadow:{glow}; }}
-.mo .stage svg {{ flex:none; width:26px; height:26px; }}
-.mo .stage span {{ min-width:0; }}
-.mo .stage b {{ display:block; font-size:14px; font-weight:700; color:{ink}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.mo .stage small {{ display:block; font:400 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
-/* D-455: in a narrow frame (a document's column) the stage gives its icon's room to its name, so no name is cut. */
-@media (max-width:900px) {{ .mo .stage svg {{ display:none; }} .mo .stage b {{ font-size:13px; }} }}
-.mo .h {{ position:relative; align-self:center; height:12px; }}
-.mo .h::before {{ content:""; position:absolute; left:3px; right:8px; top:5px; border-top:2px dashed {accent}; opacity:.85; }}
-.mo .h::after {{ content:""; position:absolute; right:1px; top:1px; border:5px solid transparent; border-left:8px solid {accent}; }}
-.mo .v {{ position:relative; }}
-.mo .v::before {{ content:""; position:absolute; left:50%; top:2px; bottom:8px; border-left:2px dashed var(--c); opacity:.9; }}
-.mo .v::after {{ content:""; position:absolute; left:calc(50% - 4px); bottom:0; border:5px solid transparent; border-top:8px solid var(--c); }}
-.mo .v.up::before {{ top:8px; bottom:2px; }}
-.mo .v.up::after {{ top:-2px; bottom:auto; border-top-color:transparent; border-bottom:8px solid var(--c); }}
-.mo .v.panel {{ --c:{panel}; }} .mo .v.autor {{ --c:{author}; }}
-.mo .band {{ display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; }}
-.mo .band b {{ display:inline; }} .mo .band em {{ display:inline; margin:0; }}
-@media (max-width:760px) {{
-  .mo-grid {{ grid-template-columns:minmax(0, 1fr); grid-template-rows:none; row-gap:8px; }}
-  .mo-grid > * {{ grid-column:1 !important; grid-row:auto !important; }}
-  .mo .h, .mo .v {{ display:none; }} .mo .lane {{ padding-top:6px; }}
-}}
-</style>"""
+    return static_files.style(
+        "monitoring.css",
+        {
+            'var(--go-text)': text,
+            'var(--go-border)': border,
+            'var(--go-surface)': surface,
+            'var(--go-grid)': grid,
+            'var(--go-ink)': ink,
+            'var(--go-muted)': muted,
+            'var(--go-panel)': panel,
+            'var(--go-author)': author,
+            'var(--go-accent)': accent,
+            'var(--go-card)': card,
+            'var(--go-glow)': glow,
+        },
+    )
 
 
 def column(stage):

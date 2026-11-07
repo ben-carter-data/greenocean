@@ -13,7 +13,7 @@ Only steps that really exist in this project are drawn.
 
 import html
 
-from bi import brand_icons, charts, control, tech_glossary
+from bi import brand_icons, charts, control, static_files, tech_glossary
 
 # region Constants
 STATE_UNKNOWN = "unknown"
@@ -439,16 +439,12 @@ def draw_clock_icon(x, y, color):
 def build_style(is_running):
     """Style the flow illustration; status pulses are attached to real running nodes."""
     dash_motion = "animation: journey-dash 1.2s linear infinite;" if is_running else ""
-    return f"""<style>
-    .journey-running {{ animation: journey-pulse 1.2s ease-in-out infinite; }}
-    .journey-dashed {{ stroke-dasharray: 5 5; {dash_motion} }}
-    @keyframes journey-pulse {{ 50% {{ opacity: 0.2; }} }}
-    @keyframes journey-dash {{ to {{ stroke-dashoffset: -20; }} }}
-    @media (prefers-reduced-motion: reduce) {{
-      .journey-running, .journey-dashed {{ animation: none; }}
-      .journey-flow {{ display: none; }}
-    }}
-    </style>"""
+    return static_files.style(
+        "journey_running.css",
+        {
+            'var(--go-dash-motion)': dash_motion,
+        },
+    )
 
 
 def build_column_headers():

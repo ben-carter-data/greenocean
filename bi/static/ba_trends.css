@@ -1,0 +1,63 @@
+
+.ba-cards { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; margin:0 0 6px; }
+.st-key-ba_head { justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.st-key-ba_filters [data-testid="stWidgetLabel"] p { font-size:12px !important; }
+/* D-460: thin cards, one line each: the label, the figure and its note, so the charts get the height. */
+.ba-card { display:flex; flex-direction:column; gap:0; padding:6px 11px 7px; border:1px solid var(--go-border); border-radius:12px;
+  background:var(--go-card-color); cursor:help; outline:none; min-width:0; }
+.ba-card:hover, .ba-card:focus-visible { border-color:var(--go-accent); }
+.ba-card-label { font-size:11px; line-height:1.3; color:var(--go-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ba-card-value { font-size:20px; font-weight:700; color:var(--go-ink); font-variant-numeric:tabular-nums; line-height:1.2; }
+.ba-card-value.rise { color:var(--go-rise); } .ba-card-value.fall { color:var(--go-fall); }
+.ba-card-note { font-size:11px; line-height:1.3; color:var(--go-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ba-chart-title { margin:0 !important; font-size:13.5px !important; font-weight:600; color:var(--go-ink) !important;
+  line-height:1.3 !important; }
+.ba-chart-title span { display:block; font-weight:400; color:var(--go-muted); font-size:11.5px; }
+/* D-458: the three charts take the height the window leaves, above a floor, so a tall window shows them larger. */
+[class*="st-key-ba_tile_"] { min-height:max(calc(100vh - var(--go-tiles-reserved)px), var(--go-tiles-floor)px); }
+[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"]:has([data-testid="stVegaLiteChart"]) {
+  flex:1 1 0; min-height:0; display:flex; flex-direction:column; }
+[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
+[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"] > div,
+[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stVegaLiteChart"] {
+  flex:1 1 auto; height:100%; min-height:0; }
+/* D-460: the green magnifier of a chart opens it large in a window; it glows in the green of GreenOcean (D-450). */
+[class*="st-key-ba_tile_"] [data-testid="stElementToolbar"] { display:none !important; }
+[class*="st-key-ba_chart_head_"] { gap:4px !important; flex-wrap:nowrap !important; }
+[class*="st-key-ba_chart_head_"] > [data-testid="stElementContainer"]:first-child { flex:1 1 auto; min-width:0; }
+[class*="st-key-ba_enlarge_"] button { min-height:24px !important; padding:0 2px !important; background:transparent !important;
+  border:0 !important; box-shadow:none !important; }
+[class*="st-key-ba_enlarge_"] button [data-testid="stMarkdownContainer"] { position:absolute !important; width:1px;
+  height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+[class*="st-key-ba_enlarge_"] button [data-testid="stIconMaterial"] { color:var(--go-green) !important; font-size:22px !important;
+  filter:drop-shadow(0 0 3px var(--go-green)) drop-shadow(0 0 7px color-mix(in srgb, var(--go-green) 55%, transparent));
+  transition:transform .15s ease; }
+[class*="st-key-ba_enlarge_"] button:hover [data-testid="stIconMaterial"] { transform:scale(1.18); }
+.ba-zoom-line { margin:0 0 3px !important; font-size:13px !important; line-height:1.45 !important;
+  color:var(--go-text) !important; }
+.ba-zoom-line b { color:var(--go-ink); margin-right:4px; }
+.ba-zoom-title { margin:0 40px 8px 0 !important; font-size:17px !important; font-weight:700; color:var(--go-ink) !important;
+  line-height:1.3 !important; }
+.ba-zoom-title span { display:block; font-weight:400; font-size:12.5px; color:var(--go-muted); }
+[role="dialog"]:has(.ba-zoom-title) [data-testid="stElementToolbar"] { display:none !important; }
+.ba-table { max-height:max(calc(100vh - var(--go-table-reserved)px), var(--go-table-floor)px); overflow:auto; }
+.ba-table table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.ba-table th { text-align:left; font-weight:600; color:var(--go-muted); padding:4px 8px; border-bottom:1px solid var(--go-border);
+  cursor:help;  position:sticky; top:0; z-index:1; background:var(--go-card-color);}
+.ba-table td { padding:2px 8px; border-bottom:1px solid var(--go-border); color:var(--go-text); }
+.ba-table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.ba-table td.rise { color:var(--go-rise); } .ba-table td.fall { color:var(--go-fall); }
+.ba-table td.ba-product { padding-left:22px; }
+.ba-table tr.ba-chosen td { background:color-mix(in srgb, var(--go-accent) 10%, transparent); color:var(--go-ink); font-weight:600; }
+@media (max-width:1100px) { .ba-cards { grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+/* D-458: under 1400 px the filters wrap under the six tabs; the green panel already names the period, so they drop
+   their labels, and the charts accept a lower floor. */
+@media (max-width:1399px) { .st-key-ba_filters [data-testid="stWidgetLabel"] { display:none !important; }
+  [class*="st-key-ba_tile_"] { min-height:max(calc(100vh - var(--go-tiles-reserved)px), var(--go-narrow-floor)px); }
+  /* D-460: the tabs and the filters keep one row down to 1250 px, so the charts keep that height. */
+  .st-key-ba_tab [data-testid="stButtonGroup"] > div { gap:12px !important; }
+  .st-key-ba_tab button p { font-size:13.5px !important; }
+  .st-key-ba_filters [data-testid="stElementContainer"] { width:166px !important; max-width:166px !important; }
+  .st-key-ba_filters [data-testid="stElementContainer"]:last-child { width:172px !important; max-width:172px !important; }
+  .ba-context p { font-size:12.5px !important; }
+  .ba-table { max-height:max(calc(100vh - var(--go-table-reserved-35)px), var(--go-table-floor)px); } }

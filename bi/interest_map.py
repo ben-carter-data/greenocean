@@ -4,7 +4,7 @@ the PRD (3.4). D-455: the page and the PRD draw it from this one module, so the 
 import html
 import math
 
-from bi import charts
+from bi import charts, static_files
 
 # region Constants
 # Each ring (high, medium, low) is an ellipse around GreenOcean, a tilted disc; each stakeholder sits on its ring at its
@@ -79,36 +79,17 @@ def build_css(palette, fit_height=True, reserved=190):
     document's width."""
     ink, text, muted, background = palette["strong_text"], palette["text"], palette["reference"], palette["background"]
     width = f"min(100%, calc((100vh - {reserved}px) * {RATIO}))" if fit_height else "100%"
-    return f"""<style>
-    .im-wrap {{ container-type:inline-size; width:{width}; margin:0 auto; }}
-    .im-stage {{ position:relative; width:100%; aspect-ratio:{RATIO} / 1; }}
-    .im-ring {{ position:absolute; border-radius:50%; border:1.5px solid color-mix(in srgb, var(--ring) 70%, transparent);
-        background:radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--ring) 9%, transparent),
-        color-mix(in srgb, var(--ring) 2%, transparent) 70%);
-        box-shadow:0 1.2cqw 2.4cqw -1.6cqw color-mix(in srgb, var(--ring) 45%, transparent); pointer-events:none; }}
-    .im-level {{ position:absolute; left:50%; transform:translate(-50%, -50%); padding:0 .8cqw; font-size:max(9px, 1.05cqw);
-        font-weight:700; letter-spacing:.09em; text-transform:uppercase; background:{background}; border-radius:1cqw;
-        white-space:nowrap; pointer-events:none; }}
-    .im-center {{ position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); display:flex; flex-direction:column;
-        align-items:center; gap:.3cqw; color:{ink}; font-size:max(11px, 1.5cqw); pointer-events:none; }}
-    .im-logo {{ font-family:"Material Symbols Rounded"; font-feature-settings:"liga"; font-size:max(22px, 3.4cqw);
-        color:#5aa9ea; line-height:1; }}
-    .im-node {{ position:absolute; transform:translate(-50%, -32%); display:flex; flex-direction:column; align-items:center;
-        width:15cqw; gap:.35cqw; text-align:center; text-decoration:none !important; color:{ink} !important; outline:none;
-        z-index:1; }}
-    .im-node:hover, .im-node:focus-visible {{ z-index:3; }}
-    .im-icon {{ font-family:"Material Symbols Rounded"; font-feature-settings:"liga";
-        font-variation-settings:"FILL" 0, "wght" 300, "GRAD" 0, "opsz" 48; font-size:max(22px, 3.3cqw); line-height:1;
-        transition:transform .18s ease; }}
-    .im-node:hover .im-icon, .im-node:focus-visible .im-icon {{ transform:scale(1.35); }}
-    .im-name {{ font-size:max(10px, 1.3cqw); font-weight:600; line-height:1.25; color:{ink};
-        text-shadow:0 0 3px {background}, 0 0 3px {background}, 0 0 6px {background}; }}
-    .im-node:focus-visible .im-name {{ text-decoration:underline; text-underline-offset:3px; }}
-    .im-why {{ max-height:0; overflow:hidden; opacity:0; font-size:max(9.5px, 1.02cqw); line-height:1.35; color:{text};
-        background:{background}; border-radius:.6cqw; padding:0 .6cqw; transition:opacity .18s ease, max-height .18s ease; }}
-    .im-node:hover .im-why, .im-node:focus-visible .im-why {{ max-height:12cqw; opacity:1; }}
-    .im-criterion {{ margin:.4rem 0 0; text-align:center; font-size:13px; color:{charts.legible(muted, background)}; }}
-    </style>"""
+    return static_files.style(
+        "interest_map.css",
+        {
+            'var(--go-width)': width,
+            'var(--go-ratio)': RATIO,
+            'var(--go-background)': background,
+            'var(--go-ink)': ink,
+            'var(--go-text)': text,
+            'var(--go-charts-legible-muted-background)': charts.legible(muted, background),
+        },
+    )
 
 
 # endregion

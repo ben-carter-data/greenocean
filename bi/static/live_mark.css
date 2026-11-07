@@ -1,0 +1,8 @@
+
+.live-mark { display:inline-flex; align-items:center; gap:6px; flex:none; font-size:11.5px; line-height:1.2;
+  letter-spacing:.01em; color:var(--go-green); white-space:nowrap; cursor:help; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+.live-mark i { width:7px; height:7px; border-radius:50%; background:var(--go-green); box-shadow:0 0 0 0 var(--go-green);
+  animation:live-mark-beat 1s ease-in-out infinite; }
+@keyframes live-mark-beat { 0%, 100% { opacity:1; box-shadow:0 0 0 0 var(--go-green); }
+  50% { opacity:.45; box-shadow:0 0 0 4px color-mix(in srgb, var(--go-green) 25%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .live-mark i { animation:none; } }

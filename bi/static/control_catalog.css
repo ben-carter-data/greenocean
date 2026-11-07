@@ -1,0 +1,25 @@
+
+:root{--bg:var(--go-background);--panel:var(--go-card);--fg:var(--go-strong-text);--text:var(--go-text);
+  --muted:var(--go-muted);--line:var(--go-card-border);--accent:var(--go-accent);--green:var(--go-green);--amber:var(--go-amber);--red:var(--go-red);
+  color-scheme:var(--go-dark-if-dark-else-light)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:12.5px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;gap:8px;padding:0 2px 4px}
+code{font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+a code{color:var(--accent)}
+.units{flex:none;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:8px 12px}
+.line{margin:0;color:var(--text)} .line b{color:var(--fg);font-weight:600}
+.why{margin:3px 0 0;font-size:11.5px;color:var(--muted)}
+.scroll{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+table{width:100%;border-collapse:collapse}
+th{position:sticky;top:0;background:var(--bg);text-align:left;font-weight:500;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--line);z-index:1}
+td{padding:3px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);vertical-align:top}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.new{margin-top:6px} .new th{background:var(--panel)}
+.step td{padding-top:9px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}
+.name{color:var(--fg)} .when{white-space:nowrap;color:var(--muted)}
+.backing{font-size:11px;color:var(--muted)}
+.tag{display:inline-block;white-space:nowrap;font-size:11px;padding:0 7px;border-radius:9px;border:1px solid currentColor}
+.tag.stop{color:var(--red)} .tag.keep{color:var(--accent)} .tag.mark{color:var(--amber)} .tag.warn{color:var(--amber)} .tag.ok{color:var(--green)}
+@media (max-width:760px){html,body{height:auto}.scroll{overflow:visible}.when{white-space:normal}}

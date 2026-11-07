@@ -8,10 +8,13 @@ import pytest
 
 from bi import app_map, app_map_detail, charts, dashboard, i18n
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 FILE = re.compile(r"\b(?:bi|etl|agent|tests|dbt|docs)/[\w./*-]*\w")
+# endregion
 
 
+# region «Mapa de la app», the whole system in one view (bi/app_map.py)
 def all_texts():
     texts = []
     for name, _, _, _, what, role, when, _, group in app_map.NODES.values():
@@ -493,3 +496,6 @@ def test_d473_the_full_card_opens_from_the_description_and_the_panel_rhythm_says
     assert rhythms["always"] == "Al abrir el panel" and "Siempre" not in rhythms.values()
     for text in ("Ver la ficha completa", "Al abrir el panel"):
         assert i18n.lookup(text), text
+
+
+# endregion

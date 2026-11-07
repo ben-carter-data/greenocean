@@ -9,9 +9,12 @@ from pathlib import Path
 
 from bi import dashboard, home_mockup, queries
 
+# region Constants and variables
 SNAPSHOT_FILE = Path(__file__).parent / "fixtures" / "snapshot_2026-10-05.json"
+# endregion
 
 
+# region Key figures of the panel, computed the way the panel computes them
 def compute_snapshot():
     week = f"{dashboard.read_latest_week():%Y-%m-%d}"
     model = dashboard.read_home_model(week, dashboard.ALL_VALUES, dashboard.ALL_VALUES, 8)
@@ -38,3 +41,6 @@ def compute_snapshot():
 
 def read_reference():
     return json.loads(SNAPSHOT_FILE.read_text(encoding="utf-8"))
+
+
+# endregion

@@ -16,7 +16,7 @@ rows leave at the second, and every gate flows into the verdict. All are pure en
 import html
 from datetime import date, datetime, timezone
 
-from bi import live_mark, charts, queries, quality, quality_view, weeks
+from bi import charts, live_mark, quality, quality_view, queries, static_files, weeks
 
 # The project's thresholds, shown next to each figure so a verdict can be disputed.
 LAST_WEEK_MIN_SHARE = 0.75  # rows of the latest week vs the median of the 8 before
@@ -391,67 +391,21 @@ def build_css(palette):
     states = "".join(f".qp .s-{key}{{--c:{color};}}" for key, color in colors.items())
     states += "".join(f".qp .k-{key}{{--c:{color};}}" for key, color in quality_view.PILL_COLORS.items())
     shade = "rgba(0,0,0,.5)" if dark else "rgba(15,40,90,.18)"
-    return f"""<style>
-* {{ box-sizing:border-box; }}
-html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-{states}
-.qp {{ padding:2px 2px 2px; }}
-.qp .hint {{ margin:0 0 4px; color:{muted}; font-size:13px; }}
-{build_pipeline_css(palette)}
-.qp .modal {{ display:none; position:fixed; inset:0; z-index:50; align-items:center; justify-content:center; padding:10px; background:rgba(0,0,0,.55); }}
-.qp .modal:target {{ display:flex; }}
-.qp .modal .back {{ position:absolute; inset:0; cursor:default; }}
-.qp .sheet {{ position:relative; z-index:1; width:100%; max-width:720px; max-height:100%; overflow:auto; padding:18px 22px 14px; border-radius:18px;
-  background:{card}; border:1px solid {border}; box-shadow:0 24px 60px rgba(0,0,0,{'.6' if dark else '.25'}); }}
-.qp .sheet h3 {{ margin:0 36px 2px 0; font-size:19px; font-weight:600; color:{ink}; }}
-.qp .sheet .q {{ margin:0 0 10px; color:{accent}; font-size:14px; font-weight:500; }}
-.qp .sheet .close {{ position:absolute; top:12px; right:14px; width:30px; height:30px; display:grid; place-items:center; border-radius:50%;
-  border:1px solid {border}; color:{ink}; text-decoration:none; font-size:15px; }}
-.qp .sheet .close:hover {{ border-color:{accent}; }}
-.qp .sheet h4 {{ margin:12px 0 2px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
-.qp .sheet p {{ margin:0 0 6px; font-size:13.5px; }}
-.qp .sheet pre {{ margin:4px 0 0; padding:8px 10px; border-radius:10px; background:color-mix(in srgb, {border} 40%, transparent); white-space:pre-wrap;
-  font:400 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; overflow-wrap:anywhere; }}
-.qp .ind {{ display:grid; grid-template-columns:10px 1fr auto; gap:0 10px; align-items:baseline; padding:8px 0; border-bottom:1px solid color-mix(in srgb, {border} 60%, transparent); }}
-.qp .ind:last-of-type {{ border-bottom:0; }}
-.qp .ind > i {{ width:10px; height:10px; border-radius:50%; background:var(--c); box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent); align-self:center; }}
-.qp .ind span {{ color:{ink}; font-size:14.5px; }}
-.qp .ind strong {{ font-size:17px; font-weight:600; color:{ink}; font-variant-numeric:tabular-nums; text-align:right; }}
-.qp .ind em {{ grid-column:2 / 4; color:{muted}; font-size:13px; font-style:normal; line-height:1.35; }}
-.qp .ind pre {{ grid-column:2 / 4; min-width:0; }}
-.qp .ind small {{ grid-column:2 / 4; color:{text}; font-size:12.5px; line-height:1.4; }}
-.qp table {{ width:100%; border-collapse:collapse; font-size:13.5px; }}
-.qp .panel {{ border:1px solid {border}; border-radius:16px; background:{card}; padding:6px 16px 10px; }}
-.qp .two {{ display:grid; grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); gap:16px; }}
-.qp caption {{ text-align:left; padding:10px 0 6px; font-size:14px; font-weight:600; color:{ink}; }}
-.qp th {{ text-align:left; padding:6px 8px 6px 0; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:{muted}; border-bottom:1px solid {border}; }}
-.qp td {{ padding:8px 8px 8px 0; border-bottom:1px solid color-mix(in srgb, {border} 55%, transparent); vertical-align:top; color:{ink}; }}
-.qp tr:last-child td {{ border-bottom:0; }}
-.qp td.n, .qp th.n {{ text-align:right; padding-right:0; font-variant-numeric:tabular-nums; white-space:nowrap; }}
-.qp td small {{ display:block; color:{muted}; font-size:12.5px; }}
-.qp code {{ font:500 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; }}
-.qp .tag {{ display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:600; color:var(--c);
-  border:1px solid color-mix(in srgb, var(--c) 55%, transparent); background:color-mix(in srgb, var(--c) 12%, transparent); white-space:nowrap; }}
-.qp .audit {{ border:1px solid {border}; border-radius:16px; background:{card}; padding:6px 16px 10px; }}
-.qp .audit td.ic {{ width:40px; padding-right:6px; }}
-.qp .audit td.ic .qa-icon {{ width:30px; height:30px; filter:drop-shadow(0 3px 3px {shade}); }}
-.qp .audit tr.step td {{ padding:14px 0 4px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:{muted}; border-bottom:1px solid {border}; }}
-.qp .audit td.st {{ white-space:nowrap; text-align:right; }}
-.qp .legend {{ margin:10px 0 0; font-size:12.5px; color:{muted}; }}
-.qp .audit-pair {{ display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:16px; align-items:start; }}
-.qp .audit-pair .audit tr.step:first-child td {{ padding-top:8px; }}
-.qp .audit-pair table {{ table-layout:fixed; }}
-.qp .audit-pair col.c-ic {{ width:34px; }} .qp .audit-pair col.c-st {{ width:136px; }}
-.qp .audit-pair td.ic .qa-icon {{ width:24px; height:24px; }}
-.qp .audit-pair td.st {{ white-space:normal; }}
-.qp .audit-pair .tag {{ white-space:normal; text-align:center; line-height:1.25; padding:2px 8px; font-size:11.5px; }}
-.qp .audit-pair td {{ padding-top:5px; padding-bottom:5px; vertical-align:middle; }}
-/* D-273: each control on one line; its whole finding on hover. */
-.qp .audit-pair td small {{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.qp .audit-pair tr.step td {{ padding:9px 0 3px; }}
-@media (max-width:900px) {{ .qp .two {{ grid-template-columns:1fr; }} }}
-@media (max-width:640px) {{ .qp .audit-pair {{ grid-template-columns:1fr; }} }}
-</style>"""
+    return static_files.style(
+        "quality_live.css",
+        {
+            'var(--go-text)': text,
+            'var(--go-states)': states,
+            'var(--go-muted)': muted,
+            'var(--go-pipeline-palette)': build_pipeline_css(palette),
+            'var(--go-card)': card,
+            'var(--go-border)': border,
+            'var(--go-6-if-dark-else-25)': '.6' if dark else '.25',
+            'var(--go-ink)': ink,
+            'var(--go-accent)': accent,
+            'var(--go-shade)': shade,
+        },
+    )
 
 
 def wrap_document(palette, body):
@@ -568,97 +522,23 @@ def build_pipeline_css(palette):
     grid = f"color-mix(in srgb, {border} {'38' if dark else '45'}%, transparent)"
     surface = f"color-mix(in srgb, {card} 72%, #000)" if dark else card
 
-    return f"""
-.qp .pq {{ --accent-ok:{accent}; position:relative; padding:11px 22px 12px; border:1px solid {border}; border-radius:18px; background-color:{surface};
-  background-image:linear-gradient({grid} 1px, transparent 1px), linear-gradient(90deg, {grid} 1px, transparent 1px);
-  background-size:30px 30px; }}
-.qp .pq-head {{ display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 14px; }}
-.qp .pq-head h2 {{ margin:0; font-size:20px; font-weight:700; letter-spacing:-.01em; color:{ink}; }}
-.qp .pq-head p {{ margin:0; font:400 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
-.qp .pq-head p.hint {{ font-family:inherit; font-size:12.5px; }}
-.qp .pq-head .live-mark {{ margin-left:auto; }}
-{live_mark.build_css(dark)}
-.qp .pq-grid {{ display:grid; margin-top:4px; align-items:center; column-gap:0; row-gap:0;
-  grid-template-columns:minmax(76px, .85fr) minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(0, 1.3fr)
-    minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(76px, .85fr);
-  grid-template-rows:auto 16px auto 16px auto 16px auto;
-  grid-template-areas:
-    ".   .  .  rej rej rej .  .  .   "
-    ".   .  .  .  vr  .  .  .  .   "
-    "org a1 g1 a2 g2  a3 g3 a4 base"
-    ".   .  v1 .  v2  .  v3 .  .   "
-    ".   .  m1 .  m2  .  m3 .  .   "
-    ".   .  w1 .  w2  .  w3 .  .   "
-    "leg leg ds ds ds ds ds .  .   "; }}
-.qp .pq a {{ text-decoration:none; color:inherit; outline:none; }}
-.qp .pq .box {{ display:block; padding:12px 10px; border:1px solid {border}; border-radius:14px; background:color-mix(in srgb, {card} 92%, transparent);
-  text-align:center; color:{ink}; }}
-.qp .pq .box b {{ display:block; font-size:17px; font-weight:700; line-height:1.25; }}
-.qp .pq .box small {{ display:block; margin-top:2px; font-size:12.5px; line-height:1.35; color:{muted}; }}
-.qp .pq .kicker {{ display:block; margin-bottom:3px; font:600 10.5px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing:.18em; text-transform:uppercase; color:{muted}; }}
-.qp .pq .gate {{ --c:{accent}; border-color:var(--c); box-shadow:{_pipeline_glow(dark, "var(--c)")}; padding:10px 8px; align-self:stretch;
-  display:flex; flex-direction:column; justify-content:center; }}
-.qp .pq .gate.s-warn {{ --c:{quality_view.PILL_COLORS["pending"]}; }} .qp .pq .gate.s-fail {{ --c:{quality_view.PILL_COLORS["fail"]}; }}
-.qp .pq .gate .kicker {{ color:var(--c); }}
-.qp .pq .gate b {{ font-size:18px; }}
-.qp .pq a.box:hover, .qp .pq a.box:focus-visible {{ border-color:{accent}; background:color-mix(in srgb, {accent} 9%, {card}); }}
-.qp .pq .gate:hover, .qp .pq .gate:focus-visible {{ border-color:var(--c); background:color-mix(in srgb, var(--c) 10%, {card}); }}
-.qp .pq .rej {{ --c:{quality_view.PILL_COLORS["pending"]}; border-color:color-mix(in srgb, var(--c) 70%, transparent);
-  background:color-mix(in srgb, var(--c) {'14' if dark else '9'}%, {card}); box-shadow:{_pipeline_glow(dark, "var(--c)")}; }}
-.qp .pq .rej {{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:center; gap:2px 9px; padding:8px 12px; }}
-.qp .pq .rej .kicker {{ margin:0; color:var(--c); }}
-.qp .pq .rej b {{ font-size:16px; }} .qp .pq .rej small {{ margin:0; font-size:13px; }}
-.qp .pq .mide {{ height:100%; padding:8px 10px 9px; }}
-.qp .pq .mide a {{ display:block; padding:0; font-size:15px; line-height:1.45; font-weight:700; color:{ink}; }}
-.qp .pq .mide a:hover, .qp .pq .mide a:focus-visible {{ color:{accent}; }}
-.qp .pq .mide a.s-warn::after, .qp .pq .mide a.s-fail::after {{ content:""; display:inline-block; width:12px; height:12px; margin-left:7px;
-  border-radius:50%; background:var(--c); vertical-align:-1px; box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent); }}
-.qp .pq .ds {{ --c:{accent}; padding:8px 14px 9px; border-color:var(--c); box-shadow:{_pipeline_glow(dark, "var(--c)")}; }}
-.qp .pq .ds.s-warn {{ --c:{quality_view.PILL_COLORS["pending"]}; }} .qp .pq .ds.s-fail {{ --c:{quality_view.PILL_COLORS["fail"]}; }}
-.qp .pq .ds b {{ font-size:21px; letter-spacing:-.01em; }}
-.qp .pq .ds small {{ font-size:13.5px; color:{ink}; opacity:.85; }}
-.qp .pq .ds:hover, .qp .pq .ds:focus-visible {{ background:color-mix(in srgb, var(--c) 10%, {card}); }}
-.qp .pq .end {{ padding:9px 5px; }}
-.qp .pq .end b {{ font-size:15px; }}
-/* The dashed lines: a horizontal stretch carries its rows above it; a vertical one goes down (or up, to the rejected rows). */
-.qp .pq .h {{ position:relative; height:44px; }}
-.qp .pq .h::before {{ content:""; position:absolute; left:6px; right:9px; top:31px; border-top:2px dashed {accent}; opacity:.85; }}
-.qp .pq .h::after {{ content:""; position:absolute; right:2px; top:27px; border:5px solid transparent; border-left:8px solid {accent}; }}
-.qp .pq .h span {{ position:absolute; left:0; right:0; top:6px; text-align:center; white-space:nowrap;
-  font:600 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; color:{accent}; font-variant-numeric:tabular-nums; }}
-.qp .pq .v {{ position:relative; height:100%; min-height:20px; }}
-.qp .pq .v::before {{ content:""; position:absolute; left:50%; top:2px; bottom:9px; border-left:2px dashed {accent}; opacity:.85; }}
-.qp .pq .v::after {{ content:""; position:absolute; left:calc(50% - 4px); bottom:1px; border:5px solid transparent; border-top:8px solid {accent}; }}
-.qp .pq .v.up::before {{ top:9px; bottom:2px; border-left-color:{quality_view.PILL_COLORS["pending"]}; }}
-.qp .pq .v.up::after {{ top:-3px; bottom:auto; border-top-color:transparent; border-bottom:8px solid {quality_view.PILL_COLORS["pending"]}; }}
-.qp .pq .legend-box {{ align-self:end; padding:0 12px 4px 0; font-size:12px; line-height:1.5; color:{muted}; white-space:nowrap; }}
-.qp .pq .legend-box i {{ display:inline-block; width:9px; height:9px; margin-right:6px; border-radius:50%; background:var(--c); }}
-@media (min-width:761px) and (max-width:960px) {{
-  .qp .pq {{ padding:12px 14px 14px; }}
-  .qp .pq-grid {{ grid-template-columns:minmax(78px, .8fr) minmax(74px, .6fr) minmax(0, 1.3fr) minmax(74px, .6fr) minmax(0, 1.3fr)
-    minmax(74px, .6fr) minmax(0, 1.3fr) minmax(74px, .6fr) minmax(78px, .8fr); }}
-  .qp .pq .box {{ padding:9px 7px; }} .qp .pq .gate {{ padding:10px 7px; }}
-  .qp .pq .box b {{ font-size:14.5px; }} .qp .pq .gate b {{ font-size:16px; }} .qp .pq .rej b {{ font-size:15.5px; }}
-  .qp .pq .end b {{ font-size:14px; }}
-  .qp .pq .box small {{ font-size:11.5px; }} .qp .pq .kicker {{ font-size:9.5px; letter-spacing:.14em; }}
-  .qp .pq .mide a {{ font-size:13px; }} .qp .pq .ds b {{ font-size:20px; }} .qp .pq .ds small {{ font-size:12.5px; }}
-  .qp .pq .h span {{ font-size:11px; }} .qp .pq-head p.hint {{ display:none; }}
-}}
-@media (max-width:760px) {{
-  .qp .pq {{ padding:14px; }}
-  .qp .pq-grid {{ grid-template-columns:minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows:none; row-gap:0; column-gap:10px;
-    grid-template-areas: "org org org" "a1 a1 a1" "g1 m1 ." "a2 a2 a2" "g2 m2 rej" "a3 a3 a3" "g3 m3 ." "a4 a4 a4" "base base base"
-      "ds ds ds" "leg leg leg"; align-items:stretch; }}
-  .qp .pq .vertical-only {{ display:none; }}
-  .qp .pq .h {{ height:42px; }}
-  .qp .pq .h::before {{ left:50%; right:auto; top:4px; bottom:10px; border-top:0; border-left:2px dashed {accent}; }}
-  .qp .pq .h::after {{ left:calc(50% - 4px); right:auto; top:auto; bottom:2px; border:5px solid transparent; border-top:8px solid {accent}; }}
-  .qp .pq .h span {{ left:calc(50% + 12px); right:auto; top:13px; text-align:left; }}
-  .qp .pq .ds {{ margin-top:12px; }} .qp .pq .legend-box {{ padding-top:8px; }}
-  .qp .pq .rej {{ flex-direction:column; align-items:center; gap:2px; }}
-}}
-"""
+    return static_files.fill(
+        "quality_pipeline.css",
+        {
+            'var(--go-accent)': accent,
+            'var(--go-border)': border,
+            'var(--go-surface)': surface,
+            'var(--go-grid)': grid,
+            'var(--go-ink)': ink,
+            'var(--go-muted)': muted,
+            'var(--go-live-mark-css-dark)': live_mark.build_css(dark),
+            'var(--go-card)': card,
+            'var(--go-pipeline-glow-dark-var-c)': _pipeline_glow(dark, "var(--c)"),
+            'var(--go-quality-view-pill-colors-pending)': quality_view.PILL_COLORS["pending"],
+            'var(--go-quality-view-pill-colors-fail)': quality_view.PILL_COLORS["fail"],
+            'var(--go-14-if-dark-else-9)': '14' if dark else '9',
+        },
+    )
 
 
 def _build_pipeline_html_number(value):

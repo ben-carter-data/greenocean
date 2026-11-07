@@ -734,173 +734,50 @@ def build_css(palette):
         gutter = "rgba(15,27,45,.32)"
         selection = f"color-mix(in srgb, {accent} 22%, transparent)"
     mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Cascadia Code', monospace"
-    return f"""<style>
-.st-key-sqlx_studio [data-testid="stMarkdownContainer"] {{ margin-bottom:0 !important; }}
-.st-key-sqlx_studio [data-testid="stMarkdownContainer"] > p {{ margin:0; }}
-.st-key-sqlx_studio {{ gap:0 !important; border-radius:18px; background:{card}; border:1px solid {border};
-  box-shadow:{panel_shadow}; overflow:hidden; margin-top:0; }}
-.st-key-sqlx_toolbar {{ gap:7px !important; padding:9px 14px 9px 12px;
-  background:{toolbar}; border-bottom:1px solid {border}; box-shadow:0 1px 0 rgba(255,255,255,{'.06' if dark else '.9'}) inset; }}
-.st-key-sqlx_toolbar_main, .st-key-sqlx_chips_row {{ flex-wrap:wrap !important; gap:6px 10px !important; }}
-.st-key-sqlx_chips_row .sqlx-bar-label {{ margin-right:4px; min-width:84px; }}
-.sqlx-db {{ display:inline-flex; align-items:center; gap:7px; padding:4px 12px 4px 9px; border-radius:999px;
-  background:{field}; border:1px solid {border}; box-shadow:{raised}; font-size:.78rem; color:{ink};
-  font-family:{mono}; white-space:nowrap; }}
-.sqlx-limits {{ font-size:.72rem; color:{muted}; white-space:nowrap; cursor:default; margin-left:2px; }}
-.sqlx-db i {{ width:9px; height:9px; border-radius:50%; background:{charts.STATUS_COLORS['good']};
-  box-shadow:0 0 0 3px color-mix(in srgb, {charts.STATUS_COLORS['good']} 22%, transparent); }}
-.sqlx-db small {{ color:{charts.legible(muted, field) if field.startswith('#') else muted}; font-family:{charts.CHART_FONT}; }}
-.st-key-sqlx_run button {{ min-height:30px !important; padding:3px 16px 3px 12px !important;
-  background:linear-gradient(180deg, color-mix(in srgb, {accent} 78%, #fff) 0%, {accent} 55%, color-mix(in srgb, {accent} 82%, #000) 100%) !important;
-  border:0 !important; box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 8px 18px -8px {accent} !important; }}
-.st-key-sqlx_run button:hover {{ transform:translateY(-1px); box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 12px 22px -8px {accent} !important; }}
-.st-key-sqlx_run button p {{ font-size:.84rem !important; }}
-.sqlx-sep {{ width:1px; height:22px; background:{border}; margin:0 2px; }}
-.sqlx-bar-label {{ font-size:.68rem; font-weight:500; letter-spacing:.11em; text-transform:uppercase; color:{muted}; }}
-[class*="st-key-sqlx_chip_"] button {{ min-height:26px !important; padding:1px 10px !important; border-radius:999px !important;
-  border:1px solid {border} !important; background:{card} !important; box-shadow:{raised} !important; }}
-[class*="st-key-sqlx_chip_"] button p {{ font-size:.76rem !important; color:{ink} !important; }}
-[class*="st-key-sqlx_chip_"] button:hover {{ border-color:{accent} !important; transform:translateY(-1px); }}
-.st-key-sqlx_body {{ gap:0 !important; }}
-/* D-233, D-267: the studio and the short footer fit the window: the explorer scrolls by itself (its bar shows on hover) and the grid takes
-   what the editor leaves; below a floor the page scrolls rather than squash them. */
-.st-key-sqlx_explorer {{ max-height:max(calc(100vh - 248px), 360px); overflow-y:auto; scrollbar-width:none; }}
-.st-key-sqlx_explorer:hover {{ scrollbar-width:thin; scrollbar-color:{border} transparent; }}
-.st-key-sqlx_body [data-testid="stHorizontalBlock"] {{ align-items:stretch; gap:0 !important; }}
-[data-testid="stColumn"]:has(.st-key-sqlx_explorer) > [data-testid="stVerticalBlock"],
-[data-testid="stColumn"]:has(.st-key-sqlx_explorer) [data-testid="stLayoutWrapper"] {{ height:100%; flex:1 1 auto; }}
-.st-key-sqlx_explorer {{ gap:2px !important; background:{explorer}; border-right:1px solid {border}; padding:10px 8px 12px 10px;
-  height:100%; }}
-.st-key-sqlx_explorer > [data-testid="stElementContainer"] {{ flex:0 0 auto; }}
-.sqlx-tree-title {{ font-size:.68rem; font-weight:500; letter-spacing:.11em; text-transform:uppercase; color:{muted};
-  margin:0 0 6px 2px; }}
-.sqlx-node {{ display:flex; align-items:center; gap:6px; font-size:.8rem; color:{ink}; line-height:1.3; padding:2px 0; white-space:nowrap; }}
-.sqlx-node small {{ color:{muted}; font-size:.7rem; }}
-.sqlx-node .tw {{ width:10px; color:{muted}; font-size:.62rem; }}
-.sqlx-node.branch {{ padding-left:16px; }}
-.sqlx-ico {{ width:14px; height:11px; border-radius:3px; flex:none; box-shadow:{raised}; }}
-.sqlx-ico.db {{ background:linear-gradient(180deg, color-mix(in srgb, {accent} 65%, #fff), {accent}); border-radius:4px; height:13px; width:13px; }}
-.sqlx-ico.folder {{ background:linear-gradient(180deg, #ffd97a, #f0b429); }}
-:is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button {{ width:100%; justify-content:flex-start; min-height:25px !important;
-  padding:1px 6px 1px 30px !important; border:0 !important; background:transparent !important; box-shadow:none !important;
-  border-radius:7px !important; position:relative; }}
-:is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button::before {{ content:""; position:absolute; left:14px; top:0; bottom:0; width:1px;
-  background:{border}; }}
-:is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button:hover {{ background:color-mix(in srgb, {accent} 10%, transparent) !important; transform:none; }}
-:is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button span[data-testid="stIconMaterial"] {{ color:{accent}; font-size:15px; }}
-:is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button p {{ font-family:{mono}; font-size:.78rem !important; color:{ink} !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.sqlx-rows {{ font-size:.66rem; color:{muted}; margin:-6px 0 2px 52px; line-height:1.2; }}
-.st-key-sqlx_explorer .st-key-sqlx_relations {{ margin-top:8px; }}
-.st-key-sqlx_explorer .st-key-sqlx_relations button {{ width:100%; min-height:28px !important; box-shadow:{raised} !important; }}
-.st-key-sqlx_explorer .st-key-sqlx_relations button p {{ font-size:.76rem !important; }}
-/* D-515: the drawing of the relationships takes the width of its window; its joins keep the editor's letter. */
-/* D-516: the whole diagram in one look, at any window: it scales to the width and never passes the height. */
-.sqlx-relations svg {{ display:block; width:100%; height:auto; max-height:calc(100vh - 230px); }}
-.st-key-sqlx_explorer [data-testid="stPopover"] {{ margin-top:6px; }}
-.st-key-sqlx_explorer [data-testid="stPopover"]>button {{ width:100%; min-height:28px !important; box-shadow:{raised} !important; }}
-.st-key-sqlx_explorer [data-testid="stPopover"]>button p {{ font-size:.76rem !important; }}
-.st-key-sqlx_main {{ gap:6px !important; padding:8px 12px 10px 10px; }}
-/* D-511: the script's tab and the filters share one line: the tab at the left, thin pills at the right, each as
-   wide as its filter needs. Under 1300 px the pills take a second line, whole, never cut. */
-.st-key-sqlx_tabrow {{ flex-wrap:wrap !important; align-items:flex-end !important; gap:4px 6px !important; padding:0; }}
-.st-key-sqlx_tabrow > [data-testid="stElementContainer"]:has(.sqlx-tabstrip) {{ flex:1 1 180px !important; min-width:0; }}
-.st-key-sqlx_tabrow > [data-testid="stLayoutWrapper"], .st-key-sqlx_tabrow > [data-testid="stLayoutWrapper"] > div
-  {{ flex:0 0 auto !important; width:auto !important; }}
-[class*="st-key-sqlx_pill_"] {{ margin-bottom:3px; }}
-[class*="st-key-sqlx_pill_"] [data-testid="stSelectbox"], [class*="st-key-sqlx_pill_"] [data-testid="stElementContainer"]
-  {{ width:auto !important; min-width:0 !important; }}
-.st-key-sqlx_pill_familia [data-testid="stSelectbox"] {{ width:132px !important; }}
-.st-key-sqlx_pill_producto_filtro [data-testid="stSelectbox"] {{ width:132px !important; }}
-.st-key-sqlx_pill_canal_filtro [data-testid="stSelectbox"] {{ width:108px !important; }}
-.st-key-sqlx_pill_region [data-testid="stSelectbox"] {{ width:108px !important; }}
-.st-key-sqlx_pill_anio_filtro [data-testid="stSelectbox"] {{ width:84px !important; }}
-.st-key-sqlx_pill_periodo [data-testid="stSelectbox"] {{ width:150px !important; }}
-[class*="st-key-sqlx_pill_"] [data-baseweb="select"] > div, [class*="st-key-sqlx_pill_"] .react-aria-ComboBox > div
-  {{ min-height:24px !important; height:24px !important; border-radius:999px !important; background:{field} !important;
-  border:1px solid {border} !important; box-shadow:none !important; font-size:.72rem; }}
-[class*="st-key-sqlx_pill_"] .react-aria-ComboBox input {{ height:22px !important; padding:0 2px 0 10px !important;
-  font-size:.72rem !important; text-overflow:ellipsis; }}
-[class*="st-key-sqlx_pill_"] .react-aria-ComboBox button {{ height:22px !important; width:22px !important; }}
-[class*="st-key-sqlx_pill_"] [data-baseweb="select"] div {{ font-size:.72rem; }}
-.sqlx-tabstrip {{ display:flex; align-items:flex-end; gap:8px; margin:0; }}
-.sqlx-tab {{ display:inline-flex; align-items:center; gap:7px; padding:5px 14px 5px 11px; border-radius:9px 9px 0 0;
-  background:{editor}; border:1px solid {border}; border-bottom:0; font-size:.76rem; color:{ink}; font-family:{mono};
-  box-shadow:0 1px 0 rgba(255,255,255,{'.06' if dark else '.9'}) inset; }}
-.sqlx-info {{ position:relative; display:inline-grid; place-items:center; width:18px; height:18px; margin:0 0 4px 2px;
-  border-radius:50%; border:1px solid {border}; color:{muted}; font-size:.68rem; font-style:italic; font-family:Georgia, serif;
-  cursor:help; background:{card}; box-shadow:{raised}; }}
-.sqlx-info:hover, .sqlx-info:focus {{ color:{accent}; border-color:{accent}; }}
-.sqlx-info-tip {{ position:absolute; z-index:20; left:26px; top:-6px; width:320px; padding:10px 12px; border-radius:12px;
-  background:{card}; border:1px solid {border}; box-shadow:0 16px 34px -16px rgba(0,0,0,.5); color:{text};
-  font:300 .78rem/1.45 {charts.CHART_FONT}; font-style:normal; opacity:0; pointer-events:none; transition:opacity .15s ease; }}
-.sqlx-info-tip b {{ display:block; font-weight:500; color:{ink}; margin-bottom:2px; }}
-.sqlx-info:hover .sqlx-info-tip, .sqlx-info:focus .sqlx-info-tip {{ opacity:1; }}
-.sqlx-tab .dot {{ width:7px; height:7px; border-radius:50%; background:{accent}; }}
-.sqlx-question {{ flex:1; min-width:0; color:{text}; font-size:.8rem; margin:0 0 4px; line-height:1.3; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis; }}
-.sqlx-question b {{ color:{ink}; font-weight:500; }}
-.st-key-sqlx_editor_box {{ position:relative; gap:0 !important; border:1px solid {border}; border-radius:0 12px 12px 12px;
-  background:{editor}; box-shadow:{inset}; overflow:hidden; }}
-.st-key-sqlx_editor_box > [data-testid="stElementContainer"]:has(.sqlx-hl) {{ height:0; min-height:0; margin:0; }}
-.st-key-sqlx_editor_box [data-testid="stTextArea"] {{ margin:0; }}
-.st-key-sqlx_editor_box [data-baseweb="textarea"], .st-key-sqlx_editor_box [data-baseweb="base-input"] {{
-  background:transparent !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; }}
-.st-key-sqlx_editor_box textarea {{ font-family:{mono} !important; font-size:.84rem !important; line-height:1.55 !important;
-  padding:10px 14px 10px 54px !important; background:transparent !important; color:{ink}; white-space:pre !important;
-  overflow-wrap:normal !important; overflow:auto !important; tab-size:4; caret-color:{ink}; resize:vertical; }}
-.st-key-sqlx_editor_box textarea[data-sqlx="on"] {{ color:transparent !important; }}
-.st-key-sqlx_editor_box textarea::selection {{ background:{selection}; }}
-.st-key-sqlx_editor_box [data-testid="InputInstructions"] {{ display:none; }}
-.sqlx-hl {{ position:absolute; z-index:2; pointer-events:none; overflow:hidden; }}
-.sqlx-hl .sqlx-gutter {{ position:absolute; left:0; top:0; bottom:0; width:42px; overflow:hidden; text-align:right;
-  padding-right:9px; color:{gutter}; border-right:1px solid {border}; background:color-mix(in srgb, {editor} 70%, {field});
-  box-sizing:border-box; font-variant-numeric:tabular-nums; }}
-.sqlx-hl .sqlx-code {{ position:absolute; inset:0; margin:0; overflow:hidden; background:transparent; color:{ink};
-  white-space:pre; box-sizing:border-box; border-style:solid; border-color:transparent; }}
-.sqlx-code .t-k {{ color:{tokens['k']}; }} .sqlx-code .t-f {{ color:{tokens['f']}; }}
-.sqlx-code .t-s {{ color:{tokens['s']}; }} .sqlx-code .t-n {{ color:{tokens['n']}; }}
-.sqlx-code .t-c {{ color:{tokens['c']}; font-style:italic; }} .sqlx-code .t-o {{ color:{tokens['o']}; }}
-.sqlx-code .t-q {{ color:{tokens['q']}; }}
-.st-key-sqlx_results {{ gap:0 !important; position:relative; }}
-/* D-516: the summary and the downloads share the line of the tabs, and the grid gets that height. */
-.st-key-sqlx_resultbar {{ position:absolute; top:9px; right:0; left:170px; width:auto !important; height:34px; z-index:2; }}
-.st-key-sqlx_resultbar > [data-testid="stElementContainer"]:has([data-testid="stCaptionContainer"]) {{ flex:1 1 0; min-width:0; }}
-.st-key-sqlx_resultbar [data-testid="stCaptionContainer"] p {{ margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.st-key-sqlx_results [data-testid="stTabPanel"] > [data-testid="stVerticalBlock"] {{ gap:0 !important; }}
-.st-key-sqlx_results [data-testid="stTabs"] [data-baseweb="tab-list"] {{ gap:4px; border-bottom:1px solid {border}; }}
-.st-key-sqlx_results [data-testid="stTabs"] button[data-baseweb="tab"] {{ padding:5px 12px; border-radius:8px 8px 0 0; }}
-.st-key-sqlx_results [data-testid="stTabs"] button[data-baseweb="tab"] p {{ font-size:.8rem; }}
-.st-key-sqlx_results [data-testid="stTabs"] [data-baseweb="tab-highlight"] {{ background:{accent}; height:2px; }}
-.st-key-sqlx_results [data-testid="stTabs"] [data-baseweb="tab-panel"] {{ padding:6px 0 0; }}
-.st-key-sqlx_results [data-testid="stDataFrame"] {{ border:1px solid {border}; border-radius:10px; overflow:hidden;
-  box-shadow:{raised}; }}
-.st-key-sqlx_results [data-testid="stDownloadButton"] button {{ min-height:24px !important; padding:0 10px !important; }}
-.st-key-sqlx_results [data-testid="stDownloadButton"] button p {{ font-size:.72rem !important; }}
-.sqlx-msg {{ font-family:{mono}; font-size:.8rem; color:{ink}; margin:0; padding:10px 12px; border:1px solid {border};
-  border-radius:10px; background:{editor}; box-shadow:{inset}; white-space:pre-wrap; line-height:1.55; min-height:96px; }}
-.sqlx-msg .ok {{ color:{charts.STATUS_COLORS['good'] if dark else charts.STATUS_TEXT_ON_LIGHT['good']}; }}
-.sqlx-msg .err {{ color:{charts.STATUS_COLORS['critical'] if dark else charts.STATUS_TEXT_ON_LIGHT['critical']}; }}
-.sqlx-note {{ color:{text}; font-size:.8rem; margin:0; }}
-.sqlx-empty {{ color:{muted}; font-size:.8rem; margin:4px 0 10px; }}
-.sqlx-status {{ display:flex; align-items:center; gap:0; margin:0; border-top:1px solid {border}; font-size:.74rem; color:{ink};
-  background:linear-gradient(180deg, color-mix(in srgb, {accent} {'18%' if dark else '12%'}, {card}), color-mix(in srgb, {accent} {'10%' if dark else '6%'}, {card}));
-  box-shadow:0 1px 0 rgba(255,255,255,{'.05' if dark else '.7'}) inset; }}
-.sqlx-status.err {{ background:linear-gradient(180deg, color-mix(in srgb, {charts.STATUS_COLORS['critical']} 16%, {card}), color-mix(in srgb, {charts.STATUS_COLORS['critical']} 8%, {card})); }}
-.sqlx-status span {{ padding:6px 14px; border-right:1px solid color-mix(in srgb, {border} 70%, transparent); white-space:nowrap; }}
-.sqlx-status span:first-child {{ flex:1; display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden; }}
-/* D-267: on a narrow window the engine, the mode and the file leave the status bar (the page bar says them), so the
-   time and the rows of the result always show. */
-@media (max-width:1320px) {{ .sqlx-status span:nth-child(2), .sqlx-status span:nth-child(3), .sqlx-status span:nth-child(4) {{ display:none; }} }}
-.sqlx-status span:last-child {{ border-right:0; }}
-.sqlx-status .mark {{ width:15px; height:15px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
-  color:#fff; font-size:.62rem; background:{charts.STATUS_COLORS['good']}; box-shadow:0 1px 2px rgba(0,0,0,.25); }}
-.sqlx-status.err .mark {{ background:{charts.STATUS_COLORS['critical']}; }}
-.sqlx-status.idle .mark {{ background:{muted}; }}
-.sqlx-status .num {{ font-family:{mono}; font-variant-numeric:tabular-nums; }}
-@media (max-width: 900px) {{ .st-key-sqlx_explorer {{ border-right:0; border-bottom:1px solid {border}; }} }}
-/* D-262: the studio takes half of the page's side margins (80 px → 40 px), a little wider; the header moves with it. */
-@media (min-width: 1024px) {{ [data-testid="stMainBlockContainer"] {{ padding-left:2.5rem !important; padding-right:2.5rem !important; }} }}
-</style>"""
+    return static_files.style(
+        "sql_explorer.css",
+        {
+            'var(--go-card)': card,
+            'var(--go-border)': border,
+            'var(--go-panel-shadow)': panel_shadow,
+            'var(--go-toolbar)': toolbar,
+            'var(--go-06-if-dark-else-9)': '.06' if dark else '.9',
+            'var(--go-field)': field,
+            'var(--go-raised)': raised,
+            'var(--go-ink)': ink,
+            'var(--go-mono)': mono,
+            'var(--go-muted)': muted,
+            'var(--go-charts-status-colors-good)': charts.STATUS_COLORS['good'],
+            'var(--go-charts-legible-muted-field-if-field-startswith-e)': charts.legible(muted, field)
+            if field.startswith('#')
+            else muted,
+            'var(--go-charts-chart-font)': charts.CHART_FONT,
+            'var(--go-accent)': accent,
+            'var(--go-explorer)': explorer,
+            'var(--go-editor)': editor,
+            'var(--go-text)': text,
+            'var(--go-inset)': inset,
+            'var(--go-selection)': selection,
+            'var(--go-gutter)': gutter,
+            'var(--go-tokens-k)': tokens['k'],
+            'var(--go-tokens-f)': tokens['f'],
+            'var(--go-tokens-s)': tokens['s'],
+            'var(--go-tokens-n)': tokens['n'],
+            'var(--go-tokens-c)': tokens['c'],
+            'var(--go-tokens-o)': tokens['o'],
+            'var(--go-tokens-q)': tokens['q'],
+            'var(--go-charts-status-colors-good-if-dark-else-charts-st)': charts.STATUS_COLORS['good']
+            if dark
+            else charts.STATUS_TEXT_ON_LIGHT['good'],
+            'var(--go-charts-status-colors-critical-if-dark-else-chart)': charts.STATUS_COLORS['critical']
+            if dark
+            else charts.STATUS_TEXT_ON_LIGHT['critical'],
+            'var(--go-18-if-dark-else-12)': '18%' if dark else '12%',
+            'var(--go-10-if-dark-else-6)': '10%' if dark else '6%',
+            'var(--go-05-if-dark-else-7)': '.05' if dark else '.7',
+            'var(--go-charts-status-colors-critical)': charts.STATUS_COLORS['critical'],
+        },
+    )
 
 
 DESCRIPTION = (

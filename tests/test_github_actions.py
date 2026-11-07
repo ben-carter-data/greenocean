@@ -10,13 +10,16 @@ import requests
 
 from bi import control, github_actions
 
+# region Constants
 # Fake tokens, built in parts so that no file of the repository holds a text shaped like a real one.
 TOKEN = "github_pat_" + "FAKE0123456789ABCDEFGHIJKLMNOP"
 READ_TOKEN = "github_pat_" + "READ0123456789ABCDEFGHIJKLMNO"
 SHAPED = "ghp_" + "abcdefghijklmnopqrstuv"
 BASE = f"{control.API_URL}/repos/{control.REPOSITORY}"
+# endregion
 
 
+# region The read-only GitHub Actions reader
 class Answer:
     def __init__(self, payload=None, status=200, text="", headers=None):
         self.payload, self.status_code, self.text, self.headers = payload, status, text, headers or {}
@@ -201,3 +204,6 @@ def test_d339_a_request_limit_or_a_network_failure_is_named_without_the_address(
     assert "límite de consultas" in model["workflows"][0]["error"] and model["workflows"][1]["error"] is None
     assert control.API_URL not in model["workflows"][0]["error"]
     assert "GitHub no respondió" in github_actions.explain(requests.Timeout())
+
+
+# endregion

@@ -1,0 +1,8 @@
+
+@keyframes go-menu-beat { 0%, 100% { filter:drop-shadow(0 0 2px var(--go-green)); opacity:1; }
+  50% { filter:drop-shadow(0 0 9px var(--go-green)); opacity:.55; } }
+[data-testid="stSidebarCollapseButton"] button, [data-testid="stExpandSidebarButton"] { color:var(--go-green) !important;
+  animation:go-menu-beat 1.6s ease-in-out infinite; }
+[data-testid="stSidebarCollapseButton"] button *, [data-testid="stExpandSidebarButton"] * { color:var(--go-green) !important; }
+@media (prefers-reduced-motion:reduce) { [data-testid="stSidebarCollapseButton"] button,
+  [data-testid="stExpandSidebarButton"] { animation:none; filter:drop-shadow(0 0 4px var(--go-green)); } }

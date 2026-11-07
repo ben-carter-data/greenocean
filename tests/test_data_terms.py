@@ -5,9 +5,12 @@ import pytest
 
 from bi import data_terms, home_mockup, i18n, queries
 
+# region Variables
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
+# endregion
 
 
+# region Data terms
 @needs_database
 def test_d403_every_family_channel_quality_and_unit_of_the_database_has_its_english():
     with duckdb.connect(str(queries.DATABASE_FILE), read_only=True) as connection:
@@ -29,3 +32,6 @@ def test_d403_the_words_change_only_for_an_english_visit_and_the_short_names_too
     assert data_terms.term("Frutas") == "Fruit" and data_terms.term("Calibre 120") == "Size 120"
     assert home_mockup.short_family("Carne de Cerdo - Ave - Cordero") == "Pork · Poultry · Lamb"
     assert data_terms.term("Tomate") == "Tomate"  # a product keeps its name
+
+
+# endregion

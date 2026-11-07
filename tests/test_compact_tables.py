@@ -1,5 +1,6 @@
 """Compact lists (D-348): no table that grows shows more than 20 rows at once, rows are collapsed and one opens at a time."""
 
+import re
 import copy
 from pathlib import Path
 
@@ -7,10 +8,13 @@ from streamlit.testing.v1 import AppTest
 
 from bi import compact_table, git_workflow
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
+# endregion
 
 
+# region Compact lists
 def script():
     from bi import compact_table
 
@@ -82,5 +86,9 @@ def test_d348_the_log_is_a_fixed_height_box_closed_by_default_and_the_reports_li
     source = "\n".join(p.read_text(encoding="utf-8") for p in sorted(Path(DASHBOARD_FILE).parent.glob("*.py")))
     block = source[source.index("def show_workflow_detail") : source.index("def show_actions_page")]
     assert "st.expander(" in block and "expanded=False" in block and "st.container(height=300)" in block
-    assert 'compact_table.show_compact_rows(\n                "cr_reports"' in source.replace("\r", "")
-    assert 'compact_table.show_compact_rows(\n        "cr_actions"' in source
+    # R-004: the call is found whatever its indentation or line breaks
+    assert re.search(r'compact_table\.show_compact_rows\(\s*"cr_reports"', source)
+    assert re.search(r'compact_table\.show_compact_rows\(\s*"cr_actions"', source)
+
+
+# endregion

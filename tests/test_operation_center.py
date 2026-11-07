@@ -9,6 +9,7 @@ from streamlit.testing.v1 import AppTest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import charts, control, dashboard, operation_center, project, queries  # noqa: E402
 
+# region Constants and variables
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 RUN = {"id": 7, "state": control.RUN_FAILED, "trigger": "Manual", "url": "https://github.com/x/y/actions/runs/7"}
 JOB = {
@@ -40,8 +41,10 @@ JOB = {
         },
     ],
 }
+# endregion
 
 
+# region Test operation center
 def test_d165_the_run_is_nine_steps_on_a_serpentine_of_three_rows():
     keys = [step["key"] for step in operation_center.STEPS]
     assert keys == ["launch", "odepa", "ine", "etl", "dbt", "tests", "save", "report", "panel"]
@@ -172,3 +175,6 @@ def test_d366_the_states_a_run_in_progress_shows_have_their_english(monkeypatch)
     words = list(operation_center.STATE_TEXTS.values())
     for text in words + ["Esperando la base", "Base al día", "Última carga falló", "En curso…"]:
         assert i18n.translate_any(text) != text, text
+
+
+# endregion

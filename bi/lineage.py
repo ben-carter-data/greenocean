@@ -562,27 +562,17 @@ def build_style(suffix, palette):
     graph = f".lin-{suffix}"
     halo = "0 0 3px rgba({}, .6)" if is_dark(palette) else "0 0 2px rgba({}, .35)"
     halo = halo.format(", ".join(str(int(lit[index : index + 2], 16)) for index in (1, 3, 5)))
-    return f"""<style>
-    {graph} .lin-node, {graph} .lin-edge, {graph} .lin-joint {{ transition: opacity .18s ease, stroke .18s ease, fill .18s ease; }}
-    {graph} .lin-node {{ cursor: pointer; }}
-    {graph} .lin-node:focus {{ outline: none; }}
-    {graph} .lin-edge.lin-extra, {graph} .lin-joint.lin-extra {{ opacity: 0; }}
-    {graph}.lin-active .lin-node {{ opacity: .2; }}
-    {graph}.lin-active .lin-node.lin-on {{ opacity: 1; }}
-    {graph}.lin-active .lin-edge {{ stroke: {dim}; opacity: .2; marker-end: url(#lin-arrow-dim-{suffix}); }}
-    {graph}.lin-active .lin-edge.lin-on {{ stroke: {lit}; opacity: 1; stroke-width: {LIT_WIDTH};
-                                          marker-end: url(#lin-arrow-lit-{suffix}); filter: drop-shadow({halo}); }}
-    {graph}.lin-active .lin-joint {{ fill: {dim}; opacity: .2; }}
-    {graph}.lin-active .lin-joint.lin-on {{ fill: {lit}; opacity: 1; r: 3.4px; }}
-    {graph}.lin-active .lin-extra:not(.lin-on) {{ opacity: 0; }}
-    {graph}.lin-active .lin-flow {{ display: none; }}
-    {graph}.lin-active .lin-flow.lin-on {{ display: inline; fill: {lit}; opacity: 1; }}
-    {graph} .lin-node.lin-focus .lin-face {{ stroke: {lit}; stroke-width: 2.4; stroke-opacity: 1; }}
-    @media (prefers-reduced-motion: reduce) {{
-      {graph} .lin-flow {{ display: none !important; }}
-      {graph} .lin-node, {graph} .lin-edge, {graph} .lin-joint {{ transition: none; }}
-    }}
-    </style>"""
+    return static_files.style(
+        "lineage_selection.css",
+        {
+            'var(--go-graph)': graph,
+            'var(--go-dim)': dim,
+            'var(--go-suffix)': suffix,
+            'var(--go-lit)': lit,
+            'var(--go-lit-width)': LIT_WIDTH,
+            'var(--go-halo)': halo,
+        },
+    )
 
 
 def build_subtitle(summary, palette):

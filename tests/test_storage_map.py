@@ -5,6 +5,7 @@ from pathlib import Path
 
 from bi import charts, database_map, storage_map
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 COUNTS = {
     "weekly_price": 814610,
@@ -23,8 +24,10 @@ COUNTS = {
     "dbt_result": 47,
 }
 SIZES = {"raw": "≈ 665 MB", "served": "19 MB", "backup": "34 MB"}
+# endregion
 
 
+# region «Dónde viven los datos»
 def build(mode=charts.MODE_DARK, layers=None, tests=31, sizes=SIZES):
     return storage_map.build_map_html(
         charts.get_palette(mode), COUNTS, layers or {"staging": 3, "intermediate": 4, "marts": 9}, tests, sizes
@@ -114,3 +117,6 @@ def test_the_light_themes_draw_too_and_the_hover_cards_follow_the_theme():
     for mode in (charts.MODE_CORPORATE, charts.MODE_BLUE_LIGHT):
         markup = build(mode, layers={"staging": 0, "intermediate": 0, "marts": 0}, tests=0)
         assert "etl/datos.duckdb" in markup and "0 modelos" in markup
+
+
+# endregion

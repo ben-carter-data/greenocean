@@ -14,6 +14,7 @@ from bi import architecture, charts, lineage, queries  # noqa: E402
 from tests.test_tech_glossary import nearest_title, parse, tag  # noqa: E402
 
 
+# region The dbt lineage is the zoom of the journey
 @pytest.fixture(scope="module")
 def build():
     nodes, results = lineage.read_tables(queries.run_sql)
@@ -189,3 +190,6 @@ def test_d380_the_marts_column_fits_eleven_tiles_without_touching():
     assert (
         lineage.LAST_MART_ROW - 33 + (lineage.TILE + 6) <= lineage.LEGEND_Y - 16
     )  # and the last one ends above the legend
+
+
+# endregion

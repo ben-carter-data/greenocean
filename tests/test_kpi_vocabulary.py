@@ -5,6 +5,7 @@ import re
 from bi import alerts, dashboard, i18n, overview, project
 
 
+# region Test kpi vocabulary
 def test_d385_the_alert_rule_is_written_once_from_the_constants_of_the_code():
     rule = alerts.describe_rule()
     for value in (
@@ -67,3 +68,6 @@ def test_d482_the_alert_window_shows_the_two_published_prices_of_its_change():
         # «Anterior» and «Actual» are the prices the change is computed from, never one worked back from the other
         assert (row["same_region_previous_price"], row["same_region_price"]) == (before, now)
         assert abs(now / before - 1 - row["variation"]) < 1e-9
+
+
+# endregion

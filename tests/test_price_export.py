@@ -10,6 +10,7 @@ from streamlit.testing.v1 import AppTest
 
 from bi import dashboard, i18n, price_export, queries
 
+# region Variables
 DASHBOARD_FILE = str(Path(__file__).resolve().parents[1] / "bi" / "dashboard.py")
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
 ROWS = [
@@ -41,8 +42,10 @@ ROWS = [
         "_single_quote": True,
     },
 ]
+# endregion
 
 
+# region Price export
 def build():
     rows = price_export.build_rows(ROWS, "26 oct – 1 nov", "19–25 oct", "todo Chile")
     notes = price_export.build_notes("26 oct – 1 nov", [("Región", "Todo Chile")], "3 nov · 16:19", {"missing": 145}, 9)
@@ -252,3 +255,6 @@ def test_d525_the_window_writes_its_own_choices_in_the_notes(monkeypatch):
     assert app.text_input(key="dialog_products_search").value == "lechuga"
     assert ("Búsqueda", "lechuga") in seen[-1] and ("Familia", "Frutas") in seen[-1]
     assert counted(app) == [1]  # only the lettuce, as the table shows
+
+
+# endregion

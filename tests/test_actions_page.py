@@ -8,11 +8,15 @@ import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from bi import control, dashboard, github_actions, i18n
+from tests import code_shape  # noqa: E402
 from tests.test_github_actions import LOG, READ_TOKEN, SHAPED, TOKEN, Answer, Network
 
+# region Constants and variables
 DASHBOARD_FILE = str(Path(__file__).resolve().parent.parent / "bi" / "dashboard.py")
+# endregion
 
 
+# region The page «GitHub Actions»
 @pytest.fixture
 def network(monkeypatch):
     fake = Network()
@@ -176,8 +180,11 @@ def test_d339_an_expired_or_unpermitted_token_says_what_to_do_and_the_states_sti
 
 
 def test_d339_the_answers_are_kept_two_minutes_so_a_second_visit_asks_nothing(network):
-    source = (Path(DASHBOARD_FILE).parent / "page_devops.py").read_text(encoding="utf-8")  # D-541
-    assert "@st.cache_data(ttl=github_actions.CACHE_SECONDS" in source and github_actions.CACHE_SECONDS == 120
+    from bi import page_devops
+
+    shape = code_shape.tree_of(page_devops.read_actions_model)  # R-004: the decorator, read in the syntax tree
+    cache = [d for d in shape.body[0].decorator_list if code_shape.dotted(getattr(d, "func", None)) == "st.cache_data"]
+    assert code_shape.keyword(cache[0], "ttl") == "github_actions.CACHE_SECONDS" and github_actions.CACHE_SECONDS == 120
     app = draw()
     asked = len(network.calls)
     assert asked > 0
@@ -234,3 +241,6 @@ def test_d359_a_failed_log_has_a_copy_button_and_links_to_the_run_and_the_job_in
     assert "Copiar" in frames and "clipboard.writeText" in frames
     for secret in (TOKEN, READ_TOKEN):
         assert secret not in frames
+
+
+# endregion

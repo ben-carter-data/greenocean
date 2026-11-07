@@ -1,0 +1,51 @@
+[class*="st-key-nav_block_"] {margin:0 !important; padding:8px 0 !important; gap:2px !important;
+        background:transparent !important; border:0; border-bottom:1px solid var(--go-line); border-radius:0; box-shadow:none;}
+    .st-key-nav_block_documentos {border-bottom:0;}
+    [class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div,
+    [class*="st-key-nav_group_"] button {width:100% !important; box-sizing:border-box;}
+    [class*="st-key-nav_group_"] button {justify-content:flex-start !important; padding:1px 8px !important;
+        min-height:22px !important; background:transparent !important; border:0 !important; margin:0 0 4px;}
+    [class*="st-key-nav_group_"] button:hover:not(:disabled) {background:transparent !important;}
+    [class*="st-key-nav_group_"] button > div {justify-content:flex-start !important;}
+    [class*="st-key-nav_group_"] button p {color:var(--go-heading) !important; -webkit-text-fill-color:var(--go-heading) !important;
+        font-size:.6875rem !important; font-weight:500 !important; letter-spacing:0 !important; white-space:nowrap;
+        text-align:left !important;}
+    [class*="st-key-nav_group_"] button:hover p {color:var(--go-text) !important; -webkit-text-fill-color:var(--go-text) !important;}
+    [class*="st-key-nav_group_"] button p::after {content:"⌄"; margin-left:8px; opacity:0; transition:opacity .12s ease;}
+    [class*="st-key-nav_group_"] button:hover p::after {opacity:.8;}
+    [class*="st-key-nav_group_"][class*="_folded"] button p::after {content:"›"; opacity:.8;}
+    /* D-459: «Dashboards», the title of the three tiles under «Negocio · BA y BI»: smaller than a section, set in. */
+    /* Its block keeps the -1rem of a markdown block (D-173), so the paragraph keeps 1rem under it. */
+    [data-testid="stSidebar"] p.nav-subtitle {margin:0 0 calc(1rem + 3px) !important; padding:0 8px; color:var(--go-heading) !important;
+        opacity:.8; font-size:.6875rem !important; font-weight:400; letter-spacing:0;}
+    /* D-512: rows of 28 px with 2 px between them, the air of VS Code's explorer, so a click never lands on the
+       neighbour. */
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a {position:relative; padding:3px 8px !important;
+        min-height:28px !important; border-radius:6px !important; border:0 !important;
+        background:transparent !important; box-shadow:none !important; gap:0 !important;}
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a:hover {background:var(--go-hover) !important;}
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] p {color:var(--go-text) !important; -webkit-text-fill-color:var(--go-text) !important;
+        font-size:.8125rem !important; font-weight:400 !important; padding-left:8px; text-shadow:none !important;
+        white-space:normal; overflow:visible; text-overflow:clip; line-height:1.3;}
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {color:var(--go-icon) !important;
+        font-size:16px !important; width:16px; opacity:1; font-variation-settings:"wght" 300;}
+    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] a {background:var(--go-current) !important;}
+    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] a::before {content:""; position:absolute;
+        left:0; top:7px; bottom:7px; width:3px; border-radius:3px; background:var(--go-accent);}
+    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] p {font-weight:500 !important;}
+    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stIconMaterial"] {color:var(--go-accent) !important;}
+    [data-testid="stSidebar"] a.nav-source-link {display:flex; align-items:center; padding:5px 8px !important; margin:0 !important;
+        font-size:.8125rem; color:var(--go-text) !important; -webkit-text-fill-color:var(--go-text) !important; text-decoration:none !important;
+        border-radius:6px; line-height:1.3;}
+    [data-testid="stSidebar"] a.nav-source-link:hover {background:var(--go-hover);}
+    [data-testid="stSidebar"] .nav-source-icon {margin-right:8px; color:var(--go-icon); flex:0 0 auto;}    /* D-298: the alert of a failed load, under the menu, on every page. */
+    .st-key-load_alert {margin:0 0 6px; padding:8px 12px 6px; border-radius:10px; gap:2px !important;
+        border:1px solid #e5484d; background:color-mix(in srgb, #e5484d 14%, transparent);}
+    .st-key-load_alert [data-testid="stMarkdownContainer"] {margin-bottom:0 !important;}
+    .st-key-load_alert [data-testid="stElementContainer"] {margin:0 !important;}
+    .st-key-load_alert p.load-alert-title {margin:0 !important; font-size:.86rem !important; font-weight:600; line-height:1.3 !important;
+        color:#ff8b8f !important;}
+    .st-key-load_alert p.load-alert-note {margin:0 0 2px !important; font-size:.74rem !important; line-height:1.3 !important;
+        color:var(--go-text) !important;}
+    .st-key-load_alert [data-testid="stPageLink"] a {padding:0 !important; min-height:0 !important;}
+    .st-key-load_alert [data-testid="stPageLink"] p {font-size:.76rem !important; color:var(--go-text) !important; text-decoration:underline;}

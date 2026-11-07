@@ -10,6 +10,7 @@ import pytest
 
 from bi import dashboard, i18n, queries
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 DOCS_DIR = ROOT / "docs"
 DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md"]
@@ -17,8 +18,10 @@ DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md"]
 # D-290: the scalability plan and the data dictionary live in the SAD; the security plan, in the test plan.
 READING = DOCUMENTS + ["MANUAL.md", "GLOSARIO.md", "INDICE_DECISIONES.md", "PLAN_DE_CALIDAD.md", "ACTA_DE_CIERRE.md"]
 MERGED = {"PLAN_PRUEBAS.md": ["SEGURIDAD.md"], "SAD.md": ["ESCALABILIDAD.md", "DICCIONARIO_DATOS.md"]}
+# endregion
 
 
+# region The project documents
 @pytest.mark.parametrize("name", DOCUMENTS)
 def test_documents_have_no_code_blocks_and_use_the_project_vocabulary(name):
     text = i18n.document_path(name, "es").read_text(encoding="utf-8")
@@ -445,3 +448,6 @@ def test_d439_the_risk_registers_name_both_abandonment_risks():
             text = i18n.document_path(name, language).read_text(encoding="utf-8")
             risks = text.split(section)[1].split("\n## ")[0]
             assert all(word in risks for word in words) and "D-439" in risks, (name, language)
+
+
+# endregion

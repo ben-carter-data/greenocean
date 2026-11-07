@@ -5,6 +5,7 @@ from datetime import datetime
 
 from bi import quality_view
 
+# region Constants
 EVIDENCE = dict(
     run_id=4,
     run_started="13-10-2026 15:35",
@@ -22,8 +23,10 @@ EVIDENCE = dict(
     checks=dict(integrity_ok=True, foreign_keys=0, duplicates=0, invalid=0),
     parity=dict(rows=811578, rejections=201, backup_rows=811578, backup_rejections=201, ok=True),
 )
+# endregion
 
 
+# region The «Controles de datos» overview draws the evidence it is given, nothing more
 def step_marks(markup):
     return re.findall(r'class="qa-mark qa-(\w+)"', markup)
 
@@ -48,3 +51,6 @@ def test_build_evidence_from_the_page_objects():
 
 def html_text(text):
     return quality_view.html.escape(text)
+
+
+# endregion

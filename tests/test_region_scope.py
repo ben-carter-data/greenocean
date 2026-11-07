@@ -9,11 +9,14 @@ from streamlit.testing.v1 import AppTest
 
 from bi import alerts, channel_latest, dashboard, home_mockup, queries
 
+# region Variables
 ROOT = Path(__file__).resolve().parents[1]
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
 SERIES = ['product_group', 'product', 'variety', 'quality', 'channel', 'normalized_unit']
+# endregion
 
 
+# region With a region chosen in step 1, everything after it in «Semanal» works on that region
 def latest_week():
     return dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]
 
@@ -163,3 +166,6 @@ def test_d499_it_is_said_in_english_too():
 def test_d499_the_formula_names_the_price_it_uses():
     assert 'precio nacional' in alerts.describe_kind(True, True)
     assert 'precio de la región elegida' in alerts.describe_kind(True, True, True)
+
+
+# endregion

@@ -5,9 +5,12 @@ import pytest
 
 from bi import alerts, charts, dashboard, home_mockup, overview, queries
 
+# region Variables
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
+# endregion
 
 
+# region «Dashboard»
 @pytest.fixture(scope="module")
 def market():
     prices = queries.run_query("k6_national_weekly_price")
@@ -108,3 +111,6 @@ def test_d478_the_insights_name_the_family_of_each_product(market):
         if text.startswith("Las mayores bajas")
     )
     assert all(f"{product} · {home_mockup.short_family(family)}" in line for product, _, _, family in drops)
+
+
+# endregion

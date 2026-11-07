@@ -8,11 +8,14 @@ from streamlit.testing.v1 import AppTest
 
 from bi import charts, dashboard, queries, transformation_rules as rules
 
+# region Variables
 DASHBOARD_FILE = str(Path(__file__).resolve().parents[1] / "bi" / "dashboard.py")
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
 PALETTE = charts.get_palette(charts.MODE_DARK)
+# endregion
 
 
+# region Transformation rules
 def by_title(title):
     return next(rule for rule in rules.read_rules() if rule["titulo"][0] == title)
 
@@ -164,3 +167,6 @@ def test_d523_the_user_view_does_not_reach_it():
     app.run()
     assert not app.exception
     assert not any("Reglas del pipeline" in str(element.proto.srcdoc) for element in app.get("iframe"))
+
+
+# endregion

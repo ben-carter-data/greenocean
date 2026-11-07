@@ -4,9 +4,12 @@ import pytest
 
 from bi import inflation_view, queries
 
+# region Variables
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
+# endregion
 
 
+# region Test inflation view
 def read_page_figures():
     rows, last = inflation_view.build_family_index(
         queries.run_sql(inflation_view.SERIES_SQL), queries.run_sql("SELECT year, month, food_index FROM ipc_monthly")
@@ -88,3 +91,6 @@ def test_d294_the_enlarged_family_labels_its_ends_marks_its_peak_and_reads_any_m
     assert titles == ["Mes", family, inflation_view.IPC_NAME, "Diferencia en puntos"]
     month = datasets[rule["data"]["name"]][5]
     assert abs(month["gap"] - (month["family"] - month["ipc"])) < 1e-9
+
+
+# endregion

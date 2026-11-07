@@ -16,7 +16,7 @@ import html
 import re
 from pathlib import Path
 
-from bi import live_mark, brand_icons, charts, database_map, doc_views, project, queries
+from bi import brand_icons, charts, database_map, doc_views, live_mark, project, queries, static_files
 
 # region Constants and variables
 REPOSITORY = Path(__file__).resolve().parent.parent
@@ -394,56 +394,28 @@ def build_css(palette):
     )
     shadow = "rgba(0,0,0,.55)" if dark else "rgba(15,39,71,.22)"
     sans = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    return f"""<style>
-/* D-277: the diagram keeps its proportion and is never taller than what the window leaves for it, with the figures.
-   D-440: but a short window never makes it narrower than 760 px; then the page scrolls a little instead. Every text
-   between two tools scales with the diagram, so none can cover its neighbour; a long description wraps inside its
-   tool; and when the diagram is too small for a secondary text to be read, it hides: the tooltip and the legend keep
-   it. The names of the tools always show. */
-.sk-map {{ container-type:inline-size; max-width:min(1240px, max(760px, calc((100vh - 378px) * {WIDTH} / {HEIGHT})));
-  margin:4px auto 0; }}
-.sk-stage {{ --u:calc(100cqw / {WIDTH}); position:relative; width:100%; aspect-ratio:{WIDTH}/{HEIGHT}; }}
-.sk-wires {{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }}
-.sk-node {{ position:absolute; width:calc(158 * var(--u)); margin-left:calc(-79 * var(--u)); margin-top:calc(-{LOGO / 2} * var(--u));
-  display:flex; flex-direction:column; align-items:center; text-align:center; text-decoration:none !important; outline:none; cursor:pointer; }}
-.sk-node.source {{ margin-top:calc(-{SOURCE_LOGO / 2} * var(--u)); cursor:default; }}
-.sk-node .logo {{ width:calc({LOGO} * var(--u)); height:calc({LOGO} * var(--u)); filter:drop-shadow(0 12px 10px {shadow});
-  transition:transform .25s ease; }}
-.sk-node.source .logo {{ width:calc({SOURCE_LOGO} * var(--u)); height:calc({SOURCE_LOGO} * var(--u)); }}
-.sk-node:hover .logo, .sk-node:focus .logo {{ transform:translateY(-4px) scale(1.06); }}
-.sk-node b {{ margin-top:3px; color:{ink}; font:600 max(10px, calc(14.5 * var(--u)))/1.15 {sans}; white-space:nowrap; }}
-.sk-node small {{ width:100%; color:{text}; font:400 max(9px, calc(12 * var(--u)))/1.2 {sans}; overflow-wrap:break-word; }}
-.sk-node em {{ margin-top:2px; color:{muted}; font:600 calc(12.5 * var(--u))/1.2 {sans}; font-style:normal;
-  letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }}
-.sk-node.source b {{ font-size:max(10px, calc(13 * var(--u))); }}
-.sk-chip {{ position:absolute; transform:translate(-50%,-50%); padding:calc(1 * var(--u)) calc(7 * var(--u));
-  border-radius:calc(7 * var(--u)); background:{palette['background']}; border:1px solid currentColor;
-  font:600 calc(12.5 * var(--u))/1.35 {sans}; white-space:nowrap; outline:none; cursor:default; }}
-@container (max-width:700px) {{ .sk-node em, .sk-chip {{ visibility:hidden; }} }}
-@container (max-width:480px) {{ .sk-node small {{ display:none; }} }}
-.sk-tip {{ position:absolute; z-index:40; top:calc(100% + 8px); left:50%; transform:translateX(-50%); width:310px; padding:11px 13px;
-  border-radius:12px; background:{card}; border:1px solid {border}; color:{text}; text-align:left;
-  box-shadow:0 18px 40px rgba(0,0,0,{'.5' if dark else '.18'}); font:400 12.5px/1.45 {sans}; white-space:pre-line; letter-spacing:0; text-transform:none;
-  display:none; pointer-events:none; }}
-.sk-tip i {{ display:block; margin:7px 0 2px; color:{muted}; font:600 10.5px/1.2 {sans}; font-style:normal; letter-spacing:.08em;
-  text-transform:uppercase; }}
-.sk-tip i:first-child {{ margin-top:0; }}
-.sk-tip u {{ display:block; margin-top:8px; color:{palette['accent']}; text-decoration:none; font-size:11.5px; }}
-.sk-tip.start {{ left:0; transform:none; }} .sk-tip.end {{ left:auto; right:0; transform:none; }}
-.sk-tip.up {{ top:auto; bottom:calc(100% + 8px); }}
-.sk-node:hover .sk-tip, .sk-node:focus .sk-tip, .sk-chip:hover .sk-tip, .sk-chip:focus .sk-tip {{ display:block; }}
-.sk-node:hover, .sk-node:focus, .sk-chip:hover, .sk-chip:focus {{ z-index:50; }}
-.sk-legend {{ font-family:{sans}; display:flex; flex-wrap:wrap; justify-content:center; gap:4px 22px; margin:2px 0 0; color:{muted}; font-size:12.5px; }}
-.sk-legend span::before {{ content:""; display:inline-block; width:22px; margin-right:7px; vertical-align:middle;
-  border-top:2px solid var(--c); }}
-.sk-legend span.dashed::before {{ border-top-style:dashed; }}
-.evidence {{ font-family:{sans}; display:flex; justify-content:center; gap:56px; flex-wrap:wrap; margin:14px 0 4px; }}
-.evidence div {{ text-align:center; }}
-.evidence strong {{ display:block; color:{ink}; font:600 30px/1.1 {sans}; font-variant-numeric:tabular-nums; }}
-.evidence span {{ color:{muted}; font-size:13px; }}
-.evidence .live-mark {{ align-self:center; }}
-{live_mark.build_css(dark)}
-</style>"""
+    return static_files.style(
+        "stack_page.css",
+        {
+            'var(--go-width)': WIDTH,
+            'var(--go-height)': HEIGHT,
+            'var(--go-logo-2)': LOGO / 2,
+            'var(--go-source-logo-2)': SOURCE_LOGO / 2,
+            'var(--go-logo)': LOGO,
+            'var(--go-shadow)': shadow,
+            'var(--go-source-logo)': SOURCE_LOGO,
+            'var(--go-ink)': ink,
+            'var(--go-sans)': sans,
+            'var(--go-text)': text,
+            'var(--go-muted)': muted,
+            'var(--go-background)': palette['background'],
+            'var(--go-card)': card,
+            'var(--go-border)': border,
+            'var(--go-5-if-dark-else-18)': '.5' if dark else '.18',
+            'var(--go-accent)': palette['accent'],
+            'var(--go-live-mark-css-dark)': live_mark.build_css(dark),
+        },
+    )
 
 
 def tip_html(x, y, parts, footer=""):

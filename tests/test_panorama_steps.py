@@ -10,6 +10,7 @@ from streamlit.testing.v1 import AppTest
 
 from bi import charts, dashboard, home_mockup, queries
 
+# region Variables
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
 LINK = (
@@ -17,8 +18,10 @@ LINK = (
     "st.components.v2.component = lambda name, js=None: (\n"
     "    lambda key=None, on_link_change=None: __import__('types').SimpleNamespace(link={link!r}))\n"
 )  # the stub is undone at the end of the script: AppTest runs in this process and the module is shared
+# endregion
 
 
+# region The reading order of the Dashboard
 def draw(profile, link=None, query=None, state=None):
     script = (
         f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\nfrom bi import dashboard\n"
@@ -307,3 +310,6 @@ def test_d532_the_alert_line_and_step_four_rerun_alone_without_the_map_and_the_f
     assert (
         "def show_products(alert, choices):" in source
     )  # the alert comes from the fragment, never from a stale closure
+
+
+# endregion

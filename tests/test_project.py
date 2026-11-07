@@ -34,9 +34,6 @@ def test_project_guide_explains_every_rule_indicator_and_table():
 # endregion
 
 
-# endregion
-
-
 # region Files
 def list_tracked_files():
     """Files Git keeps, including new ones not committed yet but not ignored."""
@@ -48,9 +45,6 @@ def list_tracked_files():
         check=True,
     ).stdout
     return output.splitlines()
-
-
-# endregion
 
 
 # endregion
@@ -118,6 +112,7 @@ def test_d054_week_prices_match_the_rows_of_that_week():
 NOT_ACRONYMS = {"MB", "GB", "AAAA", "MM", "DD", "VARCHAR", "BIGINT", "INTEGER", "DOUBLE", "BOOLEAN"}
 
 
+# region The glossary, the READMEs and the language of the comments
 def test_d279_every_acronym_of_the_documents_is_in_the_glossary():
     """The terms are defined once, in docs/negocio/GLOSARIO.md, which the panel shows."""
     glossary = project.read_glossary()
@@ -179,6 +174,10 @@ def test_d338_the_comments_of_the_code_stay_in_english():
     assert offenders == [], offenders
 
 
+# endregion
+
+
+# region The layout of the code (R-001, R-002, R-003)
 SPLIT_PANEL = [
     "dashboard.py",
     "constants.py",
@@ -226,11 +225,11 @@ def test_d541_every_file_of_the_split_panel_keeps_the_layout_of_the_agent(name):
 
 
 def test_d542_every_python_file_of_the_project_has_its_regions_closed_and_not_nested():
-    """R-001 of AKGRO.md: every module of bi/, etl/, agent/ and scripts/ is laid out in regions, like agent/agent.py;
+    """R-001 of AKGRO.md: every module of bi/, etl/, agent/, scripts/ and tests/ is laid out in regions, like agent/agent.py;
     each region closes before the next opens. A package's __init__.py only marks the folder."""
     root = Path(__file__).resolve().parent.parent
     wrong = []
-    for folder in ("bi", "etl", "agent", "scripts"):
+    for folder in ("bi", "etl", "agent", "scripts", "tests"):  # D-544: the tests too
         for path in sorted((root / folder).glob("*.py")):
             if path.name == "__init__.py":
                 continue
@@ -282,3 +281,31 @@ def test_d543_javascript_and_html_live_in_their_own_files():
                     long_texts.append(f"{folder}/{path.name}:{node.lineno}")
     assert long_texts == [], long_texts
     assert {path.name for path in (root / "bi" / "static").iterdir()} >= {"app_map.js", "zoom.js", "sql_editor.html"}
+
+
+def test_d544_no_stylesheet_is_written_inside_python():
+    """R-003 of AKGRO.md: CSS lives in bi/static/; a function only fills the marks of its file with the theme's values
+    (bi/static_files.py). A string of more than 300 characters that reads like CSS is a stylesheet in the wrong place."""
+    import ast
+
+    root = Path(__file__).resolve().parent.parent
+    css = re.compile(r"[{]{1,2}\s*[a-z-]+\s*:")
+    # An SVG drawing built from computed coordinates is code that draws, not a fixed text of another language.
+    drawing = re.compile(r"^[rf]*['\"]{1,3}\s*<(rect|svg|g|path|line|text|circle|polygon|tspan)\b")
+    inside = []
+    for folder in ("bi", "etl", "agent", "scripts"):
+        for path in sorted((root / folder).glob("*.py")):
+            source = path.read_text(encoding="utf-8")
+            tree = ast.parse(source)
+            parts = {id(part) for node in ast.walk(tree) if isinstance(node, ast.JoinedStr) for part in node.values}
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.JoinedStr, ast.Constant)) and id(node) not in parts:
+                    text = ast.get_source_segment(source, node) or ""
+                    if drawing.search(text):
+                        continue
+                    if len(text) > 300 and css.search(text) and re.search(r"(px|!important|color|display)", text):
+                        inside.append(f"{folder}/{path.name}:{node.lineno}")
+    assert inside == [], inside
+
+
+# endregion

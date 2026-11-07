@@ -8,6 +8,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from agent import agent  # noqa: E402
 
+# region Constants
 VALID_WHOLESALE_CSV = (
     '"Fecha","ID region","Region","Mercado","Subsector","Producto","Variedad / Tipo",'
     '"Calidad","Unidad de comercializacion","Origen","Volumen","Precio minimo",'
@@ -16,8 +17,10 @@ VALID_WHOLESALE_CSV = (
     '"Primera","$/caja 18 kilos","RM","100","9000,0000","10000,0000","9500,0000"\r\n'
 )
 OPEN_YEAR_RESOURCE = {"source": "wholesale", "year": 2099, "url": "http://test/file.csv"}
+# endregion
 
 
+# region Tests for the download agent
 @pytest.fixture(autouse=True)
 def temporary_download_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(agent, "DOWNLOAD_DIR", tmp_path)
@@ -123,3 +126,6 @@ def test_d164_download_verifies_the_certificate_with_that_bundle(tmp_path, monke
     monkeypatch.setattr(agent.requests, "get", fake_get)
     agent.download_file("https://datos.odepa.gob.cl/file.csv", tmp_path / "file.csv")
     assert "emSign Root CA - G1" in Path(calls["verify"]).read_text(encoding="utf-8")
+
+
+# endregion

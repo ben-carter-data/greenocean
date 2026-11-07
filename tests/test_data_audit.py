@@ -244,6 +244,7 @@ def test_an_alert_must_be_unusual_and_material():
 # endregion
 
 
+# region The reference figures of the migration (D-153)
 @needs_database
 def test_the_panel_reproduces_the_reference_figures_of_its_week():
     """The target of the migration: same week, same figures (D-153)."""

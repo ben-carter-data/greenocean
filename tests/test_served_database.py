@@ -9,9 +9,12 @@ import pytest
 
 from bi import served_database
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
+# endregion
 
 
+# region Test served database
 class Answer:
     """What requests.get returns, enough for download()."""
 
@@ -110,3 +113,6 @@ def test_the_pointer_names_the_release_file_the_panel_downloads():
     pointer = served_database.read_pointer()
     assert len(pointer["sha256"]) == 64 and pointer["bytes"] > 0
     assert served_database.DOWNLOAD_URL.endswith("/releases/download/base-actual/datos.duckdb")
+
+
+# endregion

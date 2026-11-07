@@ -1,0 +1,21 @@
+
+    .zoom-viewport { overflow: hidden; touch-action: pan-y; border-radius: 12px; }
+    .zoom-frame.zoomed .zoom-viewport { touch-action: none; cursor: grab; }
+    .zoom-content { width: 100%; }
+    /* Only the diagram itself: a logo nested inside it keeps its own size. */
+    .zoom-content > img, .zoom-content > svg { display: block; width: 100%; height: auto; }
+    .zoom-content .has-tooltip { cursor: help; }
+    /* A row under the frame, aligned right: the buttons never cover the diagram. */
+    .zoom-buttons { display: flex; justify-content: flex-end; gap: 4px; margin-top: 6px;
+                     opacity: 0.75; }
+    .zoom-buttons:hover, .zoom-buttons:focus-within { opacity: 1; }
+    .zoom-buttons button { width: 32px; height: 32px; padding: 0; border-radius: 8px;
+                            cursor: pointer; font-size: 16px; line-height: 1;
+                            background: var(--go-card); color: var(--go-strong-text);
+                            border: 1px solid var(--go-card-border); }
+    .zoom-buttons button:hover { color: var(--go-accent);
+                                  border-color: var(--go-accent); }
+    @media (max-width: 640px) {
+        .zoom-buttons button { width: 28px; height: 28px; font-size: 14px; }
+    }
+    

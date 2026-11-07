@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import architecture, charts, control  # noqa: E402
 
+# region Constants
 FIGURES = {
     "source_years": "año 2026",
     "last_run": "última 12-10 05:51",
@@ -18,8 +19,10 @@ FIGURES = {
     "next_run": "13-10 09:00",
 }
 STATE_NAMES = ["sources", "download", "etl", "tests", "report", "workflow", "load", "panel"]
+# endregion
 
 
+# region Tests for the live data journey diagram
 def make_states(state):
     return {name: state for name in STATE_NAMES}
 
@@ -319,3 +322,6 @@ def test_d473_the_capital_layer_names_and_their_lines_have_their_english():
         "Parquet · copia exacta",
     ):
         assert i18n.lookup(text), text
+
+
+# endregion

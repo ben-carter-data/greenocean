@@ -1,0 +1,27 @@
+
+* { box-sizing:border-box; }
+html, body { margin:0; background:transparent; color:var(--go-text); font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+svg.dep { display:block; width:100%; height:auto; overflow:visible; }
+.front { fill:var(--go-rgba-255-255-255-04-if-dark-else-ffffff); stroke:var(--go-ink); stroke-width:1.5; }
+.top { fill:var(--go-rgba-255-255-255-06-if-dark-else-e3e9f2); stroke:var(--go-muted); stroke-width:1.2; stroke-linejoin:round; }
+.side { fill:var(--go-rgba-255-255-255-03-if-dark-else-dfe6f0); stroke:var(--go-muted); stroke-width:1.2; stroke-linejoin:round; }
+.env { fill:var(--go-card); stroke:var(--go-muted); stroke-width:1.2; }
+.env.inner { fill:var(--go-rgba-255-255-255-05-if-dark-else-f4f7fb); stroke-dasharray:5 4; }
+.node, .envg { outline:none; cursor:default; }
+.node:hover .front, .node:focus .front, .envg:hover .env, .envg:focus .env { stroke:var(--go-accent); }
+.stereo { font-size:11.5px; font-style:italic; fill:var(--go-muted); }
+.name { font-size:13.5px; font-weight:700; fill:var(--go-ink); }
+.note { font-size:11.5px; fill:var(--go-muted); }
+.art { font:500 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill:var(--go-ink); }
+.live { font-size:12px; font-weight:600; fill:var(--go-accent); }
+.page { fill:var(--go-card); stroke:var(--go-ink); stroke-width:1.1; }
+.fold { fill:none; stroke:var(--go-ink); stroke-width:1.1; }
+.path { fill:none; stroke:var(--go-accent); stroke-width:1.8; }
+.chip { font:600 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill:var(--go-ink); paint-order:stroke; stroke:var(--go-background); stroke-width:4px; }
+.legend { font-size:11.5px; fill:var(--go-muted); }
+.tip { opacity:0; pointer-events:none; transition:opacity .15s ease; }
+.tip div { position:absolute; width:300px; padding:12px 14px; border-radius:14px; background:var(--go-card); border:1px solid var(--go-border);
+  box-shadow:0 18px 40px rgba(0,0,0,var(--go-55-if-dark-else-2)); color:var(--go-text); font-size:12.5px; line-height:1.45; }
+.tip b { display:block; margin-bottom:3px; font-size:13px; color:var(--go-ink); }
+@media print { .tip { display:none !important; } }
+var(--go-hovers)

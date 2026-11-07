@@ -10,7 +10,10 @@ import re
 import sys
 from pathlib import Path
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
+# endregion
+# region What a page still shows in Spanish when the reader chose English
 sys.path.insert(0, str(ROOT))
 
 from streamlit.testing.v1 import AppTest  # noqa: E402
@@ -244,6 +247,10 @@ def screens():
     )
 
 
+# endregion
+
+
+# region Run
 if __name__ == "__main__":
     values = read_data_values()
     chosen = sys.argv[1:]
@@ -254,3 +261,4 @@ if __name__ == "__main__":
         print(f"\n## {view}{' · ' + str(state) if state else ''}: {len(left)}")
         for text in left:
             print(f"  {text!r}")
+# endregion

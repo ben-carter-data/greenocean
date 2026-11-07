@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import charts, project, star_model  # noqa: E402
 
+# region Constants
 COLUMNS = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
 ROW_COUNTS = {
     "weekly_price": 811578,
@@ -17,8 +18,10 @@ ROW_COUNTS = {
     "rejection": 201,
 }
 IPC_COUNTS = {"ine_ipc_source": 202, "ipc_monthly": 202, "ipc_weekly": 250}
+# endregion
 
 
+# region Tests for the star model diagram
 def rect_overlap(a, b):
     ax, ay, aw, ah = a
     bx, by, bw, bh = b
@@ -168,3 +171,6 @@ def test_d190_the_ipc_group_hangs_from_dim_date_and_never_overlaps_the_star():
     assert f'H{date_x:.1f}" fill="none"' in svg  # the link ends on dim_date's left edge
     # Without the counts of its tables (the schema file has none) the group is not drawn.
     assert "IPC DE ALIMENTOS" not in star_model.build_star_svg(COLUMNS, ROW_COUNTS, charts.MODE_DARK)
+
+
+# endregion

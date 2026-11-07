@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 from bi import architecture, charts, control, deployment, project, queries
 
+# region Constants and variables
 REPOSITORY = Path(__file__).resolve().parent.parent
 STATES = {"sources": control.RUN_OK, "workflow": control.RUN_OK, "panel": control.RUN_OK}
 FIGURES = {
@@ -13,8 +14,10 @@ FIGURES = {
     "week_prices": "semana 12-10: 3.032 precios",
     "panel_time": "datos al 20-10 12:54",
 }
+# endregion
 
 
+# region «Despliegue»
 def draw(states=None, figures=None):
     return deployment.build_deployment_html(charts.get_palette("Vantablack"), states or STATES, figures or FIGURES)
 
@@ -131,3 +134,6 @@ def test_d422_the_release_has_its_own_box_and_the_three_workflows_are_drawn():
     # nothing is drawn past the frame: the side of the last node ends inside the drawing (no stripe on the right)
     right = max(x + width + deployment.DEPTH for x, _, width, *_ in deployment.NODES.values())
     assert right <= deployment.WIDTH
+
+
+# endregion

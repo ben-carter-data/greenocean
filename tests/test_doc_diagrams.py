@@ -7,6 +7,7 @@ import pytest
 
 from bi import charts, doc_diagrams, doc_figures, doc_views, i18n
 
+# region Constants and variables
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 DOCUMENTS = [
     "PRD.md",
@@ -20,8 +21,10 @@ DOCUMENTS = [
     "ACTA_DE_CIERRE.md",
 ]
 MARKER = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
+# endregion
 
 
+# region Test doc diagrams
 def read_markers():
     return {name: MARKER.findall(i18n.document_path(name, "es").read_text(encoding="utf-8")) for name in DOCUMENTS}
 
@@ -415,3 +418,6 @@ def test_d455_the_documents_draw_the_panels_own_diagrams_and_no_invented_profile
     )
     for invented in ("Gerencia |", "Analista de pricing", "Compras y abastecimiento", "Revisor técnico"):
         assert invented not in documents, invented
+
+
+# endregion

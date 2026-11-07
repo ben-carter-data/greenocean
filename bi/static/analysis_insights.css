@@ -1,0 +1,13 @@
+
+    .ov-it { overflow:auto; max-height:calc(100vh - 305px); }  /* D-458: and the green panel above the tabs */
+    .ov-it table { width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:12.5px; }
+    .ov-it thead th { position:sticky; top:0; background:var(--go-accent) !important; color:var(--go-charts-readable-on-palette-accent) !important; font-size:11px;
+        font-weight:600; text-transform:uppercase; letter-spacing:.05em; padding:7px 10px !important; text-align:left; border:0 !important; }
+    .ov-it thead th:first-child { border-radius:10px 0 0 0; } .ov-it thead th:last-child { border-radius:0 10px 0 0; }
+    .ov-it td { padding:6px 10px !important; color:var(--go-text); border:0 !important;
+        border-bottom:1px solid var(--go-card-border) !important; vertical-align:top; line-height:1.4; background:transparent !important; }
+    .ov-it tbody tr:nth-child(even) td { background:color-mix(in srgb, var(--go-accent) 5%, transparent) !important; }
+    .ov-it td:first-child { font-weight:600; color:var(--go-strong-text); }
+    /* D-173: the table's block ends in a div, so it gets no bottom margin and what follows rode over it. */
+    [data-testid="stElementContainer"]:has(.ov-it) [data-testid="stMarkdownContainer"] { margin-bottom:0 !important; }
+    .ov-it { margin-bottom:12px; }

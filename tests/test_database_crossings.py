@@ -8,11 +8,14 @@ import pytest
 from bi import charts, database_crossings, project, queries
 from etl import etl
 
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 needs_database = pytest.mark.skipif(not Path(queries.DATABASE_FILE).exists(), reason="datos.duckdb is not here")
 CHECKS = {key: ("ok", "ok") for key in ("raw", "ine", "work", "served", "parity", "history")}
+# endregion
 
 
+# region Crossings between databases
 def build(checks=None, mode=charts.MODE_DARK):
     return database_crossings.build_crossings_html(charts.get_palette(mode), checks or CHECKS)
 
@@ -121,3 +124,6 @@ def test_every_table_drawn_exists_in_the_repository():
         else:
             assert name in served or list((ROOT / "dbt" / "models").rglob(f"{name}.sql")), name
     assert set(database_crossings.BACKUP_CHIPS) | {"weekly_price"} == set(database_crossings.BACKUP_TABLES)
+
+
+# endregion

@@ -7,9 +7,12 @@ import pytest
 
 from bi import charts, github_page, project
 
+# region Constants
 VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+# endregion
 
 
+# region The GitHub page
 class BalanceChecker(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -80,3 +83,6 @@ def test_script_is_one_element_without_markup_strings():
     body = script[len("<script>") : -len("</script>")]
     assert "<" not in body.replace("<=", "")
     assert ".gh-copy" in body and "1500" in body
+
+
+# endregion

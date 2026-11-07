@@ -1,0 +1,1 @@
+var(--go-lit), [class*="st-key-nav_folder_tile_"][class*="_nav_current"] [data-testid="stPageLink"] a::before {background:var(--go-bright) !important; transform:none;}

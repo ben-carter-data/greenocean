@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from bi import charts, transformation_rules, unit_review
+from bi import charts, static_files, transformation_rules, unit_review
 
 # region Constants and variables
 CATALOG_FILE = Path(__file__).resolve().parent.parent / "docs" / "calidad" / "catalogo_controles.json"
@@ -143,32 +143,22 @@ def build_css(palette: dict[str, str]) -> str:
     dark = palette["base"] == charts.BASE_DARK
     green, amber, red = ("#3dd68c", "#f5b84b", "#ff8775") if dark else ("#1f8f5f", "#a16207", "#c23b2b")
     muted = charts.legible(palette["reference"], palette["background"])
-    return f"""<style>
-:root{{--bg:{palette["background"]};--panel:{palette["card"]};--fg:{palette["strong_text"]};--text:{palette["text"]};
-  --muted:{muted};--line:{palette["card_border"]};--accent:{palette["accent"]};--green:{green};--amber:{amber};--red:{red};
-  color-scheme:{"dark" if dark else "light"}}}
-*{{box-sizing:border-box}}
-html,body{{height:100%;margin:0}}
-body{{background:var(--bg);color:var(--text);font:12.5px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;gap:8px;padding:0 2px 4px}}
-code{{font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}}
-a code{{color:var(--accent)}}
-.units{{flex:none;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:8px 12px}}
-.line{{margin:0;color:var(--text)}} .line b{{color:var(--fg);font-weight:600}}
-.why{{margin:3px 0 0;font-size:11.5px;color:var(--muted)}}
-.scroll{{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}}
-table{{width:100%;border-collapse:collapse}}
-th{{position:sticky;top:0;background:var(--bg);text-align:left;font-weight:500;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--line);z-index:1}}
-td{{padding:3px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);vertical-align:top}}
-.num{{text-align:right;font-variant-numeric:tabular-nums}}
-.new{{margin-top:6px}} .new th{{background:var(--panel)}}
-.step td{{padding-top:9px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}}
-.name{{color:var(--fg)}} .when{{white-space:nowrap;color:var(--muted)}}
-.backing{{font-size:11px;color:var(--muted)}}
-.tag{{display:inline-block;white-space:nowrap;font-size:11px;padding:0 7px;border-radius:9px;border:1px solid currentColor}}
-.tag.stop{{color:var(--red)}} .tag.keep{{color:var(--accent)}} .tag.mark{{color:var(--amber)}} .tag.warn{{color:var(--amber)}} .tag.ok{{color:var(--green)}}
-@media (max-width:760px){{html,body{{height:auto}}.scroll{{overflow:visible}}.when{{white-space:normal}}}}
-</style>"""
+    return static_files.style(
+        "control_catalog.css",
+        {
+            'var(--go-background)': palette["background"],
+            'var(--go-card)': palette["card"],
+            'var(--go-strong-text)': palette["strong_text"],
+            'var(--go-text)': palette["text"],
+            'var(--go-muted)': muted,
+            'var(--go-card-border)': palette["card_border"],
+            'var(--go-accent)': palette["accent"],
+            'var(--go-green)': green,
+            'var(--go-amber)': amber,
+            'var(--go-red)': red,
+            'var(--go-dark-if-dark-else-light)': "dark" if dark else "light",
+        },
+    )
 
 
 def build_page_html(palette: dict[str, str], language: str, author: bool) -> str:

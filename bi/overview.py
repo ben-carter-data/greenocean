@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from bi import alerts, charts, data_terms, home_mockup, i18n, inflation_view
+from bi import alerts, charts, data_terms, home_mockup, i18n, inflation_view, static_files
 from bi.weeks import week_range
 
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
@@ -144,59 +144,20 @@ def build_css(palette: dict[str, str]) -> str:
         palette["card_border"],
         palette["accent"],
     )
-    return f"""<style>
-.ov-scores {{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; margin:0 0 2px; }}
-.ov-score {{ display:flex; flex-direction:column; gap:1px; padding:6px 12px 5px; border-radius:10px; background:{card};
-  border:1px solid {border}; min-width:0; }}
-.ov-score-label {{ font-size:11.5px; font-weight:500; color:{muted}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.ov-score-value {{ font-size:20px; font-weight:600; color:{ink}; letter-spacing:-.01em; line-height:1.15; white-space:nowrap; }}
-.ov-score-foot {{ display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:22px; }}
-.ov-score-note {{ font-size:11.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.ov-rise {{ color:{palette['rise']}; }} .ov-fall {{ color:{palette['fall']}; }} .ov-neutral {{ color:{text}; }}
-.ov-good {{ color:{GOOD}; }}
-.ov-spark {{ display:block; flex:none; }}
-.ov-score {{ position:relative; cursor:help; }}
-.ov-tip {{ display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:60; width:max(100%, 270px); max-width:330px;
-  padding:9px 12px; border-radius:10px; background:{card}; border:1px solid {border}; color:{text};
-  box-shadow:0 14px 34px -14px rgba(0,0,0,.45); font-size:12px; font-weight:400; line-height:1.45; text-align:left;
-  white-space:normal; letter-spacing:0; text-transform:none; }}
-.ov-score:nth-child(n+4) .ov-tip {{ left:auto; right:0; }}
-.ov-score:hover .ov-tip, .ov-score:focus .ov-tip {{ display:block; }}
-.ov-card-title {{ position:relative; cursor:help; }}
-.ov-card-title .ov-info {{ display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; margin-left:6px;
-  border-radius:50%; border:1px solid {muted}; color:{muted}; font-size:10px; font-weight:600; vertical-align:2px; }}
-.ov-card-title .ov-tip {{ top:calc(100% + 4px); width:min(360px, 92%); max-width:none; }}
-.ov-card-title:hover .ov-tip {{ display:block; }}
-.ov-card-title:hover .ov-info {{ border-color:{accent}; color:{accent}; }}
-[class*="st-key-ov_card_"] {{ background:{card}; border:1px solid {border} !important; border-radius:12px !important;
-  padding:12px 16px 8px !important; gap:2px !important; height:max(calc((100vh - 318px) / 2), 196px) !important;
-  min-height:max(calc((100vh - 318px) / 2), 196px) !important; }}
-[class*="st-key-ov_card_"] [data-testid="stElementContainer"]:has([data-testid="stVegaLiteChart"]) {{
-  flex:1 1 0; min-height:0; display:flex; flex-direction:column; }}
-[class*="st-key-ov_card_"] [data-testid="stFullScreenFrame"], [class*="st-key-ov_card_"] [data-testid="stFullScreenFrame"] > div,
-[class*="st-key-ov_card_"] [data-testid="stVegaLiteChart"] {{ flex:1 1 auto; height:100%; min-height:0; }}
-[class*="st-key-ov_card_"] [data-testid="stElementToolbar"] {{ display:none !important; }}
-.st-key-ov_tabs {{ margin-top:-14px; }}
-[class*="st-key-ov_card_"][class*="_small"] {{ height:auto !important; min-height:0 !important; }}
-[class*="st-key-ov_card_"][class*="_wide"] {{ height:auto !important; min-height:0 !important; max-height:max(calc(100vh - 500px), 236px); overflow:auto; }}
-[class*="st-key-ov_card_"][class*="_wide"] [data-testid="stElementContainer"]:has(.ov-ht),
-[class*="st-key-ov_card_"][class*="_wide"] [data-testid="stElementContainer"]:has(.ov-qt) {{ flex:0 0 auto; min-height:0; overflow:visible; }}
-[class*="st-key-ov_card_"][class*="_wide"] [data-testid="stMarkdown"]:has(.ov-ht),
-[class*="st-key-ov_card_"][class*="_wide"] [data-testid="stMarkdownContainer"]:has(.ov-ht) {{ height:100%; }}
-.st-key-ov_tabs [data-testid="stTabs"] [role="tabpanel"] {{ padding-top:10px; }}
-[class*="st-key-ov_head_"] {{ align-items:center; justify-content:space-between; }}
-[class*="st-key-ov_head_"] [data-testid="stSlider"] {{ padding:0 4px; }}
-[class*="st-key-ov_head_"] [data-testid="stSliderTickBar"], [class*="st-key-ov_head_"] [data-testid="stTooltipIcon"] {{
-  display:none !important; }}
-.ov-card-title {{ margin:0 !important; font-size:14px !important; font-weight:600; color:{ink} !important; line-height:1.3 !important; }}
-[class*="st-key-ov_card_"] [data-testid="stElementContainer"]:has(.ov-card-title) {{ margin-bottom:14px !important; }}
-[class*="st-key-ov_card_"] [data-testid="stMarkdown"] {{ margin-bottom:0 !important; }}
-.ov-card-note {{ margin:0 !important; font-size:11.5px !important; color:{muted} !important; line-height:1.35 !important;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.st-key-ov_tabs [data-baseweb="tab-list"] {{ gap:4px; }}
-.st-key-ov_tabs [data-baseweb="tab"] p {{ font-size:13.5px; font-weight:600; }}
-@media (max-width:1100px) {{ .ov-scores {{ grid-template-columns:repeat(3, minmax(0, 1fr)); }} }}
-</style>"""
+    return static_files.style(
+        "overview.css",
+        {
+            'var(--go-card)': card,
+            'var(--go-border)': border,
+            'var(--go-muted)': muted,
+            'var(--go-ink)': ink,
+            'var(--go-rise)': palette['rise'],
+            'var(--go-fall)': palette['fall'],
+            'var(--go-text)': text,
+            'var(--go-good)': GOOD,
+            'var(--go-accent)': accent,
+        },
+    )
 
 
 # endregion

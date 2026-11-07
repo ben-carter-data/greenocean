@@ -1,0 +1,122 @@
+
+.gh-page {
+  --gh-ink: var(--go-strong-text); --gh-text: var(--go-text);
+  --gh-accent: var(--go-60a5fa-if-dark-else-1d5fd6); --gh-border: var(--go-card-border);
+  --gh-auto: var(--go-colors-auto); --gh-trace: var(--go-colors-trace); --gh-docs: var(--go-colors-docs);
+  --gh-btn-bg: var(--go-button-bg);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  color: var(--gh-text); max-width: 1120px; margin: 0 auto; padding: 4px 0 28px;
+  box-sizing: border-box; -webkit-font-smoothing: antialiased;
+}
+.gh-page *, .gh-page *::before, .gh-page *::after { box-sizing: border-box; }
+.gh-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 24px; }
+.gh-head h1 { margin: 34px 0 10px; font-size: 2.6rem; line-height: 1.05; font-weight: 500;
+  letter-spacing: -.035em; color: var(--gh-ink); padding: 0; }
+.gh-head p { margin: 0; font-size: .98rem; line-height: 1.5; color: var(--gh-text); max-width: 25rem; }
+.gh-hero { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.gh-hero-art { width: 214px; height: auto; display: block;
+  filter: drop-shadow(0 22px 30px var(--go-rgba-56-189-248-18-if-dark-else-rgba-59-130-246)); }
+.gh-slug { margin: 8px 0 12px; font-size: 1.32rem; font-weight: 600; letter-spacing: -.015em;
+  color: var(--gh-ink); word-break: break-word; }
+.gh-actions { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.gh-btn { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 18px;
+  border-radius: 12px; border: 1.5px solid color-mix(in srgb, var(--gh-accent) 55%, transparent);
+  background: var(--gh-btn-bg); color: var(--gh-accent) !important; text-decoration: none !important;
+  font-weight: 500; font-size: .95rem; letter-spacing: -.005em;
+  box-shadow: 0 1px 2px rgba(15,40,90,.06), inset 0 1px 0 rgba(255,255,255,var(--go-06-if-dark-else-1));
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease; }
+.gh-btn:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--gh-accent) 9%, var(--gh-btn-bg));
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--gh-accent) 60%, transparent); }
+.gh-btn-main { height: 42px; padding: 0 22px; font-size: 1rem; }
+.gh-arrow { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round; }
+.gh-copy { position: relative; width: 38px; height: 38px; border-radius: 11px; border: 1px solid transparent;
+  background: transparent; color: var(--gh-ink); cursor: pointer; display: inline-grid; place-items: center;
+  padding: 0; transition: background .15s ease, border-color .15s ease; }
+.gh-copy:hover { background: color-mix(in srgb, var(--gh-ink) 6%, transparent); border-color: var(--gh-border); }
+.gh-copy svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round; grid-area: 1 / 1; transition: opacity .2s ease, transform .2s ease; }
+.gh-copy .gh-ico-check { opacity: 0; transform: scale(.6); stroke: var(--gh-auto); stroke-width: 2.4; }
+.gh-copy.is-copied .gh-ico-copy { opacity: 0; transform: scale(.6); }
+.gh-copy.is-copied .gh-ico-check { opacity: 1; transform: scale(1); }
+.gh-copy:focus-visible, .gh-btn:focus-visible { outline: 2px solid var(--gh-accent); outline-offset: 2px; }
+/* Tree: stem from the repository, one arm to each side branch. */
+.gh-tree { margin-top: 4px; }
+.gh-trunk { position: relative; height: 56px; margin: 0 16.667%; }
+.gh-trunk::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1.5px;
+  transform: translateX(-50%); background: linear-gradient(var(--gh-trace), var(--gh-trace)); opacity: var(--go-line-alpha); }
+.gh-arm { position: absolute; top: 22px; bottom: 0; width: 50%; opacity: var(--go-line-alpha); }
+.gh-arm-left { left: 0; border-top: 1.5px solid var(--gh-auto); border-left: 1.5px solid var(--gh-auto);
+  border-radius: 18px 0 0 0; }
+.gh-arm-right { right: 0; border-top: 1.5px solid var(--gh-docs); border-right: 1.5px solid var(--gh-docs);
+  border-radius: 0 18px 0 0; }
+.gh-arm-left::after, .gh-arm-right::after { content: ""; position: absolute; top: -1.5px; width: 22px;
+  height: 1.5px; }
+.gh-groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+.gh-group { --c: var(--gh-trace); display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.gh-group[data-cat="auto"] { --c: var(--gh-auto); }
+.gh-group[data-cat="docs"] { --c: var(--gh-docs); }
+.gh-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent), 0 0 10px color-mix(in srgb, var(--c) 60%, transparent); }
+.gh-pill { margin: 8px 0 0; padding: 8px 20px; border-radius: 999px; font-size: .8rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--c) var(--go-88-white-if-dark-else-78-black));
+  background: color-mix(in srgb, var(--c) var(--go-16-if-dark-else-13), transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 22%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,var(--go-08-if-dark-else-7)); }
+.gh-branch { position: relative; width: 100%; height: 40px; }
+.gh-branch::before { content: ""; position: absolute; left: 50%; top: 0; height: 100%; width: 1.5px;
+  transform: translateX(-50%); background: var(--c); opacity: var(--go-line-alpha); }
+.gh-branch.gh-split::before { height: 14px; }
+.gh-branch.gh-split::after { content: ""; position: absolute; left: 25%; right: 25%; top: 14px; bottom: 0;
+  border: 1.5px solid var(--c); border-bottom: 0; border-radius: 14px 14px 0 0; opacity: var(--go-line-alpha); }
+.gh-items { display: grid; grid-template-columns: repeat(var(--n), 1fr); width: 100%; }
+.gh-item { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 8px; min-width: 0; }
+.gh-item > .gh-dot { margin-top: -4.5px; }
+.gh-tile { position: relative; width: 104px; height: 104px; margin: 14px 0 16px; border-radius: 28px;
+  display: grid; place-items: center;
+  background: linear-gradient(160deg, var(--go-tile-top) 0%, var(--go-tile-bottom) 100%);
+  box-shadow: var(--go-tile-shadow), inset 0 1.5px 0 var(--go-tile-edge), inset 0 -3px 8px rgba(0,0,0,var(--go-35-if-dark-else-05));
+  transition: transform .2s ease; }
+.gh-tile::before { content: ""; position: absolute; inset: 1px 1px 52% 1px; border-radius: 27px 27px 40% 40% / 27px 27px 18px 18px;
+  background: linear-gradient(rgba(255,255,255,var(--go-10-if-dark-else-85)), rgba(255,255,255,0)); pointer-events: none; }
+.gh-tile::after { content: ""; position: absolute; inset: -10px; border-radius: 34px; z-index: -1;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c) var(--go-30-if-dark-else-22), transparent), transparent);
+  filter: blur(10px); }
+.gh-item:hover .gh-tile { transform: translateY(-3px); }
+.gh-glyph { position: relative; width: 74px; height: 74px; }
+.gh-item h3 { margin: 0 0 4px; padding: 0; font-size: 1.08rem; font-weight: 600; letter-spacing: -.015em;
+  color: var(--gh-ink); line-height: 1.25; }
+.gh-item p { margin: 0 0 14px; font-size: .9rem; line-height: 1.4; color: var(--gh-text); max-width: 13.5rem;
+  min-height: 2.8em; }
+.gh-item .gh-btn { height: 36px; padding: 0 18px; }
+/* The buttons share one baseline even when a title wraps onto two lines. */
+@media (min-width: 761px) {
+  .gh-item h3 { min-height: 2.5em; display: flex; align-items: flex-start; justify-content: center; }
+  .gh-item p { min-height: 2.9em; }
+}
+@media (max-width: 760px) {
+  .gh-top { grid-template-columns: 1fr; gap: 10px; }
+  .gh-head h1 { margin-top: 8px; font-size: 2.2rem; }
+  .gh-top > .gh-spacer { display: none; }
+  .gh-hero-art { width: 176px; }
+  .gh-slug { font-size: 1.08rem; }
+  .gh-trunk { display: none; }
+  .gh-groups { grid-template-columns: 1fr; gap: 26px; margin-top: 22px; }
+  .gh-group > .gh-dot, .gh-branch { display: none; }
+  .gh-pill { margin: 0 0 12px; }
+  .gh-items { grid-template-columns: 1fr; gap: 12px; }
+  .gh-item { display: grid; grid-template-columns: 72px 1fr; grid-template-areas: "tile title" "tile text" "tile act";
+    column-gap: 14px; text-align: left; align-items: center; padding: 14px; border-radius: 20px;
+    background: color-mix(in srgb, var(--go-card) var(--go-70-if-dark-else-75), transparent);
+    border: 1px solid color-mix(in srgb, var(--gh-border) 70%, transparent); }
+  .gh-item > .gh-dot { display: none; }
+  .gh-tile { grid-area: tile; width: 72px; height: 72px; margin: 0; border-radius: 20px; }
+  .gh-tile::before { border-radius: 19px 19px 40% 40% / 19px 19px 12px 12px; }
+  .gh-glyph { width: 52px; height: 52px; }
+  .gh-item h3 { grid-area: title; font-size: 1rem; }
+  .gh-item p { grid-area: text; margin: 0 0 8px; min-height: 0; max-width: none; font-size: .86rem; }
+  .gh-item .gh-actions { grid-area: act; justify-content: flex-start; }
+  .gh-item .gh-btn { height: 32px; padding: 0 14px; font-size: .88rem; }
+  .gh-item .gh-copy { width: 32px; height: 32px; }
+}

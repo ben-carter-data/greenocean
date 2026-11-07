@@ -16,7 +16,7 @@ st.iframe (CSS only, no script) whose SVG scales to the height the page gives it
 
 import html
 
-from bi import brand_icons, charts, database_map
+from bi import brand_icons, charts, database_map, static_files
 
 # region Constants
 WIDTH, HEIGHT = 1000, 620
@@ -208,40 +208,27 @@ def build_css(palette):
         palette["accent"],
     )
     shadow = "rgba(0,0,0,.5)" if dark else "rgba(15,39,71,.18)"
-    return f"""<style>
-* {{ box-sizing:border-box; }}
-html, body {{ margin:0; height:100%; background:transparent; color:{text};
-  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }}
-svg.map {{ display:block; width:100%; height:100vh; overflow:visible; }}
-.zone {{ fill:{'rgba(255,255,255,.025)' if dark else 'rgba(15,39,71,.03)'}; stroke:{border}; stroke-width:1; }}
-.zone.outside {{ stroke-dasharray:5 5; }}
-.zone.accent {{ stroke:{accent}; stroke-opacity:.55; fill:color-mix(in srgb, {accent} 5%, transparent); }}
-.zone-title {{ font-size:{SMALL}px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; fill:{ink}; }}
-.zone-sub {{ font-size:{SMALL}px; fill:{muted}; }}
-.card {{ fill:{card}; stroke:{border}; stroke-width:1; filter:drop-shadow(0 8px 10px {shadow}); }}
-.node {{ outline:none; cursor:default; }}
-.node:hover .card, .node:focus .card {{ stroke:{accent}; }}
-.name {{ font-size:15px; font-weight:600; fill:{ink}; }}
-.file {{ font:400 {SMALL}px ui-monospace, SFMono-Regular, Menlo, monospace; fill:{muted}; }}
-.size {{ font-size:{SMALL}px; font-weight:600; fill:{ink}; }}
-.size-bg {{ fill:color-mix(in srgb, {accent} 14%, transparent); }}
-.row-label {{ font-size:{SMALL}px; fill:{text}; }}
-.row-count {{ font:600 {SMALL}px ui-monospace, SFMono-Regular, Menlo, monospace; fill:{ink}; }}
-.divider {{ stroke:{border}; stroke-width:1; }}
-.chip {{ fill:{card}; stroke:{border}; stroke-width:1; }}
-.line {{ fill:none; stroke:{accent}; stroke-width:2; stroke-linecap:round; }}
-.line.check {{ stroke-dasharray:5 5; }}
-.line-label {{ font-size:{SMALL}px; fill:{ink}; text-anchor:middle; paint-order:stroke; stroke:{palette['background']}; stroke-width:5px; }}
-.line-label.right {{ text-anchor:start; }}
-.legend-text {{ font-size:{SMALL}px; fill:{muted}; }}
-.tip {{ opacity:0; pointer-events:none; transition:opacity .15s ease; }}
-.tip div {{ position:absolute; width:270px; padding:12px 14px; border-radius:14px; background:{card}; border:1px solid {border};
-  box-shadow:0 18px 40px rgba(0,0,0,{'.55' if dark else '.2'}); color:{text}; font-size:12.5px; line-height:1.45; }}
-.tip b {{ display:block; margin:8px 0 2px; font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
-.tip b:first-child {{ margin-top:0; }}
-.tip code {{ font:400 12px ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; }}
-{"".join(f"svg:has(#n-{key}:hover, #n-{key}:focus) #t-{key} {{ opacity:1; }}" for key in TIP_KEYS)}
-</style>"""
+    return static_files.style(
+        "storage_map.css",
+        {
+            'var(--go-text)': text,
+            'var(--go-rgba-255-255-255-025-if-dark-else-rgba-15-39-71)': 'rgba(255,255,255,.025)'
+            if dark
+            else 'rgba(15,39,71,.03)',
+            'var(--go-border)': border,
+            'var(--go-accent)': accent,
+            'var(--go-small)': SMALL,
+            'var(--go-ink)': ink,
+            'var(--go-muted)': muted,
+            'var(--go-card)': card,
+            'var(--go-shadow)': shadow,
+            'var(--go-background)': palette['background'],
+            'var(--go-55-if-dark-else-2)': '.55' if dark else '.2',
+            'var(--go-join-f-svg-has-n-key-hover-n-key-focus-t-key-opa)': "".join(
+                f"svg:has(#n-{key}:hover, #n-{key}:focus) #t-{key} {{ opacity:1; }}" for key in TIP_KEYS
+            ),
+        },
+    )
 
 
 def build_tip(key, box, above, what, why, produced_by, tables=None):

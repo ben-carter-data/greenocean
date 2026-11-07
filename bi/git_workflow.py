@@ -16,7 +16,7 @@ import html
 import json
 from typing import Any
 
-from bi import charts, quality_metrics
+from bi import charts, quality_metrics, static_files
 
 # region Constants
 LANES = (
@@ -570,110 +570,32 @@ def build_css(palette: dict[str, str]) -> str:
     lanes = ("#3d8bfd", "#22c08a", "#8b6cf6") if dark else ("#1f6fe0", "#0f9a6c", "#6c4ee0")
     flag, stop, ok = ("#f2b53a", "#ff8775", "#2fbf6b") if dark else ("#e9a91f", "#c23b2b", "#1f9a55")
     chip = palette["field"]
-    return f"""<style>
-:root{{--bg:{palette['background']};--panel:{palette['card']};--chip:{chip};--fg:{palette['strong_text']};--text:{palette['text']};
-  --muted:{charts.legible(palette['reference'], palette['background'])};--line:{palette['card_border']};
-  --l1:{lanes[0]};--l2:{lanes[1]};--l3:{lanes[2]};--flag:{flag};--flag-ink:#2a1d00;--stop:{stop};--ok:{ok};
-  --body:system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace;
-  color-scheme:{'dark' if dark else 'light'}}}
-*{{box-sizing:border-box}}
-body{{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.45;padding:10px 14px 16px}}
-main{{max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:10px}}
-header{{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:6px 24px}}
-.lede{{margin:0;color:var(--muted);font-size:.86rem;max-width:80ch}}
-.legend{{display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;margin:0;padding:0;font-size:.78rem;color:var(--muted)}}
-.legend li{{display:flex;align-items:center;gap:6px}}
-.legend .k{{width:16px;height:16px;border:2px dashed var(--muted);border-radius:4px}}
-.legend .k.g{{border:0;background:var(--flag);transform:rotate(45deg) scale(.8);border-radius:3px}}
-.legend .k.a{{width:26px;height:0;border:0;border-top:2px solid var(--muted);border-radius:0}}
-.flow{{display:block;width:100%;height:auto;font-family:var(--body)}}
-.lane rect{{fill:color-mix(in srgb,var(--lc) 5%,transparent);stroke:color-mix(in srgb,var(--lc) 35%,transparent)}}
-.lane.a,.a{{--lc:var(--l1)}} .lane.b,.b{{--lc:var(--l2)}} .lane.c,.c{{--lc:var(--l3)}}
-.ln{{fill:var(--lc);font-size:13px;font-weight:700;text-anchor:middle;letter-spacing:.02em}}
-.go{{fill:none;stroke:var(--lc);stroke-width:2}}
-.go.a{{marker-end:url(#h-a)}} .go.b{{marker-end:url(#h-b)}} .go.c{{marker-end:url(#h-c)}}
-.hd{{fill:var(--lc)}}
-.yes{{fill:var(--ok);font-size:11.5px;font-weight:700;text-anchor:middle}}
-.no{{fill:var(--stop);font-size:11.5px;font-weight:600;text-anchor:middle}}
-.st{{cursor:pointer;outline:none}}
-.st .hit{{fill:transparent;stroke:none}}
-.st:hover .hit,.st:focus-visible .hit{{fill:color-mix(in srgb,var(--lc) 10%,transparent);stroke:var(--lc)}}
-.st .tile{{fill:var(--panel);stroke:var(--lc);stroke-width:2}}
-.st.opt .tile{{stroke-dasharray:5 4}}
-.st.gate .tile{{fill:var(--flag);stroke:var(--flag)}} .st.gate .ico{{color:var(--flag-ink)}}
-.st.end .tile{{fill:var(--ok);stroke:var(--ok)}} .st.end .ico{{color:#fff}}
-.st .ico{{color:var(--lc)}}
-.num{{fill:var(--lc)}} .numt{{fill:#fff;font-family:var(--mono);font-size:11.5px;font-weight:700;text-anchor:middle}}
-.ttl{{fill:var(--fg);font-size:15px;font-weight:650;text-anchor:middle}}
-.sub{{fill:var(--muted);font-size:12px;text-anchor:middle}}
-.chip{{fill:var(--chip);stroke:var(--line)}}
-.cmd{{fill:var(--fg);font-family:var(--mono);font-size:11px;text-anchor:middle}}
-.badge rect{{fill:var(--stop)}} .badge text{{fill:#fff;font-family:var(--mono);font-size:10.5px;font-weight:700;text-anchor:middle}}
-.scrim{{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20}}
-.drawer{{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--panel);border-left:1px solid var(--line);z-index:21;overflow-y:auto;padding:18px 20px 24px 22px;display:flex;flex-direction:column;gap:12px}}
-.drawer[hidden],.scrim[hidden]{{display:none}}
-.drawer h2{{font-size:1.25rem;margin:0;letter-spacing:-.01em;color:var(--fg)}}
-.drawer .who{{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}}
-.drawer p{{margin:0;font-size:.9rem}}
-.drawer h4{{margin:4px 0 0;font-size:.7rem;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}}
-.cl{{display:flex;flex-direction:column;gap:6px}}
-.row{{display:flex;gap:8px;align-items:stretch}}
-.row code{{flex:1;min-width:0;font-family:var(--mono);font-size:.78rem;background:var(--chip);border:1px solid var(--line);border-radius:7px;padding:6px 8px;overflow-wrap:anywhere;color:var(--fg)}}
-.row button,.close{{font:inherit;font-size:.76rem;background:var(--chip);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:0 10px;cursor:pointer}}
-.close{{align-self:flex-end;padding:6px 12px}}
-.ex{{background:var(--chip);border:1px solid var(--line);border-left:3px solid var(--lc,var(--l1));border-radius:7px;padding:9px 11px;font-size:.88rem}}
-.fail{{color:var(--stop);font-size:.88rem}}
-.occ{{background:var(--chip);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:.84rem;display:flex;flex-direction:column;gap:3px}}
-.occ b{{color:var(--fg)}} .occ small{{color:var(--muted);font-family:var(--mono);font-size:.68rem}}
-.nav{{display:flex;justify-content:space-between;gap:8px;margin-top:4px}}
-.nav button{{font:inherit;font-size:.8rem;background:none;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}}
-.nav button:disabled{{opacity:.4;cursor:default}}
-button:focus-visible{{outline:2px solid var(--l1);outline-offset:2px}}
-footer{{color:var(--muted);font-size:.78rem;border-top:1px solid var(--line);padding-top:8px}}
-</style>"""
+    return static_files.style(
+        "git_workflow.css",
+        {
+            'var(--go-background)': palette['background'],
+            'var(--go-card)': palette['card'],
+            'var(--go-chip)': chip,
+            'var(--go-strong-text)': palette['strong_text'],
+            'var(--go-text)': palette['text'],
+            'var(--go-charts-legible-palette-reference-palette-backgro)': charts.legible(
+                palette['reference'], palette['background']
+            ),
+            'var(--go-card-border)': palette['card_border'],
+            'var(--go-lanes-0)': lanes[0],
+            'var(--go-lanes-1)': lanes[1],
+            'var(--go-lanes-2)': lanes[2],
+            'var(--go-flag)': flag,
+            'var(--go-stop)': stop,
+            'var(--go-ok)': ok,
+            'var(--go-dark-if-dark-else-light)': 'dark' if dark else 'light',
+        },
+    )
 
 
 # The script is a raw string with no HTML tags in its texts (st.iframe runs it, D-173): the DOM is built with the DOM API.
 # D-449: the stations are drawn in Python as one SVG; the script only opens and walks the side panel.
-SCRIPT = r"""
-const D = JSON.parse(document.getElementById("data").textContent);
-const S = D.stations, L = D.labels;
-const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
-const map = document.getElementById("map");
-const dr = document.getElementById("drawer"), sc = document.getElementById("scrim");
-let cur = 0, last = null;
-const colors = { a: "var(--l1)", b: "var(--l2)", c: "var(--l3)" };
-function open(n) {
-  const x = S[n - 1]; cur = n; dr.style.setProperty("--lc", colors[x.lane]); dr.replaceChildren();
-  const close = el("button", "close", L.close); close.id = "cl"; close.onclick = shut; dr.append(close);
-  dr.append(el("div", "who", L.station + " " + x.n + " · " + x.who + (x.optional ? " · " + L.optional : "") + (x.gate ? " · " + L.checkpoint : "")));
-  const title = el("h2", "", x.title); title.id = "dt"; dr.append(title, el("p", "", x.what), el("h4", "", L.commands));
-  const cl = el("div", "cl");
-  x.commands.forEach((c) => { const row = el("div", "row"); const code = el("code", "", c); const btn = el("button", "", L.copy);
-    btn.onclick = async () => { try { await navigator.clipboard.writeText(c); btn.textContent = L.copied; }
-      catch (e) { const r = document.createRange(); r.selectNodeContents(code); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = L.selected; }
-      setTimeout(() => { btn.textContent = L.copy; }, 1400); };
-    row.append(code, btn); cl.append(row); });
-  dr.append(cl);
-  if (x.fail) dr.append(el("h4", "", L.fails), el("p", "fail", x.fail));
-  dr.append(el("h4", "", L.example), el("div", "ex", x.example), el("h4", "", L.register));
-  if (!x.register.length) dr.append(el("p", "", L.none));
-  x.register.forEach((o) => { const box = el("div", "occ");
-    box.append(el("small", "", o.id + " · " + o.fecha + " · " + o.estado), el("b", "", o.ocurrencia));
-    if (o.diagnostico) box.append(el("span", "", L.diagnosis + ": " + o.diagnostico));
-    box.append(el("span", "", L.solution + ": " + o.solucion), el("span", "", o.comentario)); dr.append(box); });
-  const nav = el("div", "nav"); const pv = el("button", "", L.previous), nx = el("button", "", L.next);
-  pv.disabled = n === 1; nx.disabled = n === S.length; pv.onclick = () => open(n - 1); nx.onclick = () => open(n + 1); nav.append(pv, nx); dr.append(nav);
-  dr.hidden = false; sc.hidden = false; close.focus();
-}
-function shut() { dr.hidden = true; sc.hidden = true; if (last) last.focus(); }
-map.addEventListener("click", (e) => { const b = e.target.closest(".st"); if (b) { last = b; open(+b.dataset.n); } });
-map.addEventListener("keydown", (e) => { const b = e.target.closest(".st");
-  if (b && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); last = b; open(+b.dataset.n); } });
-sc.onclick = shut;
-document.addEventListener("keydown", (e) => { if (dr.hidden) return; if (e.key === "Escape") shut();
-  if (e.key === "ArrowRight" && cur < S.length) open(cur + 1); if (e.key === "ArrowLeft" && cur > 1) open(cur - 1); });
-"""
+SCRIPT = static_files.read("git_workflow.js")
 
 
 def build_map_html(palette: dict[str, str], language: str, author: bool) -> str:

@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from bi import control, github_actions
+from bi import control, github_actions, static_files
 from bi.i18n import tr
 
 # region Constants
@@ -216,17 +216,14 @@ def build_copy_html(
 ) -> str:
     """A small button that copies the log: the browser's clipboard, or the text selected when the page forbids it."""
     payload = json.dumps({"text": text, "done": done, "selected": selected}, ensure_ascii=False).replace("</", "<\\/")
-    return (
-        "<!doctype html><html><head><meta charset='utf-8'><style>body{margin:0;font:13px system-ui,sans-serif}"
-        f"button{{font:inherit;padding:5px 12px;border-radius:8px;border:1px solid {border};background:transparent;color:{ink};"
-        "cursor:pointer}pre{position:absolute;left:-9999px}</style></head><body>"
-        f"<button id='copy'>{html.escape(label)}</button><pre id='text'></pre>"
-        f"<script type='application/json' id='data'>{payload}</script>"
-        "<script>const D=JSON.parse(document.getElementById('data').textContent);"
-        "const b=document.getElementById('copy'),pre=document.getElementById('text'),name=b.textContent;pre.textContent=D.text;"
-        "b.onclick=async()=>{try{await navigator.clipboard.writeText(D.text);b.textContent=D.done;}"
-        "catch(e){const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);"
-        "b.textContent=D.selected;}setTimeout(()=>{b.textContent=name;},1500);};</script></body></html>"
+    return static_files.fill(
+        "copy_button.html",
+        {
+            '__GO_BORDER__': border,
+            '__GO_INK__': ink,
+            '__GO_HTML_ESCAPE_LABEL__': html.escape(label),
+            '__GO_PAYLOAD__': payload,
+        },
     )
 
 

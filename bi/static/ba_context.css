@@ -1,0 +1,12 @@
+
+.ba-context { display:flex; gap:10px; align-items:center; padding:7px 14px; margin:-12px 0 6px; font-size:13px;
+  min-height:calc(2.9em + 16px); box-sizing:border-box; border:1px solid var(--go-green); border-radius:12px;
+  background:color-mix(in srgb, var(--go-green) 11%, transparent); }
+.ba-context-icon { font-family:"Material Symbols Rounded"; font-feature-settings:"liga"; font-size:20px;
+  line-height:1; color:var(--go-green); }
+.ba-context p { margin:0 !important; font-size:13px !important; line-height:1.45 !important;
+  color:var(--go-text) !important; }
+.ba-context b { color:var(--go-strong_text); }
+.ba-insight { min-height:0; padding:5px 14px; margin:0 0 20px; cursor:help; }
+[data-testid="stMain"]:has(.ba-insight) .ba-table { max-height:max(calc(100vh - var(--go-table-reserved-insight-room)px),
+  var(--go-table-floor)px); }

@@ -7,6 +7,7 @@ from streamlit.testing.v1 import AppTest
 
 from bi import charts, dashboard, live_mark, page_bar, queries, quality_live, stack_page
 
+# region Variables
 DASHBOARD_FILE = str(Path(__file__).resolve().parents[1] / "bi" / "dashboard.py")
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
 LIVE_PAGES = [
@@ -17,8 +18,10 @@ LIVE_PAGES = [
     dashboard.PAGE_BA,
 ]
 STILL_PAGES = [dashboard.PAGE_APP_MAP, dashboard.PAGE_SECURITY, dashboard.PAGE_GIT, dashboard.PAGE_METHOD]
+# endregion
 
 
+# region A figure read from the base carries the mark «en vivo»
 def drawn(app):
     pieces = [block.value for block in app.markdown]
     for kind in ("html", "iframe"):
@@ -87,3 +90,6 @@ def test_d510_the_mark_reads_in_english():
     assert not app.exception
     markup = drawn(app)
     assert "live · read from the database on opening" in markup and live_mark.TEXT not in markup
+
+
+# endregion

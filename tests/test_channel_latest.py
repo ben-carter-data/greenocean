@@ -11,10 +11,13 @@ from streamlit.testing.v1 import AppTest
 
 from bi import channel_latest, dashboard, home_mockup, i18n
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
+# endregion
 
 
+# region «Último dato por canal»
 def sample():
     """The consumer source already has the week of 19-10; the wholesale one stops at 12-10."""
     rows = []
@@ -242,3 +245,6 @@ def test_d453_each_channel_card_has_its_own_3d_icon_in_its_own_colours():
     ]
     markup = home_mockup.channel_list(cards, lambda c: "#", None, "#", lambda c: channel_icons.image(c, 20), step=2)
     assert '<img class="ch-icon"' in markup and ">pan</small>" in markup  # D-494: its icon, and what it holds
+
+
+# endregion

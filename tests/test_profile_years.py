@@ -10,6 +10,7 @@ from etl import etl, profile_years  # noqa: E402
 from tests.test_etl import make_raw_consumer_rows, make_raw_wholesale_rows  # noqa: E402
 
 
+# region Tests for the T-27 year profile
 def test_t27_rejections_are_counted_by_reason():
     reasons = pd.Series(["", "NON_POSITIVE_PRICE", "NON_POSITIVE_PRICE", "UNREADABLE_VALUE"])
     assert profile_years.count_rejections(reasons) == {"NON_POSITIVE_PRICE": 2, "UNREADABLE_VALUE": 1}
@@ -48,3 +49,6 @@ def test_t27_profile_counts_rejected_rows_and_keeps_valid_keys():
     profile = profile_years.profile_year(raw_rows, etl.SOURCE_WHOLESALE)
     assert profile["rejections"] == {etl.REASON_NON_POSITIVE_PRICE: 1}
     assert profile["product_keys"] == {("Hortalizas", "Tomate", "Larga vida", "Primera")}
+
+
+# endregion

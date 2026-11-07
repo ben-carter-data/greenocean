@@ -9,13 +9,16 @@ from streamlit.testing.v1 import AppTest
 from bi import constants, dashboard, live_flow, page_engineering, project, queries
 from tests import i18n_audit
 
+# region Variables
 DASHBOARD_FILE = str(Path(__file__).resolve().parents[1] / "bi" / "dashboard.py")
 REPOSITORY = project.GITHUB_URL.split("github.com/")[-1]
 OWNER = REPOSITORY.split("/")[0]
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
 PROFILES = {"Usuario": "consulta", "Profesional": "profesional"}
+# endregion
 
 
+# region A link to the author's repository on GitHub exists only for the Autor, whatever the page
 def screens():
     """Every screen anyone else can open: the Autor's own pages only say there is no access."""
     seen, kept = set(), []
@@ -138,3 +141,6 @@ def test_d500_the_report_viewer_links_the_sqap_only_for_the_autor():
 
     assert "github.com" not in viewer({})
     assert project.GITHUB_URL in viewer({dashboard.ADMIN_UNLOCKED: True})
+
+
+# endregion

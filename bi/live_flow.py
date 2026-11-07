@@ -812,44 +812,22 @@ LABELS = {
 
 
 def build_css(palette: dict[str, str]) -> str:
-    return f"""
-html, body {{ margin:0; height:100%; background:transparent; color:{palette["strong_text"]};
-  font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; overflow:hidden; }}
-.lf {{ position:relative; height:100vh; display:flex; flex-direction:column; }}
-.lf-bar {{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:2px 4px 6px; font-size:13px; color:{palette["text"]}; }}
-.lf-bar b {{ color:{palette["strong_text"]}; font-weight:600; }}
-.lf-bar .lf-dot {{ width:9px; height:9px; border-radius:50%; background:{architecture.STATE_COLORS["unknown"]}; }}
-.lf-live .lf-bar .lf-dot {{ background:{REQUEST_COLOR}; animation:lf-blink 1.2s ease-in-out infinite; }}
-.lf-bar button {{ font:inherit; font-size:12.5px; color:{palette["strong_text"]}; background:{palette["card"]};
-  border:1px solid {palette["card_border"]}; border-radius:999px; padding:3px 12px; cursor:pointer; }}
-.lf-bar button:hover {{ border-color:{palette["accent"]}; }}
-.lf-bar a {{ color:{palette["accent"]}; font-size:12.5px; }}
-.lf-bar .lf-hint {{ margin-left:auto; font-size:12px; }}
-.lf-stage {{ position:relative; flex:1; min-height:0; }}
-.lf-svg {{ width:100%; height:100%; display:block; }}
-.lf-arrow {{ cursor:pointer; outline:none; }}
-.lf-arrow:hover .lf-line, .lf-arrow:focus .lf-line, .lf-arrow.lf-open .lf-line {{ stroke:{palette["accent"]}; stroke-width:2.4; }}
-.lf-arrow:hover .lf-chip, .lf-arrow:focus .lf-chip, .lf-arrow.lf-open .lf-chip {{ stroke:{palette["accent"]}; }}
-.lf-arrow.lf-done .lf-line, .lf-piece.lf-done .lf-tile {{ stroke:{ANSWER_COLOR}; }}
-.lf-arrow.lf-failed .lf-line, .lf-piece.lf-failed .lf-tile {{ stroke:{architecture.STATE_COLORS["failed"]}; stroke-width:2.4; }}
-.lf-arrow.lf-active .lf-line {{ stroke:{REQUEST_COLOR}; stroke-width:2.4; }}
-.lf-piece.lf-working .lf-tile, .lf-group.lf-working rect {{ stroke:{WORKING_COLOR}; stroke-width:2.6;
-  filter:drop-shadow(0 0 10px {WORKING_COLOR}); animation:lf-pulse 1.1s ease-in-out infinite; transform-box:fill-box;
-  transform-origin:center; }}
-.lf-message {{ pointer-events:none; }}
-@keyframes lf-pulse {{ 50% {{ transform:scale(1.08); opacity:.75; }} }}
-@keyframes lf-blink {{ 50% {{ opacity:.25; }} }}
-.lf-card {{ position:absolute; left:12px; bottom:12px; width:min(420px, 92%); background:{palette["card"]};
-  border:1px solid {palette["card_border"]}; border-radius:12px; padding:12px 14px; box-shadow:0 10px 30px rgba(0,0,0,.35); display:none; }}
-.lf-card.lf-show {{ display:block; }}
-.lf-card h3 {{ margin:0 26px 6px 0; font-size:15px; }}
-.lf-card dl {{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:4px 10px; font-size:12.5px; }}
-.lf-card dt {{ color:{palette["text"]}; font-weight:600; }}
-.lf-card dd {{ margin:0; }}
-.lf-card .lf-deduced {{ margin:8px 0 0; font-size:12px; color:{charts.STATUS_COLORS["warning"]}; }}
-.lf-card .lf-x {{ position:absolute; top:8px; right:10px; border:0; background:none; color:{palette["text"]}; font-size:18px; cursor:pointer; }}
-@media (prefers-reduced-motion: reduce) {{ .lf-piece.lf-working .lf-tile, .lf-live .lf-bar .lf-dot {{ animation:none; }} }}
-"""
+    return static_files.fill(
+        "live_flow.css",
+        {
+            'var(--go-strong-text)': palette["strong_text"],
+            'var(--go-text)': palette["text"],
+            'var(--go-architecture-state-colors-unknown)': architecture.STATE_COLORS["unknown"],
+            'var(--go-request-color)': REQUEST_COLOR,
+            'var(--go-card)': palette["card"],
+            'var(--go-card-border)': palette["card_border"],
+            'var(--go-accent)': palette["accent"],
+            'var(--go-answer-color)': ANSWER_COLOR,
+            'var(--go-architecture-state-colors-failed)': architecture.STATE_COLORS["failed"],
+            'var(--go-working-color)': WORKING_COLOR,
+            'var(--go-charts-status-colors-warning)': charts.STATUS_COLORS["warning"],
+        },
+    )
 
 
 # The animation, as the author asked: a piece that works alone lights up and pulses; a communication is a message
@@ -917,12 +895,13 @@ def build_document_html(mode: str) -> str:
 def build_static_html(palette: dict[str, str], caption: str) -> str:
     """The fixed picture for the SAD (D-412): the same diagram with no script and no state, and the date of the latest
     real load under it."""
-    return (
-        '<!doctype html><html><head><meta charset="utf-8"><style>'
-        f"html, body {{ margin:0; background:transparent; color:{palette['text']}; "
-        "font:13px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }"
-        ".lf-svg { width:100%; height:auto; display:block; } p { margin:4px 0 0; text-align:center; }"
-        f"</style></head><body>{build_svg(palette)}<p>{esc(caption)}</p></body></html>"
+    return static_files.fill(
+        "live_flow_static.html",
+        {
+            '__GO_TEXT__': palette['text'],
+            '__GO_BUILD_SVG_PALETTE__': build_svg(palette),
+            '__GO_ESC_CAPTION__': esc(caption),
+        },
     )
 
 

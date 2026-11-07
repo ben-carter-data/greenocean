@@ -8,7 +8,10 @@ from pathlib import Path
 
 import pandas as pd
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
+# endregion
+# region A source that is late
 sys.path.insert(0, str(ROOT))
 from etl import etl, pipeline  # noqa: E402
 
@@ -110,3 +113,6 @@ def test_d356_the_panorama_says_which_week_a_source_has_not_published_and_nothin
     message = f"{etl.NOTICE_SOURCE_LATE}: wholesale 2026-10-19"
     assert dashboard.describe_late_sources(message) == "ODEPA aún no publica la semana 19–25 oct (mayorista)"
     assert dashboard.describe_late_sources("") == "" and dashboard.describe_late_sources("dbt build: x") == ""
+
+
+# endregion

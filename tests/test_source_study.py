@@ -6,9 +6,12 @@ from streamlit.testing.v1 import AppTest
 
 from bi import dashboard, source_study
 
+# region Constants and variables
 DASHBOARD_FILE = str(Path(dashboard.__file__))
+# endregion
 
 
+# region Source study
 def draw(language="es", notebook=None, profile=dashboard.PROFILE_PROFESSIONAL):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
     app.query_params["vista"] = dashboard.PAGE_SOURCE_STUDY
@@ -63,3 +66,6 @@ def test_d533_the_other_language_does_not_open_and_the_user_view_has_no_folder()
     user = draw(profile=dashboard.PROFILE_PUBLIC)
     labels = {link.proto.label for link in user.sidebar.get("page_link")}
     assert not set(dashboard.FOLDER_TILES) & labels and len(user.code) == 0
+
+
+# endregion

@@ -7,9 +7,12 @@ import pytest
 
 from bi import charts, devops, tech_glossary
 
+# region Constants and variables
 WORKFLOWS = Path(__file__).resolve().parent.parent / ".github" / "workflows"
+# endregion
 
 
+# region The CI/CD diagram
 def read_workflow(name):
     return (WORKFLOWS / name).read_text(encoding="utf-8")
 
@@ -99,3 +102,6 @@ def test_d276_the_weekly_load_is_four_phases_holding_every_step_once_in_the_orde
     # D-270: the load publishes the database in the release, and the panel takes it from there (a platform setting).
     assert page.index('id="s-pub_streamlit"') < page.index('id="s-pub_release"') and "gh release upload" in page
     assert "plataforma" in page.split('id="s-pub_streamlit"')[1].split("</div>")[0] or "plataforma" in page
+
+
+# endregion

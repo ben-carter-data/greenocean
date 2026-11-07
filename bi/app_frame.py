@@ -144,6 +144,7 @@ from bi.data_access import (
 )
 from bi.i18n import tr
 from etl import etl
+from bi import static_files
 
 # region Constants
 CHANGE_VIEW = "profile_change_open"
@@ -971,54 +972,14 @@ def show_app_header(window):
     palette = charts.get_palette(get_mode())
     st.logo(build_greenocean_logo(get_mode(), sidebar=True), icon_image=build_greenocean_icon(get_mode()), size="large")
     st.markdown(
-        f"""<style>
-    [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {{display:none;}}
-    /* D-462: with the menu folded, the page starts at the top, to the right of the logo and its unfold button, instead
-       of leaving a band under them. */
-    .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMainBlockContainer"] {{padding-top:12px !important;
-        padding-left:68px !important;}}
-    /* D-463: folded, the unfold button sits under the logo, not beside it, so the page needs only a narrow margin. */
-    [data-testid="stExpandSidebarButton"] {{position:fixed !important; left:20px; top:56px; z-index:1000;}}
-    .reading-guide {{font-size:.8rem; margin:5px 0 14px; color:{palette['text']};}}
-    .reading-term {{font-size:inherit; margin-left:0; border-bottom:1px dotted currentColor; font-weight:400;}}
-    .regional-detail {{width:100%; font-size:.75rem; border-collapse:collapse;}}
-    .regional-detail td, .regional-detail th {{padding:5px 6px!important; text-align:left;}}
-    .chart-sample {{margin-top:8px; padding-bottom:12px; overflow-x:auto;}}
-    .sample-title {{font-size:.75rem; color:{palette['text']}; margin-bottom:4px;}}
-    .chart-sample table {{width:100%; font-size:.75rem; border-collapse:collapse;}}
-    .chart-sample td, .chart-sample th {{padding:5px 7px; text-align:left; white-space:normal; border-bottom:1px solid {palette['card_border']};}}
-
-    [data-testid="stMarkdownContainer"]:has(> .report-title) {{margin-bottom:0;}}
-    .report-title p {{display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:8px 0 12px;}}
-    .st-key-report_page .card-title {{flex-wrap:wrap; align-items:flex-start;}}
-    .st-key-report_page .card-title-text {{flex:1 1 140px; white-space:normal; overflow:visible;}}
-    .st-key-report_page [data-testid="stCaptionContainer"] {{overflow-wrap:anywhere;}}
-    /* The page's path, Volver and the theme choice: the only header on every page (D-096). */
-    .st-key-app_header {{background:transparent; border:0; border-bottom:1px solid {palette['card_border']};
-        border-radius:0; padding:4px 0 8px !important; margin:0 0 6px; justify-content:flex-start; column-gap:14px;
-        flex-wrap:wrap !important; row-gap:6px;}}
-    .st-key-app_header .app-brand {{font-size:.86rem; font-weight:600; color:{palette['strong_text']};
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
-    /* Volver opens the row, beside the path: Streamlit Cloud draws its own toolbar
-       (Share, star, edit, GitHub) over the top right corner. */
-    .st-key-header_preferences {{flex-wrap:nowrap !important; align-items:center; gap:8px; width:auto !important;
-        order:-1; margin-right:4px;}}
-    .st-key-header_preferences > div {{flex:none; min-width:0;}}
-    .st-key-header_preferences [data-testid="stPopover"] button {{width:40px; min-width:40px; padding:8px;}}
-    .st-key-header_preferences [data-testid="stPopover"] button p {{position:absolute; width:1px;
-        height:1px; overflow:hidden; clip-path:inset(50%);}}
-    .st-key-window_page [data-testid="stMarkdownContainer"] h3 {{font-size:1.2rem; font-weight:500;}}
-    .st-key-window_page [data-testid="stMarkdownContainer"] p,
-    .st-key-window_page [data-testid="stMarkdownContainer"] li {{
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.65;}}
-    .block-container, [data-testid="stMainBlockContainer"] {{padding-top:1rem !important; padding-bottom:.5rem !important;}}
-    [data-testid="stSidebarNav"] p, [data-testid="stSidebar"] [data-testid="stPageLink"] p {{
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-weight:400; letter-spacing:-.015em;}}
-    @media(max-width:700px) {{
-        .st-key-app_header .app-brand {{white-space:normal; flex:1 1 100%; order:1;}}
-        .st-key-header_preferences {{order:0; margin-left:0;}}
-    }}
-    </style>""",
+        static_files.style(
+            "app_header.css",
+            {
+                'var(--go-text)': palette['text'],
+                'var(--go-card-border)': palette['card_border'],
+                'var(--go-strong-text)': palette['strong_text'],
+            },
+        ),
         unsafe_allow_html=True,
     )
     view = read_current_view(window)
@@ -1348,15 +1309,16 @@ def show_view_tabs(key, labels, palette):
         st.session_state[key] = labels[0]
     ink, muted, line, accent = palette["strong_text"], palette["reference"], palette["card_border"], palette["accent"]
     st.markdown(
-        f"""<style>
-    .st-key-{key} {{ border-bottom:1px solid {line}; margin-bottom:6px; }}
-    .st-key-{key} [data-testid="stButtonGroup"] > div {{ gap:18px !important; }}
-    .st-key-{key} button {{ background:transparent !important; border:0 !important; border-radius:0 !important;
-      box-shadow:none !important; padding:6px 0 8px !important; min-height:0 !important; border-bottom:2px solid transparent !important; }}
-    .st-key-{key} button p {{ color:{charts.legible(muted, palette["background"])} !important; font-size:15px !important; }}
-    .st-key-{key} button[kind$="Active"], .st-key-{key} button[aria-checked="true"] {{ border-bottom-color:{accent} !important; }}
-    .st-key-{key} button[kind$="Active"] p, .st-key-{key} button[aria-checked="true"] p {{ color:{ink} !important; }}
-    </style>""",
+        static_files.style(
+            "view_tabs.css",
+            {
+                'var(--go-key)': key,
+                'var(--go-line)': line,
+                'var(--go-charts-legible-muted-palette-background)': charts.legible(muted, palette["background"]),
+                'var(--go-accent)': accent,
+                'var(--go-ink)': ink,
+            },
+        ),
         unsafe_allow_html=True,
     )
     choice = st.segmented_control(

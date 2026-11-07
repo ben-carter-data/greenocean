@@ -8,7 +8,10 @@ page and fail if the SVG of its builder is not there.
 import sys
 from pathlib import Path
 
+# region Constants and variables
 PROJECT_DIR = Path(__file__).resolve().parent.parent
+# endregion
+# region The views that work must stay on their page
 sys.path.insert(0, str(PROJECT_DIR))
 from bi import dashboard  # noqa: E402
 from tests.test_dashboard import draw_page, needs_database  # noqa: E402
@@ -104,3 +107,6 @@ def test_d398_the_pipeline_figures_are_chips_of_the_content_read_from_the_latest
     run = dashboard.read_latest_run()
     for value in (run["rows_read"], run["rows_loaded"], run["rows_rejected"]):
         assert dashboard.charts.format_thousands(value) in bar
+
+
+# endregion

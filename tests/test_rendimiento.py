@@ -10,9 +10,12 @@ import pytest
 
 from bi import queries
 
+# region Constants
 BUDGET = 1.0  # seconds a query, approved in D-323
+# endregion
 
 
+# region Performance budget of the named queries
 @pytest.mark.rendimiento
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
 @pytest.mark.parametrize("name", list(queries.load_queries()))
@@ -50,3 +53,6 @@ def test_d341_no_shared_runner_measures_speed_the_ci_the_weekly_load_and_the_qua
     assert '"-m",\n            "not rendimiento",' in script
     # The count of tests the indicator divides by is taken with the same filter, or the ones left out count as failures.
     assert '"--collect-only", "-q", "-m", "not rendimiento"' in script
+
+
+# endregion

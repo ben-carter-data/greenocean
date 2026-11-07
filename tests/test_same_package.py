@@ -9,11 +9,14 @@ import pytest
 from bi import channel_latest, home_mockup, price_export, queries
 from etl import etl
 
+# region Constants and variables
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
 needs_raw = pytest.mark.skipif(not etl.RAW_DATABASE_FILE.exists(), reason="etl/raw.db is not in the repository")
 KEYS = ["product", "channel", "region"]
+# endregion
 
 
+# region Same package
 def has_the_table():
     with queries.open_database() as connection:
         return connection.execute(
@@ -178,3 +181,6 @@ def test_d522_the_changes_are_rebuilt_from_the_raw_rows_of_odepa():
     assert len(merged) == len(shown) > 300  # every row of the table comes from the raw rows
     assert (merged["price_now"] - merged["price_now_raw"]).abs().max() < 1e-6
     assert (merged["price_before"] - merged["price_before_raw"]).abs().max() < 1e-6
+
+
+# endregion

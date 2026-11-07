@@ -7,10 +7,13 @@ import pytest
 
 from bi import buttons, charts, page_bar
 
+# region Constants and variables
 BI_DIR = Path(buttons.__file__).parent
 FINISH = (BI_DIR / "premium.css").read_text(encoding="utf-8")
+# endregion
 
 
+# region Buttons
 def luminance(color):
     channels = [int(color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
     linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
@@ -68,3 +71,6 @@ def test_d281_every_icon_has_its_mask():
     css = buttons.build_icon_css()
     for name in buttons.ICONS:
         assert f".stApp .go-icon-{name} {{-webkit-mask-image:url(\"data:image/svg+xml," in css, name
+
+
+# endregion

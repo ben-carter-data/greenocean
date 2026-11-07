@@ -9,7 +9,7 @@ way back when a case fails. The pop-ups are CSS sheets opened with :target, with
 
 import html
 
-from bi import charts, doc_views, i18n, quality_view, security_map
+from bi import charts, doc_views, i18n, quality_view, security_map, static_files
 
 # region Constants
 # (id, short name, attack, expected result, OWASP code or «—», the tests that verify it)
@@ -200,30 +200,18 @@ def build_css(palette):
         palette["card_border"],
         palette["accent"],
     )
-    return f"""<style>
-* {{ box-sizing:border-box; }}
-html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-svg.plan {{ display:block; width:100%; height:auto; }}
-svg.plan a {{ cursor:pointer; outline:none; }}
-svg.plan a:hover .node, svg.plan a:focus .node {{ stroke-width:3.4; }}
-svg.plan a:hover .core, svg.plan a:focus .core {{ filter:brightness(1.12); }}
-.note {{ margin:4px 4px 0; font-size:12.5px; color:{muted}; }}
-.modal {{ display:none; position:fixed; inset:0; z-index:50; align-items:center; justify-content:center; padding:10px; background:rgba(0,0,0,.55); }}
-.modal:target {{ display:flex; }}
-.modal .back {{ position:absolute; inset:0; cursor:default; }}
-.sheet {{ position:relative; z-index:1; width:100%; max-width:680px; max-height:100%; overflow:auto; padding:18px 22px 14px; border-radius:18px;
-  background:{card}; border:1px solid {border}; box-shadow:0 24px 60px rgba(0,0,0,{'.6' if dark else '.25'}); }}
-.sheet h3 {{ margin:0 36px 2px 0; font-size:19px; font-weight:600; color:{ink}; }}
-.sheet .q {{ margin:0 0 6px; color:{accent}; font-size:14px; font-weight:500; }}
-.sheet .close {{ position:absolute; top:12px; right:14px; width:30px; height:30px; display:grid; place-items:center; border-radius:50%;
-  border:1px solid {border}; color:{ink}; text-decoration:none; font-size:15px; }}
-.sheet .close:hover {{ border-color:{accent}; }}
-.sheet h4 {{ margin:12px 0 2px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
-.sheet p {{ margin:0 0 4px; font-size:14px; color:{ink}; }}
-.sheet code {{ display:block; margin:3px 0; padding:6px 10px; border-radius:10px; background:color-mix(in srgb, {border} 40%, transparent);
-  font:400 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; overflow-wrap:anywhere; }}
-@media print {{ .modal {{ display:none !important; }} }}
-</style>"""
+    return static_files.style(
+        "security_plan.css",
+        {
+            'var(--go-text)': text,
+            'var(--go-muted)': muted,
+            'var(--go-card)': card,
+            'var(--go-border)': border,
+            'var(--go-6-if-dark-else-25)': '.6' if dark else '.25',
+            'var(--go-ink)': ink,
+            'var(--go-accent)': accent,
+        },
+    )
 
 
 def wrap_document(palette, body):

@@ -14,9 +14,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import queries  # noqa: E402
 
+# region Variables
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.duckdb has not been built")
+# endregion
 
 
+# region IPC audit
 def number(text):
     return float(text.replace(".", "").replace(",", "."))
 
@@ -84,3 +87,6 @@ def test_only_weeks_after_the_last_published_month_are_provisional():
     flags = list(weeks["provisional"])
     first = flags.index(True) if True in flags else len(flags)
     assert all(flags[first:]) and not any(flags[:first])
+
+
+# endregion

@@ -9,6 +9,7 @@ from bi import charts  # noqa: E402
 from etl import etl  # noqa: E402
 
 
+# region Tests for the chart helpers
 def test_numbers_are_written_as_in_chile():
     assert charts.format_thousands(1234567.4) == "1.234.567"
     assert charts.format_percent(60.06) == "60,1 %"
@@ -51,3 +52,6 @@ def test_visible_themes_keep_legacy_light_palette_compatible():
     assert {
         charts.PALETTES[theme]["base"] for theme in [charts.MODE_CORPORATE, charts.MODE_BLUE_LIGHT, charts.MODE_LIGHT]
     } == {charts.BASE_LIGHT}
+
+
+# endregion

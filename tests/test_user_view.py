@@ -9,11 +9,14 @@ from streamlit.testing.v1 import AppTest
 
 from bi import dashboard, queries
 
+# region Variables
 DASHBOARD_FILE = str(Path(__file__).resolve().parents[1] / "bi" / "dashboard.py")
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
 MINE = {dashboard.PAGE_HOME, dashboard.PAGE_BA}
+# endregion
 
 
+# region The Usuario view holds only its two dashboards and «Fuentes»
 def open_user(view=None, **parameters):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
@@ -83,3 +86,6 @@ def test_d502_the_professional_view_keeps_every_page_and_both_links():
     assert dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_DIAGRAMS, dashboard.PAGE_DIAGRAMS) in labels
     markup = everything(app)
     assert ">Calidad</a>" in markup and ">Metodología</a>" in markup
+
+
+# endregion

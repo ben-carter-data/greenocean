@@ -12,7 +12,7 @@ from __future__ import annotations
 import html
 from typing import Any
 
-from bi import charts, i18n, quality_metrics, weeks
+from bi import charts, i18n, quality_metrics, static_files, weeks
 
 # region Constants
 # The five counts that are almost always zero share one line when they all meet their acceptable (D-332).
@@ -396,70 +396,20 @@ def build_css(palette: dict[str, str]) -> str:
     on_deep["sin_medicion"] = charts.legible("#9aa4b2", DEEP)
     states = "".join(f".qm-{state} {{ color:{color}; }}\n" for state, color in colors.items())
     deep_states = "".join(f".qm-reports .qm-{state} {{ color:{color}; }}\n" for state, color in on_deep.items())
-    return f"""<style>
-.qm-head {{ margin:0 0 10px; font-size:12.5px; color:{soft}; }}
-.qm-lead {{ margin:0 0 14px !important; font-size:15px !important; line-height:1.5 !important; color:{ink}; max-width:920px; }}
-.qm-help {{ margin:-8px 0 14px !important; max-width:920px; font-size:11.5px !important; line-height:1.4 !important; color:{soft}; }}
-.qm-groups {{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; }}
-.qm-group {{ border:1px solid {border}; border-radius:14px; background:{card}; padding:12px 16px 10px; min-width:0; }}
-.qm-group h4 {{ margin:0 0 8px !important; padding:0 !important; font-size:11px !important; letter-spacing:.08em;
-  text-transform:uppercase; color:{soft}; }}
-.qm-row {{ display:grid; grid-template-columns:minmax(0, 1.5fr) minmax(60px, 1fr) auto auto auto; gap:10px; align-items:center;
-  padding:7px 0; border-top:1px solid color-mix(in srgb, {border} 60%, transparent); font-size:13px; color:{text}; cursor:help; }}
-.qm-group h4 + .qm-row {{ border-top:0; }}
-.qm-name {{ color:{ink}; font-weight:600; min-width:0; }}
-.qm-bar {{ position:relative; height:6px; border-radius:3px; background:color-mix(in srgb, {border} 70%, transparent); }}
-.qm-bar i {{ position:absolute; left:0; top:0; bottom:0; border-radius:3px; background:{SKY}; }}
-.qm-bar b {{ position:absolute; top:-4px; width:2px; height:14px; background:{ink}; border-radius:1px; }}
-.qm-bar.qm-empty {{ height:auto; background:none; font-size:11.5px; color:{soft}; }}
-.qm-value {{ font-variant-numeric:tabular-nums; color:{ink}; text-align:right; white-space:nowrap; }}
-.qm-limit {{ font-size:11.5px; color:{soft}; white-space:nowrap; }}
-.qm-state {{ font-size:11.5px; font-weight:700; white-space:nowrap; }}
-.qm-failures {{ margin-top:12px; }}
-.qm-failures h4 {{ margin:0 0 4px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:{soft}; }}
-.qm-failures ul {{ list-style:none; margin:0; padding:0; }}
-.qm-failures li {{ display:flex; flex-wrap:wrap; gap:2px 10px; padding:5px 0; border-bottom:1px solid {border}; font-size:12.5px; color:{text}; }}
-.qm-failures li b {{ color:{ink}; white-space:nowrap; }}
-.qm-failures li small {{ flex-basis:100%; color:{soft}; font-size:11.5px; }}
-{states}.qm-insights {{ list-style:none; margin:14px 0 0; padding:0; }}
-.qm-insights li {{ display:flex; flex-wrap:wrap; gap:4px 10px; padding:9px 12px; margin-bottom:6px; border-radius:10px;
-  border:1px solid currentColor; background:color-mix(in srgb, currentColor 7%, transparent); font-size:13px; }}
-.qm-insights li span {{ color:{text}; }}
-.qm-note {{ font-size:13px; color:{text}; }}
-.st-key-quality_filters {{ gap:10px !important; flex-wrap:wrap !important; margin-bottom:8px; }}
-.st-key-quality_filters > div {{ flex:0 1 180px !important; min-width:130px; }}
-.qm-reports {{ overflow:auto; max-height:calc(100vh - 300px); border-radius:14px; background:{DEEP};
-  border:1px solid color-mix(in srgb, {SKY} 35%, #1b2433); box-shadow:0 0 28px -14px {SKY}; }}
-.qm-reports table {{ width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:13px; }}
-.qm-reports thead th {{ position:sticky; top:0; z-index:1; background:{DEEP} !important; color:{SKY} !important; font-size:11px;
-  font-weight:700; text-transform:uppercase; letter-spacing:.07em; text-align:left; padding:10px 14px !important; border:0 !important;
-  border-bottom:1px solid color-mix(in srgb, {SKY} 40%, transparent) !important; }}
-.qm-reports td {{ padding:9px 14px !important; color:#d7dee9; border:0 !important; vertical-align:top;
-  border-bottom:1px solid #141b27 !important; background:transparent !important; }}
-.qm-reports td b {{ color:#f3f7fc; }} .qm-reports code {{ color:{SKY}; background:transparent; }}
-.qm-reports a.qm-open {{ text-decoration:none !important; }} .qm-reports a.qm-open b {{ color:{SKY}; text-decoration:underline; }}
-.qm-reports a.qm-pdf {{ color:{SKY} !important; text-decoration:none !important; border:1px solid color-mix(in srgb, {SKY} 50%, transparent);
-  border-radius:6px; padding:1px 8px; font-size:11.5px; white-space:nowrap; }}
-.qm-reports tbody tr:hover td {{ background:color-mix(in srgb, {SKY} 7%, transparent) !important; }}
-{deep_states}.qm-report h3 {{ margin:0 0 4px !important; font-size:20px !important; }}
-.qm-report p {{ margin:0 0 12px !important; font-size:12.5px; color:{soft}; }}
-/* D-336: the × of the report and alert dialogs sits in the top right corner with a face of its own, readable over the
-   viewer's black and over any theme; it used to float at the top center and stick out of its card. */
-div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] {{ position:absolute !important; right:14px; top:14px;
-  z-index:30; width:30px; height:30px; min-height:0; padding:0; border-radius:50%; background:#0d1320 !important;
-  border:1px solid #243046 !important; }}
-div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] svg, div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] [data-testid="stIconMaterial"] {{
-  color:#e6edf6 !important; fill:#e6edf6 !important; }}
-.qm-alerts {{ max-height:60vh; overflow:auto; }}
-.qm-alert {{ border:1px solid currentColor; border-radius:12px; padding:10px 14px 4px; margin-bottom:10px;
-  background:color-mix(in srgb, currentColor 6%, transparent); }}
-.qm-alert h4 {{ margin:0 0 4px !important; padding:0 !important; font-size:14px !important; color:inherit; }}
-.qm-alert p {{ margin:0 0 6px !important; font-size:13px; color:{text}; }} .qm-alert p b {{ color:{ink}; }}
-.qm-alert p.qm-alert-figure {{ font-variant-numeric:tabular-nums; color:{ink}; }}
-.qm-alert-load {{ font-size:13px; color:{text}; }} .qm-alert-stale {{ font-size:13px; font-weight:600; color:{ink}; padding:8px 12px; border-radius:8px; border:1px dashed {border}; }}
-.qm-alert.qm-antigua {{ border-left-color:{border} !important; opacity:.85; }} .qm-alert.qm-antigua h4 {{ color:{soft} !important; }} .qm-alert-foot {{ font-size:12px; color:{soft}; }}
-@media (max-width:1100px) {{ .qm-groups {{ grid-template-columns:minmax(0, 1fr); }} }}
-</style>"""
+    return static_files.style(
+        "quality_method.css",
+        {
+            'var(--go-soft)': soft,
+            'var(--go-ink)': ink,
+            'var(--go-border)': border,
+            'var(--go-card)': card,
+            'var(--go-text)': text,
+            'var(--go-sky)': SKY,
+            'var(--go-states)': states,
+            'var(--go-deep)': DEEP,
+            'var(--go-deep-states)': deep_states,
+        },
+    )
 
 
 # endregion
