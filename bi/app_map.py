@@ -450,7 +450,7 @@ NODES = {
         ["apoyo"],
         ("watch", 7),
         "La documentación del proyecto, en Markdown.",
-        "Nueve documentos en cuatro carpetas de docs/ y de docs/en/, cada uno con su página en el panel y su PDF; aparte, el estudio de la fuente en dos cuadernos de Jupyter.",
+        "Nueve documentos en cuatro carpetas de docs/ y de docs/en/, cada uno con su página en el panel y su PDF: la carpeta muestra los cinco principales, y los cuatro anexos se abren desde sus enlaces; aparte, el estudio de la fuente en dos cuadernos de Jupyter.",
         "Cuando alguien abre la carpeta Documentos del proyecto o Análisis de la fuente de datos.",
         "Documentos del proyecto",
         [

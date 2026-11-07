@@ -101,7 +101,7 @@ def read_security_cases(root=ROOT):
 
 
 def read_documents(root=ROOT):
-    """[(document, version)] of the nine documents of the folder, read from their header."""
+    """[(document, version)] of the nine documents of docs/, read from their header."""
     paths = [
         "negocio/PRD.md",
         "negocio/ACTA_DE_CIERRE.md",

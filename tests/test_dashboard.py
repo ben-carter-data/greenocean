@@ -1563,17 +1563,25 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
     assert 'class="home-bar-updated"' in markup
 
 
-# D-282: one folder holds every document.
+# D-282: one folder holds every document; D-536: it lists the five main ones, the four annexes open from links.
 @needs_database
-def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_file():
+def test_d282_the_folder_shows_every_main_document_with_the_version_and_date_of_its_file():
     from bi import documents_folder
 
     app = draw_page(dashboard.PAGE_FOLDER)
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    assert markup.count('class="df-file"') == len(dashboard.FOLDER_DOCUMENTS) == 9  # D-529
-    assert "GreenOcean <i>/</i> <b>docs</b>" in markup and "9 documentos" in markup
-    for page in dashboard.FOLDER_ORDER:
+    assert len(dashboard.FOLDER_SHOWN) == 5 and len(dashboard.FOLDER_ANNEXES) == 4  # D-536
+    assert markup.count('class="df-file"') == len(dashboard.FOLDER_SHOWN)
+    assert "GreenOcean <i>/</i> <b>docs</b>" in markup and "5 documentos" in markup
+    for page in dashboard.FOLDER_ANNEXES:
+        assert (
+            documents_folder.read_title(
+                i18n.document_path(dashboard.PROJECT_DOCUMENTS[page][0], "es").read_text(encoding="utf-8")
+            )
+            not in markup
+        ), page
+    for page in dashboard.FOLDER_SHOWN:
         filename = dashboard.PROJECT_DOCUMENTS[page][0]
         text = i18n.document_path(filename, "es").read_text(encoding="utf-8")
         header = documents_folder.read_header(text)
@@ -1581,7 +1589,7 @@ def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_f
         assert documents_folder.read_title(text) in markup, filename
         # D-500: its file on GitHub is only for the Autor
         assert project.build_github_url(f"docs/{i18n.DOCUMENT_FOLDERS[filename]}/{filename}") not in markup, filename
-    assert markup.count('class="go-icon go-icon-print"') == 9 and markup.count('class="df-preview"') == 9
+    assert markup.count('class="go-icon go-icon-print"') == 5 and markup.count('class="df-preview"') == 5
 
 
 def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_menu():
@@ -1609,7 +1617,9 @@ def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_me
 
 
 @needs_database
-@pytest.mark.parametrize("page", ["PRD · Requisitos del producto", "Glosario", "Plan de pruebas y seguridad"])
+@pytest.mark.parametrize(
+    "page", ["PRD · Requisitos del producto", "SAD · Arquitectura", "Glosario", "Plan de pruebas y seguridad"]
+)
 def test_d282_a_document_opens_its_page_with_its_path_its_pdf_and_its_neighbours(page):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params['vista'] = page
@@ -1618,16 +1628,15 @@ def test_d282_a_document_opens_its_page_with_its_path_its_pdf_and_its_neighbours
     markup = " ".join(block.value for block in app.markdown)
     assert '<nav class="doc-path"' in markup and f'target="_self">{dashboard.PAGE_FOLDER}</a>' in markup
     assert any("doc-print" in block.proto.body for block in app.get("html"))
-    position = dashboard.FOLDER_ORDER.index(page)
     labels = [link.proto.label for link in app.main.get("page_link")]
+    if page in dashboard.FOLDER_ANNEXES:  # D-536: an annex leads back to the folder, never to another document
+        assert labels == [f"← Anterior: {dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_FOLDER, dashboard.PAGE_FOLDER)}"]
+        return
+    shown = dashboard.FOLDER_SHOWN
+    position = shown.index(page)
     expected = [
-        f"← Anterior: {dashboard.SIDEBAR_LABELS.get(p, p)}"
-        for p in dashboard.FOLDER_ORDER[position - 1 : position]
-        if position > 0
-    ] + [
-        f"Siguiente: {dashboard.SIDEBAR_LABELS.get(p, p)} →"
-        for p in dashboard.FOLDER_ORDER[position + 1 : position + 2]
-    ]
+        f"← Anterior: {dashboard.SIDEBAR_LABELS.get(p, p)}" for p in shown[position - 1 : position] if position > 0
+    ] + [f"Siguiente: {dashboard.SIDEBAR_LABELS.get(p, p)} →" for p in shown[position + 1 : position + 2]]
     assert labels == expected
 
 

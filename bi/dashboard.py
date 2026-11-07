@@ -7699,6 +7699,10 @@ FOLDER_DOCUMENTS = [
     (PAGE_MANUAL, "operacion"),
 ]
 FOLDER_ORDER = [page for page, _ in FOLDER_DOCUMENTS]
+# D-536: four documents are annexes. They stay in docs/, the panel and the tests still read them, and their pages open
+# from the links of the other documents; the folder lists only the five main ones.
+FOLDER_ANNEXES = (PAGE_GLOSSARY, PAGE_ADR, PAGE_DECISION_INDEX, PAGE_TEST_PLAN)
+FOLDER_SHOWN = [page for page in FOLDER_ORDER if page not in FOLDER_ANNEXES]
 FOLDER_VIEW_KEY = "folder_view"
 DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 # D-247: a document points to the page of the panel where a view lives, instead of copying it: [[vista:Modelo de datos]].
@@ -7725,9 +7729,11 @@ def build_print_address(page):
 
 
 def read_folder_files():
-    """Every document of the folder as the folder shows it, read from its file."""
+    """Every main document of the folder as the folder shows it, read from its file; the annexes are left out (D-536)."""
     files = []
     for page, family in FOLDER_DOCUMENTS:
+        if page in FOLDER_ANNEXES:
+            continue
         path = i18n.document_path(PROJECT_DOCUMENTS[page][0])
         files.append(
             documents_folder.describe(path.read_text(encoding="utf-8"))
@@ -8873,17 +8879,24 @@ def show_menu_steps(view, pages):
 
 
 def show_folder_steps(view, pages):
-    """«← Anterior» and «Siguiente →» inside the documents folder (D-282)."""
-    position = FOLDER_ORDER.index(view)
-    for step, text in ((-1, "← Anterior: {}"), (1, "Siguiente: {} →")):
-        if 0 <= position + step < len(FOLDER_ORDER):
-            neighbour = FOLDER_ORDER[position + step]
-            st.page_link(
-                pages[WINDOW_OF_VIEW[neighbour]],
-                label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
-                icon=PAGE_ICONS.get(neighbour),
-                query_params=keep_context() | {VIEW_PARAMETER: neighbour},
-            )
+    """«← Anterior» and «Siguiente →» among the main documents of the folder (D-282); an annex leads back to the folder,
+    so no step shows a document the folder does not list (D-536)."""
+    if view in FOLDER_ANNEXES:
+        neighbours = [("← Anterior: {}", PAGE_FOLDER)]
+    else:
+        position = FOLDER_SHOWN.index(view)
+        neighbours = [
+            (text, FOLDER_SHOWN[position + step])
+            for step, text in ((-1, "← Anterior: {}"), (1, "Siguiente: {} →"))
+            if 0 <= position + step < len(FOLDER_SHOWN)
+        ]
+    for text, neighbour in neighbours:
+        st.page_link(
+            pages[WINDOW_OF_VIEW[neighbour]],
+            label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
+            icon=SIDEBAR_ICONS.get(neighbour, PAGE_ICONS.get(neighbour)),
+            query_params=keep_context() | {VIEW_PARAMETER: neighbour},
+        )
 
 
 def show_route_footer(window, pages, view=None):
