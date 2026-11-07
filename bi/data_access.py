@@ -10,8 +10,15 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
-from bi import alerts, channel_latest, queries, served_database
-from bi.constants import ALL_VALUES, CHILE_TIME_ZONE, UNSPECIFIED
+from bi import alerts, channel_latest, control, queries, served_database
+from bi.constants import (
+    ALL_VALUES,
+    CHILE_TIME_ZONE,
+    GITHUB_CACHE_SECONDS,
+    RUN_HISTORY_COUNT,
+    SECRET_GITHUB_TOKEN,
+    UNSPECIFIED,
+)
 from etl import etl
 
 # region Constants
@@ -308,6 +315,49 @@ def read_cached_all_variations_in(database_version, channel):
     else:
         prices = alerts.add_weekly_variation(read_channel_national_prices(database_version, channel))
     return add_display_columns(prices[prices["variation"].notna()].copy())
+
+
+# endregion
+
+
+# region GitHub reads
+def get_secret(name):
+    """A dashboard secret, or None when it is not configured."""
+    try:
+        return st.secrets.get(name)
+    except Exception:  # no secrets file at all
+        return None
+
+
+@st.cache_resource
+def get_last_github_answers():
+    """Last good answers of GitHub, shared by every visitor, used when GitHub fails."""
+    return {}
+
+
+@st.cache_data(ttl=GITHUB_CACHE_SECONDS, show_spinner=False)
+def fetch_pipeline_runs():
+    """Latest runs from GitHub. A failure raises, and is not kept in the cache."""
+    token = get_secret(SECRET_GITHUB_TOKEN)
+    runs = control.list_workflow_runs(token, RUN_HISTORY_COUNT)
+    return control.mark_simulated_failures(runs, token)
+
+
+def read_pipeline_runs():
+    """(latest runs, why GitHub failed or ""). On a failure, the last good answer."""
+    last_answers = get_last_github_answers()
+    try:
+        runs = fetch_pipeline_runs()
+    except Exception as error:  # GitHub unreachable or refused
+        return last_answers.get("runs", []), control.describe_github_error(error)
+    last_answers["runs"] = runs
+    return runs, ""
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def read_cached_token_expiration(token):
+    """Expiration of the token, asked to GitHub at most once an hour."""
+    return control.read_token_expiration(token)
 
 
 # endregion

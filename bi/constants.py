@@ -519,6 +519,153 @@ ATTRIBUTION_TEXT = (
     "Los indicadores describen el histórico; no predicen precios. Los precios se reconstruyen "
     "desde la fuente en las pruebas automáticas."
 )
+
+
+KPI_PRESENTATION = {
+    "K1": ("Brecha de precio", "gap", "Diferencia entre el precio al consumidor y el mayorista."),
+    "K2": ("Comparación de canales", "channels", "Diferencia de precio entre dos canales de venta."),
+    "K3": ("Precio por región", "region", "Precio regional frente al promedio de las regiones con datos."),
+    "K4": ("Estacionalidad", "calendar", "Semanas más caras o más baratas dentro de un año."),
+    "K5": ("Rezago de precios", "lag", "Desfase entre los cambios mayoristas y los del consumidor."),
+    "K6": ("Alertas de precio", "alert", "Cambios semanales que se salen del comportamiento habitual."),
+    "K7": ("Cobertura del cruce", "scope", "Productos con precios comparables en ambas fuentes."),
+    "K8": ("Filas rechazadas", "security", "Registros que no superan la validación de la carga."),
+}
+
+
+HOME_LINK_PARAMETERS = ("_home_region", "_home_week", "familia", "alerta", "canal")  # D-489 alerts; D-494 channel
+
+
+# D-352: the reading order of the Dashboard. A map or «Todo Chile» click completes step 1, a family click step 2; for the
+# user view the panels 2 and 3 stay locked until the step before them is done, and a step done is never locked again.
+HOME_STEP_PARAMETER = "_home_step"
+
+
+HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_FLASH = "home_region_done", "home_family_done", "home_flash"
+
+
+HOME_SEARCHED = "home_searched"  # D-372
+
+
+RUN_WINDOW_OPEN = "run_window_open"
+
+
+ADMIN_UNLOCKED = "admin_unlocked"
+
+
+# D-282: the folder, in reading order, with the family that colors each file.
+# D-381: grouped by the four folders of docs/, each document in the folder of its subject.
+FOLDER_DOCUMENTS = [
+    (PAGE_PRD, "negocio"),
+    (PAGE_CLOSURE, "negocio"),
+    (PAGE_GLOSSARY, "negocio"),
+    (PAGE_SAD, "arquitectura"),
+    (PAGE_ADR, "arquitectura"),
+    (PAGE_DECISION_INDEX, "arquitectura"),
+    (PAGE_QUALITY_PLAN, "calidad"),
+    (PAGE_TEST_PLAN, "calidad"),
+    (PAGE_MANUAL, "operacion"),
+]
+
+
+FOLDER_ORDER = [page for page, _ in FOLDER_DOCUMENTS]
+
+
+# D-536: four documents are annexes. They stay in docs/, the panel and the tests still read them, and their pages open
+# from the links of the other documents; the folder lists only the five main ones.
+FOLDER_ANNEXES = (PAGE_GLOSSARY, PAGE_ADR, PAGE_DECISION_INDEX, PAGE_TEST_PLAN)
+
+
+FOLDER_SHOWN = [page for page in FOLDER_ORDER if page not in FOLDER_ANNEXES]
+
+
+RETURN_CONTEXT_KEYS = [
+    "dashboard_group",
+    "dashboard_region",
+    "dashboard_week",
+    "dashboard_product",
+    "dashboard_top_n",
+    "analysis_group",
+    "analysis_product",
+    "analysis_key_label",
+    "analysis_region",
+    "analysis_channels",
+]
+
+
+PAGE_HISTORY = "page_history"
+
+
+RETURN_TARGET = "return_target"
+
+
+HISTORY_LIMIT = 30
+
+
+# Besides its address, a page is its report filters and the Dashboard's steps (each channel keeps its own, «key@canal»).
+HISTORY_STATE_KEYS = {*RETURN_CONTEXT_KEYS, HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_SEARCHED}
+
+
+# D-213: one section per kind of reader, open by default; each page lives in exactly one section.
+# D-231: a flat menu, like the sidebar of a chat app: no cards, borders, shadows or gradients;
+# small grey headings, a hairline between sections, a thin icon per page, and the current page
+# with a faint fill and a blue bar on its left. The documents close the list, before the sources.
+# (key, title, pages or source links)
+MENU_BLOCKS = [
+    (
+        "negocio",
+        "Negocio · BA y BI",
+        # D-453: the section opens with its dashboards as tiles; D-456: «Análisis» gathers in its tabs the history
+        # of the prices and the former pages «Precios e inflación», «Insights» and «Interesados», with the method.
+        # D-494: «Último dato por canal» became step 2 of «Semanal»: the section is two dashboards.
+        [PAGE_HOME, PAGE_BA],
+    ),
+    ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_RULES, PAGE_ARCHITECTURE, PAGE_SQL]),
+    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG]),  # D-420: the Autor's only
+    ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP, PAGE_SECURITY]),  # D-420: security, for the Profesional
+    (
+        "calidad",
+        "Calidad",
+        [PAGE_METHOD, PAGE_OPERATIONS, PAGE_GIT],  # D-507: the plan, the controls, the log
+    ),  # D-343: quality and audit, and the method behind it
+    ("fuentes", "Fuentes de datos", SOURCE_LINKS),
+    ("documentos", "Documentos", [PAGE_FOLDER, PAGE_SOURCE_STUDY]),  # D-533: two folders
+]
+
+
+# D-308: a page that opens from a button of another page and has no line of its own in the menu.
+DOOR_PAGES: dict[str, str] = {}  # D-398: «Precios e inflación», the only one, joined the menu
+
+
+MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages}
+
+
+SIDEBAR_TOP_LABELS = {
+    REPORT_WINDOW: "Dashboards",
+    SECTION_TECHNICAL: "Ingeniería de datos",
+    SECTION_PROJECT: "Proyecto",
+    SECTION_LINKS: "Documentación",
+    SECTION_SECURITY: "Seguridad",
+    SECTION_RESOURCES: "GitHub",
+}
+
+
+SIDEBAR_LABELS = {
+    PAGE_INSIGHTS: "Insights",
+    PAGE_HOME: "Semanal",
+    PAGE_SEASONALITY: "Precios e inflación",
+    PAGE_DIAGRAMS: "Pipeline y linaje",
+    PAGE_OPERATIONS: "Controles de datos",
+    PAGE_RUNS: "Centro de operación",
+    PAGE_ACTIONS: "GitHub Actions",
+    PAGE_CONFIG: "Configuración",
+    PAGE_SECURITY: "Arquitectura de seguridad",
+    PAGE_DOCUMENTATION: "Documentación",
+    PAGE_MANUAL: "Manual de operación",
+}
+
+
+FOLDER_TILES = [PAGE_FOLDER, PAGE_SOURCE_STUDY]  # D-533: the project's documents, then the study of the source
 # endregion
 
 # region Variables

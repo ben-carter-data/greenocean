@@ -314,7 +314,10 @@ def test_d369_the_entry_window_offers_two_views_and_the_author_only_as_a_corner_
         assert door in [popover.proto.popover.label for popover in app.get("popover")]
         assert app.text_input(key="profile_author_code")  # its key field, inside the link
     assert i18n.EN["Acceso del autor"] == "Author access"
-    source = (Path(__file__).resolve().parent.parent / "bi" / "dashboard.py").read_text(encoding="utf-8")
+    # D-541: the panel lives in several files of bi/; its code is read as one
+    source = "\n".join(
+        p.read_text(encoding="utf-8") for p in (Path(__file__).resolve().parent.parent / "bi").glob("*.py")
+    )
     assert "profile_side_autor" not in source
     assert 'div[data-testid="stDialog"]:has(.st-key-profile_choices) {{ background:rgba(4, 8, 16, .97)' in source
 

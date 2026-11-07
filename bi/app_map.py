@@ -1071,7 +1071,7 @@ LINK_EVIDENCE = {
     ("devops", "semanal"): ("bi/control.py", "/dispatches"),
     ("devops", "github"): ("bi/github_actions.py", "/logs"),
     ("streamlit", "github"): ("bi/control.py", "/actions/runs/"),
-    ("streamlit", "secrets"): ("bi/dashboard.py", "def get_secret"),
+    ("streamlit", "secrets"): ("bi/data_access.py", "def get_secret"),
     ("devops", "secrets"): ("bi/control.py", "hmac.compare_digest"),
     ("semanal", "author"): (PLATFORM, "GitHub"),
     ("ci", "security"): ("tests/test_security.py", "def test_no_secret_is_tracked_by_git"),
