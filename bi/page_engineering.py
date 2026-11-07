@@ -12,6 +12,8 @@ import streamlit as st
 
 from bi import (
     app_diagrams,
+    app_map,
+    app_map_detail,
     architecture,
     charts,
     control,
@@ -19,34 +21,57 @@ from bi import (
     deployment,
     devops,
     er_diagram,
+    github_actions,
+    i18n,
     lag,
     lineage,
+    live_flow,
     monitoring,
     project,
     queries,
+    run_monitor,
     sql_explorer,
+    stack_page,
     star_model,
     storage_map,
+    transformation_rules,
     weeks,
     zoom,
 )
-from bi.app_frame import build_chip, build_repository_link_html, describe_state_source, open_card, show_page_bar
+from bi.app_frame import (
+    build_chip,
+    build_page_address,
+    build_repository_link_html,
+    describe_state_source,
+    is_author,
+    open_card,
+    show_page_bar,
+)
 from bi.app_style import build_runs_css
 from bi.constants import (
+    ADMIN_UNLOCKED,
     ARCHITECTURE_HINT,
     CATALOG_FILES,
     GITHUB_CACHE_SECONDS,
     KPI_PARAMETER,
     KPI_PRESENTATION,
     LINEAGE_HINT,
+    MENU_BLOCKS,
+    PAGE_APP_MAP,
     PAGE_ARCHITECTURE,
     PAGE_DIAGRAMS,
+    PAGE_RULES,
+    PAGE_STACK,
     PIPELINE_JOURNEY,
     PIPELINE_LINEAGE,
     PIPELINE_VIEW_KEY,
     QUERIES_PATH,
+    RUNS_TABS,
     SECRET_GITHUB_TOKEN,
+    SECRET_READ_TOKEN,
     SECTION_KPI,
+    SIDEBAR_LABELS,
+    SOURCE_LINKS,
     STEPS_PROVED_BY_A_SAVED_LOAD,
 )
 from bi.data_access import (
@@ -57,6 +82,7 @@ from bi.data_access import (
     get_secret,
     parse_run_start,
     read_download_manifest,
+    read_flow_facts,
     read_indicator,
     read_indicator_for_key,
     read_latest_run,
@@ -67,6 +93,7 @@ from bi.data_access import (
     read_price_alerts,
     to_chile_time,
 )
+from bi.i18n import tr
 from etl import etl
 
 # region Constants
@@ -194,6 +221,12 @@ QUALITY_THEME = "Calidad de datos"
 
 
 LIMIT_NO_DATA = "Sin dato no significa precio cero: esa región, canal o semana no se informó."
+
+
+STACK_VIEWS = ["Herramientas", "Flujo del sistema en vivo"]
+
+
+STACK_VIEW_KEY = "stack_view"
 # endregion
 
 
@@ -692,6 +725,115 @@ def show_architecture_page(mode):
         )
 
 
+@st.cache_data(show_spinner=False)
+def read_stack_figures(database_version):
+    """The three figures of «Stack y evidencia», once per database."""
+    return stack_page.read_figures()
+
+
+def flow_fetch(read_token):
+    """D-412: the weekly workflow's latest runs and the steps of the one to show (in progress, or the latest that
+    ended), with the read-only token only (D-397) or none. Three GETs; an error is a sentence, never a crash."""
+    try:
+        runs = github_actions.list_runs("semanal.yml", read_token or None, 5)
+        shown = next(
+            (run for run in runs if run["state"] == control.RUN_IN_PROGRESS),
+            next((run for run in runs if run["state"] != control.RUN_IN_PROGRESS), None),
+        )
+        steps = run_monitor.read_steps(run_monitor.fetch_run(shown["id"], read_token or None)["jobs"]) if shown else []
+        return runs, steps, None
+    except Exception as error:  # GitHub unreachable or the request limit spent: the diagram stays, without state
+        return [], [], control.describe_github_error(error)
+
+
+# D-483: each cached answer is kept per language, because a failure is kept as a sentence in the visitor's language
+@st.cache_data(ttl=30, show_spinner=False)
+def read_flow_live(_read_token, language=None):
+    """While a run goes on: asked again every 30 s."""
+    return flow_fetch(_read_token)
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def read_flow_with_token(_read_token, language=None):
+    return flow_fetch(_read_token)
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def read_flow_without_token(_read_token, language=None):
+    """Without a token GitHub allows 60 requests an hour, shared: the answer is kept ten minutes."""
+    return flow_fetch(_read_token)
+
+
+def read_flow_model():
+    """The model of the live flow: the slow answer first; while a run goes on, the 30-second one."""
+    read_token = get_secret(SECRET_READ_TOKEN)
+    language = i18n.get_language()
+    runs, steps, error = (read_flow_with_token if read_token else read_flow_without_token)(read_token, language)
+    if runs and runs[0]["state"] == control.RUN_IN_PROGRESS:
+        runs, steps, error = read_flow_live(read_token, language)
+    facts = read_flow_facts(get_database_version(), i18n.get_language())
+    model = live_flow.build_model(runs, steps, facts)
+    if not is_author():  # D-500: the link to the run opens the author's repository
+        model["run_url"] = None
+    return model, error
+
+
+def show_live_flow(mode):
+    """«Flujo del sistema en vivo» (D-412), for every view: the real architecture with the latest real run; while a run
+    goes on it follows its step, asking again every 30 s. Only the author gets the way to the logs."""
+    model, error = read_flow_model()
+    st.markdown(
+        '<span class="fit-flujo" aria-hidden="true"></span><style>'
+        '[data-testid="stElementContainer"]:has(.fit-flujo) + [data-testid="stElementContainer"],'
+        '[data-testid="stElementContainer"]:has(.fit-flujo) + [data-testid="stElementContainer"] iframe '
+        "{height:max(calc(100vh - 330px), 380px) !important; flex:none !important; min-height:0 !important;}"
+        "</style>",
+        unsafe_allow_html=True,
+    )
+    st.iframe(live_flow.build_html(charts.get_palette(mode), model), height=600)
+    notes = [error] if error else []
+    if st.session_state.get(ADMIN_UNLOCKED):  # D-412: the logs are the author's, in «GitHub Actions»
+        notes.append(tr("Los logs de cada paso están en «GitHub Actions», solo para el autor."))
+    if notes:
+        st.caption(" · ".join(notes))
+
+
+def show_stack_page(mode):
+    """«Stack y evidencia» (D-211, D-266): the stack as an architecture diagram; each tool explains itself and
+    opens the page where it works. D-412: its second view is the live flow of the whole system."""
+    view_holder = {}
+
+    def choose_view():
+        view_holder["view"] = (
+            st.segmented_control(
+                tr("Vista"),
+                STACK_VIEWS,
+                default=STACK_VIEWS[0],
+                format_func=tr,
+                key=STACK_VIEW_KEY,
+                label_visibility="collapsed",
+            )
+            or STACK_VIEWS[0]
+        )
+
+    show_page_bar(
+        PAGE_STACK,
+        PAGE_STACK,
+        "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.",
+        side=choose_view,
+        live="weekly_price, dbt_node y etl_run se cuentan en la Base DuckDB al abrir la página; las pruebas de pytest, en "
+        "la carpeta tests/.",
+    )  # D-398: «Mapa de la app» is the next line of the menu, not a link of the header
+    if view_holder.get("view") == STACK_VIEWS[1]:
+        model_running = read_flow_model()[0]["mode"] == "live"
+        st.fragment(show_live_flow, run_every=30 if model_running else None)(mode)
+        return
+    addresses = {page: build_page_address(page) for *_, page in stack_page.STACK}
+    st.html(
+        stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()), addresses)
+    )
+
+
 # endregion
 
 
@@ -1082,6 +1224,61 @@ def show_kpi_page(mode):
         unsafe_allow_html=True,
     )
     show_kpi_tab(mode)
+
+
+# endregion
+
+
+# region «Reglas de transformación»
+def show_rules_page(mode):
+    """«Reglas de transformación» (D-523): what the pipeline does to the data and why, each rule with the problem of the
+    source it solves and what would happen without it. It runs in the browser, in its own frame, as «Cambios e
+    incidentes»; only the Autor gets the code as links to the repository (D-500)."""
+    show_page_bar(
+        PAGE_RULES,
+        PAGE_RULES,
+        "Qué le hacemos a los datos de ODEPA y del INE, y por qué: cada regla con el problema que resuelve y lo que "
+        "pasaría sin ella.",
+    )
+    st.markdown(
+        '<style>.st-key-rules_frame, .st-key-rules_frame [data-testid="stElementContainer"], .st-key-rules_frame iframe '
+        '{ height:max(calc(100vh - 218px), 480px) !important; }</style>',
+        unsafe_allow_html=True,
+    )
+    with st.container(key="rules_frame"):
+        st.iframe(
+            transformation_rules.build_page_html(charts.get_palette(mode), i18n.get_language(), is_author()),
+            height=480,
+        )
+
+
+# endregion
+
+
+# region «Mapa de la app»
+@st.cache_data(show_spinner=False)
+def read_app_map_facts(database_version):
+    """D-441: what the map reads from the system, once per database: the dbt models and tests, the loads, the served
+    tables, the manifest, the workflows, the requirements and the goals; and from the panel itself, its menu and the tabs
+    of the Operations center, so the map never repeats them by hand."""
+    menu = [
+        (title, [SIDEBAR_LABELS.get(page, page) for page in pages])
+        for _, title, pages in MENU_BLOCKS
+        if pages is not SOURCE_LINKS
+    ]
+    return app_map_detail.read_facts(queries.DATABASE_FILE, menu=menu, runs_tabs=list(RUNS_TABS))
+
+
+def show_app_map_page(mode):
+    """«Mapa de la app» (D-285): the whole system in one view; the stack is its summary."""
+    show_page_bar(
+        PAGE_APP_MAP,
+        PAGE_APP_MAP,
+        "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y con qué se conecta.",
+    )
+    addresses = {node[7]: build_page_address(node[7]) for node in app_map.NODES.values()}
+    facts = read_app_map_facts(get_database_version())
+    st.html(app_map.build_map_html(charts.get_palette(mode), addresses, facts), unsafe_allow_javascript=True)
 
 
 # endregion

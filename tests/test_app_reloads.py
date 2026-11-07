@@ -145,3 +145,19 @@ def test_d454_a_session_the_server_forgot_reads_the_kept_view_again():
     assert "const lost = !(data && data.perfil);" in script
     assert "const raw = window.__goKeptRead && !lost ? null : store.getItem(KEY);" in script
     assert "<" not in script.replace("=>", "")  # still a script with no HTML in it (st.html, D-173)
+
+
+def test_d541_a_changed_module_reloads_with_every_module_that_imports_it_dependencies_first():
+    imports = {
+        "bi.constants": set(),
+        "bi.app_frame": {"bi.constants"},
+        "bi.page_weekly": {"bi.app_frame", "bi.constants"},
+        "bi.page_documents": {"bi.page_weekly", "bi.app_frame"},
+        "bi.charts": set(),
+    }
+    order = dashboard.order_reloads(["bi.app_frame"], imports)
+    assert order == ["bi.app_frame", "bi.page_weekly", "bi.page_documents"]  # charts and constants did not change
+    assert dashboard.order_reloads(["bi.constants"], imports)[0] == "bi.constants"
+    assert dashboard.order_reloads(["bi.charts"], imports) == ["bi.charts"]
+    # the real modules: the frame's dependents are found in their sources
+    assert "bi.app_frame" in dashboard.read_bi_imports(ROOT / "bi" / "page_weekly.py")

@@ -1091,7 +1091,7 @@ LINK_EVIDENCE = {
     ("monitoring", "semanal"): ("bi/control.py", "/jobs"),
     ("monitoring", "duckdb"): ("etl/pipeline.py", "etl_run"),
     ("measurement", "streamlit"): ("tests/medicion/medir.cjs", "1440"),
-    ("docs", "streamlit"): ("bi/dashboard.py", "PROJECT_DOCUMENTS = {"),
+    ("docs", "streamlit"): ("bi/page_documents.py", "PROJECT_DOCUMENTS = {"),
     ("ai", "docs"): ("CLAUDE.md", "docs/"),
 }
 # D-441: who owns what, as boxes behind the nodes: (owner, grid rows, grid columns, label). Solid for what the project

@@ -11,20 +11,28 @@ import streamlit as st
 
 from bi import (
     charts,
+    compact_table,
     control_catalog,
+    git_workflow,
     i18n,
     lineage,
+    project,
     quality,
     quality_evidence,
     quality_live,
+    quality_method,
+    quality_metrics,
     quality_view,
+    quality_viewer,
     queries,
     weeks,
 )
 from bi.app_frame import (
     build_external_link_html,
     build_info_card_html,
+    get_profile,
     is_author,
+    keep_context,
     open_card,
     show_chart,
     show_info_cards,
@@ -33,14 +41,24 @@ from bi.app_frame import (
     show_view_tabs,
 )
 from bi.constants import (
+    ADMIN_UNLOCKED,
+    ALL_VALUES,
     FLAG_NAMES,
+    GIT_TAB_LOG,
+    GIT_TAB_PARAMETER,
     MANIFEST_FILE,
+    PAGE_GIT,
+    PAGE_METHOD,
     PAGE_OPERATIONS,
     QUALITY_VIEW_KEY,
     REASON_NAMES,
     REASON_TEXTS,
     REJECTED_ROW_LABELS,
+    REPORT_PARAMETER,
     SOURCE_NAMES,
+    VIEW_PARAMETER,
+    WINDOW_OF_VIEW,
+    WINDOW_PAGES,
 )
 from bi.data_access import (
     format_chile_time,
@@ -53,6 +71,7 @@ from bi.data_access import (
     read_match_coverage,
     to_chile_time,
 )
+from bi.i18n import tr
 from etl import etl
 
 # region Constants
@@ -494,6 +513,200 @@ def show_operations_page(mode):
                 results=results,
                 evidence=evidence,
             ),
+        )
+
+
+# endregion
+
+
+# region «Plan de calidad»
+def filter_reports(reports, year, month, week, query):
+    """The reports the filters of «Informes» leave (D-333): by year, month and data week, and a search over the number,
+    the date and the evaluated code."""
+    query = query.strip().lower()
+    number = None
+    for prefix in ("n°", "nº", "no.", "#"):
+        if query.startswith(prefix) and query[len(prefix) :].strip().isdigit():
+            number = int(query[len(prefix) :].strip())  # «N° 2» is report 2, not any «2»
+    kept = []
+    for report in reports:
+        date = str(report["fecha"])
+        if year != ALL_VALUES and date[:4] != year:
+            continue
+        if month != ALL_VALUES and date[5:7] != month:
+            continue
+        if week != ALL_VALUES and str(report["semana"]) != week:
+            continue
+        week_text = weeks.week_range(report["semana"], year=True) if report["semana"] else ""
+        haystack = f"{report['numero']} {date} {report['codigo_evaluado']} {report['semana']} {week_text}".lower()
+        if number is not None and report["numero"] != number:
+            continue
+        if number is None and query and query not in haystack:
+            continue
+        kept.append(report)
+    return kept
+
+
+@st.dialog("Informe de calidad", width="large")
+def show_quality_report_dialog(ref):
+    """One numbered report as slides (D-333): its own document, so the keyboard, full screen and the PDF work. D-431:
+    «ref» is «7» for the weekly series or «C7» for the construction one; the viewer reads only that series."""
+    found = quality_metrics.find_report(ref)
+    if not found:
+        st.warning(tr("Ese informe no existe."))
+        return
+    reports, number = found
+    _, goals, policy = quality_method.read_page()
+    nonconformities = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json").get("registros", [])
+    incidents = quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json").get("registros", [])
+    st.iframe(
+        quality_viewer.build_viewer_html(
+            reports,
+            number,
+            goals,
+            policy,
+            nonconformities,
+            incidents,
+            i18n.is_english(),
+            project.build_github_url(
+                i18n.document_path("PLAN_DE_CALIDAD.md").relative_to(project.PROJECT_DIR).as_posix()
+            )
+            if is_author()  # D-500
+            else "",
+        ),
+        height=700,
+    )
+
+
+def show_method_page(mode):
+    """«Plan de calidad» (D-320, D-323, D-330, D-332, D-333): how the quality of the published data and of the code is
+    managed. Two tabs: «Resumen» (each indicator against its acceptable) and «Informes» (the numbered reports)."""
+    reports, goals, policy = quality_method.read_page()
+    latest = reports[-1] if reports else None
+    show_page_bar(
+        PAGE_METHOD,
+        PAGE_METHOD,
+        "Qué medimos de los datos que publicamos y del código que los trata, contra qué aceptable, y cómo vamos.",
+    )
+    st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+    st.markdown(quality_method.build_header(latest), unsafe_allow_html=True)
+    asked = st.query_params.get(REPORT_PARAMETER)
+    # D-432: only once the view is back (D-430): the first run of a reload has none yet, and its rerun would close it.
+    if asked and get_profile():
+        # A report named in the address (its number or its PDF icon in «Informes») opens once.
+        del st.query_params[REPORT_PARAMETER]
+        if quality_metrics.find_report(asked):
+            show_quality_report_dialog(asked)
+    summary, history = st.tabs([tr("Resumen"), tr("Informes")])
+    with summary:
+        st.markdown(
+            quality_method.build_overview(latest, goals, policy, git_workflow.read_failures()), unsafe_allow_html=True
+        )
+        git_page = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_GIT])  # absent when a test draws this page alone
+        if git_page:
+            st.page_link(
+                git_page,
+                label=tr("Ver registro completo"),
+                icon=":material/arrow_forward:",
+                query_params=keep_context() | {VIEW_PARAMETER: PAGE_GIT, GIT_TAB_PARAMETER: GIT_TAB_LOG},
+            )
+        if latest and st.button(
+            tr("Abrir el último informe"), icon=":material/description:", key="quality_latest_report"
+        ):
+            show_quality_report_dialog(quality_metrics.report_ref(latest))
+    with history:
+        # D-431: one series at a time, the weekly first; the construction series (C-1 to C-7) stays readable
+        series = [
+            name
+            for name in (quality_metrics.SERIES_WEEKLY, quality_metrics.SERIES_BUILD)
+            if quality_metrics.read_series(name)
+        ]
+        if len(series) > 1:
+            chosen = st.segmented_control(
+                tr("Serie"),
+                series,
+                default=series[0],
+                key="quality_series",
+                format_func=lambda name: (
+                    tr("Semanal") if name == quality_metrics.SERIES_WEEKLY else tr("Construcción (C-1 a C-7)")
+                ),
+            )
+            reports = quality_metrics.read_series(chosen or series[0])
+        years = [ALL_VALUES] + sorted({str(item["fecha"])[:4] for item in reports}, reverse=True)
+        months = [ALL_VALUES] + sorted({str(item["fecha"])[5:7] for item in reports}, reverse=True)
+        data_weeks = [ALL_VALUES] + sorted({str(item["semana"]) for item in reports if item["semana"]}, reverse=True)
+        with st.container(horizontal=True, vertical_alignment="bottom", key="quality_filters"):
+            year = st.selectbox(tr("Año"), years, key="quality_year", format_func=lambda value: tr(value))
+            month = st.selectbox(tr("Mes"), months, key="quality_month", format_func=lambda value: tr(value))
+            week = st.selectbox(
+                tr("Semana de datos"),
+                data_weeks,
+                key="quality_week",
+                format_func=lambda value: tr(value) if value == ALL_VALUES else i18n.tr_week(value, year=True),
+            )
+            query = st.text_input(
+                tr("Buscar"),
+                key="quality_search",
+                placeholder=tr("N°, fecha o código"),
+                icon=":material/search:",
+            )
+        shown = filter_reports(reports, year, month, week, query)
+        st.markdown(compact_table.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+        if not shown:
+            st.caption(tr("Ningún informe coincide."))
+        else:
+
+            def open_report_button(report):
+                if st.button(
+                    tr("Abrir el informe o su PDF"),
+                    key=f"cr_reports_open_{quality_metrics.report_ref(report)}",
+                    icon=":material/description:",
+                ):
+                    show_quality_report_dialog(quality_metrics.report_ref(report))
+
+            compact_table.show_compact_rows(
+                "cr_reports",
+                sorted(shown, key=lambda item: -item["numero"]),
+                quality_method.report_summary,
+                lambda report: quality_method.build_report_detail(report, reports),
+                signature=f"{reports[0].get('serie') if reports else ''}|{year}|{month}|{week}|{query}",
+                after_detail=open_report_button,
+            )
+
+
+# endregion
+
+
+# region «Cambios e incidentes»
+def show_git_page(mode):
+    """«Cambios e incidentes» (D-344): the map of the 15 stations from an idea to a live deployment, and the incident log.
+    The professional and the author read it; the diagnoses of the log are the author's (D-345)."""
+    author = bool(st.session_state.get(ADMIN_UNLOCKED))
+    show_page_bar(
+        PAGE_GIT,
+        PAGE_GIT,
+        "Cómo viaja un cambio desde la idea hasta el despliegue, y las fallas que han ocurrido en el camino.",
+    )
+    flow, log = st.tabs(
+        [tr("Mapa"), tr("Registro de incidentes")],
+        default=tr("Registro de incidentes") if st.query_params.get(GIT_TAB_PARAMETER) == GIT_TAB_LOG else None,
+    )
+    with flow:
+        st.iframe(git_workflow.build_map_html(charts.get_palette(mode), i18n.get_language(), author), height="content")
+    with log:
+        language = i18n.get_language()
+        states = [ALL_VALUES, "abierta", "resuelta"]
+        state = st.selectbox(tr("Estado"), states, key="incident_state", format_func=lambda value: tr(value), width=220)
+        shown = [row for row in git_workflow.read_failures() if state == ALL_VALUES or row["estado"] == state]
+        st.markdown(compact_table.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+        if not shown:
+            st.caption(tr("Todavía no hay fallas registradas."))
+        compact_table.show_compact_rows(
+            "cr_incidents",
+            shown,
+            lambda row: git_workflow.log_summary(row, language),
+            lambda row: git_workflow.log_detail(row, language, author),
+            signature=state,
         )
 
 

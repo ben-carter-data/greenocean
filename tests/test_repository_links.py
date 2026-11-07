@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from bi import constants, dashboard, live_flow, project, queries
+from bi import constants, dashboard, live_flow, page_engineering, project, queries
 from tests import i18n_audit
 
 DASHBOARD_FILE = str(Path(__file__).resolve().parents[1] / "bi" / "dashboard.py")
@@ -105,14 +105,15 @@ def test_d500_a_link_in_a_document_reads_as_plain_text(monkeypatch):
 
 def test_d500_the_live_flow_gives_the_link_of_the_run_only_to_the_autor(monkeypatch):
     run = {"url": f"{project.GITHUB_URL}/actions/runs/1", "state": "completed"}
-    monkeypatch.setattr(dashboard, "get_secret", lambda name: "")
-    monkeypatch.setattr(dashboard, "read_flow_without_token", lambda *_: ([run], [], ""))
-    monkeypatch.setattr(dashboard, "read_flow_facts", lambda *_: {})
+    # D-541: the live flow is read in bi/page_engineering.py, so its stand-ins go there
+    monkeypatch.setattr(page_engineering, "get_secret", lambda name: "")
+    monkeypatch.setattr(page_engineering, "read_flow_without_token", lambda *_: ([run], [], ""))
+    monkeypatch.setattr(page_engineering, "read_flow_facts", lambda *_: {})
     monkeypatch.setattr(live_flow, "build_model", lambda *_: {"run_url": run["url"]})
     monkeypatch.setattr(dashboard.st, "session_state", {})
-    assert dashboard.read_flow_model()[0]["run_url"] is None
+    assert page_engineering.read_flow_model()[0]["run_url"] is None
     monkeypatch.setattr(dashboard.st, "session_state", {constants.ADMIN_UNLOCKED: True})
-    assert dashboard.read_flow_model()[0]["run_url"] == run["url"]
+    assert page_engineering.read_flow_model()[0]["run_url"] == run["url"]
 
 
 def test_d500_only_the_autor_gets_a_link_from_the_shared_builder(monkeypatch):

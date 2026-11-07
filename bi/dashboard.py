@@ -1,23 +1,28 @@
-"""Streamlit dashboard for the price monitor.
+"""GreenOcean's panel: its entry point, its navigation and its menu.
 
 Run it with:  streamlit run bi/dashboard.py
 
-It reads etl/datos.db through the named queries of bi/queries.sql, and the
-state of the weekly pipeline through the GitHub API (bi/control.py).
-Texts shown to the user are in Spanish; code and comments are in English.
-The color modes and chart palettes live in bi/charts.py.
+Streamlit runs this file on every visit and every click. It keeps what decides which page to show: the windows and
+pages of the menu, the footers that lead from one page to the next, the history of «Volver», the menu with its
+activity bar, and main(). The rest of the panel lives in the modules it imports (D-541):
+
+- bi/constants.py: the fixed names. bi/data_access.py: what is read from the Base DuckDB and from GitHub.
+- bi/app_style.py: the global stylesheets. bi/app_frame.py: theme, profile, the Autor's access, header, shared parts.
+- bi/page_weekly.py, page_analysis.py, page_engineering.py, page_quality.py, page_devops.py, page_documents.py:
+  the pages, each family in its own file.
+
+Texts shown to the reader are in Spanish (bi/i18n.py gives their English); code and comments are in English.
 """
 
+import ast
 import base64
 import hashlib
 import html
 import importlib
 import json
 import os
-import re
 import sys
 from pathlib import Path
-from urllib.parse import parse_qs, urlencode
 
 import streamlit as st
 
@@ -28,40 +33,40 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (
     activity_bar,
-    compact_table,
-    git_workflow,
-    github_actions,
-    run_monitor,
-    app_map,
-    app_map_detail,
     overview,  # noqa: F401  read by the tests through this module
-    quality_method,
-    quality_metrics,
-    quality_viewer,
-    architecture,
+    architecture,  # noqa: F401  read by the tests through this module
     buttons,
-    charts,
-    control,
-    documents_folder,
+    charts,  # noqa: F401  read by the tests through this module
     i18n,
-    source_study,
-    weeks,
-    doc_diagrams,
-    github_page,
+    doc_diagrams,  # noqa: F401  read by the tests through this module
     lineage,
-    live_flow,
     sql_explorer,
-    transformation_rules,
-    stack_page,
-    project,
+    project,  # noqa: F401  read by the tests through this module
     queries,
-    zoom,
 )
 from etl import etl  # noqa: E402, F401  read by the tests through this module
+from bi.page_documents import (  # noqa: E402
+    show_documents_folder,
+    show_project_document,
+    show_source_study,
+    build_github_icon_svg,
+    show_links_page,
+    PROJECT_DOCUMENTS,  # noqa: F401  read by the tests through this module
+    FOLDER_VIEW_KEY,  # noqa: F401  read by the tests through this module
+    PRINT_DOCUMENT_CSS,  # noqa: F401  read by the tests through this module
+    PRINT_THEME,  # noqa: F401  read by the tests through this module
+    PRINT_BUTTON_HTML,  # noqa: F401  read by the tests through this module
+    AUTO_PRINT_SCRIPT,  # noqa: F401  read by the tests through this module
+    build_print_address,  # noqa: F401  read by the tests through this module
+    read_folder_files,  # noqa: F401  read by the tests through this module
+    heading_anchor,  # noqa: F401  read by the tests through this module
+    link_document_views,  # noqa: F401  read by the tests through this module
+    build_print_button_html,  # noqa: F401  read by the tests through this module
+)
 from bi.page_devops import (  # noqa: E402
+    RUNS_VIEWS,  # noqa: F401  read by the tests through this module
     show_run_indicator,
     reopen_run_window,
-    RUNS_VIEWS,
     show_runs_page,
     show_actions_page,
     show_configuration_page,
@@ -142,12 +147,20 @@ from bi.page_engineering import (  # noqa: E402
     build_kpi_path_html,  # noqa: F401  read by the tests through this module
     build_kpi_impact_html,  # noqa: F401  read by the tests through this module
     show_kpi_tab,  # noqa: F401  read by the tests through this module
+    show_stack_page,
+    show_rules_page,
+    show_app_map_page,
+    read_flow_model,  # noqa: F401  read by the tests through this module
 )
 from bi.page_quality import (  # noqa: E402
     show_operations_page,
     QUALITY_OPEN_KEY,  # noqa: F401  read by the tests through this module
     build_rejected_rows_table,  # noqa: F401  read by the tests through this module
     show_quality_tab,  # noqa: F401  read by the tests through this module
+    show_method_page,
+    show_git_page,
+    filter_reports,  # noqa: F401  read by the tests through this module
+    show_quality_report_dialog,  # noqa: F401  read by the tests through this module
 )
 from bi.app_frame import (  # noqa: E402
     CHANGE_VIEW,
@@ -197,11 +210,10 @@ from bi.app_frame import (  # noqa: E402
     build_hint_icon,  # noqa: F401  read by the tests through this module
     build_kpi_link,  # noqa: F401  read by the tests through this module
     show_page_bar,
-    show_compact_page_header,
     build_external_link_html,  # noqa: F401  read by the tests through this module
-    build_repository_link_html,
-    find_menu_page,
-    is_dark_theme,
+    build_repository_link_html,  # noqa: F401  read by the tests through this module
+    find_menu_page,  # noqa: F401  read by the tests through this module
+    is_dark_theme,  # noqa: F401  read by the tests through this module
     describe_state_source,  # noqa: F401  read by the tests through this module
     describe_late_sources,  # noqa: F401  read by the tests through this module
     show_attribution,
@@ -229,11 +241,10 @@ from bi.data_access import (  # noqa: E402
     NATIONAL_KEY,  # noqa: F401  read by the tests through this module
     read_channel_national_prices,  # noqa: F401  read by the tests through this module
     describe_product,  # noqa: F401  read by the tests through this module
-    get_secret,
+    get_secret,  # noqa: F401  read by the tests through this module
     get_last_github_answers,  # noqa: F401  read by the tests through this module
     fetch_pipeline_runs,  # noqa: F401  read by the tests through this module
     read_lineage,
-    read_flow_facts,
 )
 from bi.constants import (  # noqa: E402  D-541: the fixed names live in bi/constants.py
     PAGE_HOME,
@@ -275,8 +286,6 @@ from bi.constants import (  # noqa: E402  D-541: the fixed names live in bi/cons
     PAGE_SOURCE_STUDY,
     PAGE_APP_MAP,
     PAGE_METHOD,
-    GIT_TAB_PARAMETER,
-    GIT_TAB_LOG,
     BA_TAB_PARAMETER,
     PAGE_GIT,
     PAGE_DECISION_INDEX,
@@ -297,7 +306,7 @@ from bi.constants import (  # noqa: E402  D-541: the fixed names live in bi/cons
     WINDOW_OF_VIEW,
     VIEW_PARAMETER,
     COMPACT_VIEW,
-    ALL_VALUES,
+    ALL_VALUES,  # noqa: F401  read by the tests through this module
     PAGES,  # noqa: F401  read by the tests through this module
     HOME_PAGE,  # noqa: F401  read by the tests through this module
     PAGE_ICONS,
@@ -323,8 +332,7 @@ from bi.constants import (  # noqa: E402  D-541: the fixed names live in bi/cons
     ROLES,  # noqa: F401  read by the tests through this module
     ROLE_ORDER,  # noqa: F401  read by the tests through this module
     UNSPECIFIED,  # noqa: F401  read by the tests through this module
-    SECRET_READ_TOKEN,
-    REPORT_PARAMETER,
+    REPORT_PARAMETER,  # noqa: F401  read by the tests through this module
     REASON_TEXTS,  # noqa: F401  read by the tests through this module
     DROP_LEVELS,  # noqa: F401  read by the tests through this module
     RISE,  # noqa: F401  read by the tests through this module
@@ -337,8 +345,8 @@ from bi.constants import (  # noqa: E402  D-541: the fixed names live in bi/cons
     HOME_LINK_PARAMETERS,  # noqa: F401  read by the tests through this module
     HOME_REGION_DONE,  # noqa: F401  read by the tests through this module
     HOME_FAMILY_DONE,  # noqa: F401  read by the tests through this module
-    ADMIN_UNLOCKED,
-    FOLDER_DOCUMENTS,
+    ADMIN_UNLOCKED,  # noqa: F401  read by the tests through this module
+    FOLDER_DOCUMENTS,  # noqa: F401  read by the tests through this module
     FOLDER_ORDER,
     FOLDER_ANNEXES,
     FOLDER_SHOWN,
@@ -366,791 +374,7 @@ tr = i18n.tr
 # endregion
 
 
-# region Style
-
-
-# endregion
-
-
-# region Text sections
-
-
-# endregion
-
-
-# region Project page
-
-
-# region «Código y resultados» (C03)
-
-
-# endregion
-
-
-# region Report filters and cross filtering (D-069)
-
-
-# endregion
-
-
-# endregion
-
-
-# region Alerts page
-
-
-# region Contexto del precio (D-094)
-
-
-# endregion
-
-
-# region Control center page
-
-
-# endregion
-
-
-# region Architecture page
-
-
-# endregion
-
-
-# region Data quality page
-
-
-# endregion
-
-
-# region Links page
-def build_github_icon_svg(size=22):
-    return (
-        f'<svg viewBox="0 0 24 24" width="{size}" height="{size}" fill="currentColor" '
-        f'aria-hidden="true">{architecture.brand_icons.logo_body("github")}</svg>'
-    )
-
-
-def show_links_page(mode):
-    """The repository is the single destination for commits, executions and full
-    documents (D-106): one hero with the repository, then its three uses —
-    automatización, trazabilidad, documentación — each item opening GitHub in a new
-    tab (D-116) with its own copy button. ODEPA and the INE live in «Fuentes» (D-118). D-500: only for the Autor."""
-    if not is_author():
-        st.info(tr(NO_ACCESS), icon=":material/lock:")
-        return
-    # Our own trusted markup, in its own frame: st.html sanitises the SVG gradients,
-    # filters and buttons the page is made of.
-    st.iframe(
-        '<!doctype html><html lang="es"><head><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
-        '<body style="margin:0;background:transparent">'
-        + github_page.build_github_page_html(mode)
-        + github_page.GITHUB_PAGE_SCRIPT
-        + '</body></html>',
-        height="content",
-    )
-
-
-# endregion
-
-
-# region Project documents (D-151)
-PROJECT_DOCUMENTS = {
-    PAGE_PRD: ("PRD.md", "Qué resuelve el producto, para quién y con qué requisitos."),
-    PAGE_CLOSURE: ("ACTA_DE_CIERRE.md", "Cómo empezó el proyecto, qué se aprendió y a quién sirve."),
-    PAGE_SAD: ("SAD.md", "Cómo está construido, cómo corre cada semana, dónde viven sus datos y cómo puede crecer."),
-    PAGE_ADR: ("ADR.md", "Las decisiones de arquitectura que más pesan: contexto, decisión, opciones y consecuencias."),
-    PAGE_MANUAL: ("MANUAL.md", "Cómo operar el proyecto y resolver sus fallas."),
-    PAGE_DECISION_INDEX: (
-        "INDICE_DECISIONES.md",
-        "Las decisiones que cambian la arquitectura, los datos, la seguridad o la operación, por tema.",
-    ),
-    PAGE_TEST_PLAN: (
-        "PLAN_PRUEBAS.md",
-        "Qué se prueba, quién participa en la seguridad y con qué criterios se acepta un cambio.",
-    ),
-    PAGE_GLOSSARY: ("GLOSARIO.md", "Las siglas y los términos del panel y de los documentos."),
-    PAGE_QUALITY_PLAN: (
-        "PLAN_DE_CALIDAD.md",
-        "Qué calidad cuida el proyecto, cómo la mide, quién decide y qué pasa cuando algo falla.",
-    ),
-}
-FOLDER_VIEW_KEY = "folder_view"
-DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
-# D-247: a document points to the page of the panel where a view lives, instead of copying it: [[vista:Modelo de datos]].
-DOCUMENT_VIEW = re.compile(r"\[\[vista:([^\]]+)\]\]")
-
-
-def build_print_address(page):
-    """The address that opens a document and prints it (D-248), on a white sheet from any theme (D-280)."""
-    path, _, query = build_page_address(page).partition("?")
-    parameters = {key: values[0] for key, values in parse_qs(query).items()}
-    reader = get_mode()
-    parameters.update({THEME_PARAMETER: PRINT_THEME if is_dark_theme(reader) else reader, PRINT_PARAMETER: reader})
-    return f"{path}?{urlencode(parameters)}"
-
-
-def read_folder_files():
-    """Every main document of the folder as the folder shows it, read from its file; the annexes are left out (D-536)."""
-    files = []
-    for page, family in FOLDER_DOCUMENTS:
-        if page in FOLDER_ANNEXES:
-            continue
-        path = i18n.document_path(PROJECT_DOCUMENTS[page][0])
-        files.append(
-            documents_folder.describe(path.read_text(encoding="utf-8"))
-            | {
-                "page": page,
-                "family": family,
-                "open": build_page_address(page),
-                "pdf": build_print_address(page),
-                # D-500: only the Autor gets the link to the file in the repository
-                "github": project.build_github_url(path.relative_to(project.PROJECT_DIR).as_posix())
-                if is_author()
-                else "",
-            }
-        )
-    return files
-
-
-def show_documents_folder(mode):
-    """«Documentos del proyecto» (D-282, D-533): the folder of docs/, as files in a grid or a list."""
-    files = read_folder_files()
-    # D-288: the folder opens as a list, like a file explorer in detail view.
-    st.session_state.setdefault(FOLDER_VIEW_KEY, documents_folder.VIEW_LIST)
-    show_page_bar(
-        PAGE_FOLDER,
-        PAGE_FOLDER,
-        "Los documentos del proyecto, leídos de docs/: cada uno se abre aquí, se imprime como PDF o se lee en GitHub.",
-        side=lambda: st.segmented_control(
-            tr("Vista de la carpeta"),
-            [documents_folder.VIEW_GRID, documents_folder.VIEW_LIST],
-            format_func=tr,
-            key=FOLDER_VIEW_KEY,
-            label_visibility="collapsed",
-            width="content",
-        ),
-    )
-    st.markdown(documents_folder.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    view = st.session_state.get(FOLDER_VIEW_KEY) or documents_folder.VIEW_LIST
-    st.markdown(documents_folder.build_folder_html(files, view), unsafe_allow_html=True)
-
-
-def show_source_study(mode):
-    """«Análisis de la fuente de datos» (D-533): the notebook that studies ODEPA's raw wholesale file. Only the one in the
-    language of the visit is listed (D-535); it opens here, read only, with the outputs its file keeps, and downloads."""
-    files = source_study.read_files()
-    show_page_bar(
-        PAGE_SOURCE_STUDY,
-        PAGE_SOURCE_STUDY,
-        "El estudio del archivo mayorista de ODEPA: cada anomalía encontrada, con su decisión y su solución.",
-    )
-    palette = charts.get_palette(mode)
-    st.markdown(documents_folder.build_css(palette) + source_study.build_css(palette), unsafe_allow_html=True)
-    language = i18n.get_language()
-    opened = next(
-        (
-            file
-            for file in files
-            if file["language"] == language and st.query_params.get(source_study.NOTEBOOK_PARAMETER) == file["language"]
-        ),
-        None,
-    )
-    if opened:
-        show_notebook(opened)
-        return
-    st.markdown(source_study.build_head_html(language), unsafe_allow_html=True)
-    # Only the notebook of the visit's language is listed (D-443, D-535); the head line names the other one.
-    for file in (file for file in files if file["language"] == language):
-        address = build_page_address(PAGE_SOURCE_STUDY) + f"&{source_study.NOTEBOOK_PARAMETER}={file['language']}"
-        with st.container(key=f"notebook_row_{file['language']}", horizontal=True, vertical_alignment="center"):
-            st.markdown(source_study.build_file_html(file, address), unsafe_allow_html=True, width="stretch")
-            show_notebook_download(file)
-
-
-def show_notebook_download(file):
-    st.download_button(
-        tr("Descargar"),
-        file["path"].read_bytes(),
-        file_name=file["file"],
-        mime="application/x-ipynb+json",
-        key=f"notebook_download_{file['language']}",
-        icon=":material/download:",
-        width="content",
-    )
-
-
-def show_notebook(file):
-    """One notebook, read only: its texts, its code and the outputs its file keeps; the panel never runs it."""
-    with st.container(key="notebook_path", horizontal=True, vertical_alignment="center"):
-        st.markdown(
-            source_study.build_path_html(build_page_address(PAGE_SOURCE_STUDY), tr(PAGE_SOURCE_STUDY), file["file"]),
-            unsafe_allow_html=True,
-            width="stretch",
-        )
-        show_notebook_download(file)
-    # The notebook is already in the visit's language: its texts and outputs are drawn verbatim, never translated.
-    for cell in source_study.read_notebook(file["path"])["cells"]:
-        source = source_study.text_of(cell["source"])
-        if cell["cell_type"] == "markdown":
-            st.markdown(i18n.Verbatim(source))
-            continue
-        st.code(source, language="python")
-        outputs = source_study.build_output_html(cell.get("outputs", []))
-        if outputs:
-            st.html(i18n.Verbatim(outputs))
-
-
-def build_folder_path_html(title):
-    """«Documentos / PRD»: the thin path of a document, back to its folder (D-282)."""
-    return (
-        f'<nav class="doc-path" aria-label="{tr("Ruta")}"><a href="{html.escape(build_page_address(PAGE_FOLDER), quote=True)}" '
-        f'target="_self">{tr(PAGE_FOLDER)}</a><i>/</i><span>{html.escape(tr(SIDEBAR_LABELS.get(title, title)))}</span></nav>'
-    )
-
-
-DOCUMENT_LINK = re.compile(r"\]\((?:\.\./[a-z]+/)?([A-Z_]+\.md)(#[^)]*)?\)")  # D-381: «../negocio/PRD.md» too
-HEADING = re.compile(r"^(#{2,4}) (.+)$", re.MULTILINE)
-
-
-def heading_anchor(text):
-    """The anchor GitHub gives a heading, so an index link works the same in GitHub and in the panel (D-279)."""
-    return re.sub(r"[^\w\- ]", "", text.strip().lower()).replace(" ", "-")
-
-
-REPOSITORY_LINK = re.compile(r"\[([^\]]+)\]\(https://github\.com/[^)]*\)")
-
-
-def link_document_views(text):
-    """Each [[vista:…]] of a document as a link to its page in the panel; each link to another document of docs/
-    to that document's page, or to GitHub when it has none; each heading with the anchor its index points to."""
-    text = DOCUMENT_VIEW.sub(
-        lambda match: (
-            f"[{match.group(1)}]({build_page_address(find_menu_page(match.group(1)))})"
-            if find_menu_page(match.group(1))
-            else match.group(1)
-        ),
-        text,
-    )
-    pages = {filename: title for title, (filename, _) in PROJECT_DOCUMENTS.items()}
-
-    def document_address(match):
-        filename, anchor = match.group(1), match.group(2) or ""
-        address = (
-            build_page_address(pages[filename])
-            if filename in pages
-            else project.build_github_url(
-                f"docs/{i18n.DOCUMENT_FOLDERS.get(filename, '')}/{filename}".replace("docs//", "docs/")
-            )
-        )
-        return f"]({address}{anchor})"
-
-    text = DOCUMENT_LINK.sub(document_address, text)
-    if not is_author():  # D-500: for anyone else, a link to GitHub reads as plain text, in every document
-        text = REPOSITORY_LINK.sub(r"\1", text)
-    return HEADING.sub(
-        lambda match: f'<a id="{heading_anchor(match.group(2))}"></a>\n\n{match.group(1)} {match.group(2)}', text
-    )
-
-
-def show_document_diagram(name, mode):
-    """One marker of a document: the document views and the security map in their own frame
-    (hover tips and gradients need it, D-205), the live diagrams inline. D-455: the interest map is drawn inline, with the
-    panel's icon font."""
-    if name in doc_diagrams.INLINE:
-        st.markdown(doc_diagrams.INLINE[name](mode), unsafe_allow_html=True)
-        return
-    st.iframe(doc_diagrams.DOC_DIAGRAMS[name](mode), height=doc_diagrams.HEIGHTS[name])
-
-
-# D-248: the downloadable document is the page itself, printed by the browser: the same text, diagrams and order.
-# Only the document pages carry this stylesheet; it hides the menu and the navigation and lets the page run on.
-PRINT_DOCUMENT_CSS = """<style>
-@media print {
-  /* D-358: every sheet says its number, and the cover has a sheet of its own. */
-  @page { size: A4; margin: 12mm 12mm 16mm;
-    @bottom-center { content: "__PAGE__ " counter(page) " __OF__ " counter(pages); font: 9pt -apple-system, "Segoe UI", sans-serif; color: #5f6b7c; } }
-  .doc-cover { break-after: page; }
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
-  .st-key-app_header, .st-key-doc_actions, .st-key-compact_footer, .st-key-route_footer, .doc-path,
-  [data-testid="stElementContainer"]:has(.page-lineage), [data-testid="stCaptionContainer"],
-  hr { display: none !important; }
-  html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"] {
-    height: auto !important; min-height: 0 !important; overflow: visible !important; position: static !important; }
-  /* The page is laid out at its screen width and scaled to the sheet, so the paper shows the same lines as the screen. */
-  [data-testid="stMainBlockContainer"] { padding: 0 !important; max-width: none !important; zoom: 0.86; }
-  .st-key-project_document { max-width: none !important; margin: 0 !important; box-shadow: none !important;
-    padding: 40px 50px 44px !important; }
-  [data-testid="stIFrame"], figure, tr { break-inside: avoid; }
-  thead { display: table-header-group; }
-  h2, h3 { break-after: avoid; }
-}
-</style>"""
-# D-280: the PDF is always a white sheet. From a dark theme the button reopens the page in the light theme with
-# «imprimir=<theme>», which prints it and comes back to the reader's theme.
-PRINT_PARAMETER = "imprimir"
-PRINT_THEME = charts.MODE_CORPORATE
-PRINT_BUTTON_HTML = (
-    buttons.build_button_html("Imprimir o guardar como PDF", icon="print", variant="primary", extra="doc-print")
-    + r"""
-<script>
-document.querySelectorAll(".doc-print").forEach((button) => { button.onclick = () => {
-  const light = "__LIGHT__";
-  if (!light) { window.print(); return; }
-  const url = new URL(window.location.href);
-  url.searchParams.set("imprimir", url.searchParams.get("tema") || "");
-  url.searchParams.set("tema", light);
-  if (window.__goRemember) window.__goRemember();  // D-357: the app reloads, the visit keeps its view
-  window.location.assign(url.toString());
-}; });
-</script>"""
-)
-AUTO_PRINT_SCRIPT = r"""<script>
-(() => {
-  if (window.__documentPrinted) return;
-  window.__documentPrinted = true;
-  window.addEventListener("afterprint", () => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("tema", url.searchParams.get("imprimir"));
-    url.searchParams.delete("imprimir");
-    if (window.__goRemember) window.__goRemember();
-    window.location.replace(url.toString());
-  }, { once: true });
-  // D-427: print only the document: wait until «Elige tu vista» is gone (the view comes back a moment after the load).
-  let tries = 0;
-  const ready = () => {
-    if (!document.querySelector(".profile-ask")) { window.print(); return; }
-    tries += 1;
-    if (tries > 40) return;  // after 20 s with the window still open, nothing is printed (no less-than sign: D-280)
-    setTimeout(ready, 500);
-  };
-  setTimeout(ready, 3000);
-})();
-</script>"""
-
-
-def build_print_button_html(mode):
-    """The print button; from a dark theme it prints the light version of the page (D-280)."""
-    return PRINT_BUTTON_HTML.replace("Imprimir o guardar como PDF", tr("Imprimir o guardar como PDF")).replace(
-        "__LIGHT__", PRINT_THEME if is_dark_theme(mode) else ""
-    )
-
-
-def show_document_actions(mode, source_label, source_url):
-    """The document's source in GitHub and the button that prints the page itself (D-248)."""
-    with st.container(
-        key="doc_actions", horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"
-    ):
-        st.markdown(
-            '<div class="doc-source">' + build_repository_link_html(source_label, source_url, "secondary") + '</div>',
-            unsafe_allow_html=True,
-        )
-        st.html(build_print_button_html(mode), unsafe_allow_javascript=True)
-    st.markdown(
-        PRINT_DOCUMENT_CSS.replace("__PAGE__", tr("Página")).replace("__OF__", tr("de")), unsafe_allow_html=True
-    )
-    if st.query_params.get(PRINT_PARAMETER) in charts.THEMES:
-        st.html(AUTO_PRINT_SCRIPT, unsafe_allow_javascript=True)
-
-
-@st.cache_data(show_spinner=False)
-def read_stack_figures(database_version):
-    """The three figures of «Stack y evidencia», once per database."""
-    return stack_page.read_figures()
-
-
-STACK_VIEWS = ["Herramientas", "Flujo del sistema en vivo"]
-STACK_VIEW_KEY = "stack_view"
-
-
-def flow_fetch(read_token):
-    """D-412: the weekly workflow's latest runs and the steps of the one to show (in progress, or the latest that
-    ended), with the read-only token only (D-397) or none. Three GETs; an error is a sentence, never a crash."""
-    try:
-        runs = github_actions.list_runs("semanal.yml", read_token or None, 5)
-        shown = next(
-            (run for run in runs if run["state"] == control.RUN_IN_PROGRESS),
-            next((run for run in runs if run["state"] != control.RUN_IN_PROGRESS), None),
-        )
-        steps = run_monitor.read_steps(run_monitor.fetch_run(shown["id"], read_token or None)["jobs"]) if shown else []
-        return runs, steps, None
-    except Exception as error:  # GitHub unreachable or the request limit spent: the diagram stays, without state
-        return [], [], control.describe_github_error(error)
-
-
-# D-483: each cached answer is kept per language, because a failure is kept as a sentence in the visitor's language
-@st.cache_data(ttl=30, show_spinner=False)
-def read_flow_live(_read_token, language=None):
-    """While a run goes on: asked again every 30 s."""
-    return flow_fetch(_read_token)
-
-
-@st.cache_data(ttl=120, show_spinner=False)
-def read_flow_with_token(_read_token, language=None):
-    return flow_fetch(_read_token)
-
-
-@st.cache_data(ttl=600, show_spinner=False)
-def read_flow_without_token(_read_token, language=None):
-    """Without a token GitHub allows 60 requests an hour, shared: the answer is kept ten minutes."""
-    return flow_fetch(_read_token)
-
-
-def read_flow_model():
-    """The model of the live flow: the slow answer first; while a run goes on, the 30-second one."""
-    read_token = get_secret(SECRET_READ_TOKEN)
-    language = i18n.get_language()
-    runs, steps, error = (read_flow_with_token if read_token else read_flow_without_token)(read_token, language)
-    if runs and runs[0]["state"] == control.RUN_IN_PROGRESS:
-        runs, steps, error = read_flow_live(read_token, language)
-    facts = read_flow_facts(get_database_version(), i18n.get_language())
-    model = live_flow.build_model(runs, steps, facts)
-    if not is_author():  # D-500: the link to the run opens the author's repository
-        model["run_url"] = None
-    return model, error
-
-
-def show_live_flow(mode):
-    """«Flujo del sistema en vivo» (D-412), for every view: the real architecture with the latest real run; while a run
-    goes on it follows its step, asking again every 30 s. Only the author gets the way to the logs."""
-    model, error = read_flow_model()
-    st.markdown(
-        '<span class="fit-flujo" aria-hidden="true"></span><style>'
-        '[data-testid="stElementContainer"]:has(.fit-flujo) + [data-testid="stElementContainer"],'
-        '[data-testid="stElementContainer"]:has(.fit-flujo) + [data-testid="stElementContainer"] iframe '
-        "{height:max(calc(100vh - 330px), 380px) !important; flex:none !important; min-height:0 !important;}"
-        "</style>",
-        unsafe_allow_html=True,
-    )
-    st.iframe(live_flow.build_html(charts.get_palette(mode), model), height=600)
-    notes = [error] if error else []
-    if st.session_state.get(ADMIN_UNLOCKED):  # D-412: the logs are the author's, in «GitHub Actions»
-        notes.append(tr("Los logs de cada paso están en «GitHub Actions», solo para el autor."))
-    if notes:
-        st.caption(" · ".join(notes))
-
-
-def show_stack_page(mode):
-    """«Stack y evidencia» (D-211, D-266): the stack as an architecture diagram; each tool explains itself and
-    opens the page where it works. D-412: its second view is the live flow of the whole system."""
-    view_holder = {}
-
-    def choose_view():
-        view_holder["view"] = (
-            st.segmented_control(
-                tr("Vista"),
-                STACK_VIEWS,
-                default=STACK_VIEWS[0],
-                format_func=tr,
-                key=STACK_VIEW_KEY,
-                label_visibility="collapsed",
-            )
-            or STACK_VIEWS[0]
-        )
-
-    show_page_bar(
-        PAGE_STACK,
-        PAGE_STACK,
-        "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.",
-        side=choose_view,
-        live="weekly_price, dbt_node y etl_run se cuentan en la Base DuckDB al abrir la página; las pruebas de pytest, en "
-        "la carpeta tests/.",
-    )  # D-398: «Mapa de la app» is the next line of the menu, not a link of the header
-    if view_holder.get("view") == STACK_VIEWS[1]:
-        model_running = read_flow_model()[0]["mode"] == "live"
-        st.fragment(show_live_flow, run_every=30 if model_running else None)(mode)
-        return
-    addresses = {page: build_page_address(page) for *_, page in stack_page.STACK}
-    st.html(
-        stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()), addresses)
-    )
-
-
-@st.dialog("Informe de calidad", width="large")
-def show_quality_report_dialog(ref):
-    """One numbered report as slides (D-333): its own document, so the keyboard, full screen and the PDF work. D-431:
-    «ref» is «7» for the weekly series or «C7» for the construction one; the viewer reads only that series."""
-    found = quality_metrics.find_report(ref)
-    if not found:
-        st.warning(tr("Ese informe no existe."))
-        return
-    reports, number = found
-    _, goals, policy = quality_method.read_page()
-    nonconformities = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json").get("registros", [])
-    incidents = quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json").get("registros", [])
-    st.iframe(
-        quality_viewer.build_viewer_html(
-            reports,
-            number,
-            goals,
-            policy,
-            nonconformities,
-            incidents,
-            i18n.is_english(),
-            project.build_github_url(
-                i18n.document_path("PLAN_DE_CALIDAD.md").relative_to(project.PROJECT_DIR).as_posix()
-            )
-            if is_author()  # D-500
-            else "",
-        ),
-        height=700,
-    )
-
-
-def filter_reports(reports, year, month, week, query):
-    """The reports the filters of «Informes» leave (D-333): by year, month and data week, and a search over the number,
-    the date and the evaluated code."""
-    query = query.strip().lower()
-    number = None
-    for prefix in ("n°", "nº", "no.", "#"):
-        if query.startswith(prefix) and query[len(prefix) :].strip().isdigit():
-            number = int(query[len(prefix) :].strip())  # «N° 2» is report 2, not any «2»
-    kept = []
-    for report in reports:
-        date = str(report["fecha"])
-        if year != ALL_VALUES and date[:4] != year:
-            continue
-        if month != ALL_VALUES and date[5:7] != month:
-            continue
-        if week != ALL_VALUES and str(report["semana"]) != week:
-            continue
-        week_text = weeks.week_range(report["semana"], year=True) if report["semana"] else ""
-        haystack = f"{report['numero']} {date} {report['codigo_evaluado']} {report['semana']} {week_text}".lower()
-        if number is not None and report["numero"] != number:
-            continue
-        if number is None and query and query not in haystack:
-            continue
-        kept.append(report)
-    return kept
-
-
-def show_git_page(mode):
-    """«Cambios e incidentes» (D-344): the map of the 15 stations from an idea to a live deployment, and the incident log.
-    The professional and the author read it; the diagnoses of the log are the author's (D-345)."""
-    author = bool(st.session_state.get(ADMIN_UNLOCKED))
-    show_page_bar(
-        PAGE_GIT,
-        PAGE_GIT,
-        "Cómo viaja un cambio desde la idea hasta el despliegue, y las fallas que han ocurrido en el camino.",
-    )
-    flow, log = st.tabs(
-        [tr("Mapa"), tr("Registro de incidentes")],
-        default=tr("Registro de incidentes") if st.query_params.get(GIT_TAB_PARAMETER) == GIT_TAB_LOG else None,
-    )
-    with flow:
-        st.iframe(git_workflow.build_map_html(charts.get_palette(mode), i18n.get_language(), author), height="content")
-    with log:
-        language = i18n.get_language()
-        states = [ALL_VALUES, "abierta", "resuelta"]
-        state = st.selectbox(tr("Estado"), states, key="incident_state", format_func=lambda value: tr(value), width=220)
-        shown = [row for row in git_workflow.read_failures() if state == ALL_VALUES or row["estado"] == state]
-        st.markdown(compact_table.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
-        if not shown:
-            st.caption(tr("Todavía no hay fallas registradas."))
-        compact_table.show_compact_rows(
-            "cr_incidents",
-            shown,
-            lambda row: git_workflow.log_summary(row, language),
-            lambda row: git_workflow.log_detail(row, language, author),
-            signature=state,
-        )
-
-
-def show_rules_page(mode):
-    """«Reglas de transformación» (D-523): what the pipeline does to the data and why, each rule with the problem of the
-    source it solves and what would happen without it. It runs in the browser, in its own frame, as «Cambios e
-    incidentes»; only the Autor gets the code as links to the repository (D-500)."""
-    show_page_bar(
-        PAGE_RULES,
-        PAGE_RULES,
-        "Qué le hacemos a los datos de ODEPA y del INE, y por qué: cada regla con el problema que resuelve y lo que "
-        "pasaría sin ella.",
-    )
-    st.markdown(
-        '<style>.st-key-rules_frame, .st-key-rules_frame [data-testid="stElementContainer"], .st-key-rules_frame iframe '
-        '{ height:max(calc(100vh - 218px), 480px) !important; }</style>',
-        unsafe_allow_html=True,
-    )
-    with st.container(key="rules_frame"):
-        st.iframe(
-            transformation_rules.build_page_html(charts.get_palette(mode), i18n.get_language(), is_author()),
-            height=480,
-        )
-
-
-def show_method_page(mode):
-    """«Plan de calidad» (D-320, D-323, D-330, D-332, D-333): how the quality of the published data and of the code is
-    managed. Two tabs: «Resumen» (each indicator against its acceptable) and «Informes» (the numbered reports)."""
-    reports, goals, policy = quality_method.read_page()
-    latest = reports[-1] if reports else None
-    show_page_bar(
-        PAGE_METHOD,
-        PAGE_METHOD,
-        "Qué medimos de los datos que publicamos y del código que los trata, contra qué aceptable, y cómo vamos.",
-    )
-    st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    st.markdown(quality_method.build_header(latest), unsafe_allow_html=True)
-    asked = st.query_params.get(REPORT_PARAMETER)
-    # D-432: only once the view is back (D-430): the first run of a reload has none yet, and its rerun would close it.
-    if asked and get_profile():
-        # A report named in the address (its number or its PDF icon in «Informes») opens once.
-        del st.query_params[REPORT_PARAMETER]
-        if quality_metrics.find_report(asked):
-            show_quality_report_dialog(asked)
-    summary, history = st.tabs([tr("Resumen"), tr("Informes")])
-    with summary:
-        st.markdown(
-            quality_method.build_overview(latest, goals, policy, git_workflow.read_failures()), unsafe_allow_html=True
-        )
-        git_page = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_GIT])  # absent when a test draws this page alone
-        if git_page:
-            st.page_link(
-                git_page,
-                label=tr("Ver registro completo"),
-                icon=":material/arrow_forward:",
-                query_params=keep_context() | {VIEW_PARAMETER: PAGE_GIT, GIT_TAB_PARAMETER: GIT_TAB_LOG},
-            )
-        if latest and st.button(
-            tr("Abrir el último informe"), icon=":material/description:", key="quality_latest_report"
-        ):
-            show_quality_report_dialog(quality_metrics.report_ref(latest))
-    with history:
-        # D-431: one series at a time, the weekly first; the construction series (C-1 to C-7) stays readable
-        series = [
-            name
-            for name in (quality_metrics.SERIES_WEEKLY, quality_metrics.SERIES_BUILD)
-            if quality_metrics.read_series(name)
-        ]
-        if len(series) > 1:
-            chosen = st.segmented_control(
-                tr("Serie"),
-                series,
-                default=series[0],
-                key="quality_series",
-                format_func=lambda name: (
-                    tr("Semanal") if name == quality_metrics.SERIES_WEEKLY else tr("Construcción (C-1 a C-7)")
-                ),
-            )
-            reports = quality_metrics.read_series(chosen or series[0])
-        years = [ALL_VALUES] + sorted({str(item["fecha"])[:4] for item in reports}, reverse=True)
-        months = [ALL_VALUES] + sorted({str(item["fecha"])[5:7] for item in reports}, reverse=True)
-        data_weeks = [ALL_VALUES] + sorted({str(item["semana"]) for item in reports if item["semana"]}, reverse=True)
-        with st.container(horizontal=True, vertical_alignment="bottom", key="quality_filters"):
-            year = st.selectbox(tr("Año"), years, key="quality_year", format_func=lambda value: tr(value))
-            month = st.selectbox(tr("Mes"), months, key="quality_month", format_func=lambda value: tr(value))
-            week = st.selectbox(
-                tr("Semana de datos"),
-                data_weeks,
-                key="quality_week",
-                format_func=lambda value: tr(value) if value == ALL_VALUES else i18n.tr_week(value, year=True),
-            )
-            query = st.text_input(
-                tr("Buscar"),
-                key="quality_search",
-                placeholder=tr("N°, fecha o código"),
-                icon=":material/search:",
-            )
-        shown = filter_reports(reports, year, month, week, query)
-        st.markdown(compact_table.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
-        if not shown:
-            st.caption(tr("Ningún informe coincide."))
-        else:
-
-            def open_report_button(report):
-                if st.button(
-                    tr("Abrir el informe o su PDF"),
-                    key=f"cr_reports_open_{quality_metrics.report_ref(report)}",
-                    icon=":material/description:",
-                ):
-                    show_quality_report_dialog(quality_metrics.report_ref(report))
-
-            compact_table.show_compact_rows(
-                "cr_reports",
-                sorted(shown, key=lambda item: -item["numero"]),
-                quality_method.report_summary,
-                lambda report: quality_method.build_report_detail(report, reports),
-                signature=f"{reports[0].get('serie') if reports else ''}|{year}|{month}|{week}|{query}",
-                after_detail=open_report_button,
-            )
-
-
-def show_app_map_page(mode):
-    """«Mapa de la app» (D-285): the whole system in one view; the stack is its summary."""
-    show_page_bar(
-        PAGE_APP_MAP,
-        PAGE_APP_MAP,
-        "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y con qué se conecta.",
-    )
-    addresses = {node[7]: build_page_address(node[7]) for node in app_map.NODES.values()}
-    facts = read_app_map_facts(get_database_version())
-    st.html(app_map.build_map_html(charts.get_palette(mode), addresses, facts), unsafe_allow_javascript=True)
-
-
-@st.cache_data(show_spinner=False)
-def read_app_map_facts(database_version):
-    """D-441: what the map reads from the system, once per database: the dbt models and tests, the loads, the served
-    tables, the manifest, the workflows, the requirements and the goals; and from the panel itself, its menu and the tabs
-    of the Operations center, so the map never repeats them by hand."""
-    menu = [
-        (title, [SIDEBAR_LABELS.get(page, page) for page in pages])
-        for _, title, pages in MENU_BLOCKS
-        if pages is not SOURCE_LINKS
-    ]
-    return app_map_detail.read_facts(queries.DATABASE_FILE, menu=menu, runs_tabs=list(RUNS_VIEWS))
-
-
-CODE_SPAN = re.compile(r"`([^`\n]+)`")
-
-
-def soften_code_breaks(text):
-    """D-297: a name in code may break only after «_», «/», «.» or «::», never in the middle of a word: a zero-width
-    space after each of them (in the page only; the file keeps its text)."""
-    return CODE_SPAN.sub(lambda match: "`" + re.sub(r"(::|[_/.](?=\w))", "\\1\u200b", match.group(1)) + "`", text)
-
-
-def show_project_document(mode, title):
-    """A document of docs/ as a page: the same text as in GitHub, its diagrams drawn
-    from the live project, no code."""
-    filename, lead = PROJECT_DOCUMENTS[title]
-    # D-283: the document in the language of the visit, from docs/ or docs/en/.
-    path = i18n.document_path(filename)
-    text = path.read_text(encoding="utf-8")
-    source = path.relative_to(project.PROJECT_DIR).as_posix()
-    st.markdown(build_folder_path_html(title), unsafe_allow_html=True)
-    show_compact_page_header(title, lead)
-    show_document_actions(mode, f"{source} {tr('en GitHub')}", project.build_github_url(source))
-    # D-288: the document opens with its cover, read from its header table; the title and the table do not repeat.
-    header = documents_folder.read_header(text)
-    related = re.sub(
-        r"\[([^\]]+)\]\(([^)]+)\)",
-        lambda match: (
-            f'<a href="{html.escape(match.group(2), quote=True)}" target="_self">{html.escape(match.group(1))}</a>'
-        ),
-        link_document_views(documents_folder.field(header, "related")).split("<a id=", 1)[0],
-    )
-    cover = documents_folder.build_cover_html(text, related)
-    text = soften_code_breaks(documents_folder.strip_header_table(re.sub(r"\A# .*\n", "", text)))
-    st.markdown(documents_folder.build_cover_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    with st.container(key="project_document"):
-        st.markdown(cover, unsafe_allow_html=True)
-        position = 0
-        for marker in DOCUMENT_DIAGRAM.finditer(text):
-            st.markdown(link_document_views(text[position : marker.start()]), unsafe_allow_html=True)
-            show_document_diagram(marker.group(1), mode)
-            position = marker.end()
-        st.markdown(link_document_views(text[position:]), unsafe_allow_html=True)
-    st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
-    st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
-
-
-# endregion
-
-
-# region Entry point
-
-
+# region Constants
 SHOW_PAGE_BY_TITLE = {
     PAGE_DOCUMENTATION: lambda mode: show_project_document(mode, PAGE_PRD),
     PAGE_PRD: lambda mode: show_project_document(mode, PAGE_PRD),
@@ -1191,11 +415,11 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_LINKS: show_links_page,
 }
 
-
 # Tablets and narrow windows: the menu folds once per visit, so the page gets the
 # whole width; once the reader opens it again it stays open (D-057). Streamlit
 # already folds it on phones; computers keep it open.
 NARROW_SCREEN_WIDTH = 1024
+
 # Every diagram animates by default, with no toggle (D-131); after 20 s without a
 # mouse move, key, touch or scroll the page pauses CSS and SVG animations, and the
 # next movement resumes them — so a forgotten tab does not keep spending resources.
@@ -1219,6 +443,7 @@ IDLE_ANIMATION_SCRIPT = """<script>(() => {
         window.addEventListener(name, wake, { passive: true, capture: true }));
     wake();
 })();</script>"""
+
 FOLD_SIDEBAR_SCRIPT = f"""<script>
 (() => {{
 // D-166: a phone turned sideways shows the computer layout, menu included. Streamlit
@@ -1261,7 +486,196 @@ fold();
 }})();
 </script>"""
 
+# D-462: a dashboard opens with the menu folded, so its charts get the width; the button that unfolds it beats in the
+# green of GreenOcean (D-450), so it is seen. It folds once per page opened: a menu the reader opens stays open while
+# the reader works on that page. A phone turned sideways keeps its menu open (D-166).
+DASHBOARD_FOLD_SCRIPT = r"""<script>
+(() => {
+    const view = "__VIEW__";
+    const fold = "__FOLD__" === "yes";
+    const wide = window.innerWidth >= __WIDE__ && !window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches;
+    // D-466: the page before in this load of the app; each load (an address typed, a reload) is an entry and opens the menu
+    const last = window.__goMenuView === undefined ? null : window.__goMenuView;
+    window.__goMenuView = view;
+    if (last === view) return;
+    // Streamlit marks the menu with data-collapsed (aria-expanded in older versions)
+    const isOpen = (sidebar) => sidebar.dataset.collapsed === "false" || sidebar.getAttribute("aria-expanded") === "true";
+    let tries = 0;
+    const act = () => {
+        const sidebar = document.querySelector('[data-testid="stSidebar"]');
+        const button = last === null
+            ? document.querySelector('[data-testid="stExpandSidebarButton"]')
+            : document.querySelector('[data-testid="stSidebarCollapseButton"] button');
+        if (sidebar && button && (last === null) !== isOpen(sidebar)) { button.click(); return; }
+        if (sidebar && (last === null) === isOpen(sidebar)) return;
+        if (tries++ < 40) setTimeout(act, 100);
+    };
+    if (last === null ? wide : fold && wide) act();
+})();
+</script>"""
 
+# D-166: the panel is read in landscape. A phone held upright sees one screen asking to
+# turn it (no page can rotate a phone: only the reader can); turned, the phone gets
+# the computer layout in miniature, every page whole, and no empty band on top.
+# Tablets and computers never match these queries. Plain fills only: st.html strips
+# SVG gradients.
+PHONE_LAYOUT_HTML = """<style>
+.go-rotate {display:none;}
+@media (max-width:600px) and (orientation:portrait) {
+  .go-rotate {display:flex; position:fixed; inset:0; z-index:2147483647; flex-direction:column;
+    align-items:center; justify-content:center; gap:10px; padding:48px 32px 72px; text-align:center;
+    background:radial-gradient(120% 70% at 50% 30%, #17406f 0%, #0f2747 55%, #0a1b33 100%);
+    color:#cfd6e2; font-family:"Source Sans Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+  .go-rotate .go-brand {font-size:26px; font-weight:600; color:#6ee7b7;}
+  .go-rotate .go-brand span {color:#7dd3fc;}
+  .go-rotate .go-sub {font-size:13px; color:#98a2b3;}
+  .go-rotate .go-phone {position:relative; width:80px; height:150px; margin:56px 0 44px; border-radius:16px;
+    background:#174a7c; border:5px solid #c3ccd8; box-shadow:0 24px 30px rgba(0,0,0,.45);
+    animation:go-turn 3.2s cubic-bezier(.65,0,.35,1) infinite;}
+  .go-rotate .go-phone i {position:absolute; display:block; border-radius:3px;}
+  .go-rotate h2 {margin:0; font-size:30px; font-weight:600; color:#ffffff; line-height:1.2;}
+  .go-rotate p {margin:0; max-width:300px; font-size:16px; line-height:1.45;}
+  @keyframes go-turn {0%,18% {transform:rotate(0deg);} 45%,72% {transform:rotate(-90deg);} 100% {transform:rotate(0deg);}}
+}
+@media (orientation:landscape) and (max-height:500px) {
+  /* The computer layout drawn at 1/0.62 the width, then shrunk back to the screen. */
+  .stApp {transform:scale(.62); transform-origin:0 0; width:161.3vw !important; height:161.3vh !important;}
+  /* Streamlit sizes its scrolling area to the screen height: it must grow with the scale. */
+  [data-testid="stAppViewContainer"] > div, [data-testid="stMain"], [data-testid="stSidebar"] {height:161.3vh !important; max-height:none !important;}
+  /* D-504: the menu's column grows with its sidebar, so its footer still ends at the bottom of the screen. */
+  [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {min-height:calc(161.3vh - 72px) !important;}
+  [data-testid="stHeader"] {display:none !important;}
+  [data-testid="stMainBlockContainer"] {padding-top:.4rem !important;}
+}
+</style>
+<div class="go-rotate" role="alertdialog" aria-label="Gira tu teléfono">
+  <div class="go-brand">Green<span>Ocean</span></div>
+  <div class="go-sub">Monitor de precios de alimentos</div>
+  <div class="go-phone" aria-hidden="true">
+    <i style="left:24px;top:4px;width:22px;height:5px;background:#0a1b33"></i>
+    <i style="left:7px;top:18px;width:10px;height:110px;background:#6ee7b7;opacity:.6"></i>
+    <i style="left:23px;top:18px;width:40px;height:9px;background:#ffffff;opacity:.5"></i>
+    <i style="left:25px;top:44px;width:12px;height:12px;border-radius:50%;background:#7dd3fc"></i>
+    <i style="left:45px;top:44px;width:12px;height:12px;border-radius:50%;background:#6ee7b7"></i>
+    <i style="left:25px;top:66px;width:12px;height:12px;border-radius:50%;background:#fda4af"></i>
+    <i style="left:45px;top:66px;width:12px;height:12px;border-radius:50%;background:#fde68a"></i>
+    <i style="left:23px;top:94px;width:40px;height:6px;background:#ffffff;opacity:.35"></i>
+  </div>
+  <h2>Gira tu teléfono</h2>
+  <p>El panel se lee en horizontal: así ves el pipeline completo y el menú de un vistazo.</p>
+</div>"""
+
+# D-233: the pages that fit the window close with one short footer instead of the two long ones.
+COMPACT_FOOTER_VIEWS = {
+    PAGE_SQL,
+    PAGE_RULES,
+    PAGE_OPERATIONS,
+    PAGE_RUNS,
+    PAGE_ACTIONS,
+    PAGE_CONFIG,
+    PAGE_SECURITY,
+    PAGE_STACK,
+    PAGE_FOLDER,
+    PAGE_SOURCE_STUDY,
+    PAGE_APP_MAP,
+    PAGE_METHOD,
+    PAGE_GIT,
+}
+
+# The parameters every address carries (theme, language, view) never make a new step.
+CONTEXT_PARAMETERS = {THEME_PARAMETER, i18n.LANGUAGE_PARAMETER, PROFILE_PARAMETER, ROLE_PARAMETER, "_ctx"}
+
+RELOAD_HOME_SCRIPT = """<script>
+(() => {
+    if (document.documentElement.dataset.greenoceanReloadHandled === "true") return;
+    document.documentElement.dataset.greenoceanReloadHandled = "true";
+    // A reload just to sync the theme's base mode (D-099): stay on this page.
+    try {
+        if (sessionStorage.getItem("greenoceanThemeReload")) {
+            sessionStorage.removeItem("greenoceanThemeReload");
+            return;
+        }
+    } catch (_) {}
+    const navigation = performance.getEntriesByType("navigation")[0];
+    if (!navigation || navigation.type !== "reload") return;
+    const current = new URL(window.location.href);
+    const home = new URL("/", current);
+    for (const name of ["tema"]) {
+        if (current.searchParams.has(name)) home.searchParams.set(name, current.searchParams.get(name));
+    }
+    home.searchParams.set("vista", "__HOME__");
+    try {
+        const trail = JSON.parse(sessionStorage.getItem('greenoceanTrail') || '[]');
+        const last = trail[trail.length - 1];
+        if (last && last.filters && Object.keys(last.filters).length) {
+            home.searchParams.set('_ctx', btoa(unescape(encodeURIComponent(JSON.stringify(last.filters)))));
+        }
+    } catch (_) {}
+    if (current.pathname !== home.pathname || current.search !== home.search || current.hash) {
+        window.location.replace(home.href);
+    }
+})();
+</script>""".replace("__HOME__", PAGE_HOME)
+
+SOURCE_ICON_SVG = (
+    '<svg class="nav-source-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">'
+    '<path fill="currentColor" d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>'
+)
+
+SIDEBAR_NAV_VERSION = 13  # D-453: the two dashboard tiles open «Negocio · BA y BI»
+
+# D-286: the sources start folded; the documents are a folder at the end of the menu, not a section.
+FOLDED_BY_DEFAULT = {"fuentes"}
+
+FOLDER_TILE_BLOCK = "documentos"
+
+# D-287: the sources are a tile of their own beside the folder; their links open in a floating panel.
+SOURCES_TILE_BLOCK = "fuentes"
+
+# D-442, D-452, D-453: the two dashboards are tiles, not lines, at the head of «Negocio · BA y BI».
+DASHBOARD_TILES = [PAGE_HOME, PAGE_BA]  # D-494
+
+# D-463, D-516: the pages whose dashboards, diagrams or SQL editor want the width: the menu folds on going to them.
+FOLD_MENU_VIEWS = [
+    *DASHBOARD_TILES,
+    PAGE_SQL,
+    PAGE_RULES,
+    PAGE_DIAGRAMS,
+    PAGE_ARCHITECTURE,
+    PAGE_STACK,
+    PAGE_APP_MAP,
+    PAGE_SECURITY,
+    PAGE_GIT,
+    PAGE_RUNS,
+]
+
+TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK}
+
+SHOW_SOURCES_SCRIPT = r"""<script>
+setTimeout(() => {
+  const links = document.querySelectorAll(".nav-source-link");
+  const menu = document.querySelector("[data-testid='stSidebarContent']");
+  const footer = document.querySelector(".st-key-sidebar_footer");
+  if (!links.length || !menu || !footer) { return; }
+  const hidden = links[links.length - 1].getBoundingClientRect().bottom - footer.getBoundingClientRect().top + 12;
+  if (hidden > 0) { menu.scrollBy({top: hidden, behavior: "smooth"}); }
+}, 200);
+</script>"""
+# endregion
+
+
+# region Variables
+# D-172: Streamlit reloads this file on each run but keeps the imported bi/* modules
+# as they were; on Streamlit Cloud a push then shows a new menu with old pages until
+# someone reboots the app. Each run compares the modules' files with the time they
+# were loaded and reloads the ones that changed, dependencies first.
+# The times live on the bi package, which outlives the script runs: Streamlit
+# re-executes this file on every run, so a global here would start empty each time.
+MODULE_TIMES = vars(bi).setdefault("MODULE_TIMES", {})
+# endregion
+
+
+# region Windows and pages
 def order_windows():
     """The data-first route, followed by documentation and links."""
     return ROUTE + [SECTION_PROJECT, SECTION_RESOURCES, SECTION_KPI]
@@ -1350,35 +764,77 @@ def render_window(window, pages=None):
     )
 
 
-# D-462: a dashboard opens with the menu folded, so its charts get the width; the button that unfolds it beats in the
-# green of GreenOcean (D-450), so it is seen. It folds once per page opened: a menu the reader opens stays open while
-# the reader works on that page. A phone turned sideways keeps its menu open (D-166).
-DASHBOARD_FOLD_SCRIPT = r"""<script>
-(() => {
-    const view = "__VIEW__";
-    const fold = "__FOLD__" === "yes";
-    const wide = window.innerWidth >= __WIDE__ && !window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches;
-    // D-466: the page before in this load of the app; each load (an address typed, a reload) is an entry and opens the menu
-    const last = window.__goMenuView === undefined ? null : window.__goMenuView;
-    window.__goMenuView = view;
-    if (last === view) return;
-    // Streamlit marks the menu with data-collapsed (aria-expanded in older versions)
-    const isOpen = (sidebar) => sidebar.dataset.collapsed === "false" || sidebar.getAttribute("aria-expanded") === "true";
-    let tries = 0;
-    const act = () => {
-        const sidebar = document.querySelector('[data-testid="stSidebar"]');
-        const button = last === null
-            ? document.querySelector('[data-testid="stExpandSidebarButton"]')
-            : document.querySelector('[data-testid="stSidebarCollapseButton"] button');
-        if (sidebar && button && (last === null) !== isOpen(sidebar)) { button.click(); return; }
-        if (sidebar && (last === null) === isOpen(sidebar)) return;
-        if (tries++ < 40) setTimeout(act, 100);
-    };
-    if (last === null ? wide : fold && wide) act();
-})();
-</script>"""
+def show_page(view, mode):
+    """Draw one page; an Autor's page only for the Autor's session (D-420), checked here on the server whatever the
+    address or the menu say. Anyone else reads that there is no access."""
+    if view in AUTHOR_ONLY_PAGES and not is_author():
+        st.info(tr(NO_ACCESS), icon=":material/lock:")
+        return
+    view = user_view_page(view)  # D-502: the Usuario view never draws a page of another view
+    SHOW_PAGE_BY_TITLE[view](mode)
 
 
+def render_page(title):
+    """Draw one view alone, as tests and old callers do."""
+    mode = get_mode()
+    apply_style(mode)
+    show_page(title, mode)
+    show_attribution()
+
+
+def build_window_page(window, order, start, pages):
+    """A navigation entry that draws one section, numbered by its step in the route."""
+    return st.Page(
+        lambda: render_window(window, pages),
+        title=number_window(window, order),
+        icon=WINDOW_ICONS[window],
+        url_path=WINDOW_PATHS[window],
+        visibility="hidden" if window == SECTION_KPI else "visible",
+        default=window == start,
+    )
+
+
+def build_redirect_page(url_path, view, windows_by_title):
+    """A hidden page at an old address that opens its window on the same view (D-065)."""
+
+    def redirect():
+        parameters = {key: value for key, value in st.query_params.to_dict().items()}
+        window = WINDOW_OF_VIEW[view]
+        if view != read_window_views(window)[0]:
+            parameters[VIEW_PARAMETER] = view
+        st.switch_page(windows_by_title[window], query_params=parameters)
+
+    return st.Page(redirect, title=view, url_path=url_path, visibility="hidden")
+
+
+def redirect_moved_tab(current_page, windows_by_title):
+    """Keep deep links with ?seccion=… working: they open the view that holds that tab."""
+    tab = st.query_params.get(TAB_PARAMETER)
+    current_window = window_of_page(current_page)
+    special_view = next(
+        (
+            target
+            for (old_page, old_tab), target in OLD_TAB_PAGES.items()
+            if old_tab == tab and WINDOW_OF_VIEW.get(old_page) == current_window
+        ),
+        None,
+    )
+    view = special_view or PAGE_OF_TAB.get(OLD_HOME_TABS.get(tab, tab))
+    if not view:
+        return
+    st.query_params.pop(TAB_PARAMETER, None)
+    window = WINDOW_OF_VIEW[view]
+    parameters = {key: value for key, value in st.query_params.to_dict().items()}
+    if view != read_window_views(window)[0]:
+        parameters[VIEW_PARAMETER] = view
+    if window != window_of_page(current_page) or st.query_params.get(VIEW_PARAMETER) != parameters.get(VIEW_PARAMETER):
+        st.switch_page(windows_by_title[window], query_params=parameters)
+
+
+# endregion
+
+
+# region Footers of the pages
 def show_dashboard_menu_fold(view, mode):
     """D-462, D-463, D-466: on going to a dashboard or a page of diagrams the menu folds and its button beats in green;
     elsewhere it stays. Each load of the app, its entry, opens it."""
@@ -1405,58 +861,6 @@ def show_dashboard_menu_fold(view, mode):
         .replace("__WIDE__", str(NARROW_SCREEN_WIDTH))
     )
     st.html(script, unsafe_allow_javascript=True)
-
-
-# D-166: the panel is read in landscape. A phone held upright sees one screen asking to
-# turn it (no page can rotate a phone: only the reader can); turned, the phone gets
-# the computer layout in miniature, every page whole, and no empty band on top.
-# Tablets and computers never match these queries. Plain fills only: st.html strips
-# SVG gradients.
-PHONE_LAYOUT_HTML = """<style>
-.go-rotate {display:none;}
-@media (max-width:600px) and (orientation:portrait) {
-  .go-rotate {display:flex; position:fixed; inset:0; z-index:2147483647; flex-direction:column;
-    align-items:center; justify-content:center; gap:10px; padding:48px 32px 72px; text-align:center;
-    background:radial-gradient(120% 70% at 50% 30%, #17406f 0%, #0f2747 55%, #0a1b33 100%);
-    color:#cfd6e2; font-family:"Source Sans Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-  .go-rotate .go-brand {font-size:26px; font-weight:600; color:#6ee7b7;}
-  .go-rotate .go-brand span {color:#7dd3fc;}
-  .go-rotate .go-sub {font-size:13px; color:#98a2b3;}
-  .go-rotate .go-phone {position:relative; width:80px; height:150px; margin:56px 0 44px; border-radius:16px;
-    background:#174a7c; border:5px solid #c3ccd8; box-shadow:0 24px 30px rgba(0,0,0,.45);
-    animation:go-turn 3.2s cubic-bezier(.65,0,.35,1) infinite;}
-  .go-rotate .go-phone i {position:absolute; display:block; border-radius:3px;}
-  .go-rotate h2 {margin:0; font-size:30px; font-weight:600; color:#ffffff; line-height:1.2;}
-  .go-rotate p {margin:0; max-width:300px; font-size:16px; line-height:1.45;}
-  @keyframes go-turn {0%,18% {transform:rotate(0deg);} 45%,72% {transform:rotate(-90deg);} 100% {transform:rotate(0deg);}}
-}
-@media (orientation:landscape) and (max-height:500px) {
-  /* The computer layout drawn at 1/0.62 the width, then shrunk back to the screen. */
-  .stApp {transform:scale(.62); transform-origin:0 0; width:161.3vw !important; height:161.3vh !important;}
-  /* Streamlit sizes its scrolling area to the screen height: it must grow with the scale. */
-  [data-testid="stAppViewContainer"] > div, [data-testid="stMain"], [data-testid="stSidebar"] {height:161.3vh !important; max-height:none !important;}
-  /* D-504: the menu's column grows with its sidebar, so its footer still ends at the bottom of the screen. */
-  [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {min-height:calc(161.3vh - 72px) !important;}
-  [data-testid="stHeader"] {display:none !important;}
-  [data-testid="stMainBlockContainer"] {padding-top:.4rem !important;}
-}
-</style>
-<div class="go-rotate" role="alertdialog" aria-label="Gira tu teléfono">
-  <div class="go-brand">Green<span>Ocean</span></div>
-  <div class="go-sub">Monitor de precios de alimentos</div>
-  <div class="go-phone" aria-hidden="true">
-    <i style="left:24px;top:4px;width:22px;height:5px;background:#0a1b33"></i>
-    <i style="left:7px;top:18px;width:10px;height:110px;background:#6ee7b7;opacity:.6"></i>
-    <i style="left:23px;top:18px;width:40px;height:9px;background:#ffffff;opacity:.5"></i>
-    <i style="left:25px;top:44px;width:12px;height:12px;border-radius:50%;background:#7dd3fc"></i>
-    <i style="left:45px;top:44px;width:12px;height:12px;border-radius:50%;background:#6ee7b7"></i>
-    <i style="left:25px;top:66px;width:12px;height:12px;border-radius:50%;background:#fda4af"></i>
-    <i style="left:45px;top:66px;width:12px;height:12px;border-radius:50%;background:#fde68a"></i>
-    <i style="left:23px;top:94px;width:40px;height:6px;background:#ffffff;opacity:.35"></i>
-  </div>
-  <h2>Gira tu teléfono</h2>
-  <p>El panel se lee en horizontal: así ves el pipeline completo y el menú de un vistazo.</p>
-</div>"""
 
 
 def show_menu_steps(view, pages):
@@ -1535,24 +939,6 @@ def show_route_footer(window, pages, view=None):
         st.caption(f"Siguiente paso: {ROUTE_LEADS[ROUTE[position + 1]]}.")
 
 
-# D-233: the pages that fit the window close with one short footer instead of the two long ones.
-COMPACT_FOOTER_VIEWS = {
-    PAGE_SQL,
-    PAGE_RULES,
-    PAGE_OPERATIONS,
-    PAGE_RUNS,
-    PAGE_ACTIONS,
-    PAGE_CONFIG,
-    PAGE_SECURITY,
-    PAGE_STACK,
-    PAGE_FOLDER,
-    PAGE_SOURCE_STUDY,
-    PAGE_APP_MAP,
-    PAGE_METHOD,
-    PAGE_GIT,
-}
-
-
 def show_compact_footer(window, pages, view=None):
     """The route links and the data source in two short lines."""
     summary = lineage.summarize_build(*read_lineage(get_database_version()))
@@ -1577,107 +963,10 @@ def show_compact_footer(window, pages, view=None):
         st.caption(tr(ATTRIBUTION_TEXT))
 
 
-def show_page(view, mode):
-    """Draw one page; an Autor's page only for the Autor's session (D-420), checked here on the server whatever the
-    address or the menu say. Anyone else reads that there is no access."""
-    if view in AUTHOR_ONLY_PAGES and not is_author():
-        st.info(tr(NO_ACCESS), icon=":material/lock:")
-        return
-    view = user_view_page(view)  # D-502: the Usuario view never draws a page of another view
-    SHOW_PAGE_BY_TITLE[view](mode)
+# endregion
 
 
-def render_page(title):
-    """Draw one view alone, as tests and old callers do."""
-    mode = get_mode()
-    apply_style(mode)
-    show_page(title, mode)
-    show_attribution()
-
-
-def build_window_page(window, order, start, pages):
-    """A navigation entry that draws one section, numbered by its step in the route."""
-    return st.Page(
-        lambda: render_window(window, pages),
-        title=number_window(window, order),
-        icon=WINDOW_ICONS[window],
-        url_path=WINDOW_PATHS[window],
-        visibility="hidden" if window == SECTION_KPI else "visible",
-        default=window == start,
-    )
-
-
-def build_redirect_page(url_path, view, windows_by_title):
-    """A hidden page at an old address that opens its window on the same view (D-065)."""
-
-    def redirect():
-        parameters = {key: value for key, value in st.query_params.to_dict().items()}
-        window = WINDOW_OF_VIEW[view]
-        if view != read_window_views(window)[0]:
-            parameters[VIEW_PARAMETER] = view
-        st.switch_page(windows_by_title[window], query_params=parameters)
-
-    return st.Page(redirect, title=view, url_path=url_path, visibility="hidden")
-
-
-def redirect_moved_tab(current_page, windows_by_title):
-    """Keep deep links with ?seccion=… working: they open the view that holds that tab."""
-    tab = st.query_params.get(TAB_PARAMETER)
-    current_window = window_of_page(current_page)
-    special_view = next(
-        (
-            target
-            for (old_page, old_tab), target in OLD_TAB_PAGES.items()
-            if old_tab == tab and WINDOW_OF_VIEW.get(old_page) == current_window
-        ),
-        None,
-    )
-    view = special_view or PAGE_OF_TAB.get(OLD_HOME_TABS.get(tab, tab))
-    if not view:
-        return
-    st.query_params.pop(TAB_PARAMETER, None)
-    window = WINDOW_OF_VIEW[view]
-    parameters = {key: value for key, value in st.query_params.to_dict().items()}
-    if view != read_window_views(window)[0]:
-        parameters[VIEW_PARAMETER] = view
-    if window != window_of_page(current_page) or st.query_params.get(VIEW_PARAMETER) != parameters.get(VIEW_PARAMETER):
-        st.switch_page(windows_by_title[window], query_params=parameters)
-
-
-def restore_return_context():
-    encoded = st.query_params.pop("_ctx", None)
-    if not encoded or len(encoded) > 16000:
-        return
-    try:
-        snapshot = json.loads(base64.b64decode(encoded, validate=True))
-        if isinstance(snapshot, dict):
-            for key in RETURN_CONTEXT_KEYS:
-                value = snapshot.get(key)
-                if key == "dashboard_top_n":
-                    if isinstance(value, int) and not isinstance(value, bool) and 8 <= value <= 20:
-                        st.session_state[key] = value
-                elif key == "dashboard_product":
-                    if (
-                        isinstance(value, dict)
-                        and isinstance(value.get("key"), dict)
-                        and all(isinstance(value["key"].get(field), str) for field in queries.KEY_COLUMNS)
-                        and isinstance(value.get("name"), str)
-                    ):
-                        st.session_state[key] = value
-                elif key == "analysis_channels":
-                    if isinstance(value, list) and all(isinstance(item, str) for item in value):
-                        st.session_state[key] = value
-                elif isinstance(value, str):
-                    st.session_state[key] = value
-    except (ValueError, TypeError, UnicodeDecodeError):
-        pass
-
-
-# region Return (D-423): «Volver» walks back a short history kept in the session, with no page reload.
-# The parameters every address carries (theme, language, view) never make a new step.
-CONTEXT_PARAMETERS = {THEME_PARAMETER, i18n.LANGUAGE_PARAMETER, PROFILE_PARAMETER, ROLE_PARAMETER, "_ctx"}
-
-
+# region History of «Volver»
 def read_page_state():
     """The part of the session that makes this page what it is, as plain JSON values."""
     state = {}
@@ -1710,7 +999,33 @@ def follow_return(windows_by_title):
         st.switch_page(windows_by_title[target["window"]], query_params=target["params"] | keep_context())
 
 
-# endregion
+def restore_return_context():
+    encoded = st.query_params.pop("_ctx", None)
+    if not encoded or len(encoded) > 16000:
+        return
+    try:
+        snapshot = json.loads(base64.b64decode(encoded, validate=True))
+        if isinstance(snapshot, dict):
+            for key in RETURN_CONTEXT_KEYS:
+                value = snapshot.get(key)
+                if key == "dashboard_top_n":
+                    if isinstance(value, int) and not isinstance(value, bool) and 8 <= value <= 20:
+                        st.session_state[key] = value
+                elif key == "dashboard_product":
+                    if (
+                        isinstance(value, dict)
+                        and isinstance(value.get("key"), dict)
+                        and all(isinstance(value["key"].get(field), str) for field in queries.KEY_COLUMNS)
+                        and isinstance(value.get("name"), str)
+                    ):
+                        st.session_state[key] = value
+                elif key == "analysis_channels":
+                    if isinstance(value, list) and all(isinstance(item, str) for item in value):
+                        st.session_state[key] = value
+                elif isinstance(value, str):
+                    st.session_state[key] = value
+    except (ValueError, TypeError, UnicodeDecodeError):
+        pass
 
 
 def build_visit_history_script():
@@ -1744,69 +1059,10 @@ def build_visit_history_script():
     })();</script>""".replace("__FILTERS__", encoded)
 
 
-RELOAD_HOME_SCRIPT = """<script>
-(() => {
-    if (document.documentElement.dataset.greenoceanReloadHandled === "true") return;
-    document.documentElement.dataset.greenoceanReloadHandled = "true";
-    // A reload just to sync the theme's base mode (D-099): stay on this page.
-    try {
-        if (sessionStorage.getItem("greenoceanThemeReload")) {
-            sessionStorage.removeItem("greenoceanThemeReload");
-            return;
-        }
-    } catch (_) {}
-    const navigation = performance.getEntriesByType("navigation")[0];
-    if (!navigation || navigation.type !== "reload") return;
-    const current = new URL(window.location.href);
-    const home = new URL("/", current);
-    for (const name of ["tema"]) {
-        if (current.searchParams.has(name)) home.searchParams.set(name, current.searchParams.get(name));
-    }
-    home.searchParams.set("vista", "__HOME__");
-    try {
-        const trail = JSON.parse(sessionStorage.getItem('greenoceanTrail') || '[]');
-        const last = trail[trail.length - 1];
-        if (last && last.filters && Object.keys(last.filters).length) {
-            home.searchParams.set('_ctx', btoa(unescape(encodeURIComponent(JSON.stringify(last.filters)))));
-        }
-    } catch (_) {}
-    if (current.pathname !== home.pathname || current.search !== home.search || current.hash) {
-        window.location.replace(home.href);
-    }
-})();
-</script>""".replace("__HOME__", PAGE_HOME)
+# endregion
 
 
-SOURCE_ICON_SVG = (
-    '<svg class="nav-source-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">'
-    '<path fill="currentColor" d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>'
-)
-
-
-SIDEBAR_NAV_VERSION = 13  # D-453: the two dashboard tiles open «Negocio · BA y BI»
-# D-286: the sources start folded; the documents are a folder at the end of the menu, not a section.
-FOLDED_BY_DEFAULT = {"fuentes"}
-FOLDER_TILE_BLOCK = "documentos"
-# D-287: the sources are a tile of their own beside the folder; their links open in a floating panel.
-SOURCES_TILE_BLOCK = "fuentes"
-# D-442, D-452, D-453: the two dashboards are tiles, not lines, at the head of «Negocio · BA y BI».
-DASHBOARD_TILES = [PAGE_HOME, PAGE_BA]  # D-494
-# D-463, D-516: the pages whose dashboards, diagrams or SQL editor want the width: the menu folds on going to them.
-FOLD_MENU_VIEWS = [
-    *DASHBOARD_TILES,
-    PAGE_SQL,
-    PAGE_RULES,
-    PAGE_DIAGRAMS,
-    PAGE_ARCHITECTURE,
-    PAGE_STACK,
-    PAGE_APP_MAP,
-    PAGE_SECURITY,
-    PAGE_GIT,
-    PAGE_RUNS,
-]
-TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK}
-
-
+# region The menu and its activity bar
 def show_sidebar_navigation(windows_by_title, current_window, order):
     """The menu (D-213, D-231): flat sections by kind of reader, open by default, each a folder
     that a click folds; under each title, its pages with their icon."""
@@ -1827,72 +1083,6 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
         with st.sidebar.container(key=f"nav_block_{key}"):
             show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open)
     show_sidebar_footer(current_window, lambda: show_footer_tiles(windows_by_title, current_window, current_view))
-
-
-SHOW_SOURCES_SCRIPT = r"""<script>
-setTimeout(() => {
-  const links = document.querySelectorAll(".nav-source-link");
-  const menu = document.querySelector("[data-testid='stSidebarContent']");
-  const footer = document.querySelector(".st-key-sidebar_footer");
-  if (!links.length || !menu || !footer) { return; }
-  const hidden = links[links.length - 1].getBoundingClientRect().bottom - footer.getBoundingClientRect().top + 12;
-  if (hidden > 0) { menu.scrollBy({top: hidden, behavior: "smooth"}); }
-}, 200);
-</script>"""
-
-
-def show_footer_tiles(windows_by_title, current_window, current_view):
-    """The tiles of the footer (D-287) in one compact row (D-538): the two folders (D-533), then the data sources. The
-    Usuario view has no folders (D-502): its row holds the sources alone."""
-    with st.container(key="sidebar_tiles", horizontal=True, gap="small"):
-        if not is_public_profile():
-            for index, view in enumerate(FOLDER_TILES):
-                show_folder_tile(windows_by_title, current_window, current_view, view, index)
-        # D-540: the stack of each area, names only, for every view: it opens no other page.
-        for key, title, _, names in activity_bar.STACK_AREAS:
-            with st.container(key=f"stack_tile_{key}"):
-                with st.popover(tr(title), help=tr(title)):
-                    st.markdown(activity_bar.build_stack_html(title, names), unsafe_allow_html=True)
-        with st.container(key="sources_tile"):
-            with st.popover(tr("Fuentes"), help=tr("Fuentes de datos")):
-                st.markdown(f"**{tr('Fuentes de datos')}**")
-                for name, url in SOURCE_LINKS:
-                    st.markdown(
-                        buttons.build_link_html(tr(name), url, icon="external", variant="text", external=True),
-                        unsafe_allow_html=True,
-                    )
-
-
-def show_dashboard_tile(windows_by_title, current_window, current_view, view):
-    """D-442: «Semanal», the weekly summary of prices, as a large tile, and «Análisis» under it (D-456, D-494).
-    D-453: they open the section «Negocio · BA y BI»; a tile stays lit while its page is open."""
-    window = WINDOW_OF_VIEW[view]
-    active = window == current_window and current_view == view
-    index = DASHBOARD_TILES.index(view)
-    # «_lit», not «_nav_current»: the current line of a section draws its bar where the tile draws its icon.
-    with st.container(key=f"nav_dashboard_tile_{index}" + ("_lit" if active else "")):
-        st.page_link(
-            windows_by_title[window],
-            label=tr(SIDEBAR_LABELS.get(view, view)),
-            icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
-            query_params=keep_context() | {VIEW_PARAMETER: view},
-        )
-
-
-def show_folder_tile(windows_by_title, current_window, current_view, view, index):
-    """A folder of the footer (D-286, D-533): a larger tile with its name inside, at the end of the menu. «Documentos
-    del proyecto» stays lit while one of its documents is open."""
-    window = WINDOW_OF_VIEW[view]
-    active = window == current_window and (
-        current_view == view or (view == PAGE_FOLDER and current_view in FOLDER_ORDER)
-    )
-    with st.container(key=f"nav_folder_tile_{index}" + ("_nav_current" if active else "")):
-        st.page_link(
-            windows_by_title[window],
-            label=tr(view),
-            help=tr(view),
-            query_params=keep_context() | {VIEW_PARAMETER: view},
-        )
 
 
 def show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open):
@@ -1937,6 +1127,60 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
             )
 
 
+def show_dashboard_tile(windows_by_title, current_window, current_view, view):
+    """D-442: «Semanal», the weekly summary of prices, as a large tile, and «Análisis» under it (D-456, D-494).
+    D-453: they open the section «Negocio · BA y BI»; a tile stays lit while its page is open."""
+    window = WINDOW_OF_VIEW[view]
+    active = window == current_window and current_view == view
+    index = DASHBOARD_TILES.index(view)
+    # «_lit», not «_nav_current»: the current line of a section draws its bar where the tile draws its icon.
+    with st.container(key=f"nav_dashboard_tile_{index}" + ("_lit" if active else "")):
+        st.page_link(
+            windows_by_title[window],
+            label=tr(SIDEBAR_LABELS.get(view, view)),
+            icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
+            query_params=keep_context() | {VIEW_PARAMETER: view},
+        )
+
+
+def show_footer_tiles(windows_by_title, current_window, current_view):
+    """The tiles of the footer (D-287) in one compact row (D-538): the two folders (D-533), then the data sources. The
+    Usuario view has no folders (D-502): its row holds the sources alone."""
+    with st.container(key="sidebar_tiles", horizontal=True, gap="small"):
+        if not is_public_profile():
+            for index, view in enumerate(FOLDER_TILES):
+                show_folder_tile(windows_by_title, current_window, current_view, view, index)
+        # D-540: the stack of each area, names only, for every view: it opens no other page.
+        for key, title, _, names in activity_bar.STACK_AREAS:
+            with st.container(key=f"stack_tile_{key}"):
+                with st.popover(tr(title), help=tr(title)):
+                    st.markdown(activity_bar.build_stack_html(title, names), unsafe_allow_html=True)
+        with st.container(key="sources_tile"):
+            with st.popover(tr("Fuentes"), help=tr("Fuentes de datos")):
+                st.markdown(f"**{tr('Fuentes de datos')}**")
+                for name, url in SOURCE_LINKS:
+                    st.markdown(
+                        buttons.build_link_html(tr(name), url, icon="external", variant="text", external=True),
+                        unsafe_allow_html=True,
+                    )
+
+
+def show_folder_tile(windows_by_title, current_window, current_view, view, index):
+    """A folder of the footer (D-286, D-533): a larger tile with its name inside, at the end of the menu. «Documentos
+    del proyecto» stays lit while one of its documents is open."""
+    window = WINDOW_OF_VIEW[view]
+    active = window == current_window and (
+        current_view == view or (view == PAGE_FOLDER and current_view in FOLDER_ORDER)
+    )
+    with st.container(key=f"nav_folder_tile_{index}" + ("_nav_current" if active else "")):
+        st.page_link(
+            windows_by_title[window],
+            label=tr(view),
+            help=tr(view),
+            query_params=keep_context() | {VIEW_PARAMETER: view},
+        )
+
+
 def build_sidebar_github_html(is_current):
     """GitHub's mark on a light pill in the sidebar footer (D-124): not a row of the
     list, where it read as one more section and its blue mark sank into the navy."""
@@ -1979,19 +1223,49 @@ def show_sidebar_footer(current_window=None, folder=None):
             show_language_switch()
 
 
-# D-172: Streamlit reloads this file on each run but keeps the imported bi/* modules
-# as they were; on Streamlit Cloud a push then shows a new menu with old pages until
-# someone reboots the app. Each run compares the modules' files with the time they
-# were loaded and reloads the ones that changed, dependencies first.
-# The times live on the bi package, which outlives the script runs: Streamlit
-# re-executes this file on every run, so a global here would start empty each time.
-MODULE_TIMES = vars(bi).setdefault("MODULE_TIMES", {})
+# endregion
+
+
+# region Start
+def read_bi_imports(file):
+    """D-541: the bi modules a module imports, read from its source, wherever the import sits."""
+    names = set()
+    for node in ast.walk(ast.parse(Path(file).read_text(encoding="utf-8"))):
+        if isinstance(node, ast.ImportFrom) and node.module == "bi":
+            names |= {f"bi.{alias.name}" for alias in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("bi."):
+            names.add(node.module)
+        elif isinstance(node, ast.Import):
+            names |= {alias.name for alias in node.names if alias.name.startswith("bi.")}
+    return names
+
+
+def order_reloads(changed, imports):
+    """D-541: the changed modules and every module that imports one of them, directly or not, dependencies first.
+    Since the panel was split, a page holds the functions it imported from the frame: reloading only the frame would
+    leave the page with the old ones, so the pages that import it reload after it."""
+    stale = set(changed)
+    grew = True
+    while grew:
+        grew = False
+        for name, uses in imports.items():
+            if name not in stale and uses & stale:
+                stale.add(name)
+                grew = True
+    ordered = []
+    remaining = set(stale)
+    while remaining:
+        ready = sorted(name for name in remaining if not (imports.get(name, set()) & (remaining - {name})))
+        for name in ready or sorted(remaining):  # a cycle has no first module: a fixed order then
+            ordered.append(name)
+            remaining.discard(name)
+    return ordered
 
 
 def reload_changed_modules():
-    """Reload every bi/* module whose file changed since it was loaded."""
+    """Reload every bi/* module whose file changed since it was loaded, and the ones that import it (D-541)."""
     package = Path(__file__).resolve().parent
-    changed = []
+    loaded, changed = {}, []
     for name, module in sorted(sys.modules.items()):
         file = getattr(module, "__file__", None)
         if not name.startswith("bi.") or name == __name__ or not file or not file.startswith(str(package)):
@@ -2000,20 +1274,19 @@ def reload_changed_modules():
             modified = os.stat(file).st_mtime_ns
         except OSError:
             continue
+        loaded[name] = module
         if name not in MODULE_TIMES:
             MODULE_TIMES[name] = modified
         elif modified != MODULE_TIMES[name]:
             MODULE_TIMES[name] = modified
-            changed.append(module)
-    # brand_icons feeds devops: reload the ones without bi.* imports first.
-    for module in sorted(
-        changed,
-        key=lambda module: sum(
-            1 for value in vars(module).values() if getattr(value, "__name__", "").startswith("bi.")
-        ),
-    ):
-        importlib.reload(module)
-    return [module.__name__ for module in changed]
+            changed.append(name)
+    if not changed:
+        return []
+    imports = {name: read_bi_imports(module.__file__) & set(loaded) for name, module in loaded.items()}
+    ordered = order_reloads(changed, imports)
+    for name in ordered:
+        importlib.reload(loaded[name])
+    return ordered
 
 
 def main():

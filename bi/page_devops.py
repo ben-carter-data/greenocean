@@ -57,6 +57,7 @@ from bi.constants import (
     VIEW_PARAMETER,
     WINDOW_OF_VIEW,
     WINDOW_PAGES,
+    RUNS_TABS,
 )
 from bi.data_access import (
     fetch_pipeline_runs,
@@ -528,12 +529,17 @@ def show_runs_tab(mode):
     )()
 
 
-RUNS_VIEWS = {
-    "Despliegue": lambda mode: show_devops_tab(mode),
-    "Operación": lambda mode: show_runs_tab(mode),
-    "CI/CD": lambda mode: show_cicd_tab(mode),
-    "Monitoreo": lambda mode: show_monitoring_tab(mode),
-}
+RUNS_VIEWS = dict(
+    zip(
+        RUNS_TABS,
+        (
+            lambda mode: show_devops_tab(mode),
+            lambda mode: show_runs_tab(mode),
+            lambda mode: show_cicd_tab(mode),
+            lambda mode: show_monitoring_tab(mode),
+        ),
+    )
+)
 
 
 def show_runs_page(mode):

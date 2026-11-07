@@ -706,6 +706,9 @@ SIDEBAR_ICONS = {
     PAGE_FOLDER: ":material/folder_open:",
     PAGE_SOURCE_STUDY: ":material/manage_search:",
 }
+# D-541: the tabs of «Centro de operación», in order; bi/page_devops.py draws each one (RUNS_VIEWS) and the app map
+# counts them, so the names live here once.
+RUNS_TABS = ("Despliegue", "Operación", "CI/CD", "Monitoreo")
 # endregion
 
 # region Variables
