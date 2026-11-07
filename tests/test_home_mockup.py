@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
-from bi import dashboard, home_mockup, queries
+from bi import dashboard, home_mockup, page_weekly, queries
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -140,15 +140,17 @@ def test_d497_the_filter_sits_beside_the_search_and_rests_while_an_alert_is_chos
     app.button(key='home_alert_trigger').click().run()
     assert not app.selectbox(key='home_products_direction').disabled
     # it is drawn in the alert line, right after the search
-    source = (ROOT / 'bi/dashboard.py').read_text(encoding='utf-8')
-    line = source[source.index('def show_alert_line') : source.index('def show_profile_indicator')]
+    source = (ROOT / 'bi/page_weekly.py').read_text(encoding='utf-8')  # D-541: «Semanal» left bi/dashboard.py
+    line = source[source.index('def show_alert_line') :]
+    line = line[: line.index('\ndef ', 1)]
     assert line.index('key="home_products_search"') < line.index('key="home_products_direction"')
 
 
 def test_d498_the_window_brings_the_channel_back_when_it_reruns_alone(monkeypatch):
     seen = []
-    monkeypatch.setattr(dashboard, 'draw_products_window', lambda *window: seen.append(dashboard.current_channel()))
-    inspect.unwrap(dashboard.show_products_dialog)('Feria libre')
+    # D-541: the window and what it draws live in bi/page_weekly.py, so the stand-in goes there
+    monkeypatch.setattr(page_weekly, 'draw_products_window', lambda *window: seen.append(dashboard.current_channel()))
+    inspect.unwrap(page_weekly.show_products_dialog)('Feria libre')
     assert seen == ['Feria libre'] and dashboard.current_channel() is None
 
 

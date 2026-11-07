@@ -197,7 +197,7 @@ LIMIT_NO_DATA = "Sin dato no significa precio cero: esa región, canal o semana 
 # endregion
 
 
-# region Pipeline y linaje
+# region «Pipeline y linaje»
 @st.cache_data(ttl=GITHUB_CACHE_SECONDS, show_spinner=False)
 def fetch_run_steps(run_id):
     """Steps of one run from GitHub. A failure raises, and is not kept in the cache."""
@@ -457,7 +457,7 @@ def show_monitoring_tab(mode):
 # endregion
 
 
-# region Modelo de datos
+# region «Modelo de datos»
 @st.cache_data(show_spinner=False)
 def read_crossing_checks(database_version):
     """The live checks of the «Cruces entre bases» view (D-197)."""
@@ -503,7 +503,7 @@ def read_table_row_counts():
 # endregion
 
 
-# region Consultas SQL
+# region «Consultas SQL»
 def build_query_address(name):
     """The query in GitHub, the source of truth of the code (D-143)."""
     path, line = find_catalog_line(name)
@@ -528,7 +528,7 @@ def find_catalog_line(name):
 # endregion
 
 
-# region Stack y evidencia
+# region «Stack y evidencia»
 def build_architecture_chips(row_counts):
     """The real figures of the model (D-097), as chips of the page bar (D-267); the last load is the bar's own time."""
     number = charts.format_thousands

@@ -1533,7 +1533,7 @@
    ],
    "codigo": [
     {
-     "archivo": "bi/dashboard.py",
+     "archivo": "bi/page_weekly.py",
      "ancla": "def compare_same_regions"
     },
     {
@@ -1626,7 +1626,7 @@
    ],
    "codigo": [
     {
-     "archivo": "bi/dashboard.py",
+     "archivo": "bi/page_weekly.py",
      "ancla": "def build_regional_movement_model"
     }
    ]
@@ -1653,7 +1653,7 @@
    ],
    "codigo": [
     {
-     "archivo": "bi/dashboard.py",
+     "archivo": "bi/page_weekly.py",
      "ancla": "def read_cached_region_directions_in"
     }
    ]
@@ -1679,7 +1679,7 @@
    ],
    "codigo": [
     {
-     "archivo": "bi/dashboard.py",
+     "archivo": "bi/page_weekly.py",
      "ancla": "def read_home_trends_in"
     }
    ]

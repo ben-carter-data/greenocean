@@ -114,7 +114,7 @@ SYSTEM_DECISION_PAGES = {"sqap": PAGE_QUALITY_PLAN, "git": PAGE_GIT}
 # endregion
 
 
-# region Análisis and its tabs
+# region «Análisis» and its tabs
 def build_interest_map_html(rows, palette, address_of_view):
     """D-444: the interest map of «Interesados»; D-455: drawn by bi/interest_map.py, which the PRD draws too. A
     stakeholder whose page this view's menu does not lead to says where it opens instead."""
