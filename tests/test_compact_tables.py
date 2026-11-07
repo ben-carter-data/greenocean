@@ -78,7 +78,8 @@ def test_d348_the_incident_log_pages_by_twenty_and_the_diagnosis_is_the_authors(
 
 
 def test_d348_the_log_is_a_fixed_height_box_closed_by_default_and_the_reports_list_uses_the_same_component():
-    source = Path(DASHBOARD_FILE).read_text(encoding="utf-8")
+    # D-541: the panel's code spans bi/; each page keeps its functions together in its own module
+    source = "\n".join(p.read_text(encoding="utf-8") for p in sorted(Path(DASHBOARD_FILE).parent.glob("*.py")))
     block = source[source.index("def show_workflow_detail") : source.index("def show_actions_page")]
     assert "st.expander(" in block and "expanded=False" in block and "st.container(height=300)" in block
     assert 'compact_table.show_compact_rows(\n                "cr_reports"' in source.replace("\r", "")

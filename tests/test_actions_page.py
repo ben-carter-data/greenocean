@@ -176,7 +176,7 @@ def test_d339_an_expired_or_unpermitted_token_says_what_to_do_and_the_states_sti
 
 
 def test_d339_the_answers_are_kept_two_minutes_so_a_second_visit_asks_nothing(network):
-    source = Path(DASHBOARD_FILE).read_text(encoding="utf-8")
+    source = (Path(DASHBOARD_FILE).parent / "page_devops.py").read_text(encoding="utf-8")  # D-541
     assert "@st.cache_data(ttl=github_actions.CACHE_SECONDS" in source and github_actions.CACHE_SECONDS == 120
     app = draw()
     asked = len(network.calls)

@@ -485,9 +485,11 @@ def test_d149_a_failed_run_says_it_did_not_complete_and_can_be_closed():
 def test_d351_the_window_cannot_be_dismissed_minimizing_does_not_cancel_and_cancel_asks_first():
     import inspect
 
+    from bi import page_devops
+
     assert (
         "dismissible=False"
-        in inspect.getsource(dashboard).split("def show_run_now_dialog")[0].rsplit("@st.dialog", 1)[1]
+        in inspect.getsource(page_devops).split("def show_run_now_dialog")[0].rsplit("@st.dialog", 1)[1]
     )
     cancelled = []
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="in_progress", dialog=True)
