@@ -10,10 +10,13 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
+# region Constants
 MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
 MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+# endregion
 
 
+# region How the app names a week
 def monday(value: Any) -> date:
     """The Monday a week starts on, from a date, a timestamp or an ISO text («2026-10-19»)."""
     return date.fromisoformat(str(value)[:10])
@@ -36,3 +39,6 @@ def week_range(value: Any, year: bool = False, english: bool = False) -> str:
 def next_week(value: Any) -> date:
     """The Monday of the week after this one."""
     return monday(value) + timedelta(days=7)
+
+
+# endregion

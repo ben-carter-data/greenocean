@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+# region Constants and variables
 FOLDER = Path(__file__).resolve().parent.parent / "docs" / "calidad"
 GOALS_FILE = FOLDER / "metas.json"
 BASELINE_FILE = FOLDER / "linea_base.json"
@@ -171,8 +172,10 @@ SCHEDULE = [
         ("Pendiente: aún no se ha hecho", "Pending: not done yet"),
     ),
 ]
+# endregion
 
 
+# region The quality indicators of GreenOcean
 def read(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
@@ -562,3 +565,6 @@ def diagnose(
             }
         )
     return lines
+
+
+# endregion

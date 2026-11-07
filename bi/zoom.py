@@ -9,10 +9,13 @@ browser draws the SVG again at its new size: it stays sharp at any zoom. The
 shape never changes. No library: one script for the whole page.
 """
 
+# region Constants
 ZOOM_STEP = 1.5
 MAXIMUM_ZOOM = 6
+# endregion
 
 
+# region Zoom and pan inside a diagram frame, on phones and computers
 def build_zoom_frame_html(inner_html, css_class="", style=""):
     """A frame the zoom script turns into a zoomable view of inner_html."""
     style_attribute = f' style="{style}"' if style else ""
@@ -249,3 +252,4 @@ prepare();
 new MutationObserver(prepare).observe(document.body, {childList: true, subtree: true});
 })();
 </script>"""
+# endregion

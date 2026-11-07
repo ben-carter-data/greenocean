@@ -12,6 +12,7 @@ import html
 
 from bi import charts, doc_views
 
+# region Constants
 # Signals: (key, origin mark, origin, signal, what it records, where it is read, who reads it, file that produces it).
 SIGNALS = [
     (
@@ -115,8 +116,10 @@ STAGE_OF_SIGNAL = {
 }
 EVERY_STEP = "actions_log"
 LANES = {"panel": "Lo ve el panel", "autor": "Solo el autor"}
+# endregion
 
 
+# region «Monitoreo y observabilidad»: how we know that something failed
 def esc(value):
     return html.escape(str(value))
 
@@ -245,3 +248,6 @@ def build_monitoring_html(palette):
         + f'</head><body><div class="mo" role="group" aria-label="Monitoreo y observabilidad">{head}'
         f'<div class="mo-grid">{"".join(parts)}</div></div></body></html>'
     )
+
+
+# endregion

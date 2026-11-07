@@ -36,6 +36,7 @@ from bi import (
 from etl import etl
 
 
+# region Constants
 IPC_TABLE_DEFINITIONS = {
     "ipc_weekly": "el deflactor de cada semana: el IPC del mes de su lunes frente al último mes publicado, "
     "para expresar los precios en pesos reales",
@@ -57,8 +58,10 @@ TABLE_ROLES = {
 # raw.db is 665 MB on the author's computer and never in the repository (D-020); where the file is missing, the
 # documented size is shown with an approximation sign.
 RAW_DATABASE_SIZE_TEXT = "≈ 665 MB"
+# endregion
 
 
+# region The panel's own diagrams for the documents
 def model_tooltips(row_counts):
     """{table: what shows on hover}: its role, its rows and its definition from the project guide."""
     definitions = project.parse_definitions(
@@ -297,3 +300,6 @@ def build_interest_html(mode):
     return interest_map.build_css(palette, fit_height=False) + interest_map.build_map_html(
         rows, palette, lambda row: (None, ""), i18n.tr
     )
+
+
+# endregion

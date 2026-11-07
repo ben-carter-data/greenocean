@@ -16,6 +16,7 @@ from typing import Any
 
 from bi import charts, doc_views, project
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 RULES_FILE = ROOT / "docs" / "arquitectura" / "reglas_transformacion.json"
 PIPELINE_TAB, CALCULATIONS_TAB = "pipeline", "calculos"
@@ -107,8 +108,10 @@ TEXTS = {
     "rule": ("Regla", "Rule"),
     "rules": ("reglas", "rules"),
 }
+# endregion
 
 
+# region «Reglas de transformación»
 def pick(pair: Any, language: str) -> str:
     return pair[1] if language == "en" else pair[0]
 
@@ -136,10 +139,6 @@ def code_reference(reference: dict[str, str], author: bool) -> dict[str, str]:
     if author:
         found["href"] = f'{project.GITHUB_URL}/blob/main/{reference["archivo"]}' + (f"#L{line}" if line else "")
     return found
-
-
-def tab_of(layer: str) -> str:
-    return next(entry[1] for entry in LAYERS if entry[0] == layer)
 
 
 def build_rules_data(language: str, author: bool) -> list[dict[str, Any]]:
@@ -463,3 +462,6 @@ def build_page_html(palette: dict[str, str], language: str, author: bool) -> str
         '<div class="split"><div class="list"></div><article class="detail"></article></div></section>'
         f'<script type="application/json" id="data">{data}</script><script>{SCRIPT}</script></body></html>'
     )
+
+
+# endregion

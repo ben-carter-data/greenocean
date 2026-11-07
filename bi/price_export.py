@@ -19,6 +19,7 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 
 from bi import data_terms, home_mockup, i18n
 
+# region Constants
 SHEET_DATA, SHEET_NOTES = "Datos", "Notas"
 # One column per question a BI tool asks of a price: what it is, where it is sold, what it cost and how it moved.
 COLUMNS: tuple[tuple[str, str], ...] = (
@@ -41,8 +42,10 @@ COLUMNS: tuple[tuple[str, str], ...] = (
 )
 MONEY_FORMAT = '"$"#,##0'
 PERCENT_FORMAT = "+0.0 %;-0.0 %;0.0 %"
+# endregion
 
 
+# region The prices of step 4 as an Excel or CSV file
 def tr(text: str) -> str:
     """The text in the language of the visit; the dictionaries of the app, never a translation of our own."""
     return i18n.tr(text)
@@ -196,3 +199,6 @@ def build_name(week, scope, extension):
     while "--" in name:
         name = name.replace("--", "-")
     return f"{name.strip('-')}.{extension}"
+
+
+# endregion

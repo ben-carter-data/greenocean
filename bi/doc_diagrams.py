@@ -6,12 +6,15 @@ containers (SAD), the use cases and the real screens of the panel (PRD) and, in 
 
 from bi import app_diagrams, doc_figures, doc_views, live_flow, security_plan
 
+# region Constants
 # D-280: Chrome prints a blurred shadow as a grey rectangle; on paper the diagrams have no shadows or filters.
 PRINT_STYLE = (
     "<style>@media print { *, *::before, *::after { box-shadow:none !important; filter:none !important; } }</style>"
 )
+# endregion
 
 
+# region Doc diagrams
 def for_print(builder):
     return lambda mode: builder(mode).replace("</head>", PRINT_STYLE + "</head>", 1)
 
@@ -63,3 +66,4 @@ HEIGHTS.update(
 # D-455: a diagram drawn inline in the document, not in a frame: the interest map's icons are letters of the panel's
 # own icon font, which a frame does not have.
 INLINE = {"interes": app_diagrams.build_interest_html}
+# endregion

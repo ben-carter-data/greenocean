@@ -18,6 +18,7 @@ import html
 
 from bi import brand_icons, charts, database_map
 
+# region Constants
 WIDTH, HEIGHT = 1000, 620
 CARD_HEIGHT = 88
 ROWS = (146, 282, 418)
@@ -116,8 +117,10 @@ DEPLOY = ((REPO_X_MID, ZONE_BOTTOM), (REPO_X_MID, STREAMLIT_CARD[1][0]))
 # Brand discs the other views use, plus Streamlit.
 TIP_KEYS = [store[0] for store in STORES] + ["served", "streamlit"] + [key for key, *_ in REPO_FILES]
 STREAMLIT_DISC = ("#ff8f98", "#e0303f", "#ffffff")
+# endregion
 
 
+# region «Dónde viven los datos»
 def esc(value):
     return html.escape(str(value))
 
@@ -427,3 +430,6 @@ def build_map_html(palette, counts, layers, tests, sizes=None):
         f'role="img" aria-label="Dónde viven los datos">{head}{zones}{badge}{lines}{"".join(nodes)}'
         f'{"".join(repo)}{streamlit}{build_legend()}{"".join(tips)}</svg></body></html>'
     )
+
+
+# endregion

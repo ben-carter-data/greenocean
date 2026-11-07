@@ -11,6 +11,7 @@ import html
 
 from bi import charts, doc_views, i18n, quality_view, security_map
 
+# region Constants
 # (id, short name, attack, expected result, OWASP code or «—», the tests that verify it)
 CASES = [
     (
@@ -173,8 +174,10 @@ CASE_PLACES = {
         f"S-{index + 8:02d}": (x, round(510 - 60 * ((x - 500) / 420) ** 2)) for index, x in enumerate(reversed(COLUMNS))
     },
 }
+# endregion
 
 
+# region «Plan de pruebas y seguridad»
 def esc(value):
     return html.escape(str(value))
 
@@ -358,3 +361,6 @@ def orthogonal(start, end, half_width, half_height, gap=6):
         y = (y1 + y2) / 2
         return f"M{x1 + right * half_width:.1f} {y:.1f} H{x2 - right * (half_width + gap):.1f}"
     return f"M{x1 + right * half_width:.1f} {y1:.1f} H{x2:.1f} V{y2 - down * (half_height + gap):.1f}"
+
+
+# endregion

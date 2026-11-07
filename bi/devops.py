@@ -18,6 +18,7 @@ from pathlib import Path
 
 from bi import brand_icons, charts, database_map
 
+# region Constants and variables
 WORKFLOWS_DIR = Path(__file__).resolve().parent.parent / ".github" / "workflows"
 # What CI and CD mean, in two short sentences each (shown over the diagram and in the glossary).
 DEFINITION = (
@@ -271,8 +272,10 @@ PHASES = [
 CI_FLOW = ["ci_change", "ci_lint", "ci_parse", "ci_pytest", "ci_result"]
 TAGS = {"gate": "puerta", "optional": "opcional", "platform": "plataforma"}
 ROW_NOTE = "Si un paso falla, los siguientes no corren y la base publicada no cambia."
+# endregion
 
 
+# region CI/CD and orchestration of the project
 def workflow_line(marker):
     """«semanal.yml, línea 46»: where the marker text is in its workflow, read from the file itself."""
     if not marker:
@@ -443,3 +446,6 @@ def build_cicd_html(palette):
         + build_css(palette)
         + f'</head><body><div class="cc" role="group" aria-label="CI/CD del proyecto">{body}</div></body></html>'
     )
+
+
+# endregion

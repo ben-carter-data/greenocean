@@ -15,6 +15,7 @@ import html
 
 from bi import charts, doc_views, quality_view, storage_map
 
+# region Constants
 # Controls: (number, title, short line, what it protects, how, files, tests, verifiable in the repository).
 CONTROLS = [
     (
@@ -284,8 +285,10 @@ LINKS = [
     ("M720 80 V128", True, None),
     ("M720 100 H540 V128", True, None),
 ]
+# endregion
 
 
+# region «Arquitectura de seguridad»
 def esc(value):
     return html.escape(str(value))
 
@@ -572,3 +575,6 @@ def build_security_html(palette):
         f'preserveAspectRatio="xMidYMid meet" role="img" aria-label="Arquitectura de seguridad">{head}{build_zones()}'
         f'{build_links()}{nodes}{threats}{loop}{tips}{loop_tips}</svg></body></html>'
     )
+
+
+# endregion

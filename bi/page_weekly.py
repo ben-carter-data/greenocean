@@ -713,12 +713,6 @@ def alert_prices(row):
     return None, row['national_price']
 
 
-def alert_count_text(count, direction):
-    """«8 alzas fuertes», «1 baja fuerte» (D-477)."""
-    one, many = ALERT_KINDS[direction]
-    return f'{count} {one if count == 1 else many}'
-
-
 def family_alerts_table(week, family, direction, query, region=None):
     """D-489, D-492: the products table with only the sharp rises or the sharp drops of the chosen family (or of the
     whole basket), at the national price of K6; the search looks only among them. The levels and the rule are said on

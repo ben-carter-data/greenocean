@@ -94,6 +94,7 @@ def wrap(text, width):
 # endregion
 
 
+# region The captures of the documents
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 # (file, title, theme, view). D-392: the Dashboard twice, as the Usuario and as the Profesional see it.
 MOCKUPS = [

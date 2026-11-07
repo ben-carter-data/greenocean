@@ -10,6 +10,7 @@ import re
 
 from bi import i18n
 
+# region Constants
 FAMILIES = {
     "Abarrotes y otros": "Groceries and others",
     "Carne bovina": "Beef",
@@ -41,8 +42,10 @@ CHANNEL_CONTENTS = {
     "Carnicería": ("carnes", "meat"),
     "Panadería": ("pan", "bread"),
 }
+# endregion
 
 
+# region The words the data brings, in the reader's language
 def channel_content(channel):
     """D-494: what a channel holds, in the reader's language, or None when it sells several families."""
     content = CHANNEL_CONTENTS.get(channel)
@@ -119,3 +122,6 @@ def term(value):
     if value is None or not i18n.is_english():
         return value
     return english(value) or str(value)
+
+
+# endregion

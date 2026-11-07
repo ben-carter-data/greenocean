@@ -20,6 +20,7 @@ import requests
 from bi import control, github_actions
 from bi.i18n import tr
 
+# region Constants
 WATCH = "run_watch"
 MAX_MINUTES = 20  # the workflow's own timeout-minutes (semanal.yml); past it the window stops asking
 CONFIRM_SECONDS = 90  # how long GitHub may take to show the run it was asked to start
@@ -51,8 +52,10 @@ PHASE_LABELS = {
     TIMEOUT: "Sigue en GitHub",
     UNCONFIRMED: "GitHub no confirmó el inicio",
 }
+# endregion
 
 
+# region The manual run of the pipeline, followed from the panel
 def new_watch(now: datetime) -> dict[str, Any]:
     return {
         "phase": STARTING,
@@ -225,3 +228,6 @@ def build_copy_html(
         "catch(e){const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);"
         "b.textContent=D.selected;}setTimeout(()=>{b.textContent=name;},1500);};</script></body></html>"
     )
+
+
+# endregion

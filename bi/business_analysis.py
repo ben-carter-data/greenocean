@@ -8,11 +8,14 @@ from typing import Any
 
 from bi import i18n
 
+# region Constants
 VIEW_MARK = re.compile(r"\[\[vista:([^\]]+)\]\]")
 # D-376: one icon per stakeholder, in the order of the PRD's table (Material Symbols).
 STAKEHOLDER_ICONS = ["family_restroom", "restaurant", "agriculture", "newspaper", "engineering"]
+# endregion
 
 
+# region Business analysis
 def read_section(document: str, number: str, language: str | None = None) -> str:
     """The text of the section numbered `number` («3.1», «6») of a document of docs/, without its heading, up to the
     next heading of the same level or above."""
@@ -219,3 +222,6 @@ def system_decisions(language: str | None = None) -> list[dict[str, Any]]:
         labels = [part[3] for part in parts]
         decisions.append({"title": title, "parts": lines, "labels": labels, "line": " ".join(lines), "page": page})
     return decisions
+
+
+# endregion

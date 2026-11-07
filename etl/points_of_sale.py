@@ -10,11 +10,14 @@ from pathlib import Path
 
 import pandas as pd
 
+# region Constants and variables
 ROOT = Path(__file__).resolve().parent.parent
 DOWNLOADS = ROOT / "agent" / "downloads"
 OUTPUT = ROOT / "bi" / "assets" / "points_of_sale.json"
+# endregion
 
 
+# region The places where the products are sold, by region
 def build(download_dir=DOWNLOADS):
     """{region: {"wholesale": [markets], "consumer": [types], "sectors": [sectors]}} read from every downloaded year."""
     wholesale = pd.concat(
@@ -35,6 +38,11 @@ def build(download_dir=DOWNLOADS):
     return points
 
 
+# endregion
+
+
+# region Run
 if __name__ == "__main__":
     OUTPUT.write_text(json.dumps(build(), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print("written", OUTPUT)
+# endregion

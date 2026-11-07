@@ -12,6 +12,7 @@ from bi import queries  # noqa: E402
 from etl import etl  # noqa: E402
 
 
+# region Constants
 # The checks as SQL, shared with the evidence dialogs of the panel (D-171).
 FOREIGN_KEYS_SQL = """SELECT
     (SELECT COUNT(*) FROM weekly_price w LEFT JOIN dim_product p USING(product_id) WHERE p.product_id IS NULL)
@@ -31,8 +32,10 @@ PARITY_SQL = (
     "SELECT (SELECT COUNT(*) FROM weekly_price), (SELECT COUNT(*) FROM rejection), "
     "(SELECT SUM(price) FROM weekly_price)"
 )
+# endregion
 
 
+# region Read-only evidence checks
 def check_database(database_file=queries.DATABASE_FILE):
     """Check the stored database independently of dashboard aggregations."""
     with queries.open_database(database_file) as connection:
@@ -104,3 +107,6 @@ def check_parity(backup_file=etl.DATABASE_FILE, database_file=queries.DATABASE_F
         rejections=(backup[1], current[1]),
         ok=backup[:2] == current[:2] and math.isclose(backup[2], current[2], rel_tol=1e-9),
     )
+
+
+# endregion

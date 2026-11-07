@@ -14,6 +14,7 @@ from typing import Any
 
 from bi import charts, i18n, quality_metrics, weeks
 
+# region Constants
 # The five counts that are almost always zero share one line when they all meet their acceptable (D-332).
 COUNTS = {
     "ruff_avisos": ("Ruff", "Ruff"),
@@ -25,8 +26,10 @@ COUNTS = {
 STATE_COLORS = {"cumple": "#199e70", "aviso": "#b8860b", "urgente": "#e07b22", "critico": None, "sin_medicion": None}
 SKY = "#38bdf8"  # the sky-blue accent of the reports, on deep black (D-332)
 DEEP = "#05070b"
+# endregion
 
 
+# region «Plan de calidad»
 def t(spanish: str, english: str) -> str:
     return english if i18n.is_english() else spanish
 
@@ -457,3 +460,6 @@ div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] svg, div[
 .qm-alert.qm-antigua {{ border-left-color:{border} !important; opacity:.85; }} .qm-alert.qm-antigua h4 {{ color:{soft} !important; }} .qm-alert-foot {{ font-size:12px; color:{soft}; }}
 @media (max-width:1100px) {{ .qm-groups {{ grid-template-columns:minmax(0, 1fr); }} }}
 </style>"""
+
+
+# endregion

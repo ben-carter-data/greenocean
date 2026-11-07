@@ -26,6 +26,7 @@ import re
 from bi import app_map_detail as detail
 from bi import brand_icons, charts, database_map, doc_views, i18n
 
+# region Constants
 # The themes of the filters, in the order of the buttons.
 THEMES = [
     ("datos", "Datos"),
@@ -1214,8 +1215,10 @@ STORY_GROUPS = [
 STORY_TITLE = "La carga semanal, paso a paso"
 STORY_PARALLEL = "Desde el paso 21, Streamlit Cloud toma el commit mientras GitHub abre el informe y corre calidad.yml."
 PEOPLE_KEYS = {"visitor", "professional", "author"}
+# endregion
 
 
+# region «Mapa de la app»
 def story_steps():
     """The story as [line index, towards a person]: each line in its turn, from GitHub's start to the people."""
     index = {link[:2]: number for number, link in enumerate(LINKS)}
@@ -2717,3 +2720,6 @@ def build_map_html(palette, addresses, facts=None):
         f'<div class="am-bar am-foot"><span class="am-legend">{legend}</span></div>'
         "</div>" + SCRIPT
     )
+
+
+# endregion

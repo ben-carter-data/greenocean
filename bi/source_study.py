@@ -14,6 +14,7 @@ from pathlib import Path
 from bi import buttons
 from bi.i18n import tr
 
+# region Constants and variables
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 # (language, file): the Spanish study and its English version.
 NOTEBOOKS = [
@@ -31,8 +32,10 @@ NOTEBOOK_COLOR = "#22b35a"
 # The block of a notebook output: the source's raw data as the notebook printed it (tests/i18n_audit.py reads it as
 # data, not as a sentence of the panel).
 OUTPUT_OPEN, OUTPUT_CLOSE = '<div class="nb-output">', "</div><!--/nb-output-->"
+# endregion
 
 
+# region «Análisis de la fuente de datos»
 def esc(value):
     return html.escape(str(value), quote=True)
 
@@ -151,3 +154,6 @@ def build_css(palette):
 .nb-table th, .nb-table td {{ padding:4px 9px; border-bottom:1px solid {border}; text-align:left; white-space:nowrap; }}
 .nb-table thead th {{ position:sticky; top:0; background:{card}; color:{muted}; font-weight:600; }}
 </style>"""
+
+
+# endregion

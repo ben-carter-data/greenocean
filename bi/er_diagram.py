@@ -15,6 +15,7 @@ import html
 
 from bi import charts, queries
 
+# region Constants
 MARGIN = 20
 HEADER = 34
 ROW = 26
@@ -80,8 +81,10 @@ LOGICAL = (
     "ipc_weekly toma el IPC del mes de su lunes (ipc_year, ipc_month) de ipc_monthly (year, month)",
 )
 FOREIGN_KEYS = {(child, column) for child, column, *_ in RELATIONS}
+# endregion
 
 
+# region Entity-relationship diagram of the served database, in the classic notation
 def read_schema(database_file=queries.DATABASE_FILE):
     """{table: [(column, type)]} from DESCRIBE, for the tables of the model."""
     with queries.open_database(database_file) as connection:
@@ -290,3 +293,6 @@ def build_er_svg(schema, counts, mode, tooltips=None, empty_units=None):
         f'aria-label="Modelo entidad-relación de datos.duckdb" font-family="{charts.CHART_FONT}">'
         f'{links}{logical}{tables}{legend}</svg>'
     )
+
+
+# endregion

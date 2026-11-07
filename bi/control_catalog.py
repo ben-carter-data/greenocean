@@ -10,6 +10,7 @@ from typing import Any
 
 from bi import charts, transformation_rules, unit_review
 
+# region Constants and variables
 CATALOG_FILE = Path(__file__).resolve().parent.parent / "docs" / "calidad" / "catalogo_controles.json"
 MOMENTS = {
     "descarga": ("Al descargar", "When downloading"),
@@ -59,8 +60,10 @@ TEXTS = {
     "fails": ("Si falla", "If it fails"),
     "backing": ("Respaldo", "Backing"),
 }
+# endregion
 
 
+# region «Catálogo de controles»
 def pick(pair: Any, language: str) -> str:
     return pair[1] if language == "en" else pair[0]
 
@@ -175,3 +178,6 @@ def build_page_html(palette: dict[str, str], language: str, author: bool) -> str
         f"{build_css(palette)}</head><body>{build_units_html(unit_review.summarize(), language)}"
         f"{build_controls_html(language, author)}</body></html>"
     )
+
+
+# endregion

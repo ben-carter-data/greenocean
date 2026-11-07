@@ -13,6 +13,7 @@ import html
 from bi import charts, live_mark
 
 
+# region The thin header bar of the panel's pages
 def esc(value):
     return html.escape(str(value), quote=True)
 
@@ -116,3 +117,6 @@ def build_updated_html(updated, loaded):
         f'<span class="page-bar-updated" title="Datos al {esc(updated)} · {state}">'
         f'<i class="{"loaded" if loaded else "failed"}"></i>{esc(updated)}</span>'
     )
+
+
+# endregion

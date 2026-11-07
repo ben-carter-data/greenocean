@@ -22,6 +22,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from etl import bronze  # noqa: E402
 
+# region Constants
 INE_FILES = {
     "base_2023": "https://www.ine.gob.cl/docs/default-source/%C3%ADndice-de-precios-al-consumidor/"
     "cuadros-estadisticos/base-anual-2023_100/series-de-tiempo/"
@@ -34,8 +35,10 @@ INE_FILES = {
 FOOD_DIVISION = "1"
 BRONZE_TABLE = "ine_ipc"
 REQUEST_TIMEOUT_SECONDS = 60
+# endregion
 
 
+# region IPC of the INE (Chile) for real prices
 def parse_rows(text: str, file_name: str) -> list[dict[str, str]]:
     """Rows of division 1 (the division itself, not its groups): year, month, index and
     monthly change, as text exactly as published."""
@@ -101,5 +104,10 @@ def main() -> int:
     return 0
 
 
+# endregion
+
+
+# region Run
 if __name__ == "__main__":
     sys.exit(main())
+# endregion

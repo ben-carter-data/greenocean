@@ -7,10 +7,13 @@ read. A drawing that does not measure anything carries no mark, so the differenc
 
 import html
 
+# region Constants
 TEXT = "en vivo · leído de la base al abrir"
 GREEN_DARK, GREEN_LIGHT = "#3dd68c", "#1f8f5f"
+# endregion
 
 
+# region «en vivo», the mark of a figure read from the base
 def build_html(what, extra=""):
     """The mark: a dot that beats and the words; «what» is what was read, shown on hover."""
     classes = "live-mark" + (f" {extra}" if extra else "")
@@ -32,3 +35,6 @@ def build_css(dark):
   50% {{ opacity:.45; box-shadow:0 0 0 4px color-mix(in srgb, {green} 25%, transparent); }} }}
 @media (prefers-reduced-motion: reduce) {{ .live-mark i {{ animation:none; }} }}
 """
+
+
+# endregion

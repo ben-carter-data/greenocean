@@ -6,6 +6,7 @@ import math
 
 from bi import charts
 
+# region Constants
 # Each ring (high, medium, low) is an ellipse around GreenOcean, a tilted disc; each stakeholder sits on its ring at its
 # own angle (degrees, 0 to the right, 90 down), so no two names meet.
 RINGS = [(0.21, "Interés alto"), (0.335, "Interés medio"), (0.445, "Interés bajo")]
@@ -14,8 +15,10 @@ TILT = 0.44  # the vertical radius of a ring over its horizontal one, on screen:
 RATIO = 1.85  # the stage's width over its height
 COLORS = ["#5fd39b", "#5aa9ea", "#b49cff"]
 CRITERION = "Cada anillo dice cuánto depende su decisión de estos datos y con qué frecuencia los usa."
+# endregion
 
 
+# region The interest map of «Interesados»
 def place(level, order):
     """Where a stakeholder sits, in % of the stage: on its ring, at its angle."""
     radius = RINGS[level][0]
@@ -106,3 +109,6 @@ def build_css(palette, fit_height=True, reserved=190):
     .im-node:hover .im-why, .im-node:focus-visible .im-why {{ max-height:12cqw; opacity:1; }}
     .im-criterion {{ margin:.4rem 0 0; text-align:center; font-size:13px; color:{charts.legible(muted, background)}; }}
     </style>"""
+
+
+# endregion

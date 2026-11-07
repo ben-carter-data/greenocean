@@ -16,6 +16,7 @@ import pandas as pd
 
 from bi import queries
 
+# region Constants and variables
 REVIEWED_FILE = Path(__file__).resolve().parent.parent / "etl" / "reviewed_units.csv"
 # One package and one quantity, or a price already per kilo, unit or liter: nothing that can be read two ways.
 PLAIN_PACKAGE = re.compile(
@@ -23,8 +24,10 @@ PLAIN_PACKAGE = re.compile(
     r"|(?!docena|media|cien)[a-záéíóúñ]+(?: de)? \(?\d+(?:,\d+)? ?(?:kilos?|unidades|gramos|grs|litros?|ml)\)?"
     r"(?: [a-záéíóúñ]+)?(?: \(volumen en unidades\))?)$"
 )
+# endregion
 
 
+# region The sale units of ODEPA reviewed by hand
 def read_reviewed() -> pd.DataFrame:
     return pd.read_csv(REVIEWED_FILE, dtype=str, keep_default_na=False)
 
@@ -61,3 +64,6 @@ def summarize(database_file: Path = queries.DATABASE_FILE) -> dict[str, Any]:
         "seen": None if units is None else units["unit"].nunique(),
         "new": [] if units is None else find_unclassified(units, reviewed).to_dict("records"),
     }
+
+
+# endregion

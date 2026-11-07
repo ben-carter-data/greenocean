@@ -18,6 +18,7 @@ from pathlib import Path
 
 from bi import live_mark, brand_icons, charts, database_map, doc_views, project, queries
 
+# region Constants and variables
 REPOSITORY = Path(__file__).resolve().parent.parent
 # Disc colors (light top, dark bottom, glyph) beyond database_map.BRANDS.
 EXTRA_DISCS = {
@@ -299,8 +300,10 @@ LEGEND = [
     ("sql", "dónde se usa SQL"),
     ("test", "qué verifican las pruebas"),
 ]
+# endregion
 
 
+# region «Stack y evidencia»
 def read_figures(database_file=queries.DATABASE_FILE, tests_dir=REPOSITORY / "tests"):
     """{prices, tests, loads}: weekly prices served, automatic tests (pytest + dbt) and recorded loads."""
     connection = queries.open_database(database_file)
@@ -515,3 +518,6 @@ def build_stack_html(palette, figures, addresses):
         + "".join(nodes)
         + f'</div><p class="sk-legend">{legend}</p></div><div class="evidence">{numbers}</div>'
     )
+
+
+# endregion

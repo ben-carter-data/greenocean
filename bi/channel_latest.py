@@ -15,11 +15,14 @@ import pandas as pd
 
 from bi import home_mockup
 
+# region Constants
 SOURCES = (("wholesale", "Mayorista"), ("consumer", "Consumidor"))
 KEY = ["product_group", "product", "variety", "quality", "normalized_unit", "channel"]
 STILL = 0.05  # a regional change under this many percent is «no change» for the up and down counts
+# endregion
 
 
+# region The channels of step 2 of «Semanal»
 def weeks_of(frame: pd.DataFrame, source: str) -> list[str]:
     """The weeks of one source in the table, newest first (two at most)."""
     return sorted(frame.loc[frame["source"] == source, "week_start"].unique(), reverse=True)
@@ -146,3 +149,6 @@ def home_mockup_plain(text: str) -> str:
     import unicodedata
 
     return "".join(c for c in unicodedata.normalize("NFKD", str(text).lower()) if not unicodedata.combining(c))
+
+
+# endregion

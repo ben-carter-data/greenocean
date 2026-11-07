@@ -7,6 +7,7 @@ bi/storage_map.py; the other views take their logos from here.
 
 from bi import brand_icons, charts, operation_center
 
+# region Constants
 MAIN_Y = 235
 BACKUP_Y = MAIN_Y + 270
 # Brand marks on a soft gradient disc: (top, bottom, glyph color).
@@ -147,8 +148,10 @@ NODES = [
         "publica: se rehace en la máquina de cada carga para la prueba de paridad (D-270).",
     ),
 ]
+# endregion
 
 
+# region The stores of the project and the brand marks every diagram shares
 def thousands(value):
     return charts.format_thousands(value) if value is not None else "—"
 
@@ -170,3 +173,6 @@ def brand_logo(slug, suffix=""):
 def source_logo(key):
     """ODEPA's and the INE's marks, the ones of the operation center."""
     return f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true"><defs>{operation_center.LOGOS[key]}</svg>'
+
+
+# endregion

@@ -25,6 +25,7 @@ import pandas as pd
 
 from bi import charts
 
+# region Constants
 BASE_YEAR, BASE_MONTH = 2022, 1
 IPC_NAME = "IPC alimentos (INE)"
 BASKET_NAME = "Toda la canasta"  # D-456: every consumer series at once, like the Dashboard's row (D-352)
@@ -56,8 +57,10 @@ FROM national n
 JOIN dim_product p USING (product_id)
 GROUP BY n.product_group, p.product, n.product_id, n.channel_id, n.normalized_unit, year, month
 """
+# endregion
 
 
+# region Inflation view
 def build_family_index(
     series: pd.DataFrame, ipc: pd.DataFrame, basket: bool = False
 ) -> tuple[pd.DataFrame, tuple[int, ...]]:
@@ -389,3 +392,6 @@ def family_insights(
         )
     )
     return insights
+
+
+# endregion

@@ -20,6 +20,7 @@ import requests
 from bi import control
 from bi.i18n import tr
 
+# region Constants
 WORKFLOWS = (("pruebas", "pruebas.yml"), ("semanal", "semanal.yml"), ("calidad", "calidad.yml"))
 RUNS_PER_WORKFLOW = 8
 LOG_LINES = 60
@@ -33,8 +34,10 @@ FAILED_TEST = re.compile(r"^(?:FAILED|ERROR) (\S+)")
 SECRET_SHAPES = re.compile(
     r"(gh[pousr]_[A-Za-z0-9]{16,}|github_pat_[A-Za-z0-9_]{16,}|[Bb]earer\s+[A-Za-z0-9._~+/=-]{16,})"
 )
+# endregion
 
 
+# region GitHub Actions, read-only
 def pick_token(read_token: str | None, token: str | None) -> str | None:
     """D-397: only the read-only token. The usual one can start and cancel runs, so it is never sent from here; it is
     still covered in every text, in case a log prints it."""
@@ -239,3 +242,6 @@ def build_model(read_token: str | None, token: str | None, now: datetime | None 
         model["workflows"].append(entry)
     model["read_at"] = now or datetime.now(timezone.utc)
     return model
+
+
+# endregion

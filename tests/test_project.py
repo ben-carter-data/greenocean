@@ -223,3 +223,26 @@ def test_d541_every_file_of_the_split_panel_keeps_the_layout_of_the_agent(name):
         if node is not top and isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
     ]
     assert nested == [], (name, nested)
+
+
+def test_d542_every_python_file_of_the_project_has_its_regions_closed_and_not_nested():
+    """R-001 of AKGRO.md: every module of bi/, etl/, agent/ and scripts/ is laid out in regions, like agent/agent.py;
+    each region closes before the next opens. A package's __init__.py only marks the folder."""
+    root = Path(__file__).resolve().parent.parent
+    wrong = []
+    for folder in ("bi", "etl", "agent", "scripts"):
+        for path in sorted((root / folder).glob("*.py")):
+            if path.name == "__init__.py":
+                continue
+            depth, nested, opened = 0, False, 0
+            for line in path.read_text(encoding="utf-8").split("\n"):
+                if line.startswith("# region "):
+                    nested |= depth > 0
+                    depth += 1
+                    opened += 1
+                elif line == "# endregion":
+                    depth -= 1
+                    nested |= depth < 0
+            if not opened or depth or nested:
+                wrong.append(f"{folder}/{path.name}")
+    assert wrong == [], wrong

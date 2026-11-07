@@ -9,6 +9,7 @@ import html
 
 from bi.i18n import tr
 
+# region Constants
 # Line icons on a 24 px grid. The bar paints them through a CSS mask, so one shape takes the tone of each theme and
 # brightens on hover or when its page is open.
 ICONS = {
@@ -127,8 +128,10 @@ STACK_AREAS = [
         ],
     ),
 ]
+# endregion
 
 
+# region The activity bar of the menu
 def build_icon_svg(name):
     """One icon as an SVG file, for the CSS mask of its button."""
     return (
@@ -141,3 +144,6 @@ def build_stack_html(title, names):
     """The window of one area: its title and its names, numbered in order of relevance."""
     items = "".join(f"<li>{html.escape(tr(name))}</li>" for name in names)
     return f'<div class="stack-list"><p class="stack-title">{html.escape(tr(title))}</p><ol>{items}</ol></div>'
+
+
+# endregion

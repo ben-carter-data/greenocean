@@ -28,6 +28,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import project, queries  # noqa: E402
 
+# region Constants
 RELEASE_TAG = "base-actual"
 DATABASE_FILE = queries.DATABASE_FILE
 POINTER_FILE = DATABASE_FILE.with_name("datos.version")
@@ -37,8 +38,10 @@ TIMEOUT_SECONDS = 60
 # How the local file compares with the published one, and what ensure_database did.
 MISSING, PRESENT, LOCAL_BUILD, OLDER = "missing", "present", "local build", "older"
 DOWNLOADED, NO_POINTER = "downloaded", "no pointer"
+# endregion
 
 
+# region Where the served database lives
 def file_sha256(path: Path | str) -> str:
     digest = hashlib.sha256()
     with open(path, "rb") as source:
@@ -110,8 +113,13 @@ def ensure_database(
     return DOWNLOADED
 
 
+# endregion
+
+
+# region Run
 if __name__ == "__main__":
     if "--pointer" in sys.argv:
         print(json.dumps(write_pointer()))
     else:
         print(ensure_database())
+# endregion

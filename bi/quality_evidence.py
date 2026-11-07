@@ -10,6 +10,7 @@ import pandas as pd
 
 from bi import project, quality
 
+# region Constants
 # The cards, in the board's order: key, title, what the check does.
 CARDS = [
     (
@@ -101,8 +102,10 @@ ORDER BY r.status, n.name"""
 RUNS_SQL = """SELECT run_id AS ejecucion, started_at AS inicio_utc, status AS estado, rows_read AS leidas,
        rows_loaded AS cargadas, rows_rejected AS rechazadas, message AS mensaje
 FROM etl_run ORDER BY run_id DESC"""
+# endregion
 
 
+# region The evidence behind each card of «Controles de datos»
 def manifest_frame(manifest):
     """One row per registered download."""
     rows = [
@@ -203,3 +206,6 @@ def test_links(key):
     return [(path, f"{project.GITHUB_URL}/blob/{project.GITHUB_BRANCH}/{path}") for path in TEST_LINKS.get(key, ())] + [
         ("Resultado en GitHub Actions (pruebas)", f"{project.GITHUB_URL}/actions/workflows/pruebas.yml")
     ]
+
+
+# endregion

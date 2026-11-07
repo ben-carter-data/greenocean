@@ -14,9 +14,12 @@ import streamlit as st
 
 from bi.i18n import tr
 
+# region Constants
 PAGE_SIZE = 20
+# endregion
 
 
+# region Compact lists for the tables that grow
 def page_count(total: int, size: int = PAGE_SIZE) -> int:
     return max(1, -(-total // size))
 
@@ -86,3 +89,6 @@ def build_css(palette: dict[str, str]) -> str:
 [class*="st-key-cr_"][class*="_row_"] button p {{ font-size:13px !important; color:{text} !important; text-align:left !important; overflow-wrap:anywhere; }}
 [class*="st-key-cr_"][class*="_row_"] [data-testid="stMarkdownContainer"] .cr-detail {{ margin:0 0 10px 34px; font-size:12.5px; color:{text}; }}
 </style>"""
+
+
+# endregion

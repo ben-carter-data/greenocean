@@ -3,10 +3,13 @@ por canal». Every icon is a standalone SVG with its gradients, shown as an imag
 
 import base64
 
+# region Constants
 # Shared pieces: a soft floor shadow and the gradient helper.
 SHADOW = '<ellipse cx="32" cy="58" rx="22" ry="4" fill="#000" opacity=".22"/>'
+# endregion
 
 
+# region Channel icons
 def gradient(name, top, bottom, vertical=True):
     direction = 'x1="0" y1="0" x2="0" y2="1"' if vertical else 'x1="0" y1="0" x2="1" y2="0"'
     return f'<linearGradient id="{name}" {direction}><stop offset="0" stop-color="{top}"/><stop offset="1" stop-color="{bottom}"/></linearGradient>'
@@ -114,3 +117,6 @@ def image(channel, size=44):
         f'<img class="ch-icon" src="data:image/svg+xml;base64,{data}" width="{size}" height="{size}" alt="" '
         'aria-hidden="true">'
     )
+
+
+# endregion

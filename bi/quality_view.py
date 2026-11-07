@@ -525,6 +525,7 @@ def build_icon_svg(name):
 # endregion
 
 
+# region The story of the pipeline
 # The story (D-176): four stages of the pipeline, each with its role in data quality,
 # its main figure, its verdict and, as small illustrations, the controls it runs.
 STAGES = [

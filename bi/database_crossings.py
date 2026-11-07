@@ -14,6 +14,7 @@ import html
 
 from bi import charts, database_map, queries, storage_map
 
+# region Constants
 BACKUP_TABLES = ["dim_product", "dim_region", "dim_channel", "dim_date", "weekly_price", "rejection", "etl_run"]
 
 RAW_NOTE = "no se puede comprobar aquí: raw.db no está en este servidor"
@@ -134,8 +135,10 @@ STATUS_WORDS = {
     "info": "Dato",
 }
 STATUS_COLORS = {"ok": "#22b35a", "fail": "#d03b3b", "warn": "#d97706", "pending": "#d97706", "info": "#8a94a6"}
+# endregion
 
 
+# region Where two databases meet
 def read_checks(database_file=queries.DATABASE_FILE, backup_file=None):
     """{crossing key: (status, text)} of what can be measured in this server."""
     from bi import quality
@@ -487,3 +490,6 @@ def build_crossings_html(palette, checks):
         + f'</head><body><svg class="map" viewBox="0 0 {WIDTH} {HEIGHT}" preserveAspectRatio="xMidYMid meet" '
         f'role="img" aria-label="Cruces entre bases">{"".join(parts)}{"".join(badges)}{legend}{"".join(tips)}</svg></body></html>'
     )
+
+
+# endregion

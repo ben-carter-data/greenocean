@@ -8,6 +8,7 @@ rule dresses the page links Streamlit draws for «Anterior / Siguiente». This m
 import html
 from urllib.parse import quote
 
+# region Constants
 VARIANTS = ("primary", "secondary", "text")
 SIZES = ("compact", "normal")
 # Thin line icons, 24-unit grid, drawn with the text color.
@@ -23,8 +24,10 @@ ICONS = {
     "folder": '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     "language": '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/>',
 }
+# endregion
 
 
+# region The one button and link component of the panel
 def build_icon_html(name):
     """An icon as a span: st.html drops inline SVG, so the drawing travels as a CSS mask (build_icon_css)."""
     return f'<span class="go-icon go-icon-{name}" aria-hidden="true"></span>'
@@ -63,3 +66,6 @@ def build_button_html(text, *, icon=None, variant="secondary", size="normal", ex
     """A button drawn as the component; its behaviour is attached by the caller's script, by its class."""
     mark = build_icon_html(icon) if icon else ""
     return f'<button class="{build_class(variant, size, extra)}" type="button">{mark}<span>{html.escape(text)}</span></button>'
+
+
+# endregion

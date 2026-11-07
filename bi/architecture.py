@@ -1397,6 +1397,7 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
 # endregion
 
 
+# region The logo of each component
 # Glossary entry of the brand logo each component shows (what that logo stands for here).
 COMPONENT_LOGO_KEYS = {
     "Job semanal.yml": "github_actions",

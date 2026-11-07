@@ -16,6 +16,7 @@ from typing import Any
 
 from bi import quality_metrics, weeks
 
+# region Constants
 SKY = "#38bdf8"
 DEEP = "#05070b"
 BEFORE = "#a78bfa"  # the earlier report of a comparison: violet, apart from the sky blue of the later one
@@ -26,8 +27,10 @@ STATE_COLORS = {
     "critico": "#f87171",
     "sin_medicion": "#94a3b8",
 }
+# endregion
 
 
+# region The quality report viewer
 def esc(value: Any) -> str:
     return html.escape(str(value))
 
@@ -49,10 +52,6 @@ def period(reports: list[dict[str, Any]], report: dict[str, Any]) -> tuple[str, 
     """(from, to) of the period a report covers: from the previous report's date to its own."""
     previous = next((item for item in reports if item["numero"] == report["anterior"]), None)
     return (previous["fecha"][:10] if previous else "", report["fecha"][:10])
-
-
-def incidents_in(incidents: list[dict[str, Any]], start: str, end: str) -> int:
-    return sum(1 for item in incidents if start < str(item.get("fecha", ""))[:10] <= end)
 
 
 def slide(key: str, title: str, body: str) -> str:
@@ -399,3 +398,4 @@ mini.appendChild(copy);const number=document.createElement('i');number.textConte
 tile.onclick=()=>show(k);thumbs.appendChild(tile);tiles.push(tile);}});
 new ResizeObserver(fit).observe(stage);new ResizeObserver(fit).observe(thumbs);fit();show(0);
 """
+# endregion

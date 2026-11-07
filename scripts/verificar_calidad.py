@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import quality_metrics  # noqa: E402
 
 
+# region Compares a measurement with the acceptables and goals of docs/calidad/metas.json
 def main() -> int:
     path = Path(sys.argv[1]) if len(sys.argv) > 1 else quality_metrics.REPORT_FILE
     report = quality_metrics.read(path)
@@ -39,5 +40,10 @@ def main() -> int:
     return 0
 
 
+# endregion
+
+
+# region Run
 if __name__ == "__main__":
     sys.exit(main())
+# endregion

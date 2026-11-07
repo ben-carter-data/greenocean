@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 from bi import charts, control
 from bi.i18n import tr
 
+# region Constants
 CHILE = ZoneInfo("America/Santiago")
 STATE_WORDS = {"ok": "Correcta", "failed": "Falló", "in_progress": "En curso"}
 STATE_COLORS = {"ok": "#199e70", "failed": None, "in_progress": "#b8860b"}
@@ -28,8 +29,10 @@ NO_TOKEN_NOTICE = (
     "Falta el token de solo lectura. Sin él solo se ven los estados, sin logs: guárdalo como GITHUB_READ_TOKEN en "
     "los secretos de Streamlit."
 )
+# endregion
 
 
+# region The page «GitHub Actions»
 def esc(value: Any) -> str:
     return html.escape(str(value))
 
@@ -140,3 +143,6 @@ def build_css(palette: dict[str, str]) -> str:
 .ga-label {{ font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:{soft}; margin:8px 0 2px !important; }}
 .ga-failure ul {{ margin:0 0 4px; padding-left:18px; font-size:12.5px; color:{text}; }}
 </style>"""
+
+
+# endregion

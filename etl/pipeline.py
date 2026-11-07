@@ -28,6 +28,7 @@ import duckdb
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from etl import bronze, etl, ine  # noqa: E402
 
+# region Constants
 PROJECT_DIR = etl.BASE_DIR.parent
 DBT_DIR = PROJECT_DIR / "dbt"
 WORK_DATABASE_FILE = etl.BASE_DIR / "warehouse_build.duckdb"
@@ -71,8 +72,10 @@ ETL_RUN_SCHEMA = """CREATE TABLE IF NOT EXISTS etl_run (
     run_id INTEGER PRIMARY KEY, started_at VARCHAR NOT NULL, status VARCHAR NOT NULL,
     rows_read INTEGER NOT NULL, rows_loaded INTEGER NOT NULL, rows_rejected INTEGER NOT NULL,
     message VARCHAR)"""
+# endregion
 
 
+# region Weekly load with dbt and DuckDB
 def prepare_ipc(serving_file: Path = SERVING_DATABASE_FILE) -> None:
     """IPC of the INE into the bronze layer (D-155). If the INE does not answer, the
     rows kept in the published database rebuild it: the load never stops for the IPC."""
@@ -299,5 +302,10 @@ def main(dbt_command: str | None = None, load_raw: bool = True, record: bool = T
     return 0
 
 
+# endregion
+
+
+# region Run
 if __name__ == "__main__":
     sys.exit(main(record="--local" not in sys.argv))
+# endregion

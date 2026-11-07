@@ -18,9 +18,12 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import alerts, queries  # noqa: E402
 
+# region Constants
 SERIES = ["product", "variety", "quality", "channel", "normalized_unit"]
+# endregion
 
 
+# region Why the prices of a week have no valid comparison
 def count_gaps(prices, week=None):
     """{week, prices, with_comparison, without, one_week, two_to_twelve, over_twelve, never, groups} of one week."""
     prices = prices.assign(week_start=pd.to_datetime(prices["week_start"]))
@@ -62,5 +65,10 @@ def main():
     print("  por grupo: " + ", ".join(f"{name} {count}" for name, count in found["groups"].items()))
 
 
+# endregion
+
+
+# region Run
 if __name__ == "__main__":
     main()
+# endregion

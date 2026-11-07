@@ -168,10 +168,6 @@ def read_design_table(heading):
 # endregion
 
 
-# region SQL catalog
-# endregion
-
-
 # region Data model
 def count_table_rows(database_file=queries.DATABASE_FILE):
     """{table: number of rows} for every table of the data warehouse."""
@@ -228,6 +224,7 @@ def read_week_span(database_file=queries.DATABASE_FILE):
 # endregion
 
 
+# region GitHub addresses
 def build_github_url(path):
     """Address of a file (blob) or a folder (tree) of the repository on GitHub."""
     kind = "tree" if path.endswith("/") else "blob"
@@ -245,9 +242,6 @@ def select_example_rows(rows, region=EXAMPLE_REGION, channel=EXAMPLE_CHANNEL):
         if column in rows.columns and value is not None:
             rows = rows[rows[column] == value]
     return rows
-
-
-# endregion
 
 
 # endregion

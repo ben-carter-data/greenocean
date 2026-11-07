@@ -21,13 +21,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import quality_metrics as q  # noqa: E402
 
+# region Constants
 REPORT_PATH = q.FOLDER / "INFORME.md"
 NONCONFORMITIES = q.FOLDER / "no_conformidades.json"
 OUT_OF_RANGE = ("urgente", "critico")
 FOLDER = q.WEEKLY_FOLDER
 GOAL_FIELDS = ("max", "min", "meta", "margen_critico", "tipo", "medida")
+# endregion
 
 
+# region Weekly quality reports
 def read_reports(folder=FOLDER):
     """Every weekly report, oldest first."""
     return [
@@ -236,5 +239,10 @@ def main():
     print(f"{report['titulo']} {'escrito' if new else 'ya existía'}")
 
 
+# endregion
+
+
+# region Run
 if __name__ == "__main__":
     main()
+# endregion

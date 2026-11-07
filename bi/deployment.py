@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 
 from bi import architecture, charts, control, project, queries, quality_view
 
+# region Constants and variables
 WIDTH, HEIGHT = 1210, 566  # D-422: wider, not taller, so it keeps its height on screen
 DEPTH = 12
 REPOSITORY = Path(__file__).resolve().parent.parent
@@ -91,8 +92,10 @@ TIPS = {
     "browser": "El Usuario, el Profesional o el Autor. El panel público no pide cuenta; la clave de control solo abre lo del Autor, "
     "como el botón «Ejecutar pipeline ahora».",
 }
+# endregion
 
 
+# region «Despliegue»
 def esc(value):
     return html.escape(str(value))
 
@@ -312,3 +315,6 @@ def build_deployment_html(palette, states, figures, live=True):
         f'preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de despliegue">{head}{"".join(drawn)}'
         f'{paths}{chips}{legend}{"".join(tips)}</svg></body></html>'
     )
+
+
+# endregion

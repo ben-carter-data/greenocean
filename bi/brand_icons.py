@@ -6,6 +6,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
+# region Locally bundled brand paths shared by technical diagrams
 @lru_cache(maxsize=16)
 def logo_body(slug):
     root = ET.fromstring((Path(__file__).with_name("assets") / "logos" / f"{slug}.svg").read_text())
@@ -21,3 +22,6 @@ def logo(slug, x, y, color, size=28):
         f'<svg x="{x}" y="{y}" width="{size}" height="{size}" '
         f'viewBox="0 0 24 24" fill="{color}" aria-hidden="true">{logo_body(slug)}</svg>'
     )
+
+
+# endregion

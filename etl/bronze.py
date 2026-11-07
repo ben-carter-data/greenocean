@@ -18,10 +18,13 @@ import pyarrow.parquet as pq
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from etl import etl  # noqa: E402
 
+# region Constants
 BRONZE_DIR = etl.BASE_DIR / "bronze"
 BRONZE_TABLES = {etl.SOURCE_WHOLESALE: "odepa_wholesale", etl.SOURCE_CONSUMER: "odepa_consumer"}
+# endregion
 
 
+# region Bronze layer in Parquet
 def export_source(connection: sqlite3.Connection, source: str, bronze_dir: Path = BRONZE_DIR) -> dict[int, int]:
     """Write bronze/<table>/file_year=<year>/data.parquet for every year of one source.
     Returns {year: rows}."""
@@ -52,5 +55,10 @@ def main() -> None:
         connection.close()
 
 
+# endregion
+
+
+# region Run
 if __name__ == "__main__":
     main()
+# endregion

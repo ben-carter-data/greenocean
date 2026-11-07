@@ -18,6 +18,7 @@ from typing import Any
 
 from bi import charts, quality_metrics
 
+# region Constants
 LANES = (
     ("a", ("Preparar", "Prepare")),
     ("b", ("Guardar y verificar", "Commit and verify")),
@@ -368,8 +369,10 @@ STATIONS: list[dict[str, Any]] = [
         ),
     },
 ]
+# endregion
 
 
+# region «Cambios e incidentes»
 def pick(pair: tuple[str, str], language: str) -> str:
     return pair[1] if language == "en" else pair[0]
 
@@ -724,3 +727,6 @@ def log_detail(row: dict[str, Any], language: str, author: bool) -> str:
     station = f"{pick(LABELS['station'], language)} {row['estacion']}"
     ref = f" · {html.escape(row['referencia'])}" if row["referencia"] and row["referencia"] != "desconocido" else ""
     return f'<ul class="cr-detail">{items}<li><b>{html.escape(station)}</b>{ref}</li></ul>'
+
+
+# endregion

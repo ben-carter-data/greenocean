@@ -13,6 +13,7 @@ from pathlib import Path
 
 from bi import data_terms, i18n
 
+# region Constants
 PACKAGE_SEPARATOR = ' · '  # as dbt/models/intermediate/int_prices__same_package.sql joins them
 
 RED = '#e62035'
@@ -29,8 +30,10 @@ FAMILY_ART_FILES = {
     'Carne de Cerdo - Ave - Cordero': 'cerdo-ave-cordero.webp',
     'Cerdo, ave y cordero': 'cerdo-ave-cordero.webp',
 }
+# endregion
 
 
+# region Pixel-directed home dashboard
 @lru_cache(maxsize=None)
 def family_art_data_uri(group):
     """Return a compact, self-contained family image for Streamlit HTML."""
@@ -1192,3 +1195,6 @@ def panels(model, scope, focus_link, data_link, history_link, order, count, qual
         f'<span>Fuente: ODEPA · precios nominales · valores redondeados; cambios calculados antes de redondear. '
         f'<a href="{esc(quality_link)}" target="_self">Calidad</a> · <a href="{esc(methodology_link)}" target="_self">Metodología</a></span></footer>'
     )
+
+
+# endregion

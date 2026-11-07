@@ -11,6 +11,7 @@ import html
 
 from bi import er_diagram, i18n, sql_explorer
 
+# region Constants
 HEADER, ROW, BOX, MARGIN = 32, 24, 255, er_diagram.MARGIN
 # D-516: four columns, so the drawing is wider than tall and all of it fits one look at the window. Each view beside the
 # view it joins; the gaps leave room for the lines that pass between two columns.
@@ -91,8 +92,10 @@ JOIN_LINES = [
     ("JOIN semanas AS s ON s.semana = i.semana", "el calendario de esa semana"),
     ("JOIN ipc_mensual AS m ON m.anio = i.anio_ipc AND m.mes = i.mes_ipc", "el mes del IPC de cada semana"),
 ]
+# endregion
 
 
+# region The relationships between the views of «Consultas SQL»
 def build_joins():
     """The joins as one SQL text, the comments in the language of the visit, aligned in a column."""
     width = max(len(sql) for sql, _ in JOIN_LINES if sql) + 2
@@ -275,3 +278,6 @@ def build_svg(schema, counts, mode, descriptions=None):
         f'aria-label="Relaciones entre las vistas de Consultas SQL" font-family="{er_diagram.charts.CHART_FONT}">'
         f"{links}{logical}{tables}{legend}</svg>"
     )
+
+
+# endregion
