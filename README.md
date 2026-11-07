@@ -72,11 +72,16 @@ GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los 
 │   ├── datos.duckdb     base servida (no se sube; python bi/served_database.py la descarga)
 │   └── datos.db         respaldo en SQLite (no se sube; lo rehace cada carga)
 ├── dbt/                 proyecto dbt: staging, intermedio, marts y pruebas
-├── bi/
-│   ├── dashboard.py     panel Streamlit
+├── bi/                  panel Streamlit, un archivo por responsabilidad
+│   ├── dashboard.py     arranque, navegación, menú y barra de íconos
+│   ├── constants.py     nombres fijos: páginas, menú y temas
+│   ├── data_access.py   lecturas de la Base DuckDB y de GitHub
+│   ├── app_frame.py     tema, perfil, acceso del Autor y encabezado
+│   ├── app_style.py     hojas de estilo globales
+│   ├── page_*.py        las páginas: Semanal, Análisis, ingeniería, calidad, DevOps y documentos
 │   ├── queries.sql      consultas del panel
-│   └── architecture.py  diagramas en vivo del pipeline y la plataforma
-│   (y el resto del panel: páginas, diagramas, textos en español e inglés)
+│   └── static/          JavaScript y HTML de las vistas
+│   (y el resto del panel: diagramas, textos en español e inglés)
 ├── docs/                los documentos, en cuatro carpetas (negocio, arquitectura, calidad y operación), y las decisiones
 │   ├── en/              los mismos documentos y carpetas, en inglés
 │   ├── img/             capturas del panel
