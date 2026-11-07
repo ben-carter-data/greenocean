@@ -841,6 +841,34 @@ def scenario_css(palette):
 </style>"""
 
 
+def _sad_scenarios_icon(name, color):
+    return f'<svg viewBox="0 0 24 24">{mark(f"icon:{name}@{color}", 12, 12, 24, color)}</svg>'
+
+
+def _sad_scenarios_person(name):
+    return doc_views.flat_logo("person", name).replace('class="logo" ', "", 1)
+
+
+def _sad_scenarios_tile(name, detail="", ref=""):
+    reference = f' <span class="ref">{esc(ref)}</span>' if ref else ""
+    body = f" <span>· {esc(detail)}</span>" if detail else ""
+    return f'<div class="sc-tile"><b>{esc(name)}{reference}</b>{body}</div>'
+
+
+def _sad_scenarios_section(row, actor, color, heading, tiles, extra="", layout=""):
+    return (
+        f'<section class="sc-sec" data-actor="{actor}" style="grid-row:{row};--c:{color}"><h4>{esc(heading)}</h4>'
+        f'<div class="sc-grid {layout}">{"".join(tiles)}</div>{extra}</section>'
+    )
+
+
+def _sad_scenarios_arrow(row, color, label, direction="right", column=2):
+    return (
+        f'<div class="sc-arrow {direction}" style="grid-row:{row};grid-column:{column};--c:{color}">'
+        f"<em>{esc(label)}</em></div>"
+    )
+
+
 def sad_scenarios(mode):
     """D-425: who uses GreenOcean and what each one reaches, inside the panel and around it. Each profile inherits the
     one above it; the Base DuckDB and GitHub Actions sit outside the panel. Every name is the official one (the menu,
@@ -853,29 +881,6 @@ def sad_scenarios(mode):
         "#8b5cf6",
         palette["accent"],
     )
-
-    def icon(name, color):
-        return f'<svg viewBox="0 0 24 24">{mark(f"icon:{name}@{color}", 12, 12, 24, color)}</svg>'
-
-    def person(name):
-        return doc_views.flat_logo("person", name).replace('class="logo" ', "", 1)
-
-    def tile(name, detail="", ref=""):
-        reference = f' <span class="ref">{esc(ref)}</span>' if ref else ""
-        body = f" <span>· {esc(detail)}</span>" if detail else ""
-        return f'<div class="sc-tile"><b>{esc(name)}{reference}</b>{body}</div>'
-
-    def section(row, actor, color, heading, tiles, extra="", layout=""):
-        return (
-            f'<section class="sc-sec" data-actor="{actor}" style="grid-row:{row};--c:{color}"><h4>{esc(heading)}</h4>'
-            f'<div class="sc-grid {layout}">{"".join(tiles)}</div>{extra}</section>'
-        )
-
-    def arrow(row, color, label, direction="right", column=2):
-        return (
-            f'<div class="sc-arrow {direction}" style="grid-row:{row};grid-column:{column};--c:{color}">'
-            f"<em>{esc(label)}</em></div>"
-        )
 
     actors = [
         (3, "visitor", say("Usuario", "User"), say("Lee el negocio", "Reads the business"), "", ""),
@@ -898,7 +903,7 @@ def sad_scenarios(mode):
     ]
     parts = ['<div class="sc-frame"></div>']
     parts.append(
-        f'<div class="sc-head">{icon("chart", sky)}<div><b>{say("Panel web", "Web panel")} · Streamlit</b>'
+        f'<div class="sc-head">{_sad_scenarios_icon("chart", sky)}<div><b>{say("Panel web", "Web panel")} · Streamlit</b>'
         f"<span>{esc(say('Lee la Base DuckDB en solo lectura. Solo la entrada como Autor pide clave y se comprueba en el servidor; Usuario → Profesional es solo un filtro del menú.', 'Reads the DuckDB database read-only. Only the entry as the Author asks for a key and is checked on the server; User → Professional is only a menu filter.'))}</span></div></div>"
     )
     parts.append(
@@ -915,13 +920,13 @@ def sad_scenarios(mode):
         + "</p></section>"
     )
     parts.append(
-        section(
+        _sad_scenarios_section(
             3,
             "usuario",
             green,
             say("Usuario · Negocio · BA y BI · sin cuenta", "User · Business · BA and BI · no account"),
             [
-                tile(
+                _sad_scenarios_tile(
                     say("Semanal", "Weekly"),
                     say(
                         "región, canal, familia y alertas de precio", "region, channel, family and price alerts"
@@ -929,7 +934,7 @@ def sad_scenarios(mode):
                     "P-1 · RF-05",
                 ),
                 # D-456: one page, in tabs, gathers the history and the former four pages of the section.
-                tile(
+                _sad_scenarios_tile(
                     say("Análisis", "Analysis"),
                     say(
                         "Mensual · Histórico · Precios e inflación · Insights · Interesados · Método",
@@ -943,7 +948,7 @@ def sad_scenarios(mode):
         )
     )
     parts.append(
-        section(
+        _sad_scenarios_section(
             4,
             "profesional",
             blue,
@@ -952,7 +957,7 @@ def sad_scenarios(mode):
                 "Professional · the whole project · no account · the role only orders the menu",
             ),
             [
-                tile(
+                _sad_scenarios_tile(
                     say("Ingeniería de datos", "Data engineering"),
                     say(
                         "Pipeline y linaje · Reglas de transformación · Modelo de datos · Consultas SQL sobre la Base DuckDB, solo lectura",
@@ -960,14 +965,14 @@ def sad_scenarios(mode):
                     ),
                     "P-2 · P-3 · RF-06",
                 ),
-                tile(
+                _sad_scenarios_tile(
                     say("Stack y evidencia", "Stack and evidence"),
                     say(
                         "«Flujo del sistema en vivo» · Mapa de la app · Arquitectura de seguridad, sin valores secretos",
                         "«Live system flow» · App map · Security architecture, no secret values",
                     ),
                 ),
-                tile(
+                _sad_scenarios_tile(
                     say("Calidad", "Quality"),
                     say(
                         "Controles de datos · Plan de calidad (ISO 25012, ISO 25010) · Cambios e incidentes",
@@ -975,7 +980,7 @@ def sad_scenarios(mode):
                     ),
                     "P-5",
                 ),
-                tile(
+                _sad_scenarios_tile(
                     say("Documentos", "Documents"),
                     say(
                         "PRD · SAD · ADR · Índice de decisiones · SQAP · Plan de pruebas · MANUAL · Glosario, cada uno con su PDF",
@@ -986,7 +991,7 @@ def sad_scenarios(mode):
         )
     )
     parts.append(
-        section(
+        _sad_scenarios_section(
             5,
             "autor",
             amber,
@@ -995,7 +1000,7 @@ def sad_scenarios(mode):
                 "Author · DevOps and security · with the key, checked on the server",
             ),
             [
-                tile(
+                _sad_scenarios_tile(
                     say("Entrada", "Entry"),
                     say(
                         "la clave del Autor (secreto CONTROL_CODE) en «Elige tu vista» · espera tras 3 fallos · sesión de 30 min · sin ser Autor, estas páginas dicen «No tienes acceso»",
@@ -1003,7 +1008,7 @@ def sad_scenarios(mode):
                     ),
                     "RF-09",
                 ),
-                tile(
+                _sad_scenarios_tile(
                     say("Centro de operación", "Operations center"),
                     say(
                         "«Ejecutar pipeline ahora» lanza semanal.yml · «Cancelar» con «¿Seguro?» · «Recargar datos» · «Cerrar acceso» · aviso de tokens a 15 días",
@@ -1011,14 +1016,14 @@ def sad_scenarios(mode):
                     ),
                     "RF-07",
                 ),
-                tile(
+                _sad_scenarios_tile(
                     "GitHub Actions",
                     say(
                         "estado de cada workflow y sus logs, leídos con GITHUB_READ_TOKEN",
                         "state of each workflow and its logs, read with GITHUB_READ_TOKEN",
                     ),
                 ),
-                tile(
+                _sad_scenarios_tile(
                     say("Configuración", "Settings"),
                     say(
                         "GITHUB_TOKEN y GITHUB_READ_TOKEN · última carga · último informe de calidad · pruebas · fuentes · mantenimiento",
@@ -1034,14 +1039,14 @@ def sad_scenarios(mode):
         parts.append(
             f'<div class="sc-actor" style="grid-row:{row}">'
             + (f'<span class="sc-up">{esc(inherits)}</span>' if inherits else "")
-            + f"{person(name)}<b>{esc(label)}</b><span>{esc(caption)}</span>"
+            + f"{_sad_scenarios_person(name)}<b>{esc(label)}</b><span>{esc(caption)}</span>"
             + (f"<small>{esc(note)}</small>" if note else "")
             + "</div>"
         )
     parts += [
-        arrow(3, green, say("ve", "sees")),
-        arrow(4, blue, say("además ve", "also sees")),
-        arrow(5, amber, say("además opera", "also operates")),
+        _sad_scenarios_arrow(3, green, say("ve", "sees")),
+        _sad_scenarios_arrow(4, blue, say("además ve", "also sees")),
+        _sad_scenarios_arrow(5, amber, say("además opera", "also operates")),
         f'<div class="sc-conn"><div class="sc-ups"><div class="sc-v up" style="--c:{sky}"><em>'
         f'{esc(say("lee", "reads"))}</em></div></div><span></span><div class="sc-ups">'
         f'<div class="sc-v down" style="--c:{amber}"><em>{esc(say("lanza y cancela", "launches and cancels"))}'
@@ -1050,7 +1055,7 @@ def sad_scenarios(mode):
         f'<small>GITHUB_READ_TOKEN · {esc(say("logs, solo el Autor", "logs, the Author only"))}</small></em></div></div></div>',
     ]
     parts.append(
-        f'<div class="sc-bottom"><div class="sc-db" style="--c:{sky}">{icon("database", sky)}<div><b>{say("Base DuckDB", "DuckDB database")}</b><span>'
+        f'<div class="sc-bottom"><div class="sc-db" style="--c:{sky}">{_sad_scenarios_icon("database", sky)}<div><b>{say("Base DuckDB", "DuckDB database")}</b><span>'
         + esc(
             say(
                 "datos.duckdb en el release «base-actual» · puntero datos.version en main",
@@ -1062,10 +1067,10 @@ def sad_scenarios(mode):
     )
     parts.append(
         f'<div class="sc-gh" style="--c:{violet}">'
-        f'<div class="sc-gh-title">{icon("calendar", violet)}<div><b>GitHub Actions</b>'
+        f'<div class="sc-gh-title">{_sad_scenarios_icon("calendar", violet)}<div><b>GitHub Actions</b>'
         f'<span>{esc(say("Automatización. No es un perfil.", "Automation. Not a profile."))}</span></div></div>'
         + '<div class="sc-grid">'
-        + tile(
+        + _sad_scenarios_tile(
             "semanal.yml",
             say(
                 "martes 12:07 UTC y desde «Centro de operación»: ODEPA e INE → dbt → pruebas; si todo pasa, publica la Base DuckDB y abre el «Informe semanal»",
@@ -1073,14 +1078,14 @@ def sad_scenarios(mode):
             ),
             "RF-01 · RF-02 · RF-03 · RF-08",
         )
-        + tile(
+        + _sad_scenarios_tile(
             "calidad.yml",
             say(
                 "mide en cada push; tras una carga en verde propone el informe de calidad (pull request) y lo fusiona si el código está en su aceptable",
                 "measures on every push; after a green load it proposes the quality report (pull request) and merges it if the code is in range",
             ),
         )
-        + tile(
+        + _sad_scenarios_tile(
             "pruebas.yml",
             say(
                 "en cada push: ruff, mypy, pytest y dbt parse; no toca la Base DuckDB",
@@ -2119,37 +2124,42 @@ def weekly_cycle(mode):
 
 
 # region Closure record (D-529): the stages of the project, what was expected against what was found, and whom it serves.
-def closure_timeline(mode):
-    def day(spanish, iso):
-        return iso if i18n.is_english() else spanish
+def _closure_timeline_day(spanish, iso):
+    return iso if i18n.is_english() else spanish
 
+
+def closure_timeline(mode):
     return timeline(
         mode,
         say("Las etapas del proyecto", "The stages of the project"),
         [
             (
-                day("11-10-2026", "2026-10-11"),
+                _closure_timeline_day("11-10-2026", "2026-10-11"),
                 say("Hitos 1 a 4", "Milestones 1 to 4"),
                 [say("descarga, ETL,", "download, ETL,"), say("panel y carga semanal", "panel and weekly load")],
             ),
-            (day("18-10-2026", "2026-10-18"), say("Documentos", "Documents"), ["PRD · SAD · ADR", "D-151"]),
             (
-                day("27-10-2026", "2026-10-27"),
+                _closure_timeline_day("18-10-2026", "2026-10-18"),
+                say("Documentos", "Documents"),
+                ["PRD · SAD · ADR", "D-151"],
+            ),
+            (
+                _closure_timeline_day("27-10-2026", "2026-10-27"),
                 say("Plan de calidad", "Quality plan"),
                 [say("14 indicadores", "14 indicators"), say("e informes · D-323", "and reports · D-323")],
             ),
             (
-                day("02-11-2026", "2026-11-02"),
+                _closure_timeline_day("02-11-2026", "2026-11-02"),
                 say("Inglés", "English"),
                 [say("toda la app", "the whole app"), say("en dos idiomas · D-443", "in two languages · D-443")],
             ),
             (
-                day("03-11-2026", "2026-11-03"),
+                _closure_timeline_day("03-11-2026", "2026-11-03"),
                 say("Semanal, 4 pasos", "Weekly, 4 steps"),
                 [say("región, canal,", "region, channel,"), say("familia y productos", "family and products")],
             ),
             (
-                day("04-11-2026", "2026-11-04"),
+                _closure_timeline_day("04-11-2026", "2026-11-04"),
                 say("Datos fiables", "Reliable data"),
                 [
                     say("unidades, volumen", "units, volume"),

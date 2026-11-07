@@ -411,20 +411,21 @@ def icon_gear():
     )
 
 
-def icon_layers():
-    def slab(y, top, side):
-        return (
-            f'<path d="M48 {y} L80 {y + 14} L48 {y + 28} L16 {y + 14} Z" fill="url(#qa-{top})"/>'
-            f'<path d="M16 {y + 14} L48 {y + 28} V{y + 34} L16 {y + 20} Z" fill="url(#qa-{side})"/>'
-            f'<path d="M80 {y + 14} L48 {y + 28} V{y + 34} L80 {y + 20} Z" fill="#0b3a92"/>'
-            f'<path d="M48 {y + 2} L72 {y + 13} L48 {y + 16} L24 {y + 13} Z" fill="url(#qa-gloss)" opacity=".45"/>'
-        )
+def _icon_layers_slab(y, top, side):
+    return (
+        f'<path d="M48 {y} L80 {y + 14} L48 {y + 28} L16 {y + 14} Z" fill="url(#qa-{top})"/>'
+        f'<path d="M16 {y + 14} L48 {y + 28} V{y + 34} L16 {y + 20} Z" fill="url(#qa-{side})"/>'
+        f'<path d="M80 {y + 14} L48 {y + 28} V{y + 34} L80 {y + 20} Z" fill="#0b3a92"/>'
+        f'<path d="M48 {y + 2} L72 {y + 13} L48 {y + 16} L24 {y + 13} Z" fill="url(#qa-gloss)" opacity=".45"/>'
+    )
 
+
+def icon_layers():
     return (
         shadow(48, 88, 32, 5)
-        + slab(50, "blue", "blue-side")
-        + slab(34, "blue", "blue-side")
-        + slab(18, "paper", "blue-side")
+        + _icon_layers_slab(50, "blue", "blue-side")
+        + _icon_layers_slab(34, "blue", "blue-side")
+        + _icon_layers_slab(18, "paper", "blue-side")
     )
 
 
@@ -449,16 +450,17 @@ def icon_parity():
     )
 
 
-def icon_reconcile():
-    def arrow(y, flip):
-        shape = (
-            f'<path d="M14 {y} h44 v-9 l24 17 l-24 17 v-9 h-44 Z" fill="url(#qa-blue)"/>'
-            f'<path d="M14 {y + 16} h44 v9 l6 -4 v-9 h-50 Z" fill="url(#qa-blue-side)"/>'
-            f'<rect x="16" y="{y + 2}" width="40" height="5" rx="2.5" fill="url(#qa-gloss)" opacity=".6"/>'
-        )
-        return f'<g transform="translate(96 0) scale(-1 1)">{shape}</g>' if flip else shape
+def _icon_reconcile_arrow(y, flip):
+    shape = (
+        f'<path d="M14 {y} h44 v-9 l24 17 l-24 17 v-9 h-44 Z" fill="url(#qa-blue)"/>'
+        f'<path d="M14 {y + 16} h44 v9 l6 -4 v-9 h-50 Z" fill="url(#qa-blue-side)"/>'
+        f'<rect x="16" y="{y + 2}" width="40" height="5" rx="2.5" fill="url(#qa-gloss)" opacity=".6"/>'
+    )
+    return f'<g transform="translate(96 0) scale(-1 1)">{shape}</g>' if flip else shape
 
-    return shadow(48, 88, 32, 5) + arrow(14, False) + arrow(48, True)
+
+def icon_reconcile():
+    return shadow(48, 88, 32, 5) + _icon_reconcile_arrow(14, False) + _icon_reconcile_arrow(48, True)
 
 
 def icon_calculator():

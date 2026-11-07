@@ -353,6 +353,10 @@ def families(rows: pd.DataFrame) -> list[str]:
     return sorted(set(rows["product_group"]) - {IPC, BASKET})
 
 
+def _product_frames_down(frame: pd.DataFrame) -> pd.DataFrame:
+    return frame.assign(product_group=PRODUCT + frame["product"])
+
+
 def product_frames(
     series: pd.DataFrame, ipc: pd.DataFrame, margins: pd.DataFrame, seasonal: pd.DataFrame, alerts_found: pd.DataFrame
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, str]]:
@@ -362,15 +366,18 @@ def product_frames(
     alerts and K1 pairs are exactly the sum of its products' (a product without an index shows «—», never a guess)."""
     rows, _ = inflation_view.build_family_index(series.assign(product_group=PRODUCT + series["product"]), ipc)
 
-    def down(frame: pd.DataFrame) -> pd.DataFrame:
-        return frame.assign(product_group=PRODUCT + frame["product"])
-
     family_of = {
         PRODUCT + product: family
         for frame in (series, margins, seasonal, alerts_found)
         for product, family in zip(frame["product"], frame["product_group"])
     }
-    return rows, down(margins), down(seasonal), down(alerts_found), family_of
+    return (
+        rows,
+        _product_frames_down(margins),
+        _product_frames_down(seasonal),
+        _product_frames_down(alerts_found),
+        family_of,
+    )
 
 
 def products_of(family_of: dict[str, str], family: str) -> list[str]:

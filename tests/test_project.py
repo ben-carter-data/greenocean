@@ -246,3 +246,39 @@ def test_d542_every_python_file_of_the_project_has_its_regions_closed_and_not_ne
             if not opened or depth or nested:
                 wrong.append(f"{folder}/{path.name}")
     assert wrong == [], wrong
+
+
+def test_d543_no_function_of_the_project_is_written_inside_another():
+    """R-002 of AKGRO.md: functions are separate. What a function needs from another travels as a parameter, or with
+    functools.partial where a callable is handed over; a one-line lambda Streamlit asks for is not a function of the
+    module."""
+    import ast
+
+    root = Path(__file__).resolve().parent.parent
+    nested = []
+    for folder in ("bi", "etl", "agent", "scripts"):
+        for path in sorted((root / folder).glob("*.py")):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            nested += [
+                f"{folder}/{path.name}: {top.name} > {node.name}"
+                for top in tree.body
+                if isinstance(top, (ast.FunctionDef, ast.AsyncFunctionDef))
+                for node in ast.walk(top)
+                if node is not top and isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            ]
+    assert nested == [], nested
+
+
+def test_d543_javascript_and_html_live_in_their_own_files():
+    """No long text of another language hides in a Python string: it lives in bi/static/ and the module reads it."""
+    import ast
+
+    root = Path(__file__).resolve().parent.parent
+    long_texts = []
+    for folder in ("bi", "etl", "agent", "scripts"):
+        for path in sorted((root / folder).glob("*.py")):
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+                if isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value.count("\n") > 100:
+                    long_texts.append(f"{folder}/{path.name}:{node.lineno}")
+    assert long_texts == [], long_texts
+    assert {path.name for path in (root / "bi" / "static").iterdir()} >= {"app_map.js", "zoom.js", "sql_editor.html"}

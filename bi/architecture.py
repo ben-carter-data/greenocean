@@ -828,6 +828,14 @@ def build_consumption_nodes(states, figures, palette):
     )
 
 
+def _link_right_of(column, half, name, y=MAIN_ROW_Y):
+    return (column[name] + half, y)
+
+
+def _link_left_of(column, half, name, y=MAIN_ROW_Y):
+    return (column[name] - half, y)
+
+
 def build_links(palette, is_running):
     """Links between steps, each with the kind of data that travels through it.
 
@@ -837,31 +845,25 @@ def build_links(palette, is_running):
     half = TILE_SIZE / 2
     first_y, second_y, third_y = SIDE_ROWS_Y
 
-    def right_of(name, y=MAIN_ROW_Y):
-        return (column[name] + half, y)
-
-    def left_of(name, y=MAIN_ROW_Y):
-        return (column[name] - half, y)
-
     return "".join(
         [
             build_link(
-                right_of("sources", first_y),
-                left_of("ingestion"),
+                _link_right_of(column, half, "sources", first_y),
+                _link_left_of(column, half, "ingestion"),
                 LAYER_COLORS["sources"],
                 palette,
                 moving_dot=is_running,
             ),
             build_link(
-                right_of("sources", second_y),
-                left_of("ingestion"),
+                _link_right_of(column, half, "sources", second_y),
+                _link_left_of(column, half, "ingestion"),
                 LAYER_COLORS["sources"],
                 palette,
                 moving_dot=is_running,
             ),
             build_link(
-                right_of("sources", third_y),
-                left_of("ingestion", third_y),
+                _link_right_of(column, half, "sources", third_y),
+                _link_left_of(column, half, "ingestion", third_y),
                 LAYER_COLORS["sources"],
                 palette,
                 moving_dot=is_running,
@@ -869,8 +871,8 @@ def build_links(palette, is_running):
             # The INE files skip the landing database: etl/ine.py writes bronze directly,
             # through the free lane between the landing and bronze captions.
             build_routed_link(
-                right_of("ingestion", third_y),
-                left_of("bronze", MAIN_ROW_Y + 20),
+                _link_right_of(column, half, "ingestion", third_y),
+                _link_left_of(column, half, "bronze", MAIN_ROW_Y + 20),
                 (column["landing"] + column["bronze"]) / 2,
                 LAYER_COLORS["ingestion"],
                 palette,
@@ -878,59 +880,64 @@ def build_links(palette, is_running):
                 moving_dot=is_running,
             ),
             build_link(
-                right_of("ingestion"),
-                left_of("landing"),
+                _link_right_of(column, half, "ingestion"),
+                _link_left_of(column, half, "landing"),
                 LAYER_COLORS["ingestion"],
                 palette,
                 "manifest",
                 moving_dot=is_running,
             ),
             build_link(
-                right_of("landing"),
-                left_of("bronze"),
+                _link_right_of(column, half, "landing"),
+                _link_left_of(column, half, "bronze"),
                 LAYER_COLORS["ingestion"],
                 palette,
                 "raw_*",
                 moving_dot=is_running,
             ),
             build_link(
-                right_of("bronze"),
-                left_of("staging"),
+                _link_right_of(column, half, "bronze"),
+                _link_left_of(column, half, "staging"),
                 LAYER_COLORS["bronze"],
                 palette,
                 "sources",
                 moving_dot=is_running,
             ),
             build_link(
-                right_of("staging"),
-                left_of("intermediate"),
+                _link_right_of(column, half, "staging"),
+                _link_left_of(column, half, "intermediate"),
                 LAYER_COLORS["processing"],
                 palette,
                 "stg_*",
                 moving_dot=is_running,
             ),
             build_link(
-                right_of("intermediate"),
-                left_of("marts"),
+                _link_right_of(column, half, "intermediate"),
+                _link_left_of(column, half, "marts"),
                 LAYER_COLORS["processing"],
                 palette,
                 "int_*",
                 moving_dot=is_running,
             ),
             build_link(
-                right_of("marts"), left_of("gold"), LAYER_COLORS["quality"], palette, "OK", moving_dot=is_running
+                _link_right_of(column, half, "marts"),
+                _link_left_of(column, half, "gold"),
+                LAYER_COLORS["quality"],
+                palette,
+                "OK",
+                moving_dot=is_running,
             ),
             build_link(
-                right_of("gold"),
-                left_of("consumption", first_y),
+                _link_right_of(column, half, "gold"),
+                _link_left_of(column, half, "consumption", first_y),
                 LAYER_COLORS["gold"],
                 palette,
                 "SQL",
                 moving_dot=is_running,
             ),
             build_link(
-                right_of("gold"),
-                left_of("consumption", second_y),
+                _link_right_of(column, half, "gold"),
+                _link_left_of(column, half, "consumption", second_y),
                 LAYER_COLORS["gold"],
                 palette,
                 "MD",
@@ -938,8 +945,8 @@ def build_links(palette, is_running):
             ),
             # D-162: the gold layer is queried for real now, so this link flows like the others.
             build_link(
-                right_of("gold"),
-                left_of("consumption", third_y),
+                _link_right_of(column, half, "gold"),
+                _link_left_of(column, half, "consumption", third_y),
                 LAYER_COLORS["gold"],
                 palette,
                 "consultas",

@@ -546,6 +546,14 @@ def build_verdict_box(indicators, columns):
     return ("fail" if failed and kind == "ok" else kind), name, line
 
 
+def _pipeline_glow(dark, color):
+    return (
+        f"0 0 0 1px color-mix(in srgb, {color} 35%, transparent), 0 0 24px -6px color-mix(in srgb, {color} 70%, transparent)"
+        if dark
+        else "0 8px 18px -14px rgba(15,40,90,.35)"
+    )
+
+
 def build_pipeline_css(palette):
     """The pipeline of quality (D-273): boxes and dashed lines drawn with HTML and CSS, so the words keep their size on
     any window; under 760 px the stretches stack from top to bottom."""
@@ -559,13 +567,6 @@ def build_pipeline_css(palette):
     )
     grid = f"color-mix(in srgb, {border} {'38' if dark else '45'}%, transparent)"
     surface = f"color-mix(in srgb, {card} 72%, #000)" if dark else card
-
-    def glow(color):
-        return (
-            f"0 0 0 1px color-mix(in srgb, {color} 35%, transparent), 0 0 24px -6px color-mix(in srgb, {color} 70%, transparent)"
-            if dark
-            else "0 8px 18px -14px rgba(15,40,90,.35)"
-        )
 
     return f"""
 .qp .pq {{ --accent-ok:{accent}; position:relative; padding:11px 22px 12px; border:1px solid {border}; border-radius:18px; background-color:{surface};
@@ -596,7 +597,7 @@ def build_pipeline_css(palette):
 .qp .pq .box small {{ display:block; margin-top:2px; font-size:12.5px; line-height:1.35; color:{muted}; }}
 .qp .pq .kicker {{ display:block; margin-bottom:3px; font:600 10.5px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing:.18em; text-transform:uppercase; color:{muted}; }}
-.qp .pq .gate {{ --c:{accent}; border-color:var(--c); box-shadow:{glow("var(--c)")}; padding:10px 8px; align-self:stretch;
+.qp .pq .gate {{ --c:{accent}; border-color:var(--c); box-shadow:{_pipeline_glow(dark, "var(--c)")}; padding:10px 8px; align-self:stretch;
   display:flex; flex-direction:column; justify-content:center; }}
 .qp .pq .gate.s-warn {{ --c:{quality_view.PILL_COLORS["pending"]}; }} .qp .pq .gate.s-fail {{ --c:{quality_view.PILL_COLORS["fail"]}; }}
 .qp .pq .gate .kicker {{ color:var(--c); }}
@@ -604,7 +605,7 @@ def build_pipeline_css(palette):
 .qp .pq a.box:hover, .qp .pq a.box:focus-visible {{ border-color:{accent}; background:color-mix(in srgb, {accent} 9%, {card}); }}
 .qp .pq .gate:hover, .qp .pq .gate:focus-visible {{ border-color:var(--c); background:color-mix(in srgb, var(--c) 10%, {card}); }}
 .qp .pq .rej {{ --c:{quality_view.PILL_COLORS["pending"]}; border-color:color-mix(in srgb, var(--c) 70%, transparent);
-  background:color-mix(in srgb, var(--c) {'14' if dark else '9'}%, {card}); box-shadow:{glow("var(--c)")}; }}
+  background:color-mix(in srgb, var(--c) {'14' if dark else '9'}%, {card}); box-shadow:{_pipeline_glow(dark, "var(--c)")}; }}
 .qp .pq .rej {{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:center; gap:2px 9px; padding:8px 12px; }}
 .qp .pq .rej .kicker {{ margin:0; color:var(--c); }}
 .qp .pq .rej b {{ font-size:16px; }} .qp .pq .rej small {{ margin:0; font-size:13px; }}
@@ -613,7 +614,7 @@ def build_pipeline_css(palette):
 .qp .pq .mide a:hover, .qp .pq .mide a:focus-visible {{ color:{accent}; }}
 .qp .pq .mide a.s-warn::after, .qp .pq .mide a.s-fail::after {{ content:""; display:inline-block; width:12px; height:12px; margin-left:7px;
   border-radius:50%; background:var(--c); vertical-align:-1px; box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent); }}
-.qp .pq .ds {{ --c:{accent}; padding:8px 14px 9px; border-color:var(--c); box-shadow:{glow("var(--c)")}; }}
+.qp .pq .ds {{ --c:{accent}; padding:8px 14px 9px; border-color:var(--c); box-shadow:{_pipeline_glow(dark, "var(--c)")}; }}
 .qp .pq .ds.s-warn {{ --c:{quality_view.PILL_COLORS["pending"]}; }} .qp .pq .ds.s-fail {{ --c:{quality_view.PILL_COLORS["fail"]}; }}
 .qp .pq .ds b {{ font-size:21px; letter-spacing:-.01em; }}
 .qp .pq .ds small {{ font-size:13.5px; color:{ink}; opacity:.85; }}
@@ -660,14 +661,15 @@ def build_pipeline_css(palette):
 """
 
 
+def _build_pipeline_html_number(value):
+    return thousands(value) if value is not None else "—"
+
+
 def build_pipeline_html(indicators, columns, measures=None):
     """The pipeline of quality (D-273): the rows of the latest load go through the three gates; each gate says what it
     measures and every gate flows into the verdict. Each gate, each dimension, the rejected rows and the verdict open
     their pop-up."""
     flow = build_flow(measures)
-
-    def number(value):
-        return thousands(value) if value is not None else "—"
 
     read, loaded = (flow["read"], flow["loaded"]) if flow else (None, None)
     run = f" de la carga {flow['run']}" if flow else ""
@@ -677,19 +679,23 @@ def build_pipeline_html(indicators, columns, measures=None):
         (
             "a3",
             loaded,
-            f"Filas que pasaron la puerta 2: {number(read)} leídas menos {number(flow['rejected'] if flow else None)} rechazadas",
+            f"Filas que pasaron la puerta 2: {_build_pipeline_html_number(read)} leídas menos {_build_pipeline_html_number(flow['rejected'] if flow else None)} rechazadas",
         ),
         ("a4", loaded, "Las mismas filas: si la puerta 3 falla, no se publica ninguna"),
     ]
     parts = [
-        f'<div class="h" style="grid-area:{area}" title="{html.escape(note)}"><span>{number(value)}</span></div>'
+        f'<div class="h" style="grid-area:{area}" title="{html.escape(note)}"><span>{_build_pipeline_html_number(value)}</span></div>'
         for area, value, note in stretches
     ]
     parts.append(
         '<div class="box end" style="grid-area:org" title="Los CSV anuales de ODEPA, descargados por HTTPS">'
         '<span class="kicker">Origen</span><b>Archivos</b><small>CSV de ODEPA</small></div>'
     )
-    prices = f"{number(flow['prices'])} precios" if flow and flow["prices"] is not None else "Base DuckDB"
+    prices = (
+        f"{_build_pipeline_html_number(flow['prices'])} precios"
+        if flow and flow["prices"] is not None
+        else "Base DuckDB"
+    )
     parts.append(
         f'<div class="box end" style="grid-area:base" title="{html.escape(prices)} semanales: las filas válidas, agrupadas '
         f'por semana, producto, región, canal y unidad"><span class="kicker">Carga</span><b>Base</b>'
@@ -723,7 +729,7 @@ def build_pipeline_html(indicators, columns, measures=None):
         reasons = ", ".join(flow["reasons"]) or "motivo registrado en rejection"
         parts.append(
             f'<a class="box rej" href="#g-1" style="grid-area:rej" title="Filas rechazadas por la puerta 2{run}, con su motivo">'
-            f'<span class="kicker">Rechazo</span><b>{number(flow["rejected"])} filas</b><small>{html.escape(reasons)}</small></a>'
+            f'<span class="kicker">Rechazo</span><b>{_build_pipeline_html_number(flow["rejected"])} filas</b><small>{html.escape(reasons)}</small></a>'
             '<i class="v up vertical-only" style="grid-area:vr"></i>'
         )
     status, name, line = build_verdict_box(indicators, columns)

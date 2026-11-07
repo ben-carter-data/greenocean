@@ -228,6 +228,15 @@ def table_rows(facts, table):
     return number(data["rows"][table]) if data and table in data["rows"] else NOT_VERIFIED
 
 
+def _model_level(parents, depth, unique_id):
+    if unique_id not in depth:
+        depth[unique_id] = 1 + max(
+            (_model_level(parents, depth, parent) for parent in parents.get(unique_id, []) if parent in parents),
+            default=0,
+        )
+    return depth[unique_id]
+
+
 def models_by_layer(facts):
     """{layer: [model]} of dbt_node, in the order of the layers and, inside a layer, in the order they are built: a model
     after the models it reads (read from depends_on)."""
@@ -235,15 +244,10 @@ def models_by_layer(facts):
     parents = {node[0]: json.loads(node[4] or "[]") for node in nodes}
     depth = {}
 
-    def level(unique_id):
-        if unique_id not in depth:
-            depth[unique_id] = 1 + max(
-                (level(parent) for parent in parents.get(unique_id, []) if parent in parents), default=0
-            )
-        return depth[unique_id]
-
     found = {"staging": [], "intermediate": [], "marts": []}
-    for unique_id, name, _, layer, *_ in sorted(nodes, key=lambda node: (level(node[0]), node[1])):
+    for unique_id, name, _, layer, *_ in sorted(
+        nodes, key=lambda node: (_model_level(parents, depth, node[0]), node[1])
+    ):
         found.setdefault(layer, []).append(name)
     return found
 
@@ -537,6 +541,10 @@ def inside_of(key, facts):
     return found.get(key, [])
 
 
+def _numbers_of_count(rows):
+    return number(len(rows))
+
+
 def numbers_of(key, facts):
     """«The numbers»: (what, figure, the command that produces it). A figure that cannot be read here says so."""
     data = database(facts)
@@ -544,12 +552,9 @@ def numbers_of(key, facts):
     pointer = (facts or {}).get("pointer")
     manifest = (facts or {}).get("manifest", {})
 
-    def count(rows):
-        return number(len(rows))
-
     found = {
         "odepa": [
-            ("archivos", count(inputs_of(facts, "wholesale")), "grep -c wholesale agent/input.csv"),
+            ("archivos", _numbers_of_count(inputs_of(facts, "wholesale")), "grep -c wholesale agent/input.csv"),
             (
                 "columnas esperadas",
                 number(facts["headers"]["wholesale"]) if facts else NOT_VERIFIED,
@@ -557,7 +562,7 @@ def numbers_of(key, facts):
             ),
         ],
         "odepa_consumer": [
-            ("archivos", count(inputs_of(facts, "consumer")), "grep -c consumer agent/input.csv"),
+            ("archivos", _numbers_of_count(inputs_of(facts, "consumer")), "grep -c consumer agent/input.csv"),
             (
                 "columnas esperadas",
                 number(facts["headers"]["consumer"]) if facts else NOT_VERIFIED,
@@ -570,7 +575,7 @@ def numbers_of(key, facts):
             ("meses del IPC", table_rows(facts, "ipc_monthly"), "SELECT count(*) FROM ipc_monthly"),
         ],
         "agent": [
-            ("direcciones", count((facts or {}).get("inputs", [])), "agent/input.csv"),
+            ("direcciones", _numbers_of_count((facts or {}).get("inputs", [])), "agent/input.csv"),
             ("archivos con huella", number(len(manifest)), "agent/downloads/manifest.json"),
         ],
         "dbt": [
@@ -594,23 +599,25 @@ def numbers_of(key, facts):
             ("publicada", pointer["published_at"] if pointer else NOT_VERIFIED, "etl/datos.version"),
         ],
         "streamlit": [
-            ("secciones del menú", count((facts or {}).get("menu", [])), "MENU_BLOCKS"),
+            ("secciones del menú", _numbers_of_count((facts or {}).get("menu", [])), "MENU_BLOCKS"),
             (
                 "consultas con nombre",
                 number(facts["queries"]) if facts else NOT_VERIFIED,
                 "grep -c '^-- name:' bi/queries.sql",
             ),
         ],
-        "devops": [("pestañas del Centro de operación", count((facts or {}).get("runs_tabs", [])), "RUNS_VIEWS")],
+        "devops": [
+            ("pestañas del Centro de operación", _numbers_of_count((facts or {}).get("runs_tabs", [])), "RUNS_VIEWS")
+        ],
         "semanal": [
-            ("pasos", count(steps_of(facts, "semanal.yml")), ".github/workflows/semanal.yml"),
+            ("pasos", _numbers_of_count(steps_of(facts, "semanal.yml")), ".github/workflows/semanal.yml"),
             ("cron", workflow(facts, "semanal.yml")["cron"] or NOT_VERIFIED, ".github/workflows/semanal.yml"),
             ("minutos como máximo", number(workflow(facts, "semanal.yml")["timeout"] or 0), "timeout-minutes"),
         ],
         "calidad": [
-            ("indicadores de código", count(goals_of(facts, "codigo")), "docs/calidad/metas.json"),
-            ("indicadores de datos", count(goals_of(facts, "datos")), "docs/calidad/metas.json"),
-            ("pasos", count(steps_of(facts, "calidad.yml")), ".github/workflows/calidad.yml"),
+            ("indicadores de código", _numbers_of_count(goals_of(facts, "codigo")), "docs/calidad/metas.json"),
+            ("indicadores de datos", _numbers_of_count(goals_of(facts, "datos")), "docs/calidad/metas.json"),
+            ("pasos", _numbers_of_count(steps_of(facts, "calidad.yml")), ".github/workflows/calidad.yml"),
         ],
         "pruebas": [
             (
@@ -643,8 +650,12 @@ def numbers_of(key, facts):
                 "etl.MAX_LATE_WEEKS",
             ),
         ],
-        "pypi": [("dependencias con tope", count((facts or {}).get("requirements", [])), "requirements*.txt")],
-        "security": [("casos de seguridad", count((facts or {}).get("security", [])), "docs/calidad/PLAN_PRUEBAS.md")],
+        "pypi": [
+            ("dependencias con tope", _numbers_of_count((facts or {}).get("requirements", [])), "requirements*.txt")
+        ],
+        "security": [
+            ("casos de seguridad", _numbers_of_count((facts or {}).get("security", [])), "docs/calidad/PLAN_PRUEBAS.md")
+        ],
         "monitoring": [
             ("cargas registradas", table_rows(facts, "etl_run"), "SELECT count(*) FROM etl_run"),
             (
@@ -653,7 +664,7 @@ def numbers_of(key, facts):
                 "docs/calidad/plan_mitigacion.json",
             ),
         ],
-        "docs": [("documentos", count((facts or {}).get("documents", [])), "docs/")],
+        "docs": [("documentos", _numbers_of_count((facts or {}).get("documents", [])), "docs/")],
     }
     if last:
         found["monitoring"].append(
@@ -991,6 +1002,10 @@ def inside_parquet(facts):
     }
 
 
+def _inside_dbt_to_piece(name, sub):
+    return piece(name, "brand:dbt", name, sub, "")
+
+
 def inside_dbt(facts):
     """The models of dbt_node by layer, joined by their real dependencies; the tests as one piece."""
     data = database(facts)
@@ -1005,16 +1020,13 @@ def inside_dbt(facts):
     ipc = [name for name in marts if "ipc" in name]
     rest = [name for name in marts if name not in dims + ipc]
 
-    def to_piece(name, sub):
-        return piece(name, "brand:dbt", name, sub, "")
-
     columns = [
         ("Fuentes", [piece(node[0], "brand:apacheparquet", node[1], "bronce", "") for node in sources]),
-        ("Staging", [to_piece(name, "vista") for name in layers.get("staging", [])]),
-        ("Intermedio", [to_piece(name, "tabla") for name in layers.get("intermediate", [])]),
-        ("Marts · dimensiones", [to_piece(name, "tabla") for name in dims]),
-        ("Marts · hechos", [to_piece(name, "tabla") for name in rest]),
-        ("Marts · IPC", [to_piece(name, "tabla") for name in ipc]),
+        ("Staging", [_inside_dbt_to_piece(name, "vista") for name in layers.get("staging", [])]),
+        ("Intermedio", [_inside_dbt_to_piece(name, "tabla") for name in layers.get("intermediate", [])]),
+        ("Marts · dimensiones", [_inside_dbt_to_piece(name, "tabla") for name in dims]),
+        ("Marts · hechos", [_inside_dbt_to_piece(name, "tabla") for name in rest]),
+        ("Marts · IPC", [_inside_dbt_to_piece(name, "tabla") for name in ipc]),
         (
             "Pruebas",
             [
@@ -1037,28 +1049,57 @@ def inside_dbt(facts):
     return {"columns": columns, "links": links}
 
 
+def _duckdb_tab(rows, name, sub=""):
+    return piece(name, "brand:duckdb", name, f"{number(rows[name])} filas" if name in rows else NOT_VERIFIED, sub)
+
+
 def inside_duckdb(facts):
     data = database(facts)
     rows = data["rows"] if data else {}
 
-    def tab(name, sub=""):
-        return piece(name, "brand:duckdb", name, f"{number(rows[name])} filas" if name in rows else NOT_VERIFIED, sub)
-
     return {
         "columns": [
-            ("Dimensiones", [tab("dim_product"), tab("dim_region"), tab("dim_channel"), tab("dim_date")]),
+            (
+                "Dimensiones",
+                [
+                    _duckdb_tab(rows, "dim_product"),
+                    _duckdb_tab(rows, "dim_region"),
+                    _duckdb_tab(rows, "dim_channel"),
+                    _duckdb_tab(rows, "dim_date"),
+                ],
+            ),
             (
                 "Hechos",
                 [
-                    tab("weekly_price", "Un precio por semana, producto, región, canal y unidad."),
-                    tab(
-                        "weekly_same_package", "El cambio de cada precio contra la semana anterior, en el mismo envase."
+                    _duckdb_tab(rows, "weekly_price", "Un precio por semana, producto, región, canal y unidad."),
+                    _duckdb_tab(
+                        rows,
+                        "weekly_same_package",
+                        "El cambio de cada precio contra la semana anterior, en el mismo envase.",
                     ),
                 ],
             ),
-            ("IPC", [tab("ipc_monthly"), tab("ipc_weekly"), tab("ine_ipc_source")]),
-            ("Última semana", [tab("latest_by_source", "Las dos últimas semanas de cada fuente (D-365).")]),
-            ("Registro de la carga", [tab("etl_run"), tab("rejection"), tab("dbt_node"), tab("dbt_result")]),
+            (
+                "IPC",
+                [
+                    _duckdb_tab(rows, "ipc_monthly"),
+                    _duckdb_tab(rows, "ipc_weekly"),
+                    _duckdb_tab(rows, "ine_ipc_source"),
+                ],
+            ),
+            (
+                "Última semana",
+                [_duckdb_tab(rows, "latest_by_source", "Las dos últimas semanas de cada fuente (D-365).")],
+            ),
+            (
+                "Registro de la carga",
+                [
+                    _duckdb_tab(rows, "etl_run"),
+                    _duckdb_tab(rows, "rejection"),
+                    _duckdb_tab(rows, "dbt_node"),
+                    _duckdb_tab(rows, "dbt_result"),
+                ],
+            ),
             (
                 "Quién la lee",
                 [
@@ -1136,14 +1177,15 @@ def inside_release(facts):
     }
 
 
+def _inside_panel_pages(count):
+    return f"{count} página" if count == 1 else f"{count} páginas"
+
+
 def inside_panel(facts):
     menu = (facts or {}).get("menu", [])
 
-    def pages(count):
-        return f"{count} página" if count == 1 else f"{count} páginas"
-
     sections = [
-        piece(f"s{index}", "icon:files", label, pages(len(items)), " · ".join(items))
+        piece(f"s{index}", "icon:files", label, _inside_panel_pages(len(items)), " · ".join(items))
         for index, (label, items) in enumerate(menu)
     ]
     queries = number(facts["queries"]) if facts else NOT_VERIFIED

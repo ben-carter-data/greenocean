@@ -1,0 +1,109 @@
+<div class="sqlx-hl" aria-hidden="true"><div class="sqlx-gutter"></div><pre class="sqlx-code"></pre></div>
+<script>
+(function () {
+    const KEYWORDS = new Set("__KEYWORDS__".split(" "));
+    const FUNCTIONS = new Set("__FUNCTIONS__".split(" "));
+    const TOKEN = /--[^\n]*|\/\*[\s\S]*?\*\/|'(?:[^']|'')*'|"[^"]*"|\d+(?:\.\d+)?|[A-Za-z_][A-Za-z_0-9]*|\s+|[\s\S]/g;
+    const COPIED = ["fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing", "tabSize",
+                    "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"];
+    function classify(token) {
+        if (token.startsWith("--") || token.startsWith("/*")) { return "c"; }
+        if (token[0] === "'") { return "s"; }
+        if (token[0] === '"') { return "q"; }
+        if (/^\d/.test(token)) { return "n"; }
+        if (/^[A-Za-z_]/.test(token)) {
+            const upper = token.toUpperCase();
+            if (KEYWORDS.has(upper)) { return "k"; }
+            if (FUNCTIONS.has(upper)) { return "f"; }
+            return "";
+        }
+        if (/^\s/.test(token)) { return ""; }
+        return "o";
+    }
+    function paint(textarea, overlay) {
+        const text = textarea.value;
+        if (overlay.dataset.text === text) { return; }
+        overlay.dataset.text = text;
+        const code = overlay.querySelector(".sqlx-code");
+        const gutter = overlay.querySelector(".sqlx-gutter");
+        code.textContent = "";
+        TOKEN.lastIndex = 0;
+        let match;
+        while ((match = TOKEN.exec(text)) !== null) {
+            const kind = classify(match[0]);
+            if (kind) {
+                const span = document.createElement("span");
+                span.className = "t-" + kind;
+                span.textContent = match[0];
+                code.appendChild(span);
+            } else {
+                code.appendChild(document.createTextNode(match[0]));
+            }
+        }
+        code.appendChild(document.createTextNode("\n"));
+        gutter.textContent = "";
+        const lines = text.split("\n").length;
+        for (let number = 1; lines >= number; number += 1) {
+            const line = document.createElement("div");
+            line.textContent = String(number);
+            gutter.appendChild(line);
+        }
+    }
+    function place(textarea, overlay) {
+        const parent = overlay.offsetParent;
+        if (!parent) { return; }
+        const base = parent.getBoundingClientRect();
+        const rect = textarea.getBoundingClientRect();
+        overlay.style.left = (rect.left - base.left + parent.scrollLeft) + "px";
+        overlay.style.top = (rect.top - base.top + parent.scrollTop) + "px";
+        overlay.style.width = rect.width + "px";
+        overlay.style.height = rect.height + "px";
+        const style = getComputedStyle(textarea);
+        const code = overlay.querySelector(".sqlx-code");
+        const gutter = overlay.querySelector(".sqlx-gutter");
+        COPIED.forEach((property) => { code.style[property] = style[property]; });
+        code.style.borderWidth = [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth,
+                                  style.borderLeftWidth].join(" ");
+        gutter.style.paddingTop = (parseFloat(style.paddingTop) + parseFloat(style.borderTopWidth)) + "px";
+        gutter.style.lineHeight = style.lineHeight;
+        gutter.style.fontSize = style.fontSize;
+        gutter.style.fontFamily = style.fontFamily;
+        code.scrollTop = textarea.scrollTop;
+        code.scrollLeft = textarea.scrollLeft;
+        gutter.scrollTop = textarea.scrollTop;
+    }
+    function refresh(textarea) {
+        const box = textarea.closest(".st-key-sqlx_editor_box");
+        const overlay = box ? box.querySelector(".sqlx-hl") : null;
+        if (!overlay) { return; }
+        paint(textarea, overlay);
+        place(textarea, overlay);
+    }
+    function bind(textarea) {
+        textarea.dataset.sqlx = "on";
+        textarea.addEventListener("input", () => refresh(textarea));
+        textarea.addEventListener("scroll", () => refresh(textarea));
+        textarea.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+                setTimeout(() => {
+                    const run = Array.from(document.querySelectorAll(".st-key-sqlx_run button"))
+                        .find((button) => button.offsetParent !== null);
+                    if (run) { run.click(); }
+                }, 250);
+            }
+        });
+        if (window.ResizeObserver) {
+            new ResizeObserver(() => refresh(textarea)).observe(textarea);
+        }
+    }
+    function tick() {
+        document.querySelectorAll(".st-key-sqlx_editor_box textarea").forEach((textarea) => {
+            if (textarea.dataset.sqlx !== "on") { bind(textarea); }
+            refresh(textarea);
+        });
+    }
+    if (window.sqlxTimer) { clearInterval(window.sqlxTimer); }
+    window.sqlxTimer = setInterval(tick, 600);
+    tick();
+})();
+</script>

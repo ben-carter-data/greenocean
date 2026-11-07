@@ -6,6 +6,7 @@ opens in its language. The documents exist in both languages: docs/ in Spanish a
 file names, structure and identifiers. No dependency: the translations are dictionaries of the project.
 """
 
+import functools
 from pathlib import Path
 
 import streamlit as st
@@ -869,18 +870,22 @@ def translate_markup_text(text):
     return text if english == plain else _html.escape(english, quote=False)
 
 
+def _translate_script_string(match):
+    english = lookup(match.group(2))
+    return f"{match.group(1)}{english}{match.group(1)}" if english and match.group(1) not in english else match.group(0)
+
+
 def translate_script(script):
     """Inside a script, only string literals that are a whole entry: the texts a script writes on the page."""
 
-    def string(match):
-        english = lookup(match.group(2))
-        return (
-            f"{match.group(1)}{english}{match.group(1)}"
-            if english and match.group(1) not in english
-            else match.group(0)
-        )
+    return JS_STRING.sub(_translate_script_string, script)
 
-    return JS_STRING.sub(string, script)
+
+def _keep_protected_block(kept, block):
+    kept.append(
+        block.group(1) + translate_script(block.group(2)) + block.group(3) if block.group(1) else block.group(4)
+    )
+    return f"<\u0001{len(kept) - 1}\u0001>"
 
 
 def translate_html(markup):
@@ -890,13 +895,7 @@ def translate_html(markup):
         return markup
     kept = []
 
-    def keep(block):
-        kept.append(
-            block.group(1) + translate_script(block.group(2)) + block.group(3) if block.group(1) else block.group(4)
-        )
-        return f"<\u0001{len(kept) - 1}\u0001>"
-
-    marked = _translate_plain_html(BLOCK.sub(keep, markup))
+    marked = _translate_plain_html(BLOCK.sub(functools.partial(_keep_protected_block, kept), markup))
     return _re.sub("<\u0001(\\d+)\u0001>", lambda match: kept[int(match.group(1))], marked)
 
 
@@ -1011,29 +1010,41 @@ def translate_frame(frame):
     return frame
 
 
-def _wrap(method, first="body", keys=("label", "help", "placeholder", "caption"), frame=False, options=False):
-    def translated(self, *args, **kwargs):
-        if is_english():
-            args = list(args)
-            if args:
-                args[0] = (
-                    translate_frame(args[0])
-                    if frame
-                    else (
-                        [translate_any(item) for item in args[0]]
-                        if isinstance(args[0], (list, tuple)) and options
-                        else translate_any(args[0])
-                    )
+def _translated_call(self, method, first, keys, frame, options, /, *args, **kwargs):
+    """A Streamlit method that translates its texts first when the reader chose English. Its own settings are
+    positional only, so a Streamlit argument of the same name (options=, for instance) never collides with them."""
+    if is_english():
+        args = list(args)
+        if args:
+            args[0] = (
+                translate_frame(args[0])
+                if frame
+                else (
+                    [translate_any(item) for item in args[0]]
+                    if isinstance(args[0], (list, tuple)) and options
+                    else translate_any(args[0])
                 )
-            for key in (first, *keys):
-                if key in kwargs:
-                    kwargs[key] = translate_frame(kwargs[key]) if frame and key == first else translate_any(kwargs[key])
-            if options and "format_func" not in kwargs and len(args) > 1 and not frame:
-                kwargs["format_func"] = lambda option: translate_any(str(option))
-        return method(self, *args, **kwargs)
+            )
+        for key in (first, *keys):
+            if key in kwargs:
+                kwargs[key] = translate_frame(kwargs[key]) if frame and key == first else translate_any(kwargs[key])
+        if options and "format_func" not in kwargs and len(args) > 1 and not frame:
+            kwargs["format_func"] = lambda option: translate_any(str(option))
+    return method(self, *args, **kwargs)
 
+
+def _wrap(method, first="body", keys=("label", "help", "placeholder", "caption"), frame=False, options=False):
+    """The Streamlit method `method`, translating its texts (D-283). A partialmethod binds the reader's element first,
+    as the method itself would (D-542: no function is written inside another)."""
+    translated = functools.partialmethod(_translated_call, method, first, keys, frame, options)
     translated.__wrapped__ = method
     return translated
+
+
+def _prepare_translated(prepare, spec, *args, **kwargs):
+    """Streamlit's preparation of a chart, then the chart's texts in the reader's language."""
+    spec = prepare(spec, *args, **kwargs)
+    return translate_spec(spec) if is_english() else spec
 
 
 def install():
@@ -1080,13 +1091,7 @@ def install():
     setattr(DeltaGenerator, "iframe", _wrap(DeltaGenerator.iframe, first="src"))
     from streamlit.elements import vega_charts
 
-    prepare = vega_charts._prepare_vega_lite_spec
-
-    def prepare_translated(spec, *args, **kwargs):
-        spec = prepare(spec, *args, **kwargs)
-        return translate_spec(spec) if is_english() else spec
-
-    vega_charts._prepare_vega_lite_spec = prepare_translated
+    vega_charts._prepare_vega_lite_spec = functools.partial(_prepare_translated, vega_charts._prepare_vega_lite_spec)
     DeltaGenerator._i18n_installed = True
     for name in plain + [
         "radio",

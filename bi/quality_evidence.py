@@ -122,19 +122,20 @@ def manifest_frame(manifest):
     return pd.DataFrame(rows, columns=["archivo", "año", "bytes", "descargado", "huella"])
 
 
+def _files_frame_short(value):
+    return f"{str(value)[:12]}…" if value else "—"
+
+
 def files_frame(files):
     """The checked files: status, the registered fingerprint and the computed one."""
-
-    def short(value):
-        return f"{str(value)[:12]}…" if value else "—"
 
     return pd.DataFrame(
         [
             {
                 "archivo": item["file"],
                 "comprobación": item["status"],
-                "huella registrada": short(item["expected"]),
-                "huella calculada": short(item["actual"]),
+                "huella registrada": _files_frame_short(item["expected"]),
+                "huella calculada": _files_frame_short(item["actual"]),
                 "descargado": item["downloaded_at"],
             }
             for item in files

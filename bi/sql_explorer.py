@@ -16,6 +16,7 @@ Safety, in layers:
 - a timer interrupts the connection after TIMEOUT_SECONDS.
 """
 
+import functools
 import html
 import os
 import re
@@ -28,7 +29,7 @@ from functools import partial
 import duckdb
 import pandas as pd
 
-from bi import charts, i18n, queries
+from bi import charts, i18n, queries, static_files
 from bi.i18n import tr
 
 
@@ -416,14 +417,15 @@ def period_bounds(period, read=tr):
 COMMENT_PATTERN = re.compile(r"(?:^--[^\n]*(?:\n|$))+|--[^\n]*", re.MULTILINE)
 
 
+def _translated_comment(read, match):
+    text = match.group(0)
+    return read(text.rstrip("\n")) + text[len(text.rstrip("\n")) :]
+
+
 def translate_comments(template, read=tr):
     """D-516: the comments of a template in the language of the visit. The SQL, its names and its data stay."""
 
-    def translated(match):
-        text = match.group(0)
-        return read(text.rstrip("\n")) + text[len(text.rstrip("\n")) :]
-
-    return COMMENT_PATTERN.sub(translated, template)
+    return COMMENT_PATTERN.sub(functools.partial(_translated_comment, read), template)
 
 
 def render_example(index, values=None, read=tr):
@@ -679,115 +681,9 @@ FUNCTIONS = (
 # The editor's paint layer (D-173): a transparent textarea over a <pre> that a script
 # repaints on every keystroke with the SQL colors, plus a gutter of line numbers.
 # One script per block, no HTML tags inside it and no node moves (CLAUDE.md).
-EDITOR_HTML = r"""<div class="sqlx-hl" aria-hidden="true"><div class="sqlx-gutter"></div><pre class="sqlx-code"></pre></div>
-<script>
-(function () {
-    const KEYWORDS = new Set("__KEYWORDS__".split(" "));
-    const FUNCTIONS = new Set("__FUNCTIONS__".split(" "));
-    const TOKEN = /--[^\n]*|\/\*[\s\S]*?\*\/|'(?:[^']|'')*'|"[^"]*"|\d+(?:\.\d+)?|[A-Za-z_][A-Za-z_0-9]*|\s+|[\s\S]/g;
-    const COPIED = ["fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing", "tabSize",
-                    "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"];
-    function classify(token) {
-        if (token.startsWith("--") || token.startsWith("/*")) { return "c"; }
-        if (token[0] === "'") { return "s"; }
-        if (token[0] === '"') { return "q"; }
-        if (/^\d/.test(token)) { return "n"; }
-        if (/^[A-Za-z_]/.test(token)) {
-            const upper = token.toUpperCase();
-            if (KEYWORDS.has(upper)) { return "k"; }
-            if (FUNCTIONS.has(upper)) { return "f"; }
-            return "";
-        }
-        if (/^\s/.test(token)) { return ""; }
-        return "o";
-    }
-    function paint(textarea, overlay) {
-        const text = textarea.value;
-        if (overlay.dataset.text === text) { return; }
-        overlay.dataset.text = text;
-        const code = overlay.querySelector(".sqlx-code");
-        const gutter = overlay.querySelector(".sqlx-gutter");
-        code.textContent = "";
-        TOKEN.lastIndex = 0;
-        let match;
-        while ((match = TOKEN.exec(text)) !== null) {
-            const kind = classify(match[0]);
-            if (kind) {
-                const span = document.createElement("span");
-                span.className = "t-" + kind;
-                span.textContent = match[0];
-                code.appendChild(span);
-            } else {
-                code.appendChild(document.createTextNode(match[0]));
-            }
-        }
-        code.appendChild(document.createTextNode("\n"));
-        gutter.textContent = "";
-        const lines = text.split("\n").length;
-        for (let number = 1; lines >= number; number += 1) {
-            const line = document.createElement("div");
-            line.textContent = String(number);
-            gutter.appendChild(line);
-        }
-    }
-    function place(textarea, overlay) {
-        const parent = overlay.offsetParent;
-        if (!parent) { return; }
-        const base = parent.getBoundingClientRect();
-        const rect = textarea.getBoundingClientRect();
-        overlay.style.left = (rect.left - base.left + parent.scrollLeft) + "px";
-        overlay.style.top = (rect.top - base.top + parent.scrollTop) + "px";
-        overlay.style.width = rect.width + "px";
-        overlay.style.height = rect.height + "px";
-        const style = getComputedStyle(textarea);
-        const code = overlay.querySelector(".sqlx-code");
-        const gutter = overlay.querySelector(".sqlx-gutter");
-        COPIED.forEach((property) => { code.style[property] = style[property]; });
-        code.style.borderWidth = [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth,
-                                  style.borderLeftWidth].join(" ");
-        gutter.style.paddingTop = (parseFloat(style.paddingTop) + parseFloat(style.borderTopWidth)) + "px";
-        gutter.style.lineHeight = style.lineHeight;
-        gutter.style.fontSize = style.fontSize;
-        gutter.style.fontFamily = style.fontFamily;
-        code.scrollTop = textarea.scrollTop;
-        code.scrollLeft = textarea.scrollLeft;
-        gutter.scrollTop = textarea.scrollTop;
-    }
-    function refresh(textarea) {
-        const box = textarea.closest(".st-key-sqlx_editor_box");
-        const overlay = box ? box.querySelector(".sqlx-hl") : null;
-        if (!overlay) { return; }
-        paint(textarea, overlay);
-        place(textarea, overlay);
-    }
-    function bind(textarea) {
-        textarea.dataset.sqlx = "on";
-        textarea.addEventListener("input", () => refresh(textarea));
-        textarea.addEventListener("scroll", () => refresh(textarea));
-        textarea.addEventListener("keydown", (event) => {
-            if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-                setTimeout(() => {
-                    const run = Array.from(document.querySelectorAll(".st-key-sqlx_run button"))
-                        .find((button) => button.offsetParent !== null);
-                    if (run) { run.click(); }
-                }, 250);
-            }
-        });
-        if (window.ResizeObserver) {
-            new ResizeObserver(() => refresh(textarea)).observe(textarea);
-        }
-    }
-    function tick() {
-        document.querySelectorAll(".st-key-sqlx_editor_box textarea").forEach((textarea) => {
-            if (textarea.dataset.sqlx !== "on") { bind(textarea); }
-            refresh(textarea);
-        });
-    }
-    if (window.sqlxTimer) { clearInterval(window.sqlxTimer); }
-    window.sqlxTimer = setInterval(tick, 600);
-    tick();
-})();
-</script>""".replace("__KEYWORDS__", KEYWORDS).replace("__FUNCTIONS__", FUNCTIONS)
+EDITOR_HTML = (
+    static_files.read("sql_editor.html").replace("__KEYWORDS__", KEYWORDS).replace("__FUNCTIONS__", FUNCTIONS)
+)  # D-543
 
 
 def build_css(palette):
@@ -1154,28 +1050,30 @@ def describe_tables(database_file=queries.DATABASE_FILE):
         connection.close()
 
 
+def _read_tables(database_file, modified):
+    """The tables of the database; `modified` changes the cache key when the file changes."""
+    return describe_tables(database_file)
+
+
 def load_tables():
     import streamlit as st
 
-    @st.cache_data(ttl=600, show_spinner=False)
-    def cached(database_file, modified):
-        return describe_tables(database_file)
-
     database_file = str(queries.DATABASE_FILE)
     modified = os.path.getmtime(database_file) if os.path.exists(database_file) else 0
-    return cached(database_file, modified)
+    return st.cache_data(ttl=600, show_spinner=False)(_read_tables)(database_file, modified)
+
+
+def _read_catalog(database_file, modified):
+    """The views of «Consultas SQL»; `modified` changes the cache key when the file changes."""
+    return describe_views(database_file)
 
 
 def load_catalog():
     import streamlit as st
 
-    @st.cache_data(ttl=600, show_spinner=False)
-    def cached(database_file, modified):
-        return describe_views(database_file)
-
     database_file = str(queries.DATABASE_FILE)
     modified = os.path.getmtime(database_file) if os.path.exists(database_file) else 0
-    return cached(database_file, modified)
+    return st.cache_data(ttl=600, show_spinner=False)(_read_catalog)(database_file, modified)
 
 
 PARAMETER_KEYS = {
@@ -1242,35 +1140,36 @@ def apply_parameters():
         choose_example(index)
 
 
+def _read_parameter_options(database_file, modified):
+    """Every list the selectors offer; `modified` changes the cache key when the file changes."""
+    years = read_view("SELECT DISTINCT anio FROM semanas WHERE anio IS NOT NULL ORDER BY anio DESC", database_file)
+    combos = read_view(
+        "SELECT familia, producto, canal, count(*) AS n FROM precios WHERE marca = 'SIN_MARCA' "
+        "GROUP BY ALL ORDER BY familia, producto, n DESC",
+        database_file,
+    )
+    regions = read_view("SELECT DISTINCT region FROM precios ORDER BY region", database_file)
+    channels, by_family = {}, {}
+    for row in combos.itertuples():
+        channels.setdefault(row.producto, [])
+        if row.canal not in channels[row.producto]:
+            channels[row.producto].append(row.canal)
+        by_family.setdefault(row.familia, set()).add(row.producto)
+    return dict(
+        years=[int(year) for year in years["anio"]],
+        channels=channels,
+        families={family: sorted(products) for family, products in by_family.items()},
+        regions=list(regions["region"]),
+    )
+
+
 def load_parameter_options():
     """Every list the selectors offer, read from the database once (cached per database)."""
     import streamlit as st
 
-    @st.cache_data(ttl=600, show_spinner=False)
-    def cached(database_file, modified):
-        years = read_view("SELECT DISTINCT anio FROM semanas WHERE anio IS NOT NULL ORDER BY anio DESC", database_file)
-        combos = read_view(
-            "SELECT familia, producto, canal, count(*) AS n FROM precios WHERE marca = 'SIN_MARCA' "
-            "GROUP BY ALL ORDER BY familia, producto, n DESC",
-            database_file,
-        )
-        regions = read_view("SELECT DISTINCT region FROM precios ORDER BY region", database_file)
-        channels, by_family = {}, {}
-        for row in combos.itertuples():
-            channels.setdefault(row.producto, [])
-            if row.canal not in channels[row.producto]:
-                channels[row.producto].append(row.canal)
-            by_family.setdefault(row.familia, set()).add(row.producto)
-        return dict(
-            years=[int(year) for year in years["anio"]],
-            channels=channels,
-            families={family: sorted(products) for family, products in by_family.items()},
-            regions=list(regions["region"]),
-        )
-
     database_file = str(queries.DATABASE_FILE)
     modified = os.path.getmtime(database_file) if os.path.exists(database_file) else 0
-    return cached(database_file, modified)
+    return st.cache_data(ttl=600, show_spinner=False)(_read_parameter_options)(database_file, modified)
 
 
 def parameter_choices(options, state):
@@ -1449,21 +1348,22 @@ def follow_language(st):
 
 def show_relations_dialog(st, mode, descriptions):
     """D-515: the relationships between the views, as a SQL client draws them, and the joins ready to copy."""
+    st.dialog("Relaciones entre las vistas", width="large")(_relations_window)(st, mode, descriptions)
+
+
+def _relations_window(st, mode, descriptions):
+    """The window «Relaciones»: the diagram of the views and the joins ready to copy."""
     from bi import sql_relations  # here, not at the top: sql_relations reads the views of this module
 
-    @st.dialog("Relaciones entre las vistas", width="large")
-    def relations():
-        schema, counts = sql_relations.read_schema()
-        drawing, joins = st.tabs(["Diagrama", "JOIN listos para copiar"])
-        with drawing:
-            st.markdown(
-                '<div class="sqlx-relations">' + sql_relations.build_svg(schema, counts, mode, descriptions) + "</div>",
-                unsafe_allow_html=True,
-            )
-        with joins:
-            st.code(sql_relations.build_joins(), language="sql", wrap_lines=False)
-
-    relations()
+    schema, counts = sql_relations.read_schema()
+    drawing, joins = st.tabs(["Diagrama", "JOIN listos para copiar"])
+    with drawing:
+        st.markdown(
+            '<div class="sqlx-relations">' + sql_relations.build_svg(schema, counts, mode, descriptions) + "</div>",
+            unsafe_allow_html=True,
+        )
+    with joins:
+        st.code(sql_relations.build_joins(), language="sql", wrap_lines=False)
 
 
 def show_exports(st):

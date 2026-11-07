@@ -11,6 +11,7 @@ serving database (tables dbt_node and dbt_result). This module turns them into:
 Nothing here is typed by hand: a new model or test appears on the next build.
 """
 
+import functools
 import colorsys
 import html
 import json
@@ -18,7 +19,7 @@ import re
 
 import pandas as pd
 
-from bi import architecture, brand_icons, charts, control, tech_glossary
+from bi import architecture, brand_icons, charts, control, static_files, tech_glossary
 from bi.i18n import tr
 
 LAYERS = [
@@ -274,22 +275,28 @@ def tech_tip(svg_part, explanation):
     return architecture.add_tech_explanation(svg_part, explanation)
 
 
+def _layer_depth(depth, same, node_id):
+    if node_id not in depth:
+        depth[node_id] = 1 + max(
+            (_layer_depth(depth, same, parent) for parent in same[node_id]["depends_on"] if parent in same), default=-1
+        )
+    return depth[node_id]
+
+
 def depth_in_layer(columns):
     """{node id: how many models of its own layer it reads through} (0 for the first)."""
     depth = {}
     for items in columns.values():
         same = {node["unique_id"]: node for node in items}
 
-        def depth_of(node_id):
-            if node_id not in depth:
-                depth[node_id] = 1 + max(
-                    (depth_of(parent) for parent in same[node_id]["depends_on"] if parent in same), default=-1
-                )
-            return depth[node_id]
-
         for node_id in same:
-            depth_of(node_id)
+            _layer_depth(depth, same, node_id)
     return depth
+
+
+def _layer_weight(depth, row, node):
+    parents = [row[parent] for parent in node["depends_on"] if parent in row]
+    return depth[node["unique_id"]], sum(parents) / len(parents) if parents else 0, node["name"]
 
 
 def order_layers(nodes):
@@ -303,12 +310,7 @@ def order_layers(nodes):
     depth = depth_in_layer(columns)
     row = {}
     for layer, _, _ in LAYERS:
-
-        def weight(node):
-            parents = [row[parent] for parent in node["depends_on"] if parent in row]
-            return depth[node["unique_id"]], sum(parents) / len(parents) if parents else 0, node["name"]
-
-        columns[layer].sort(key=weight)
+        columns[layer].sort(key=functools.partial(_layer_weight, depth, row))
         for index, node in enumerate(columns[layer]):
             row[node["unique_id"]] = index
     return columns
@@ -876,20 +878,22 @@ def edge_path(parent, child, position, layer_of, port, out_x, int_lanes, mart_la
     return f"M{start_x} {start_y} H{middle} V{end_y} H{end_x}", [], False
 
 
+def _edge_port(position, layer_of, node_id):
+    x, y = position[node_id]
+    return y - PORT if layer_of[node_id] == "intermediate" else y
+
+
+def _edge_out_x(position, layer_of, ends, half, node_id):
+    x, _ = position[node_id]
+    return ends[node_id] + 8 if layer_of[node_id] == "marts" else x + half + 4
+
+
 def route_edges(position, by_id, layer_of, ends, gold):
     """Every link as orthogonal segments: bronze straight into staging, staging along a
     bus into the intermediate chain, the chain down its column, elbows into the marts and
     the marts along a bus into datos.duckdb. A link inside the marts is drawn only when a
     selection includes it. [(from, to, path, colour key, joints, extra)]."""
     half = TILE / 2
-
-    def port(node_id):
-        x, y = position[node_id]
-        return y - PORT if layer_of[node_id] == "intermediate" else y
-
-    def out_x(node_id):
-        x, _ = position[node_id]
-        return ends[node_id] + 8 if layer_of[node_id] == "marts" else x + half + 4
 
     links = [
         (parent, node["unique_id"]) for node in by_id.values() for parent in node["depends_on"] if parent in position
@@ -899,23 +903,46 @@ def route_edges(position, by_id, layer_of, ends, gold):
     to_marts = {}
     for parent, child in links:
         if layer_of[child] == "intermediate" and layer_of[parent] != "intermediate":
-            to_int.setdefault(child, []).append(port(parent))
+            to_int.setdefault(child, []).append(_edge_port(position, layer_of, parent))
         if layer_of[child] == "marts" and layer_of[parent] != "marts":
             to_marts.setdefault(parent, []).append(position[child][1])
     int_lanes = allocate_lanes(
-        {child: (min(ys + [port(child)]), max(ys + [port(child)])) for child, ys in to_int.items()}, STAGING_BUS
+        {
+            child: (
+                min(ys + [_edge_port(position, layer_of, child)]),
+                max(ys + [_edge_port(position, layer_of, child)]),
+            )
+            for child, ys in to_int.items()
+        },
+        STAGING_BUS,
     )
     mart_lanes = allocate_lanes(
-        {parent: (min(ys + [port(parent)]), max(ys + [port(parent)])) for parent, ys in to_marts.items()}, MART_LANE
+        {
+            parent: (
+                min(ys + [_edge_port(position, layer_of, parent)]),
+                max(ys + [_edge_port(position, layer_of, parent)]),
+            )
+            for parent, ys in to_marts.items()
+        },
+        MART_LANE,
     )
     edges = []
     for parent, child in links:
-        path, joints, extra = edge_path(parent, child, position, layer_of, port, out_x, int_lanes, mart_lanes)
+        path, joints, extra = edge_path(
+            parent,
+            child,
+            position,
+            layer_of,
+            functools.partial(_edge_port, position, layer_of),
+            functools.partial(_edge_out_x, position, layer_of, ends, half),
+            int_lanes,
+            mart_lanes,
+        )
         edges.append((parent, child, path, color_key[layer_of[parent]], joints, extra))
     gold_x, gold_y = gold
     for node_id, (x, y) in position.items():
         if layer_of[node_id] == "marts":
-            path = f"M{out_x(node_id)} {y} H{GOLD_BUS} V{gold_y} H{gold_x - GOLD / 2 - 10}"
+            path = f"M{_edge_out_x(position, layer_of, ends, half, node_id)} {y} H{GOLD_BUS} V{gold_y} H{gold_x - GOLD / 2 - 10}"
             edges.append((node_id, GOLD_ID, path, "marts", [(GOLD_BUS, y), (GOLD_BUS, gold_y)], False))
     return edges
 
@@ -1068,124 +1095,7 @@ def build_lineage_svg(nodes, results, mode):
 # later work too. It builds no markup: it only toggles classes (st.html drops a script
 # whose strings look like tags). bi/zoom.py TIP_SCRIPT may answer the same click with
 # the node's card; both are meant to.
-LINEAGE_SCRIPT = r"""<script>
-(() => {
-if (window.lineageReady) { return; }
-window.lineageReady = true;
-const GRAPH = 'svg[aria-label="Linaje dbt: de bronce a marts"]';
-const split = (text) => (text || "").split(" ").filter(Boolean);
-
-// The graph of one drawing, read once from its data attributes.
-const graphOf = (svg) => {
-    if (svg.lineageGraph) { return svg.lineageGraph; }
-    const up = new Map();
-    const down = new Map();
-    svg.querySelectorAll("[data-node]").forEach((node) => {
-        up.set(node.dataset.node, split(node.dataset.up));
-        down.set(node.dataset.node, split(node.dataset.down));
-    });
-    svg.lineageGraph = {up, down};
-    return svg.lineageGraph;
-};
-// Every node reachable from start along links (transitive inputs or outputs).
-const reach = (start, links) => {
-    const seen = new Set([start]);
-    const queue = [start];
-    while (queue.length) {
-        for (const next of links.get(queue.pop()) || []) {
-            if (!seen.has(next)) { seen.add(next); queue.push(next); }
-        }
-    }
-    return seen;
-};
-
-const light = (svg, id) => {
-    const graph = graphOf(svg);
-    const before = reach(id, graph.up);
-    const after = reach(id, graph.down);
-    svg.classList.add("lin-active");
-    svg.querySelectorAll("[data-node]").forEach((node) => {
-        const name = node.dataset.node;
-        node.classList.toggle("lin-on", before.has(name) || after.has(name));
-        node.classList.toggle("lin-focus", name === id);
-    });
-    const lit = [];
-    svg.querySelectorAll("[data-from]").forEach((part) => {
-        const from = part.dataset.from;
-        const to = part.dataset.to;
-        const on = (before.has(from) && before.has(to)) || (after.has(from) && after.has(to));
-        part.classList.toggle("lin-on", on);
-        if (on && part.classList.contains("lin-edge")) { lit.push(part); }
-    });
-    // Lit links over the dimmed ones that share their buses.
-    // Nodes never move: Streamlit (React) owns this markup and must find it where it left it.
-};
-const clear = (svg) => {
-    svg.classList.remove("lin-active");
-    svg.querySelectorAll(".lin-on, .lin-focus").forEach((part) => part.classList.remove("lin-on", "lin-focus"));
-};
-const nodeOf = (element) => (element && element.closest ? element.closest("[data-node]") : null);
-const graphAround = (element) => (element && element.closest ? element.closest(GRAPH) : null);
-
-document.addEventListener("pointerover", (event) => {
-    const node = nodeOf(event.target);
-    const svg = graphAround(node);
-    if (svg && !svg.dataset.lineagePinned) { light(svg, node.dataset.node); }
-});
-document.addEventListener("pointerout", (event) => {
-    const node = nodeOf(event.target);
-    const svg = graphAround(node);
-    if (!svg || svg.dataset.lineagePinned) { return; }
-    const next = nodeOf(event.relatedTarget);
-    if (next && svg.contains(next)) { return; }
-    clear(svg);
-});
-document.addEventListener("click", (event) => {
-    const svg = graphAround(event.target);
-    if (!svg) { return; }
-    const node = nodeOf(event.target);
-    if (!node) {
-        delete svg.dataset.lineagePinned;
-        clear(svg);
-    } else if (svg.dataset.lineagePinned === node.dataset.node) {
-        delete svg.dataset.lineagePinned;
-        light(svg, node.dataset.node);
-    } else {
-        svg.dataset.lineagePinned = node.dataset.node;
-        light(svg, node.dataset.node);
-    }
-});
-// The keyboard: Tab onto a model lights it, Enter pins it, Escape clears.
-document.addEventListener("focusin", (event) => {
-    const node = nodeOf(event.target);
-    const svg = graphAround(node);
-    if (svg && !svg.dataset.lineagePinned) { light(svg, node.dataset.node); }
-});
-document.addEventListener("focusout", (event) => {
-    const svg = graphAround(nodeOf(event.target));
-    if (svg && !svg.dataset.lineagePinned) { clear(svg); }
-});
-document.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-        const node = nodeOf(event.target);
-        const svg = graphAround(node);
-        if (svg) { svg.dataset.lineagePinned = node.dataset.node; light(svg, node.dataset.node); }
-    }
-    if (event.key === "Escape") {
-        document.querySelectorAll(GRAPH).forEach((svg) => { delete svg.dataset.lineagePinned; clear(svg); });
-    }
-});
-
-// Streamlit draws the page in steps and redraws it on every rerun: a new drawing
-// starts unselected, and its graph is read again on first use.
-const prepare = () => document.querySelectorAll(GRAPH).forEach((svg) => {
-    if (svg.dataset.lineageReady) { return; }
-    svg.dataset.lineageReady = "yes";
-    delete svg.lineageGraph;
-    clear(svg);
-});
-prepare();
-new MutationObserver(prepare).observe(document.body, {childList: true, subtree: true});
-})();
-</script>"""
+LINEAGE_SCRIPT = (
+    "<script>" + static_files.read("lineage.js") + "</script>"
+)  # D-543: the script lives in bi/static/lineage.js
 # endregion

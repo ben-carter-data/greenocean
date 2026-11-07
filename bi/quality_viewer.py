@@ -143,6 +143,14 @@ def texts_of(policy: dict[str, Any], key: str, english: bool) -> str:
     return pick(policy.get("diapositivas", {}).get(key, ["", ""]), english)
 
 
+def _viewer_number(english, value: Any) -> str:
+    return (
+        "—"
+        if value is None
+        else quality_metrics.number(value, 1 if isinstance(value, float) and value % 1 else 0, english)
+    )
+
+
 def build_viewer_html(
     reports: list[dict[str, Any]],
     number: int,
@@ -188,13 +196,6 @@ def build_viewer_html(
     data = report["medicion"].get("datos", {})
     dbt = report["medicion"].get("dbt", {}).get("ultima_construccion") or {}
 
-    def num(value: Any) -> str:
-        return (
-            "—"
-            if value is None
-            else quality_metrics.number(value, 1 if isinstance(value, float) and value % 1 else 0, english)
-        )
-
     of = "of" if english else "de"
     figures = (
         ("dbt tests passed", "Rows rejected", "Prices with a valid comparison")
@@ -204,9 +205,18 @@ def build_viewer_html(
     behind = " · ".join(
         f"{label}: {value}"
         for label, value in (
-            (figures[0], f"{num(dbt.get('pruebas_ok'))} {of} {num(dbt.get('pruebas_total'))}"),
-            (figures[1], f"{num(data.get('filas_rechazadas'))} {of} {num(data.get('filas_leidas'))}"),
-            (figures[2], f"{num(data.get('con_comparacion'))} {of} {num(data.get('precios_semana'))}"),
+            (
+                figures[0],
+                f"{_viewer_number(english, dbt.get('pruebas_ok'))} {of} {_viewer_number(english, dbt.get('pruebas_total'))}",
+            ),
+            (
+                figures[1],
+                f"{_viewer_number(english, data.get('filas_rechazadas'))} {of} {_viewer_number(english, data.get('filas_leidas'))}",
+            ),
+            (
+                figures[2],
+                f"{_viewer_number(english, data.get('con_comparacion'))} {of} {_viewer_number(english, data.get('precios_semana'))}",
+            ),
         )
     )
     results = slide(

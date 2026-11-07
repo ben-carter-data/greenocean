@@ -4,6 +4,7 @@ No raster charts, fabricated trend points, ETL changes, or remotely hosted asset
 """
 
 import html
+import functools
 import math
 import statistics
 import base64
@@ -384,6 +385,10 @@ def short_family(family):
     return data_terms.term(FAMILY_SHORT_NAMES.get(family, family))
 
 
+def _project_point(left, top, west, north, aspect, scale, lon, lat):
+    return left + (lon - west) * aspect * scale, top + (north - lat) * scale
+
+
 def real_projection(geometry):
     """Equirectangular projection corrected by the cosine of the mean latitude: Chile
     keeps its real proportions, so its shape is the one people know."""
@@ -394,10 +399,9 @@ def real_projection(geometry):
     scale = (bottom - top) / (north - south)
     aspect = math.cos(math.radians((north + south) / 2))
 
-    def project(lon, lat):
-        return left + (lon - west) * aspect * scale, top + (north - lat) * scale
-
-    return project, left + (east - west) * aspect * scale
+    return functools.partial(_project_point, left, top, west, north, aspect, scale), left + (
+        east - west
+    ) * aspect * scale
 
 
 def _inside_rings(x, y, rings):
@@ -950,6 +954,13 @@ def alert_table(items, query='', level_title=''):
     )
 
 
+def _calculation_detail_line(name, then, now, change, css=''):
+    return (
+        f'<li{css}><span>{esc(name)}</span><span class="mock-calc-prices"><span>{money(then)}</span> → '
+        f'<span>{money(now)}</span></span><b>{percent(change, True)}</b></li>'
+    )
+
+
 def calculation_detail(row, week_label, previous_label, published):
     """«Ver cálculo · 7 de 9 regiones» (D-327): what the row was calculated from. It opens in place (a native details)
     and lists each region used with its price of both weeks and the average, then each region left out with the reason.
@@ -960,15 +971,9 @@ def calculation_detail(row, week_label, previous_label, published):
     used, out = calc['used'], calc['out']
     this_week, before = week_label, previous_label  # D-374: each week as its range
 
-    def line(name, then, now, change, css=''):
-        return (
-            f'<li{css}><span>{esc(name)}</span><span class="mock-calc-prices"><span>{money(then)}</span> → '
-            f'<span>{money(now)}</span></span><b>{percent(change, True)}</b></li>'
-        )
-
-    body = ''.join(line(region, then, now, (now / then - 1) * 100) for region, then, now in used)
+    body = ''.join(_calculation_detail_line(region, then, now, (now / then - 1) * 100) for region, then, now in used)
     plural = 'región' if len(used) == 1 else 'regiones'
-    body += line(
+    body += _calculation_detail_line(
         f'Promedio de {len(used)} {plural}',
         row.get('_same_before'),
         row.get('_same_now'),

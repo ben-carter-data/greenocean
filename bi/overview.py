@@ -334,6 +334,15 @@ def consumer_insights(
     return lines
 
 
+def _architect_insights_number(value: float) -> str:
+    return f"{int(value):,}".replace(",", ".")
+
+
+def _architect_insights_share(total: int, part: float) -> str:
+    """A part of the week's prices as a percent of all of them, written the Chilean way."""
+    return f"{part / total * 100:.1f} %".replace(".", ",")
+
+
 def architect_insights(
     latest: Any,
     tests: tuple[int, int],
@@ -346,33 +355,27 @@ def architect_insights(
 ) -> list[str]:
     """For whoever designs the data: what the load brought, how much of it reaches the indicators and where it is lost."""
 
-    def number(value: float) -> str:
-        return f"{int(value):,}".replace(",", ".")
-
     day = f"{latest['started_at'][8:10]}-{latest['started_at'][5:7]}-{latest['started_at'][:4]}"
     total = int(flags["weekly_prices"].sum())
     by_flag = flags.groupby("flag")["weekly_prices"].sum()
     unconvertible, outliers = int(by_flag.get("UNIDAD_NO_CONVERTIBLE", 0)), int(by_flag.get("ATIPICO", 0))
 
-    def share(part: float) -> str:
-        return f"{part / total * 100:.1f} %".replace(".", ",")
-
     lines = [
-        f"La carga del {day} leyó {number(latest['rows_read'])} filas de los archivos de ODEPA y rechazó "
-        f"{number(latest['rows_rejected'])} con su motivo; pasaron {tests[0]} de {tests[1]} pruebas de dbt y {green} de "
+        f"La carga del {day} leyó {_architect_insights_number(latest['rows_read'])} filas de los archivos de ODEPA y rechazó "
+        f"{_architect_insights_number(latest['rows_rejected'])} con su motivo; pasaron {tests[0]} de {tests[1]} pruebas de dbt y {green} de "
         f"{indicators} indicadores de calidad de los datos están en su umbral.",
-        f"La Base DuckDB tiene {number(database['prices'])} precios semanales en {number(database['weeks'])} semanas sin "
+        f"La Base DuckDB tiene {_architect_insights_number(database['prices'])} precios semanales en {_architect_insights_number(database['weeks'])} semanas sin "
         f"huecos, de {database['regions']} regiones y {database['channels']} canales.",
     ]
     if unconvertible or outliers:
         bigger = "las unidades que no se pueden convertir" if unconvertible >= outliers else "los precios atípicos"
         lines.append(
-            f"{number(unconvertible)} precios ({share(unconvertible)}) quedan fuera de los indicadores por unidad no "
-            f"convertible y {number(outliers)} ({share(outliers)}) por atípicos: la mayor pérdida está en {bigger}, "
+            f"{_architect_insights_number(unconvertible)} precios ({_architect_insights_share(total, unconvertible)}) quedan fuera de los indicadores por unidad no "
+            f"convertible y {_architect_insights_number(outliers)} ({_architect_insights_share(total, outliers)}) por atípicos: la mayor pérdida está en {bigger}, "
             "donde una regla nueva sumaría más datos."
         )
     lines.append(
-        f"Esta semana, {number(comparable_now)} de {number(prices_now)} precios tienen comparación con la anterior: "
+        f"Esta semana, {_architect_insights_number(comparable_now)} de {_architect_insights_number(prices_now)} precios tienen comparación con la anterior: "
         "el resto no tiene precio la semana previa en las mismas regiones."
     )
     return lines
