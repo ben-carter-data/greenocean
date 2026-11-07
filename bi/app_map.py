@@ -1048,7 +1048,7 @@ LINK_EVIDENCE = {
     ("release", "streamlit"): ("bi/served_database.py", "/releases/download/"),
     ("streamlit", "web"): ("bi/dashboard.py", "st.html("),
     ("streamlit", "charts"): ("bi/dashboard.py", "st.altair_chart("),
-    ("visitor", "streamlit"): ("bi/dashboard.py", 'st.button(tr("Usuario")'),
+    ("visitor", "streamlit"): ("bi/app_frame.py", 'st.button(tr("Usuario")'),
     ("professional", "streamlit"): ("bi/sql_explorer.py", "ROW_LIMIT = 5000"),
     ("author", "devops"): ("bi/constants.py", 'SECRET_CONTROL_CODE = "CONTROL_CODE"'),
     ("author", "github"): (PLATFORM, "GitHub"),

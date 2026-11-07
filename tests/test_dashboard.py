@@ -418,7 +418,9 @@ def test_d421_there_is_one_key_only_and_every_author_action_checks_the_session(m
     window = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
     assert not window.exception and not list(window.text_input) and "run_watch" in window.session_state
     # the only key field of the panel is the Autor's entry in «Elige tu vista»
-    source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
+    source = "\n".join(
+        p.read_text(encoding="utf-8") for p in sorted((PROJECT_DIR / "bi").glob("*.py"))
+    )  # D-541: the panel spans bi/
     assert 'key="run_now_code"' not in source and "author_access_code" not in source
     assert source.count("control.check_control_code(") == 1 and "profile_author_code" in source
     # each action of the Autor asks the session again on the server
@@ -1720,7 +1722,9 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
         firsts[role] = order[0]
     assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.HOME_PAGE  # D-378
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_DIAGRAMS
-    source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
+    source = "\n".join(
+        p.read_text(encoding="utf-8") for p in sorted((PROJECT_DIR / "bi").glob("*.py"))
+    )  # D-541: the panel spans bi/
     assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep the view
 
 

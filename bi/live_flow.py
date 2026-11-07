@@ -296,7 +296,7 @@ PIECES: dict[str, tuple[str, int, int, str, tuple[str, str], tuple[str, str], st
         "key",
         ("Secretos y tokens", "Secrets and tokens"),
         ("lanzar · solo lectura", "launch · read only"),
-        "bi/dashboard.py",
+        "bi/constants.py",
         "GITHUB_READ_TOKEN",
     ),
     "jobtoken": (

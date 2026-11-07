@@ -45,7 +45,9 @@ def test_d357_a_tab_with_nothing_kept_asks_for_the_view():
 
 
 def test_d357_every_reload_the_app_makes_remembers_the_view_first():
-    source = (ROOT / "bi" / "dashboard.py").read_text(encoding="utf-8")
+    source = "\n".join(
+        p.read_text(encoding="utf-8") for p in sorted((ROOT / "bi").glob("*.py"))
+    )  # D-541: the panel spans bi/
     assert ".df-actions a, .doc-path a, .doc-print" in dashboard.PROFILE_KEEPER_JS  # «Abrir», «PDF», the path, print
     for reload in (
         "page.location.reload();",
