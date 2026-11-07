@@ -1218,7 +1218,7 @@ PEOPLE_KEYS = {"visitor", "professional", "author"}
 # endregion
 
 
-# region «Mapa de la app»
+# region The story of the map
 def story_steps():
     """The story as [line index, towards a person]: each line in its turn, from GitHub's start to the people."""
     index = {link[:2]: number for number, link in enumerate(LINKS)}
@@ -1291,6 +1291,10 @@ OWNER_STYLES = {"proyecto": "solid", "plataforma": "dashed", "fuente": "dashed",
 OWNER_COLORS = {"proyecto": "#56b4e0", "plataforma": "#8b96a8", "fuente": "#3fb6a8", "persona": "#e883a7"}
 
 
+# endregion
+
+
+# region Nodes and their links
 def esc(value):
     return html.escape(str(value), quote=True)
 
@@ -1319,6 +1323,10 @@ def node_rhythms(key):
     return rhythms
 
 
+# endregion
+
+
+# region Logos
 def logo_id(spec):
     """The name of a logo's CSS variable: «brand:python» → «lg-brand-python»."""
     return "lg-" + re.sub(r"[^a-z0-9]+", "-", spec.lower())
@@ -1366,6 +1374,10 @@ def logo_data(spec, palette):
     return f"data:image/svg+xml;base64,{base64.b64encode(svg.encode()).decode()}"
 
 
+# endregion
+
+
+# region Nodes, cards and tips
 def build_tip(key):
     name, _, _, _, what, role, when, _, group = NODES[key]
     parts = [("Qué es", what), ("Rol en GreenOcean", role), ("Cuándo actúa", when)]
@@ -1515,6 +1527,10 @@ def build_link_card(index, color):
     )
 
 
+# endregion
+
+
+# region Inside each view and the tour
 def inside_views(key, facts):
     """The views of a piece's magnifier (D-441): how the tool itself works, then what it does in GreenOcean."""
     views = []
@@ -1593,6 +1609,10 @@ def tour_steps(facts):
     ]
 
 
+# endregion
+
+
+# region Drawing the map
 def build_css(palette):
     ink, text, muted, card, border, accent = (
         palette["strong_text"],

@@ -1,7 +1,6 @@
 """The read-only GitHub Actions reader (D-339): only GET, the token never leaves it, logs only with a token, and every
 error says what to do."""
 
-import inspect
 import json
 from datetime import datetime, timezone
 
@@ -106,10 +105,12 @@ def network(monkeypatch):
 
 
 def test_d339_the_reader_only_reads_and_no_write_verb_exists_in_it():
-    source = inspect.getsource(github_actions)
+    from tests import code_shape
+
+    shape = code_shape.tree_of(github_actions)
     for verb in ("requests.post", "requests.put", "requests.patch", "requests.delete", "requests.request"):
-        assert verb not in source, verb
-    assert source.count("requests.get(") == 1  # the only function that touches the network
+        assert not code_shape.calls(shape, verb), verb
+    assert len(code_shape.calls(shape, "requests.get")) == 1  # the only function that touches the network
     assert github_actions.CACHE_SECONDS == 120 and github_actions.LOG_LINES == 60
 
 

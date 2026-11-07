@@ -8,7 +8,7 @@ from streamlit.testing.v1 import AppTest
 
 from bi import git_workflow
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
 REFERENCE = ROOT / "docs" / "referencia" / "ciclo_git.html"

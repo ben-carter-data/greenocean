@@ -26,12 +26,14 @@ import pandas as pd
 from bi import alerts, charts, data_terms, home_mockup, i18n, inflation_view, static_files
 from bi.weeks import week_range
 
+# region Constants
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
 STILL = 0.0005
 # A state that passes (every test, every indicator in its threshold): green, never the blue of a fall.
 GOOD = "#199e70"
 MARKET_WEEKS = 26
 HEAT_WEEKS = 8
+# endregion
 
 
 # region Data
@@ -345,6 +347,7 @@ def architect_insights(
 # endregion
 
 
+# region Wholesale insights
 def wholesale_insights(variations: pd.DataFrame, week: Any, margins: pd.DataFrame) -> list[str]:
     """For whoever buys wholesale (a shop, a restaurant): how the wholesale price moved this week, its biggest drops and
     the gap up to the consumer price. ODEPA's wholesale prices cover fruit and vegetables only."""
@@ -380,6 +383,9 @@ def wholesale_insights(variations: pd.DataFrame, week: Any, margins: pd.DataFram
         )
     lines.append("ODEPA publica precios mayoristas solo de frutas y hortalizas.")
     return lines
+
+
+# endregion
 
 
 # region Points of sale (D-306): what exists in each region; the Insights read it

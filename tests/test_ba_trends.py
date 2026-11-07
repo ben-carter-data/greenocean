@@ -11,9 +11,13 @@ from streamlit.testing.v1 import AppTest
 
 from bi import alerts, ba_trends, charts, dashboard, inflation_view, overview, queries, weeks
 
-# region Constants and variables
-needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
+# region Constants
 IPC = inflation_view.IPC_NAME
+# endregion
+
+
+# region Variables
+needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
 # endregion
 
 

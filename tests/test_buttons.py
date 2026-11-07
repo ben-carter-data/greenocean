@@ -7,7 +7,7 @@ import pytest
 
 from bi import buttons, charts, page_bar
 
-# region Constants and variables
+# region Variables
 BI_DIR = Path(buttons.__file__).parent
 FINISH = (BI_DIR / "premium.css").read_text(encoding="utf-8")
 # endregion
@@ -28,10 +28,14 @@ def contrast(first, second):
 def test_d281_the_component_is_styled_once_and_no_old_link_style_is_left():
     assert FINISH.count(".stApp .go-btn,") == 1 and ".go-btn--primary" in FINISH and ".go-btn--text" in FINISH
     assert ".go-btn--compact" in FINISH and ":focus-visible" in FINISH
-    for path in BI_DIR.glob("*.py"):
-        text = path.read_text(encoding="utf-8")
-        assert not re.search(r"\.go-btn[\w-]* ?\{", text), path.name  # the look lives only in premium.css
-        assert ".doc-print {" not in text and ".page-bar-link" not in text, path.name
+    from tests import code_shape
+
+    sheets = [
+        path.read_text(encoding="utf-8") for path in (BI_DIR / "static").glob("*.css") if path.name != "premium.css"
+    ]
+    for text in sheets + [text for tree in code_shape.folder_trees(BI_DIR) for text in code_shape.texts(tree)]:
+        assert not re.search(r"\.go-btn[\w-]* ?\{", text)  # the look lives only in premium.css
+        assert ".doc-print {" not in text and ".page-bar-link" not in text
 
 
 @pytest.mark.parametrize("variant", buttons.VARIANTS)

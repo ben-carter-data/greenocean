@@ -109,9 +109,11 @@ def test_the_live_checks_hold_on_the_real_database_and_say_what_cannot_be_measur
 
 
 def test_every_table_drawn_exists_in_the_repository():
-    sources = {
-        "raw": (ROOT / "etl" / "etl.py").read_text(encoding="utf-8"),
-        "bronze": (ROOT / "etl" / "bronze.py").read_text(encoding="utf-8"),
+    from tests import code_shape
+
+    sources = {  # the texts each step writes: its SQL and its file names
+        layer: " ".join(code_shape.texts(code_shape.file_tree(ROOT / "etl" / f"{module}.py")))
+        for layer, module in (("raw", "etl"), ("bronze", "bronze"))
     }
     served = set(project.TABLE_NAMES + project.IPC_TABLE_NAMES)
     for layer, _, _, name in database_crossings.CHIPS:

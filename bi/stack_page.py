@@ -18,8 +18,7 @@ from pathlib import Path
 
 from bi import brand_icons, charts, database_map, doc_views, live_mark, project, queries, static_files
 
-# region Constants and variables
-REPOSITORY = Path(__file__).resolve().parent.parent
+# region Constants
 # Disc colors (light top, dark bottom, glyph) beyond database_map.BRANDS.
 EXTRA_DISCS = {
     "pytest": ("#7fc4ff", "#1f6fb5", "#ffffff"),
@@ -303,7 +302,12 @@ LEGEND = [
 # endregion
 
 
-# region «Stack y evidencia»
+# region Variables
+REPOSITORY = Path(__file__).resolve().parent.parent
+# endregion
+
+
+# region Figures
 def read_figures(database_file=queries.DATABASE_FILE, tests_dir=REPOSITORY / "tests"):
     """{prices, tests, loads}: weekly prices served, automatic tests (pytest + dbt) and recorded loads."""
     connection = queries.open_database(database_file)
@@ -320,6 +324,10 @@ def format_number(value):
     return f"{value:,}".replace(",", ".")
 
 
+# endregion
+
+
+# region Logos
 def as_image(svg):
     """An SVG as an image: st.html strips inline SVG gradients and markers, a data: image keeps them."""
     svg = re.sub(r'<svg class="logo"', '<svg xmlns="http://www.w3.org/2000/svg"', svg, count=1)
@@ -351,6 +359,10 @@ def disc_svg(key):
     )
 
 
+# endregion
+
+
+# region Links between tools
 def names():
     return dict([(key, name) for key, name, *_ in STACK] + [(key, name) for key, name, _ in SOURCES])
 
@@ -383,6 +395,10 @@ def build_wires_svg(palette):
     return f'<img class="sk-wires" alt="" src="data:image/svg+xml;base64,{base64.b64encode(svg.encode()).decode()}">'
 
 
+# endregion
+
+
+# region Drawing the stack
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
     ink, text, muted, card, border = (

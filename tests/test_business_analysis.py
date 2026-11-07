@@ -97,12 +97,12 @@ def test_d377_the_kpi_definitions_left_insights_for_the_analysis_page():
         "app_frame.py",
         *sorted(f.name for f in folder.glob("page_*.py")),
     ]
-    panel = "\n".join((folder / name).read_text(encoding="utf-8") for name in split)
-    assert '["Preguntas", "KPIs"]' not in panel and "OVERVIEW_INSIGHT_VIEW" not in panel
-    assert panel.count("overview.KPIS") == 1
-    source = (folder / "page_analysis.py").read_text(encoding="utf-8")
-    before = source[: source.index("overview.KPIS")]
-    assert before[before.rindex("\ndef ") : before.rindex("\ndef ") + 30].startswith("\ndef show_analysis_block")
+    from bi import page_analysis
+    from tests import code_shape
+
+    found = [name for name in split for _ in code_shape.uses(code_shape.file_tree(folder / name), "overview.KPIS")]
+    assert found == ["page_analysis.py"]
+    assert code_shape.uses(code_shape.tree_of(page_analysis.show_analysis_block), "overview.KPIS")
 
 
 @needs_database

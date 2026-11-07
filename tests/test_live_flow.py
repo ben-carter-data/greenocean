@@ -13,12 +13,16 @@ from streamlit.testing.v1 import AppTest
 
 from bi import charts, control, github_actions, i18n, live_flow
 
-# region Constants and variables
+# region Constants
+FACTS = {"odepa": "2 archivos · 63,1 MB · 2026-10-31 04:40"}
+# endregion
+
+
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
 PALETTE = charts.get_palette(charts.MODE_DARK)
 STARTED = datetime(2026, 10, 31, 4, 38, tzinfo=timezone.utc)
-FACTS = {"odepa": "2 archivos · 63,1 MB · 2026-10-31 04:40"}
 # endregion
 
 

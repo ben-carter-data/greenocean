@@ -10,7 +10,7 @@ import re
 import sys
 from pathlib import Path
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 # endregion
 # region What a page still shows in Spanish when the reader chose English

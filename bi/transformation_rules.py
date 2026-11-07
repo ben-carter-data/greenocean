@@ -16,9 +16,7 @@ from typing import Any
 
 from bi import charts, doc_views, project, static_files
 
-# region Constants and variables
-ROOT = Path(__file__).resolve().parent.parent
-RULES_FILE = ROOT / "docs" / "arquitectura" / "reglas_transformacion.json"
+# region Constants
 PIPELINE_TAB, CALCULATIONS_TAB = "pipeline", "calculos"
 # (layer, tab, name, where it runs, logo kind and name, centre of the drawing, dots per row)
 LAYERS: tuple[tuple[str, str, tuple[str, str], tuple[str, str], tuple[str, str], int, int], ...] = (
@@ -108,6 +106,12 @@ TEXTS = {
     "rule": ("Regla", "Rule"),
     "rules": ("reglas", "rules"),
 }
+# endregion
+
+
+# region Variables
+ROOT = Path(__file__).resolve().parent.parent
+RULES_FILE = ROOT / "docs" / "arquitectura" / "reglas_transformacion.json"
 # endregion
 
 

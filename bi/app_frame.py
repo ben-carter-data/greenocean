@@ -170,49 +170,7 @@ AUTHOR_ENTERED = "profile_author_entered"  # D-350: a right key must close the w
 # that opens the Autor's view by itself. D-428: Streamlit Community Cloud loads the page twice after a reload (the app
 # frame, then the whole page), so each page reads the kept view once and leaves it for the second load. D-454: a session
 # the server forgot (idle time, sleep, restart) reads it again, so the visit never asks twice for its view.
-PROFILE_KEEPER_JS = r"""
-export default function(component) {
-    const { setTriggerValue, data } = component;
-    const KEY = "go-keep-profile";
-    const store = window.sessionStorage;
-    const remember = () => {
-        if (!data || !data.perfil) return;
-        try {
-            store.setItem(KEY, JSON.stringify({
-                p: data.perfil, r: data.rol || "", h: data.historial || [], a: data.autor || "", t: Date.now()
-            }));
-        } catch (e) {}
-    };
-    window.__goRemember = remember;
-    remember();  // D-430: each run, so a reload of this tab never asks for the view again
-    // D-423: read even when the address already names the view, because the history of «Volver» comes along too.
-    // D-428: once per page, and the kept view stays for the second load Streamlit Community Cloud makes.
-    // D-454: and again whenever the server comes without a view while this tab has one: after a long idle time (or a
-    // sleep, or a restart) the server forgets the session and the page reconnects in place, without a reload.
-    try {
-        const lost = !(data && data.perfil);
-        const raw = window.__goKeptRead && !lost ? null : store.getItem(KEY);
-        window.__goKeptRead = true;
-        if (raw) setTriggerValue("keep", raw);
-    } catch (e) {}
-    const handler = (event) => {
-        // D-406: a channel card is a reload the app makes too, like a document of the folder
-        const link = event.target.closest && event.target.closest(".df-actions a, .doc-path a, .doc-print, a.im-node");
-        if (link) remember();
-        // D-373: the GreenOcean logo reopens «Elige tu vista» instead of going to the first page.
-        const logo = event.target.closest && event.target.closest(
-            '[data-testid="stSidebarLogo"], [data-testid="stHeaderLogo"], [data-testid="stLogoLink"]'
-        );
-        if (logo && data && data.perfil) {
-            event.preventDefault();
-            event.stopPropagation();
-            setTriggerValue("reopen", String(Date.now()));
-        }
-    };
-    document.addEventListener("click", handler, true);
-    return () => document.removeEventListener("click", handler, true);
-}
-"""
+PROFILE_KEEPER_JS = static_files.read("profile_keeper.js")
 
 
 AUTHOR_TICKET = "author_ticket"
@@ -520,39 +478,14 @@ def build_base_mode_script(theme_or_base):
     value = json.dumps("Dark" if base == charts.BASE_DARK else "Light")
     selected_theme = json.dumps(theme)
     section_paths = json.dumps([""] + list(WINDOW_PATHS.values()))
-    return f"""<script>
-    const page = window.parent;
-    const attempt = "project-base-request-" + page.location.pathname;
-    const key = "stActiveTheme-" + page.location.pathname + "-v2";
-    const wanted = {value};
-    // The app may live under a folder: the sections share the current page's folder.
-    const folder = page.location.pathname.replace(/[^/]*$/, "");
-    try {{
-        const current = JSON.parse(page.localStorage.getItem(key) || "null");
-        const requested = page.sessionStorage.getItem(attempt);
-        // Stored preference can already match while React still uses the old base.
-        const ink = page.getComputedStyle(page.document.body).color.match(/[0-9.]+/g);
-        const brightInk = ink && (Number(ink[0]) * .2126 + Number(ink[1]) * .7152 + Number(ink[2]) * .0722) > 128;
-        const baseMatches = ink && (wanted === "Dark" ? brightInk : !brightInk);
-        if (baseMatches) {{ page.sessionStorage.removeItem(attempt); }}
-        for (const path of {section_paths}) {{
-            page.localStorage.setItem("stActiveTheme-" + folder + path + "-v2",
-                                      JSON.stringify(wanted));
-        }}
-        if (!baseMatches && requested !== wanted) {{
-            page.sessionStorage.setItem(attempt, wanted);
-            // The address keeps the chosen palette across the reload.
-            const address = new URL(page.location.href);
-            address.searchParams.set("tema", {selected_theme});
-            page.history.replaceState(null, "", address.toString());
-            // This reload only syncs Streamlit's native-widget base mode; it is not
-            // a real page refresh, so it must not send the reader back home (D-099).
-            page.sessionStorage.setItem("greenoceanThemeReload", "1");
-            if (page.__goRemember) {{ page.__goRemember(); }}  // D-357: this reload is the app's own
-            page.location.reload();
-        }}
-    }} catch (error) {{ /* CSS remains usable when browser storage is unavailable. */ }}
-    </script>"""
+    return static_files.script(
+        "base_mode.js",
+        {
+            '__GO_VALUE__': value,
+            '__GO_SECTION_PATHS__': section_paths,
+            '__GO_SELECTED_THEME__': selected_theme,
+        },
+    )
 
 
 def match_base_mode(theme):

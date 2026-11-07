@@ -60,7 +60,7 @@ GROUP BY n.product_group, p.product, n.product_id, n.channel_id, n.normalized_un
 # endregion
 
 
-# region Inflation view
+# region The families' index
 def build_family_index(
     series: pd.DataFrame, ipc: pd.DataFrame, basket: bool = False
 ) -> tuple[pd.DataFrame, tuple[int, ...]]:
@@ -143,6 +143,10 @@ def summarize_families(rows: pd.DataFrame, last: tuple[int, ...]) -> tuple[pd.Da
     return summary, ipc_total, ipc_year
 
 
+# endregion
+
+
+# region Drawing the cards and the focus
 def family_domain(rows: pd.DataFrame, real: bool = False, step: int = 10) -> list[float]:
     """The shared y range of the family cards: every family and the IPC fit in it, so
     the cards compare at a glance; rounded outward to the nearest step."""
@@ -286,6 +290,10 @@ def draw_family_focus(
     return charts.apply_chart_style(chart, mode)
 
 
+# endregion
+
+
+# region Insights
 def month_name(year: int, month: int) -> str:
     return f"{charts.CHILE_LOCALE['time']['months'][month - 1]} {year}"
 

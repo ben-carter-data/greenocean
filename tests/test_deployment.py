@@ -6,14 +6,18 @@ from urllib.parse import urlparse
 
 from bi import architecture, charts, control, deployment, project, queries
 
-# region Constants and variables
-REPOSITORY = Path(__file__).resolve().parent.parent
+# region Constants
 STATES = {"sources": control.RUN_OK, "workflow": control.RUN_OK, "panel": control.RUN_OK}
 FIGURES = {
     "next_run": "27-10 09:00",
     "week_prices": "semana 12-10: 3.032 precios",
     "panel_time": "datos al 20-10 12:54",
 }
+# endregion
+
+
+# region Variables
+REPOSITORY = Path(__file__).resolve().parent.parent
 # endregion
 
 

@@ -12,7 +12,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import project, queries  # noqa: E402
 
+# region Constants
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.db has not been built")
+# endregion
 
 
 # region Documents
@@ -87,6 +89,7 @@ def test_t54_every_public_link_answers(link):
 # endregion
 
 
+# region Real figures of the diagrams
 def test_d054_real_figures_of_the_devops_diagram(tmp_path):
     (tmp_path / "test_one.py").write_text(
         "x = 1\n\ndef test_a():\n    pass\n\n\ndef test_b():\n    pass\n", encoding="utf-8"
@@ -110,6 +113,9 @@ def test_d054_week_prices_match_the_rows_of_that_week():
 
 # Units, SQL types and the date pattern read as words, not acronyms to define.
 NOT_ACRONYMS = {"MB", "GB", "AAAA", "MM", "DD", "VARCHAR", "BIGINT", "INTEGER", "DOUBLE", "BOOLEAN"}
+
+
+# endregion
 
 
 # region The glossary, the READMEs and the language of the comments
@@ -269,17 +275,25 @@ def test_d543_no_function_of_the_project_is_written_inside_another():
 
 
 def test_d543_javascript_and_html_live_in_their_own_files():
-    """No long text of another language hides in a Python string: it lives in bi/static/ and the module reads it."""
+    """R-003 of AKGRO.md: no script hides in a Python string, long or short (D-545); it lives in bi/static/ and the
+    module reads it. A text with two marks of JavaScript (a listener, the page, an arrow function) is a script."""
     import ast
 
     root = Path(__file__).resolve().parent.parent
-    long_texts = []
+    marks = re.compile(r"(addEventListener|document\.|window\.|=>|function\s*\(|querySelector|location\.)")
+    scripts = []
     for folder in ("bi", "etl", "agent", "scripts"):
         for path in sorted((root / folder).glob("*.py")):
-            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-                if isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value.count("\n") > 100:
-                    long_texts.append(f"{folder}/{path.name}:{node.lineno}")
-    assert long_texts == [], long_texts
+            source = path.read_text(encoding="utf-8")
+            tree = ast.parse(source)
+            parts = {id(part) for node in ast.walk(tree) if isinstance(node, ast.JoinedStr) for part in node.values}
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.JoinedStr, ast.Constant)) and id(node) not in parts:
+                    text = ast.get_source_segment(source, node) or ""
+                    if isinstance(node, ast.JoinedStr) or isinstance(node.value, str):
+                        if len(marks.findall(text)) >= 2 or text.count("\n") > 100:
+                            scripts.append(f"{folder}/{path.name}:{node.lineno}")
+    assert scripts == [], scripts
     assert {path.name for path in (root / "bi" / "static").iterdir()} >= {"app_map.js", "zoom.js", "sql_editor.html"}
 
 

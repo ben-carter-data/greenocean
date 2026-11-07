@@ -21,6 +21,7 @@ QUOTE_WORDS = {2: "dos", 3: "tres"}
 # endregion
 
 
+# region The rule in words
 def describe_rule() -> str:
     """K6 in words, from the constants above: the one definition the panel and the documents repeat (D-385)."""
     quotes = QUOTE_WORDS.get(ALERT_MINIMUM_QUOTES, str(ALERT_MINIMUM_QUOTES))
@@ -60,6 +61,9 @@ def describe_scale(professional: bool) -> str:
         f"Cuántas veces se alejó el cambio de su promedio de {ALERT_WINDOW_WEEKS} semanas, medido en lo que suele "
         "variar (desviación estándar)."
     )
+
+
+# endregion
 
 
 # region Alerts

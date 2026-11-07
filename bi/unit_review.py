@@ -16,7 +16,7 @@ import pandas as pd
 
 from bi import queries
 
-# region Constants and variables
+# region Variables
 REVIEWED_FILE = Path(__file__).resolve().parent.parent / "etl" / "reviewed_units.csv"
 # One package and one quantity, or a price already per kilo, unit or liter: nothing that can be read two ways.
 PLAIN_PACKAGE = re.compile(

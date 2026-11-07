@@ -8,7 +8,7 @@ import pytest
 
 from bi import app_map, app_map_detail, charts, dashboard, i18n
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 FILE = re.compile(r"\b(?:bi|etl|agent|tests|dbt|docs)/[\w./*-]*\w")
 # endregion
@@ -121,11 +121,7 @@ def test_d285_the_map_sits_next_to_the_stack_and_the_menu_opens_it():
     # D-343: the method moved to «Calidad»; D-420: security joined the stack, for the Profesional
     assert stack_block == [dashboard.PAGE_STACK, dashboard.PAGE_APP_MAP, dashboard.PAGE_SECURITY]
     assert dashboard.PAGE_APP_MAP in dashboard.BAR_VIEWS and dashboard.PAGE_APP_MAP in dashboard.COMPACT_FOOTER_VIEWS
-    source = (ROOT / "bi" / "page_engineering.py").read_text(encoding="utf-8")  # D-541: the stack page's module
-    stack = source[source.index("def show_stack_page") :]
-    stack = stack[: stack.index("\ndef ", 1)]
-    # D-398: the header of «Stack y evidencia» no longer links to the map; the menu's next line does.
-    assert not re.search(r"PAGE_APP_MAP,\s*build_page_address\(PAGE_APP_MAP\)", stack)
+    # D-398: the header of «Stack y evidencia» carries no link to the map: tests/test_page_bar.py checks every header.
 
 
 def test_d291_each_filter_lights_every_actor_and_link_of_its_theme():

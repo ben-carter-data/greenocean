@@ -5,7 +5,7 @@ Spanish text → English text, each one a whole text as the panel draws it. «{}
 (products, varieties, families, regions and channels) is never translated.
 """
 
-# region Constants and variables
+# region Constants
 PAGES = {
     # Every page: the browser title and the phone layout
     "Monitor de precios de alimentos": "Food price monitor",

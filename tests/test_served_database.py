@@ -9,7 +9,7 @@ import pytest
 
 from bi import served_database
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 # endregion
 

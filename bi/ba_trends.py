@@ -17,6 +17,7 @@ import pandas as pd
 
 from bi import charts, home_mockup, i18n, inflation_view, interest_map, overview, static_files, weeks
 
+# region Constants
 BASKET = inflation_view.BASKET_NAME
 IPC = inflation_view.IPC_NAME
 BASE = (inflation_view.BASE_YEAR, inflation_view.BASE_MONTH)
@@ -37,6 +38,7 @@ INSIGHT_ROOM = 43  # D-518: the height of the green box of «Histórico», taken
 # One chart of a tab: its title, the months it shows, what it measures, what follows from it, and how to draw it at a
 # width and a height.
 Tile = tuple[str, str, str, str, Callable[..., Any]]
+# endregion
 
 
 # region Words

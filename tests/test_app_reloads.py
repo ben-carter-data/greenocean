@@ -8,7 +8,7 @@ from streamlit.testing.v1 import AppTest
 
 from bi import dashboard
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 # endregion
 
@@ -48,16 +48,20 @@ def test_d357_a_tab_with_nothing_kept_asks_for_the_view():
 
 
 def test_d357_every_reload_the_app_makes_remembers_the_view_first():
-    source = "\n".join(
-        p.read_text(encoding="utf-8") for p in sorted((ROOT / "bi").glob("*.py"))
-    )  # D-541: the panel spans bi/
+    from tests import code_shape
+
+    # the scripts the page receives: the texts of bi/ and the files of bi/static/
+    scripts = [text for tree in code_shape.folder_trees(ROOT / "bi") for text in code_shape.texts(tree)]
+    static = ROOT / "bi" / "static"
+    scripts += [path.read_text(encoding="utf-8") for path in sorted([*static.glob("*.js"), *static.glob("*.html")])]
     assert ".df-actions a, .doc-path a, .doc-print" in dashboard.PROFILE_KEEPER_JS  # «Abrir», «PDF», the path, print
     for reload in (
         "page.location.reload();",
         "window.location.assign(url.toString());",
         "window.location.replace(url.toString());",
     ):
-        before = source[: source.index(reload)].rsplit("\n", 2)[-2:]
+        holder = next(text for text in scripts if reload in text)
+        before = holder[: holder.index(reload)].rsplit("\n", 2)[-2:]
         assert any("__goRemember" in line for line in before), reload
     assert "Date.now() - kept.t" not in dashboard.PROFILE_KEEPER_JS  # D-430: kept for the life of the tab
 

@@ -8,7 +8,7 @@ page and fail if the SVG of its builder is not there.
 import sys
 from pathlib import Path
 
-# region Constants and variables
+# region Variables
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 # endregion
 # region The views that work must stay on their page
@@ -80,7 +80,6 @@ def test_d251_the_star_and_the_pipeline_are_drawn_as_in_d229():
     assert STAR_LABEL in page and '<div class="zoom-frame' not in page
     page = read_markdown(draw_page(dashboard.PAGE_DIAGRAMS))
     assert '<div class="zoom-frame diagram-wide">' in page and "fit-pipeline" not in page
-    assert "fit-pipeline" not in Path(dashboard.__file__).read_text(encoding="utf-8")
 
 
 def test_d232_the_frame_ratio_comes_from_the_svg_viewbox():

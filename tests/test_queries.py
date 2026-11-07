@@ -1,6 +1,5 @@
 """Tests for bi/queries.sql (K1 to K4, K8). The SQL K5 and K6: test_reconciliation."""
 
-import re
 import sys
 from pathlib import Path
 
@@ -182,9 +181,14 @@ def test_every_named_query_runs_read_only_on_the_served_database(query_name):
 def test_every_github_link_of_the_panel_points_to_a_file_in_the_repository():
     # D-244: a literal path given to build_github_url must exist, so no link of the panel is broken.
     root = Path(__file__).resolve().parent.parent
-    paths = set()
-    for source in (root / "bi").glob("*.py"):
-        paths |= set(re.findall(r'build_github_url\(\s*"([^"{}]+)"', source.read_text(encoding="utf-8")))
+    from tests import code_shape
+
+    paths = {
+        code_shape.literal(call.args[0])
+        for tree in code_shape.folder_trees(root / "bi")
+        for call in code_shape.calls_named(tree, "build_github_url")
+        if call.args and code_shape.literal(call.args[0]) and "{" not in code_shape.literal(call.args[0])
+    }
     assert paths
     for path in paths:
         assert (root / path).exists(), path

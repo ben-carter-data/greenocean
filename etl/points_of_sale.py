@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 DOWNLOADS = ROOT / "agent" / "downloads"
 OUTPUT = ROOT / "bi" / "assets" / "points_of_sale.json"

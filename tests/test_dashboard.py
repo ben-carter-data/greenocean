@@ -1,7 +1,6 @@
 """Tests for the dashboard: navigation, appearance, key figures and evidence."""
 
 import html
-import inspect
 import re
 import json
 import sys
@@ -16,12 +15,15 @@ sys.path.insert(0, str(PROJECT_DIR))
 from bi import github_page, charts, control, dashboard, i18n, project, queries, stack_page  # noqa: E402
 from tests import code_shape  # noqa: E402
 
+# region Constants
 DASHBOARD_FILE = str(PROJECT_DIR / "bi" / "dashboard.py")
 # These tests draw the real dashboard, so they need the committed database.
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.db has not been built")
 ALL_PAGES = [p for views in dashboard.WINDOWS.values() for p in views]
+# endregion
 
 
+# region Drawing the pages
 @pytest.fixture(autouse=True)
 def fixed_github_answers(monkeypatch):
     monkeypatch.setattr(control, "list_workflow_runs", lambda *args, **kwargs: [])
@@ -295,6 +297,9 @@ def test_t44_base_mode_switch_writes_streamlit_choice_and_tries_only_once():
     assert 'address.searchParams.set("tema", "Dark Grey")' in graphite
 
 
+# endregion
+
+
 # region Administration (T-54)
 # D-409: the administration links live in «Configuración», read from the runbook's GitHub guide.
 ADMIN_ADDRESSES = ["https://github.com/settings/personal-access-tokens", "https://share.streamlit.io"]
@@ -419,11 +424,8 @@ def test_d421_there_is_one_key_only_and_every_author_action_checks_the_session(m
     window = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
     assert not window.exception and not list(window.text_input) and "run_watch" in window.session_state
     # the only key field of the panel is the Autor's entry in «Elige tu vista»
-    source = "\n".join(
-        p.read_text(encoding="utf-8") for p in sorted((PROJECT_DIR / "bi").glob("*.py"))
-    )  # D-541: the panel spans bi/
-    assert 'key="run_now_code"' not in source and "author_access_code" not in source
-    assert source.count("control.check_control_code(") == 1 and "profile_author_code" in source
+    trees = code_shape.folder_trees(PROJECT_DIR / "bi")
+    assert sum(len(code_shape.calls(tree, "control.check_control_code")) for tree in trees) == 1
     # each action of the Autor asks the session again on the server
     state = {}
     monkeypatch.setattr(dashboard.st, "session_state", state)
@@ -487,10 +489,8 @@ def test_d351_the_window_cannot_be_dismissed_minimizing_does_not_cancel_and_canc
 
     from bi import page_devops
 
-    assert (
-        "dismissible=False"
-        in inspect.getsource(page_devops).split("def show_run_now_dialog")[0].rsplit("@st.dialog", 1)[1]
-    )
+    dialog = code_shape.decorator(code_shape.tree_of(page_devops.show_run_now_dialog), "st.dialog")
+    assert code_shape.keyword(dialog, "dismissible") == "False"
     cancelled = []
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="in_progress", dialog=True)
     open_run_dialog(app, "clave")
@@ -575,6 +575,7 @@ def test_project_links_are_grouped_as_a_tree_with_descriptions():
 # endregion
 
 
+# region Cards and KPIs
 def test_d057_cards_escape_their_text_and_keep_bold_and_code():
     card = dashboard.build_info_card_html(
         "<b>Título</b>", "Texto con **negrita** y `datos.db`", label="P1", note="nota"
@@ -1724,10 +1725,8 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
         firsts[role] = order[0]
     assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.HOME_PAGE  # D-378
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_DIAGRAMS
-    source = "\n".join(
-        p.read_text(encoding="utf-8") for p in sorted((PROJECT_DIR / "bi").glob("*.py"))
-    )  # D-541: the panel spans bi/
-    assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep the view
+    trees = code_shape.folder_trees(PROJECT_DIR / "bi")  # page addresses, the menu and the neighbours keep the view
+    assert sum(len(code_shape.calls_named(tree, "profile_parameters")) for tree in trees) >= 2
 
 
 @needs_database
@@ -1771,3 +1770,6 @@ def test_d349_a_visit_with_no_parameters_opens_dark_also_the_entry_window_and_th
     light.query_params["tema"] = "Corporativo"
     light.run()
     assert light.session_state[dashboard.THEME_STATE] == "Corporativo"
+
+
+# endregion

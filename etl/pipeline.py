@@ -75,7 +75,7 @@ ETL_RUN_SCHEMA = """CREATE TABLE IF NOT EXISTS etl_run (
 # endregion
 
 
-# region Weekly load with dbt and DuckDB
+# region Preparing the load
 def prepare_ipc(serving_file: Path = SERVING_DATABASE_FILE) -> None:
     """IPC of the INE into the bronze layer (D-155). If the INE does not answer, the
     rows kept in the published database rebuild it: the load never stops for the IPC."""
@@ -110,6 +110,10 @@ def read_run_history(
     return []
 
 
+# endregion
+
+
+# region dbt build and its results
 def run_dbt(run_id: int, dbt_command: str | None = None) -> tuple[bool, str]:
     """dbt build (models and tests) in the work database. Returns (ok, last output lines)."""
     command = (dbt_command or os.environ.get("DBT_BIN", "dbt")).split() + [
@@ -202,6 +206,10 @@ def write_dbt_artifacts(
         connection.executemany("INSERT INTO dbt_result VALUES (?, ?, ?, ?, ?)", results)
 
 
+# endregion
+
+
+# region Publishing and recording the load
 def write_serving_database(
     history: list[tuple[Any, ...]],
     run: tuple[Any, ...],
@@ -237,6 +245,10 @@ def record_failed_run(
         connection.execute("INSERT INTO etl_run VALUES (?, ?, ?, ?, ?, ?, ?)", run)
 
 
+# endregion
+
+
+# region The load from start to end
 def main(dbt_command: str | None = None, load_raw: bool = True, record: bool = True) -> int:
     """record=False (--local): a development build keeps the published run history as it is."""
     started_at = datetime.now().isoformat(timespec="seconds")

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-# region Constants and variables
+# region Variables
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 # endregion
 # region The menu does not scroll towards a void
@@ -74,10 +74,12 @@ def test_d504_the_turned_phone_grows_the_menu_column_with_its_sidebar():
 
 def test_d504_the_menu_never_moves_its_nodes_with_a_script():
     """Streamlit owns the DOM (CLAUDE.md): the footer and the header are placed with CSS alone."""
-    source = Path(dashboard.__file__).read_text(encoding="utf-8")
-    footer = source[source.index("def show_sidebar_footer") :]
-    footer = footer[: footer.index("\ndef ")]
-    assert "st.html(" not in footer and "<script" not in footer and 'container(key="sidebar_footer")' in footer
+    from tests import code_shape
+
+    footer = code_shape.tree_of(dashboard.show_sidebar_footer)
+    assert not code_shape.calls(footer, "st.html") and not code_shape.calls_named(footer, "html")  # no script runs here
+    keys = {code_shape.keyword(call, "key") for call in code_shape.calls_named(footer, "container")}
+    assert code_shape.normal('"sidebar_footer"') in keys
 
 
 def test_d539_each_icon_of_the_bar_is_named_on_hover():

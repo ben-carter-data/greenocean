@@ -1,0 +1,12 @@
+
+<script>
+document.querySelectorAll(".doc-print").forEach((button) => { button.onclick = () => {
+  const light = "__LIGHT__";
+  if (!light) { window.print(); return; }
+  const url = new URL(window.location.href);
+  url.searchParams.set("imprimir", url.searchParams.get("tema") || "");
+  url.searchParams.set("tema", light);
+  if (window.__goRemember) window.__goRemember();  // D-357: the app reloads, the visit keeps its view
+  window.location.assign(url.toString());
+}; });
+</script>

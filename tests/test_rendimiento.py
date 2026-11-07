@@ -46,13 +46,16 @@ def test_d341_no_shared_runner_measures_speed_the_ci_the_weekly_load_and_the_qua
     ]
     from tests import conftest
 
-    for name in conftest.DATA_FILES:
-        source = (root / "tests" / f"{name}.py").read_text(encoding="utf-8")
-        assert "AppTest" not in source and "i18n_audit" not in source, name  # no screen test among the data ones
-    script = (root / "scripts" / "medir_calidad.py").read_text(encoding="utf-8")
-    assert '"-m",\n            "not rendimiento",' in script
+    from tests import code_shape
+
+    for name in conftest.DATA_FILES:  # no screen test among the data ones
+        tree = code_shape.file_tree(root / "tests" / f"{name}.py")
+        assert not code_shape.uses(tree, "AppTest") and not code_shape.uses(tree, "i18n_audit"), name
+        assert not [module for module in code_shape.imports(tree) if module.startswith("streamlit.testing")], name
+    script = code_shape.file_tree(root / "scripts" / "medir_calidad.py")
+    assert code_shape.has_sequence(script, ["-m", "not rendimiento"])
     # The count of tests the indicator divides by is taken with the same filter, or the ones left out count as failures.
-    assert '"--collect-only", "-q", "-m", "not rendimiento"' in script
+    assert code_shape.has_sequence(script, ["--collect-only", "-q", "-m", "not rendimiento"])
 
 
 # endregion

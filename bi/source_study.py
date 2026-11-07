@@ -14,13 +14,7 @@ from pathlib import Path
 from bi import buttons, static_files
 from bi.i18n import tr
 
-# region Constants and variables
-PROJECT_DIR = Path(__file__).resolve().parent.parent
-# (language, file): the Spanish study and its English version.
-NOTEBOOKS = [
-    ("es", PROJECT_DIR / "notebooks" / "estudio_fuente_odepa_es.ipynb"),
-    ("en", PROJECT_DIR / "notebooks" / "odepa_source_study_en.ipynb"),
-]
+# region Constants
 NOTEBOOK_PARAMETER = "cuaderno"
 LANGUAGE_NAMES = {"es": "Español", "en": "English"}
 # The head line of the folder in each visit language: it names the version the folder does not list (D-535).
@@ -32,6 +26,16 @@ NOTEBOOK_COLOR = "#22b35a"
 # The block of a notebook output: the source's raw data as the notebook printed it (tests/i18n_audit.py reads it as
 # data, not as a sentence of the panel).
 OUTPUT_OPEN, OUTPUT_CLOSE = '<div class="nb-output">', "</div><!--/nb-output-->"
+# endregion
+
+
+# region Variables
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+# (language, file): the Spanish study and its English version.
+NOTEBOOKS = [
+    ("es", PROJECT_DIR / "notebooks" / "estudio_fuente_odepa_es.ipynb"),
+    ("en", PROJECT_DIR / "notebooks" / "odepa_source_study_en.ipynb"),
+]
 # endregion
 
 

@@ -66,9 +66,13 @@ COPY_ICON = (
     '<path d="M5 12.5l4.4 4.4L19 7.3"/></svg>'
 )
 ARROW = '<svg class="gh-arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 8.5l5-5M4.5 3.5h4v4"/></svg>'
+# One listener for the whole page (a page drawn twice does not copy twice). The DOM is
+# touched only through JS APIs: st.html drops a script that holds markup-like strings.
+GITHUB_PAGE_SCRIPT = static_files.script("github_page.js")
 # endregion
 
 
+# region The items of the page
 def _links_by_name():
     return {link["name"]: link["url"] for link in project.PROJECT_LINKS}
 
@@ -77,6 +81,9 @@ def page_items():
     """The items of the tree that have an address, each with its url."""
     urls = _links_by_name()
     return [{**item, "url": urls[item["link"]]} for item in ITEMS if urls.get(item["link"])]
+
+
+# endregion
 
 
 # region Glyphs (viewBox 0 0 64 64, ids prefixed so they never collide with the panel)
@@ -175,6 +182,7 @@ def build_glyph_svg(kind, dark=False):
 # endregion
 
 
+# region The page
 def build_hero_svg(palette):
     """The GitHub mark as a glossy sphere resting on a lit pedestal."""
     dark = palette["base"] == charts.BASE_DARK
@@ -322,40 +330,4 @@ def build_github_page_html(mode):
     )
 
 
-# One listener for the whole page (a page drawn twice does not copy twice). The DOM is
-# touched only through JS APIs: st.html drops a script that holds markup-like strings.
-GITHUB_PAGE_SCRIPT = """<script>
-if (!window.ghPageCopyReady) {
-    window.ghPageCopyReady = true;
-    document.addEventListener("click", (event) => {
-        const button = event.target.closest(".gh-copy");
-        if (!button) { return; }
-        const url = button.getAttribute("data-copy");
-        const done = () => {
-            button.classList.add("is-copied");
-            button.setAttribute("title", "Copiado");
-            clearTimeout(button.ghTimer);
-            button.ghTimer = setTimeout(() => {
-                button.classList.remove("is-copied");
-                button.setAttribute("title", "Copiar enlace");
-            }, 1500);
-        };
-        const copyWithField = () => {
-            const field = document.createElement("textarea");
-            field.value = url;
-            field.style.position = "fixed";
-            field.style.opacity = "0";
-            document.body.appendChild(field);
-            field.select();
-            const copied = document.execCommand("copy");
-            field.remove();
-            if (copied) { done(); }
-        };
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).then(done, copyWithField);
-        } else {
-            copyWithField();
-        }
-    });
-}
-</script>"""
+# endregion

@@ -332,6 +332,7 @@ def find_run_started_after(runs: list[dict[str, Any]], requested_at: datetime) -
 # endregion
 
 
+# region The Autor's key
 # The control code (D-199): compared in constant time and as bytes, so any character works. D-393 (replaces the
 # accepted risk of D-249): every door of the code shares one gate kept by the server, so a reload does not reset it.
 # After 3 failures each try waits 2 s, and twice as long after each new failure, up to 15 minutes; a right key opens
@@ -385,3 +386,6 @@ def check_control_code(typed: str | None, expected: str | None, gate: AttemptGat
     if gate is not None and expected:
         gate.record(ok)
     return (True, "") if ok else (False, "Clave incorrecta.")
+
+
+# endregion

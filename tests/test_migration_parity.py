@@ -16,12 +16,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from etl import etl  # noqa: E402
 
-# region Constants and variables
+# region Constants
 SQLITE_FILE = etl.DATABASE_FILE
 DUCKDB_FILE = etl.BASE_DIR / "datos.duckdb"
-pytestmark = pytest.mark.skipif(
-    not (SQLITE_FILE.exists() and DUCKDB_FILE.exists()), reason="faltan etl/datos.db o etl/datos.duckdb"
-)
 PRICES = """SELECT w.week_start, p.product_group, p.product, p.variety, p.quality, w.region_id,
                    c.channel, c.source, w.normalized_unit, w.price, w.volume, w.observation_count, w.flag
             FROM weekly_price w JOIN dim_product p USING(product_id) JOIN dim_channel c USING(channel_id)"""
@@ -36,6 +33,13 @@ KEY = [
     "source",
     "normalized_unit",
 ]
+# endregion
+
+
+# region Variables
+pytestmark = pytest.mark.skipif(
+    not (SQLITE_FILE.exists() and DUCKDB_FILE.exists()), reason="faltan etl/datos.db o etl/datos.duckdb"
+)
 # endregion
 
 

@@ -18,6 +18,7 @@ from datetime import date, datetime, timezone
 
 from bi import charts, live_mark, quality, quality_view, queries, static_files, weeks
 
+# region Constants
 # The project's thresholds, shown next to each figure so a verdict can be disputed.
 LAST_WEEK_MIN_SHARE = 0.75  # rows of the latest week vs the median of the 8 before
 REJECTED_MAX_SHARE = 0.01  # rows rejected over rows read
@@ -68,6 +69,10 @@ TESTS_SQL = """SELECT r.status, count(*) FROM dbt_node AS n JOIN dbt_result AS r
 WHERE n.resource_type = 'test' GROUP BY ALL"""
 
 
+# endregion
+
+
+# region Reading the measures
 def read_measures(database_file=queries.DATABASE_FILE, backup_file=None):
     """Every raw figure of the page, from the database; the verdicts come later."""
     with queries.open_database(database_file) as connection:
@@ -295,6 +300,10 @@ def build_indicators(measures, now=None):
     return rows
 
 
+# endregion
+
+
+# region The verdict
 def dimension_status(statuses):
     return "fail" if "fail" in statuses else "warn" if "warn" in statuses else "ok" if "ok" in statuses else "info"
 
@@ -309,6 +318,9 @@ def build_verdict(indicators):
         return "ok", f"Los {len(judged)} indicadores medidos están dentro de su umbral."
     names = [row[1] for row in indicators if row[4] in ("warn", "fail")]
     return kind, f"{ok} de {len(judged)} indicadores dentro de su umbral. A revisar: {', '.join(names)}."
+
+
+# endregion
 
 
 # region Markup
@@ -419,6 +431,10 @@ def wrap_document(palette, body):
     )
 
 
+# endregion
+
+
+# region Gates and verdict
 def hub_measure(key, indicators, columns):
     """(status, headline) of one dimension: its indicators, or for accuracy the audit controls of the results step."""
     if key == "exactitud":
@@ -500,6 +516,10 @@ def build_verdict_box(indicators, columns):
     return ("fail" if failed and kind == "ok" else kind), name, line
 
 
+# endregion
+
+
+# region The pipeline
 def _pipeline_glow(dark, color):
     return (
         f"0 0 0 1px color-mix(in srgb, {color} 35%, transparent), 0 0 24px -6px color-mix(in srgb, {color} 70%, transparent)"
@@ -641,6 +661,10 @@ def build_pipeline_html(indicators, columns, measures=None):
     return f'<div class="pq">{head}<div class="pq-grid">{"".join(parts)}</div></div>'
 
 
+# endregion
+
+
+# region Indicators and windows
 def build_indicator_html(label, value, reference, state, detail):
     """One indicator with how it is measured: its text and, when the measure is a query, the query."""
     text, _, query = detail.partition("\n")
@@ -715,6 +739,10 @@ def build_all_modal(indicators, sentence):
     )
 
 
+# endregion
+
+
+# region Pages
 def build_quality_html(palette, indicators, columns, measures=None):
     """The main view (D-273): the pipeline of quality, and a pop-up behind each gate, each dimension and the verdict.
     measures gives the rows of the latest load at each stretch; without it the stretches show a dash."""

@@ -425,96 +425,19 @@ NARROW_SCREEN_WIDTH = 1024
 # Every diagram animates by default, with no toggle (D-131); after 20 s without a
 # mouse move, key, touch or scroll the page pauses CSS and SVG animations, and the
 # next movement resumes them — so a forgotten tab does not keep spending resources.
-IDLE_ANIMATION_SCRIPT = """<script>(() => {
-    if (window.greenoceanIdleBound) { return; }
-    window.greenoceanIdleBound = true;
-    const IDLE_MS = 20000;
-    let timer = null;
-    const setPaused = (paused) => {
-        document.documentElement.classList.toggle('greenocean-idle', paused);
-        document.querySelectorAll('svg').forEach((svg) => {
-            try { paused ? svg.pauseAnimations() : svg.unpauseAnimations(); } catch (_) {}
-        });
-    };
-    const wake = () => {
-        if (document.documentElement.classList.contains('greenocean-idle')) { setPaused(false); }
-        clearTimeout(timer);
-        timer = setTimeout(() => setPaused(true), IDLE_MS);
-    };
-    ['mousemove', 'pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'].forEach((name) =>
-        window.addEventListener(name, wake, { passive: true, capture: true }));
-    wake();
-})();</script>"""
+IDLE_ANIMATION_SCRIPT = static_files.script("idle_animation.js")
 
-FOLD_SIDEBAR_SCRIPT = f"""<script>
-(() => {{
-// D-166: a phone turned sideways shows the computer layout, menu included. Streamlit
-// folded the menu when the page opened upright, so it opens again on turning.
-const phoneLandscape = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
-// D-473: Streamlit marks the menu with data-collapsed; older versions, with aria-expanded.
-const isOpen = (sidebar) => sidebar.dataset.collapsed === "false" || sidebar.getAttribute("aria-expanded") === "true";
-const openMenu = () => {{
-    let attempts = 0;
-    const open = () => {{
-        const sidebar = document.querySelector('[data-testid="stSidebar"]');
-        const button = document.querySelector('[data-testid="stExpandSidebarButton"]');
-        if (sidebar && isOpen(sidebar)) {{ return; }}
-        if (button) {{ button.click(); }} else if (attempts++ < 40) {{ setTimeout(open, 100); }}
-    }};
-    open();
-}};
-if (!window.greenoceanPhoneTurnBound) {{
-    window.greenoceanPhoneTurnBound = true;
-    phoneLandscape.addEventListener("change", (event) => {{ if (event.matches) {{ openMenu(); }} }});
-    if (phoneLandscape.matches) {{ openMenu(); }}
-}}
-if (phoneLandscape.matches) {{ return; }}
-if (window.innerWidth >= {NARROW_SCREEN_WIDTH}) {{ return; }}
-try {{ if (sessionStorage.getItem("sidebarFolded")) {{ return; }} }} catch (error) {{ return; }}
-let tries = 0;
-const fold = () => {{
-    const sidebar = document.querySelector('[data-testid="stSidebar"]');
-    const button = document.querySelector('[data-testid="stSidebarCollapseButton"] button');
-    if (sidebar && button && isOpen(sidebar)) {{
-        button.click();
-        try {{ sessionStorage.setItem("sidebarFolded", "yes"); }} catch (error) {{}}
-    }} else if (sidebar && !isOpen(sidebar)) {{
-        try {{ sessionStorage.setItem("sidebarFolded", "yes"); }} catch (error) {{}}
-    }} else if (tries++ < 40) {{
-        setTimeout(fold, 100);
-    }}
-}};
-fold();
-}})();
-</script>"""
+FOLD_SIDEBAR_SCRIPT = static_files.script(
+    "fold_sidebar.js",
+    {
+        '__GO_NARROW_SCREEN_WIDTH__': NARROW_SCREEN_WIDTH,
+    },
+)
 
 # D-462: a dashboard opens with the menu folded, so its charts get the width; the button that unfolds it beats in the
 # green of GreenOcean (D-450), so it is seen. It folds once per page opened: a menu the reader opens stays open while
 # the reader works on that page. A phone turned sideways keeps its menu open (D-166).
-DASHBOARD_FOLD_SCRIPT = r"""<script>
-(() => {
-    const view = "__VIEW__";
-    const fold = "__FOLD__" === "yes";
-    const wide = window.innerWidth >= __WIDE__ && !window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches;
-    // D-466: the page before in this load of the app; each load (an address typed, a reload) is an entry and opens the menu
-    const last = window.__goMenuView === undefined ? null : window.__goMenuView;
-    window.__goMenuView = view;
-    if (last === view) return;
-    // Streamlit marks the menu with data-collapsed (aria-expanded in older versions)
-    const isOpen = (sidebar) => sidebar.dataset.collapsed === "false" || sidebar.getAttribute("aria-expanded") === "true";
-    let tries = 0;
-    const act = () => {
-        const sidebar = document.querySelector('[data-testid="stSidebar"]');
-        const button = last === null
-            ? document.querySelector('[data-testid="stExpandSidebarButton"]')
-            : document.querySelector('[data-testid="stSidebarCollapseButton"] button');
-        if (sidebar && button && (last === null) !== isOpen(sidebar)) { button.click(); return; }
-        if (sidebar && (last === null) === isOpen(sidebar)) return;
-        if (tries++ < 40) setTimeout(act, 100);
-    };
-    if (last === null ? wide : fold && wide) act();
-})();
-</script>"""
+DASHBOARD_FOLD_SCRIPT = static_files.script("dashboard_fold.js")
 
 # D-166: the panel is read in landscape. A phone held upright sees one screen asking to
 # turn it (no page can rotate a phone: only the reader can); turned, the phone gets
@@ -543,37 +466,7 @@ COMPACT_FOOTER_VIEWS = {
 # The parameters every address carries (theme, language, view) never make a new step.
 CONTEXT_PARAMETERS = {THEME_PARAMETER, i18n.LANGUAGE_PARAMETER, PROFILE_PARAMETER, ROLE_PARAMETER, "_ctx"}
 
-RELOAD_HOME_SCRIPT = """<script>
-(() => {
-    if (document.documentElement.dataset.greenoceanReloadHandled === "true") return;
-    document.documentElement.dataset.greenoceanReloadHandled = "true";
-    // A reload just to sync the theme's base mode (D-099): stay on this page.
-    try {
-        if (sessionStorage.getItem("greenoceanThemeReload")) {
-            sessionStorage.removeItem("greenoceanThemeReload");
-            return;
-        }
-    } catch (_) {}
-    const navigation = performance.getEntriesByType("navigation")[0];
-    if (!navigation || navigation.type !== "reload") return;
-    const current = new URL(window.location.href);
-    const home = new URL("/", current);
-    for (const name of ["tema"]) {
-        if (current.searchParams.has(name)) home.searchParams.set(name, current.searchParams.get(name));
-    }
-    home.searchParams.set("vista", "__HOME__");
-    try {
-        const trail = JSON.parse(sessionStorage.getItem('greenoceanTrail') || '[]');
-        const last = trail[trail.length - 1];
-        if (last && last.filters && Object.keys(last.filters).length) {
-            home.searchParams.set('_ctx', btoa(unescape(encodeURIComponent(JSON.stringify(last.filters)))));
-        }
-    } catch (_) {}
-    if (current.pathname !== home.pathname || current.search !== home.search || current.hash) {
-        window.location.replace(home.href);
-    }
-})();
-</script>""".replace("__HOME__", PAGE_HOME)
+RELOAD_HOME_SCRIPT = static_files.script("reload_home.js").replace("__HOME__", PAGE_HOME)
 
 SOURCE_ICON_SVG = (
     '<svg class="nav-source-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">'
@@ -609,16 +502,7 @@ FOLD_MENU_VIEWS = [
 
 TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK}
 
-SHOW_SOURCES_SCRIPT = r"""<script>
-setTimeout(() => {
-  const links = document.querySelectorAll(".nav-source-link");
-  const menu = document.querySelector("[data-testid='stSidebarContent']");
-  const footer = document.querySelector(".st-key-sidebar_footer");
-  if (!links.length || !menu || !footer) { return; }
-  const hidden = links[links.length - 1].getBoundingClientRect().bottom - footer.getBoundingClientRect().top + 12;
-  if (hidden > 0) { menu.scrollBy({top: hidden, behavior: "smooth"}); }
-}, 200);
-</script>"""
+SHOW_SOURCES_SCRIPT = static_files.script("show_sources.js")
 # endregion
 
 
@@ -988,32 +872,7 @@ def restore_return_context():
 def build_visit_history_script():
     snapshot = {key: st.session_state[key] for key in RETURN_CONTEXT_KEYS if key in st.session_state}
     encoded = json.dumps(snapshot, ensure_ascii=True, default=str).replace("<", "\\u003c")
-    return """<script>(() => {
-    try {
-        if (!document.documentElement.dataset.greenoceanLinksBound) {
-            document.documentElement.dataset.greenoceanLinksBound = 'true';
-            document.addEventListener('click', event => {
-                if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                const anchor = event.target.closest && event.target.closest('a[href]');
-                if (!anchor || anchor.hasAttribute('download')) return;
-                // Only internal navigation forces the same tab (D-113): this app may run
-                // behind an iframe wrapper, where forcing target=_self on an external
-                // link (GitHub, ODEPA…) makes the destination refuse to be framed.
-                if (anchor.hostname === location.hostname) anchor.target = '_self';
-            }, true);
-        }
-        const url = new URL(location.href); url.searchParams.delete('_ctx');
-        const identity = url.pathname + '|' + ['vista','kpi','consulta'].map(k => url.searchParams.get(k) || '').join('|');
-        const pending = sessionStorage.getItem('greenoceanReturning');
-        if (pending && pending !== identity) return;
-        if (pending) sessionStorage.removeItem('greenoceanReturning');
-        const rows = JSON.parse(sessionStorage.getItem('greenoceanTrail') || '[]');
-        const record = {url:url.pathname + url.search, identity, filters:__FILTERS__};
-        if (rows.length && rows[rows.length-1].identity === identity) rows[rows.length-1] = record;
-        else rows.push(record);
-        sessionStorage.setItem('greenoceanTrail', JSON.stringify(rows.slice(-30)));
-    } catch (_) {}
-    })();</script>""".replace("__FILTERS__", encoded)
+    return static_files.script("visit_history.js").replace("__FILTERS__", encoded)
 
 
 # endregion

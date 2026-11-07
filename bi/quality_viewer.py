@@ -30,7 +30,7 @@ STATE_COLORS = {
 # endregion
 
 
-# region The quality report viewer
+# region Pieces
 def esc(value: Any) -> str:
     return html.escape(str(value))
 
@@ -58,6 +58,10 @@ def slide(key: str, title: str, body: str) -> str:
     return f'<section class="slide" data-key="{key}"><h2>{esc(title)}</h2>{body}</section>'
 
 
+# endregion
+
+
+# region Rows of the report
 def results_rows(report: dict[str, Any], policy: dict[str, Any], english: bool) -> str:
     rows = []
     for row in report["indicadores"]:
@@ -143,6 +147,10 @@ def texts_of(policy: dict[str, Any], key: str, english: bool) -> str:
     return pick(policy.get("diapositivas", {}).get(key, ["", ""]), english)
 
 
+# endregion
+
+
+# region The viewer
 def _viewer_number(english, value: Any) -> str:
     return (
         "—"

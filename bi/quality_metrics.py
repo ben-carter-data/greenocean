@@ -8,19 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-# region Constants and variables
-FOLDER = Path(__file__).resolve().parent.parent / "docs" / "calidad"
-GOALS_FILE = FOLDER / "metas.json"
-BASELINE_FILE = FOLDER / "linea_base.json"
-REPORT_FILE = FOLDER / "medicion.json"
-RUBRIC_FILE = FOLDER / "rubrica.json"
-HISTORY_FILE = FOLDER / "historial.json"
-POLICY_FILE = FOLDER / "politica.json"
-SQAP_FILE = FOLDER / "PLAN_DE_CALIDAD.md"
-# D-431: the seven reports of the construction stage (26 to 31 October 2026) stay as written, as a closed series named
-# C-1 to C-7; the weekly series, one report per data week, starts again at No. 1 in its own folder.
-REPORTS_FOLDER = FOLDER / "informes"
-WEEKLY_FOLDER = REPORTS_FOLDER / "semanales"
+# region Constants
 SERIES_WEEKLY, SERIES_BUILD = "semanal", "construccion"
 # D-431: a weekly report holds only what is measured once per load; the code is checked by the CI of every push and the
 # days since the last load are the panel's.
@@ -102,7 +90,6 @@ INDICATORS = [
     ("vigencia_dias", "Días desde la última carga", "Days since the last load", "días", "fiabilidad", "etl_run"),
 ]
 
-
 # What is measured by itself and what the author reviews by hand, and how often: (what, how, when), each in both languages.
 SCHEDULE = [
     (
@@ -175,7 +162,23 @@ SCHEDULE = [
 # endregion
 
 
-# region The quality indicators of GreenOcean
+# region Variables
+FOLDER = Path(__file__).resolve().parent.parent / "docs" / "calidad"
+GOALS_FILE = FOLDER / "metas.json"
+BASELINE_FILE = FOLDER / "linea_base.json"
+REPORT_FILE = FOLDER / "medicion.json"
+RUBRIC_FILE = FOLDER / "rubrica.json"
+HISTORY_FILE = FOLDER / "historial.json"
+POLICY_FILE = FOLDER / "politica.json"
+SQAP_FILE = FOLDER / "PLAN_DE_CALIDAD.md"
+# D-431: the seven reports of the construction stage (26 to 31 October 2026) stay as written, as a closed series named
+# C-1 to C-7; the weekly series, one report per data week, starts again at No. 1 in its own folder.
+REPORTS_FOLDER = FOLDER / "informes"
+WEEKLY_FOLDER = REPORTS_FOLDER / "semanales"
+# endregion
+
+
+# region Reading and showing a figure
 def read(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
@@ -208,6 +211,10 @@ def show(value: Any, unit: str, english: bool = False) -> str:
     return number(value, decimals, english) + (f" {unit_text(unit, english)}" if unit else "")
 
 
+# endregion
+
+
+# region Indicators against their goals
 def values(report: dict[str, Any]) -> dict[str, Any]:
     """{indicator: value} read from a measurement; None when that part could not run or was not measured then."""
     coverage = report.get("cobertura", {})
@@ -301,6 +308,10 @@ def met(now: dict[str, Any], goals: dict[str, Any]) -> tuple[int, int]:
     return sum(1 for state in states if state), sum(1 for state in states if state is not None)
 
 
+# endregion
+
+
+# region History and state
 def history_entry(report: dict[str, Any]) -> dict[str, Any]:
     return {"generado": report.get("generado"), "commit": report.get("commit"), "valores": values(report)}
 
@@ -404,6 +415,10 @@ def evaluate(
     return rows
 
 
+# endregion
+
+
+# region Series
 def read_series(series: str) -> list[dict[str, Any]]:
     """Every report of one series (D-331, D-431), oldest first, each marked with its series."""
     folder = WEEKLY_FOLDER if series == SERIES_WEEKLY else REPORTS_FOLDER
@@ -418,6 +433,10 @@ def current_series() -> str:
     return SERIES_WEEKLY if any(WEEKLY_FOLDER.glob("informe-*.json")) else SERIES_BUILD
 
 
+# endregion
+
+
+# region The weekly reports
 def read_reports(series: str | None = None) -> list[dict[str, Any]]:
     """The reports of a series, the current one by default, oldest first."""
     return read_series(series or current_series())
@@ -475,6 +494,10 @@ def same_report(record: dict[str, Any], report: dict[str, Any]) -> bool:
     )
 
 
+# endregion
+
+
+# region Incidents and diagnosis
 def is_resolved(record: dict[str, Any]) -> bool:
     """D-419: the author wrote «resuelta» as the state of a non-conformity (a text, or [es, en]); D-431: «cerrada» too,
     as the ten closed at the end of the construction series."""

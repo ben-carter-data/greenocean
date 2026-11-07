@@ -8,7 +8,7 @@ from pathlib import Path
 
 from bi import business_analysis, dashboard, doc_views, sql_explorer, i18n
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 PRD = i18n.document_path("PRD.md", "es").read_text(encoding="utf-8")
 REFERENCE = re.compile(r"`([^`]+)`")
@@ -34,9 +34,9 @@ def assert_reference_exists(reference):
         return  # a value such as a cron expression, not a file
     assert (ROOT / path).exists(), reference
     if test:
-        assert re.search(rf"^def {re.escape(test)}\(", (ROOT / path).read_text(encoding="utf-8"), re.MULTILINE), (
-            reference
-        )
+        from tests import code_shape
+
+        assert test in code_shape.defined(code_shape.file_tree(ROOT / path)), reference
 
 
 def test_every_business_question_names_a_screen_of_the_menu_and_evidence_that_exists():

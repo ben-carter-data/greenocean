@@ -9,10 +9,14 @@ import pytest
 from bi import channel_latest, home_mockup, price_export, queries
 from etl import etl
 
-# region Constants and variables
+# region Constants
+KEYS = ["product", "channel", "region"]
+# endregion
+
+
+# region Variables
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
 needs_raw = pytest.mark.skipif(not etl.RAW_DATABASE_FILE.exists(), reason="etl/raw.db is not in the repository")
-KEYS = ["product", "channel", "region"]
 # endregion
 
 

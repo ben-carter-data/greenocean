@@ -17,9 +17,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-# region Constants and variables
-ROOT = Path(__file__).resolve().parent.parent
-OUTPUT = ROOT / "docs" / "calidad" / "medicion.json"
+# region Constants
 CODE = ["bi", "etl", "agent"]
 LINE_LENGTH = 120
 MAX_COMPLEXITY = 10
@@ -54,7 +52,13 @@ NOT_VERIFIED = "no verificado"
 # endregion
 
 
-# region The quality measurement of the code and the data
+# region Variables
+ROOT = Path(__file__).resolve().parent.parent
+OUTPUT = ROOT / "docs" / "calidad" / "medicion.json"
+# endregion
+
+
+# region Running the tools
 def run(command, cwd=ROOT, check=False):
     """The output of one command, stdout and stderr together; never raises on a non-zero exit."""
     done = subprocess.run(command, cwd=cwd, capture_output=True, text=True)
@@ -75,6 +79,10 @@ def count_formatting(output):
     return int(pending.group(1)) if pending else 0, int(done.group(1)) if done else 0
 
 
+# endregion
+
+
+# region Code measures
 def measure_ruff(tools):
     """The rules E, F and W of pyproject.toml, which leaves out E501; the lines over 120 columns are counted apart, so the
     baseline (measured with E501 inside) and every later measurement compare the same rules."""
@@ -232,6 +240,10 @@ SECRET_NAME = re.compile(
 SECRETS_BASELINE = ROOT / ".secrets.baseline"
 
 
+# endregion
+
+
+# region Secrets
 def reviewed_secret_hashes():
     """The candidates the author reviewed and marked as not secret (`"is_secret": false`) in .secrets.baseline."""
     if not SECRETS_BASELINE.exists():
@@ -309,6 +321,10 @@ def measure_secrets(tools):
     }
 
 
+# endregion
+
+
+# region Data and tests measures
 def measure_dbt():
     models = {
         layer: len(list((ROOT / "dbt" / "models" / layer).rglob("*.sql")))
@@ -411,6 +427,10 @@ def measure_tests(python):
     return {"pruebas": count or (int(match.group(1)) if match else None), "archivos_de_prueba": files}
 
 
+# endregion
+
+
+# region The measurement from start to end
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(

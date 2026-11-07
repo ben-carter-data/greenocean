@@ -12,6 +12,7 @@ import re
 from bi import buttons, i18n, static_files
 from bi.i18n import tr
 
+# region Constants
 VIEW_GRID, VIEW_LIST = "Cuadrícula", "Lista"
 WORDS_PER_MINUTE = 200
 PREVIEW_ENTRIES = 9
@@ -37,8 +38,10 @@ FAMILY_TITLES = {
 }
 HEADER_ROW = re.compile(r"^\| ([^|]+?) \| (.+?) \|$", re.MULTILINE)
 INDEX_HEADINGS = tuple(f"## {fields['index']}" for fields in i18n.DOCUMENT_FIELDS.values())
+# endregion
 
 
+# region Reading each document
 def esc(value):
     return html.escape(str(value), quote=True)
 
@@ -209,6 +212,9 @@ def build_css(palette):
             'var(--go-text)': text,
         },
     )
+
+
+# endregion
 
 
 # region Cover (D-288)

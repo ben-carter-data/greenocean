@@ -388,6 +388,7 @@ WORD_KEYS = {
 # endregion
 
 
+# region Text
 # D-284: the same entries in English, chosen when the reader reads in English.
 TECH_GLOSSARY_EN = {
     "python": (
@@ -663,7 +664,6 @@ TECH_GLOSSARY_EN = {
 }
 
 
-# region Text
 def describe(key):
     """One plain-text line for an SVG <title>: what it is, its acronym, its role here (in the reader's language)."""
     if i18n.is_english() and key in TECH_GLOSSARY_EN:

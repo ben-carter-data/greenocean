@@ -10,6 +10,7 @@ from pathlib import Path
 
 from bi import brand_icons, charts, database_map, i18n, static_files
 
+# region Constants
 # Disc colors (light top, dark bottom, glyph) of the brands the actors view needs, as in
 # database_map.BRANDS.
 DISCS = dict(
@@ -24,8 +25,10 @@ PERSON_DISCS = {
     "professional": ("#8ec5ff", "#2563eb"),
     "author": ("#ffcf70", "#c98500"),
 }
+# endregion
 
 
+# region Logos
 def esc(value):
     return html.escape(str(value))
 
@@ -75,6 +78,9 @@ def flat_logo(kind, name):
         f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true">'
         f'<g fill="{PERSON_DISCS[name][1]}" transform="translate(9 9) scale(1.5)">{person}</g></svg>'
     )
+
+
+# endregion
 
 
 # region Text helpers
@@ -145,8 +151,10 @@ def build_mockups_html(mode):
 
 # endregion
 
+# region The views of each marker
 # The document views by marker, with the height of their frame in the page.
 # D-474: the context and container views are drawn by doc_figures (D-289); only the captures stay here.
 VIEWS = {
     "mockups": (build_mockups_html, 1080),
 }
+# endregion

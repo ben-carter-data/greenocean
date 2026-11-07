@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
-# region Constants and variables
+# region Variables
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 # endregion
 # region The thin header bar of the main pages and the reading of an enlarged family

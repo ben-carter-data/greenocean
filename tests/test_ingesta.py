@@ -11,6 +11,7 @@ import pytest
 
 from etl import bronze, etl, ine, pipeline
 
+# region Constants
 INE_TEXT = (
     '"Año";"Mes";"División";"Grupo";"Índice";"Variación Mensual (%)"\n'
     '"2024";"1";"1";"";"101,5";"0,4"\n'
@@ -18,8 +19,10 @@ INE_TEXT = (
     '"2024";"2";"1";"";"102,0";"0,5"\n'
     '"2024";"2";"2";"";"110,0";"1,0"\n'
 )
+# endregion
 
 
+# region The landing database
 def raw_database(path):
     connection = sqlite3.connect(path)
     for table in etl.RAW_TABLE_BY_SOURCE.values():
@@ -30,6 +33,9 @@ def raw_database(path):
         )
     connection.commit()
     return connection
+
+
+# endregion
 
 
 # region bronze

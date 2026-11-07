@@ -9,8 +9,7 @@ from streamlit.testing.v1 import AppTest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import charts, control, dashboard, operation_center, project, queries  # noqa: E402
 
-# region Constants and variables
-PROJECT_DIR = Path(__file__).resolve().parent.parent
+# region Constants
 RUN = {"id": 7, "state": control.RUN_FAILED, "trigger": "Manual", "url": "https://github.com/x/y/actions/runs/7"}
 JOB = {
     "html_url": "https://github.com/x/y/actions/runs/7/job/70",
@@ -41,6 +40,11 @@ JOB = {
         },
     ],
 }
+# endregion
+
+
+# region Variables
+PROJECT_DIR = Path(__file__).resolve().parent.parent
 # endregion
 
 

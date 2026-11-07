@@ -10,14 +10,18 @@ import pytest
 
 from bi import dashboard, i18n, queries
 
-# region Constants and variables
-ROOT = Path(__file__).resolve().parent.parent
-DOCS_DIR = ROOT / "docs"
+# region Constants
 DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md"]
 # The reading documents of the project (D-279): every one has a header, an index, a glossary and a version history.
 # D-290: the scalability plan and the data dictionary live in the SAD; the security plan, in the test plan.
 READING = DOCUMENTS + ["MANUAL.md", "GLOSARIO.md", "INDICE_DECISIONES.md", "PLAN_DE_CALIDAD.md", "ACTA_DE_CIERRE.md"]
 MERGED = {"PLAN_PRUEBAS.md": ["SEGURIDAD.md"], "SAD.md": ["ESCALABILIDAD.md", "DICCIONARIO_DATOS.md"]}
+# endregion
+
+
+# region Variables
+ROOT = Path(__file__).resolve().parent.parent
+DOCS_DIR = ROOT / "docs"
 # endregion
 
 

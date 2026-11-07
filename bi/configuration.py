@@ -17,6 +17,7 @@ from typing import Any
 
 from bi import business_analysis, charts, control, i18n, quality_method, quality_metrics, static_files
 
+# region Constants
 OK, WARN, FAIL, UNKNOWN = "ok", "warn", "fail", "unknown"
 STATE_COLORS = {
     OK: charts.STATUS_COLORS["good"],
@@ -34,8 +35,10 @@ MARKDOWN_LINK = re.compile(r"^\[([^\]]+)\]\(([^)]+)\)$")
 VIEW_LINK = re.compile(r"^\[\[vista:([^\]]+)\]\]$")
 CODE = re.compile(r"`([^`]+)`")
 INLINE_LINK = re.compile(r"\[([^\]]+)\]\([^)]+\)")
+# endregion
 
 
+# region Words and cards
 def t(spanish: str, english: str) -> str:
     return english if i18n.is_english() else spanish
 
@@ -58,6 +61,9 @@ def token_label(name: str) -> str:
 
 def card(key: str, icon: str, label: str, state: str, value: str, detail: str = "") -> dict[str, str]:
     return {"key": key, "icon": icon, "label": label, "state": state, "value": value, "detail": detail}
+
+
+# endregion
 
 
 # region The six states

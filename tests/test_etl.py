@@ -9,7 +9,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from etl import etl  # noqa: E402
 
+# region Constants
 NON_BREAKING_SPACE = chr(160)
+# endregion
 
 
 # region Sample rows

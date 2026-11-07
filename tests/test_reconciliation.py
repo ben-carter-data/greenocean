@@ -14,10 +14,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import alerts, lag, queries  # noqa: E402
 
+# region Constants
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.db has not been built")
 # Only rounding differences are accepted.
 TOLERANCE = 1e-9
 K5_SERIES_COLUMNS = ["product_group", "product", "variety", "quality", "normalized_unit", "region", "channel"]
+# endregion
 
 
 # region Python versions
@@ -56,6 +58,7 @@ def assert_columns_match(merged, python_column, sql_column):
 # endregion
 
 
+# region SQL and Python agree
 @needs_database
 def test_k6_sql_and_python_judge_the_same_weeks_with_the_same_range():
     python_rows = calculate_k6_in_python()
@@ -93,3 +96,6 @@ def test_k5_sql_and_python_give_the_same_series_and_weekly_changes():
 
 def test_k5_sql_uses_the_same_minimum_of_weeks_as_python():
     assert f"HAVING COUNT(*) >= {lag.MINIMUM_WEEKS}" in queries.load_queries()["k5_weekly_variations_sql"]
+
+
+# endregion

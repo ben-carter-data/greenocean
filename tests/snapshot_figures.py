@@ -9,7 +9,7 @@ from pathlib import Path
 
 from bi import dashboard, home_mockup, queries
 
-# region Constants and variables
+# region Variables
 SNAPSHOT_FILE = Path(__file__).parent / "fixtures" / "snapshot_2026-10-05.json"
 # endregion
 

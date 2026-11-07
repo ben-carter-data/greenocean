@@ -177,7 +177,7 @@ CASE_PLACES = {
 # endregion
 
 
-# region «Plan de pruebas y seguridad»
+# region Pieces and style
 def esc(value):
     return html.escape(str(value))
 
@@ -223,6 +223,10 @@ def wrap_document(palette, body):
     )
 
 
+# endregion
+
+
+# region Windows of each case
 def build_modal(identifier, title, subtitle, body):
     return (
         f'<div class="modal" id="{identifier}"><a class="back" href="#" aria-label="Cerrar"></a><div class="sheet" role="dialog" '
@@ -253,6 +257,10 @@ def build_case_modal(case):
     return build_modal(f"c-{case_id}", f"{case_id} · {short}", "Se repite en cada push y pull request.", body)
 
 
+# endregion
+
+
+# region Drawing the cases
 def lock_mark(cx, cy, size, color):
     """The padlock of the plan as a flat mark in the accent color, with no disc (D-280)."""
     return (

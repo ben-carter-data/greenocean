@@ -31,6 +31,100 @@ def calls(tree, name):
     return [node for node in ast.walk(tree) if isinstance(node, ast.Call) and dotted(node.func) == name]
 
 
+def calls_named(tree, name):
+    """Every call to the function `name`, with or without its module in front (`build_github_url` or
+    `queries.build_github_url`)."""
+    return [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and (dotted(node.func) or "").split(".")[-1] == name
+    ]
+
+
+def uses(tree, name):
+    """Every place the tree reads `name`, written as in the code: `overview.KPIS` or `RUN_WINDOW_CLOSING`."""
+    return [node for node in ast.walk(tree) if isinstance(node, (ast.Name, ast.Attribute)) and dotted(node) == name]
+
+
+def first(nodes):
+    """The line of the first of the nodes, to compare the order of two steps of a function."""
+    return min(node.lineno for node in nodes)
+
+
+def arguments(call):
+    """The positional arguments of a call, as source text."""
+    return [ast.unparse(item) for item in call.args]
+
+
+def literal(node):
+    """The text of a string written as it is (a constant); None for anything computed."""
+    return node.value if isinstance(node, ast.Constant) and isinstance(node.value, str) else None
+
+
+def decorator(tree, name):
+    """The decorator `name` (`st.dialog`, `st.fragment`) of the first function of the tree; None when it has not."""
+    function = next(node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)))
+    for item in function.decorator_list:
+        if dotted(item.func if isinstance(item, ast.Call) else item) == name:
+            return item
+    return None
+
+
+def defined(tree):
+    """The names of the functions defined at the top level of a module's tree."""
+    return {node.name for node in tree.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))}
+
+
+def every_call(tree):
+    """Every call of the tree."""
+    return [node for node in ast.walk(tree) if isinstance(node, ast.Call)]
+
+
+def imports(tree):
+    """The name of every module the tree imports."""
+    names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names |= {alias.name for alias in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names.add(node.module)
+    return names
+
+
+def texts(tree):
+    """Every text the code writes, as the page or the database receives it: a string, or an f-string with `{}` where
+    a value goes. The code around it does not count, so a comment or a name never matches."""
+    parts = {id(part) for node in ast.walk(tree) if isinstance(node, ast.JoinedStr) for part in node.values}
+    found = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.JoinedStr):
+            found.append("".join(part.value if isinstance(part, ast.Constant) else "{}" for part in node.values))
+        elif literal(node) is not None and id(node) not in parts:
+            found.append(node.value)
+    return found
+
+
+def has_sequence(tree, items):
+    """Whether a list or a tuple of the tree holds `items` one after the other, as a command does."""
+    items = list(items)
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.List, ast.Tuple)):
+            values = [literal(item) for item in node.elts]
+            if any(values[start : start + len(items)] == items for start in range(len(values))):
+                return True
+    return False
+
+
+def deletes(tree):
+    """Every `del` of the tree."""
+    return [node for node in ast.walk(tree) if isinstance(node, ast.Delete)]
+
+
+def conditions(tree):
+    """The condition of every `if` of the tree, as source text."""
+    return {ast.unparse(node.test) for node in ast.walk(tree) if isinstance(node, ast.If)}
+
+
 def normal(expression):
     """An expression written the way the syntax tree writes it back, quotes included, to compare with keyword()."""
     return ast.unparse(ast.parse(expression, mode="eval").body)
@@ -42,6 +136,20 @@ def keyword(call, name):
         if item.arg == name:
             return ast.unparse(item.value)
     return None
+
+
+# endregion
+
+
+# region Files
+def file_tree(path):
+    """The syntax tree of one Python file."""
+    return ast.parse(path.read_text(encoding="utf-8"))
+
+
+def folder_trees(folder):
+    """The syntax trees of every Python file of a folder, in the order of their names."""
+    return [file_tree(path) for path in sorted(folder.glob("*.py"))]
 
 
 # endregion

@@ -29,7 +29,7 @@ DEEP = "#05070b"
 # endregion
 
 
-# region «Plan de calidad»
+# region Words and numbers
 def t(spanish: str, english: str) -> str:
     return english if i18n.is_english() else spanish
 
@@ -65,6 +65,10 @@ def state_word(state: str, policy: dict[str, Any]) -> str:
     return t(*policy.get("estados", {}).get(state, [state, state]))
 
 
+# endregion
+
+
+# region The overview
 def build_header(report: dict[str, Any] | None) -> str:
     """Where the figures come from: the latest report, its date and the code it evaluated."""
     if not report:
@@ -210,6 +214,10 @@ def build_overview(
     )
 
 
+# endregion
+
+
+# region The weekly reports
 def report_summary(report: dict[str, Any]) -> str:
     """The one line of a report in «Informes»: its number, date and how many indicators are within the acceptable."""
     within, _, measured = quality_metrics.report_counts(report)
@@ -276,6 +284,10 @@ def build_report_view(report: dict[str, Any], policy: dict[str, Any]) -> str:
     )
 
 
+# endregion
+
+
+# region Alerts
 def record_of(report: dict[str, Any], row: dict[str, Any], nonconformities: list[dict[str, Any]]) -> dict[str, Any]:
     """The non-conformity of this indicator in this report, or {}."""
     return next(
@@ -381,6 +393,10 @@ def is_stale(report: dict[str, Any], today: Any = None) -> bool:
     return ((today or date.today()) - measured).days > STALE_DAYS
 
 
+# endregion
+
+
+# region Style
 def build_css(palette: dict[str, str]) -> str:
     ink, text, muted, border, card = (
         palette["strong_text"],

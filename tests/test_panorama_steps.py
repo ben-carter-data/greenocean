@@ -304,12 +304,19 @@ def test_d531_a_reload_or_a_profile_change_brings_the_dashboard_back_to_its_init
 
 def test_d532_the_alert_line_and_step_four_rerun_alone_without_the_map_and_the_first_steps():
     """A search, a filter, an alert button or «Ampliar» rerun only their fragment; the page reads the alert there."""
-    source = (Path(dashboard.__file__).parent / "page_weekly.py").read_text(encoding="utf-8")  # D-541
-    assert re.search(r"@st\.fragment\n\s*def show_products_section\(choices\):", source)  # D-541: a top-level fragment
-    assert "rerun_scope='fragment'" in source and "st.rerun(scope=rerun_scope)" in source
-    assert (
-        "def show_products(alert, choices):" in source
-    )  # the alert comes from the fragment, never from a stale closure
+    import inspect
+
+    from bi import page_weekly
+    from tests import code_shape
+
+    section = code_shape.tree_of(page_weekly.show_products_section)
+    assert code_shape.decorator(section, "st.fragment") is not None  # a top-level fragment
+    scopes = {code_shape.keyword(call, "rerun_scope") for call in code_shape.calls_named(section, "show_alert_line")}
+    assert code_shape.normal("'fragment'") in scopes
+    line = code_shape.tree_of(page_weekly.show_alert_line)
+    assert "rerun_scope" in {code_shape.keyword(call, "scope") for call in code_shape.calls(line, "st.rerun")}
+    # the alert comes from the fragment, never from a stale closure
+    assert list(inspect.signature(page_weekly.show_products).parameters) == ["alert", "choices"]
 
 
 # endregion

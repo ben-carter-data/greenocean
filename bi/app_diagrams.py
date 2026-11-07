@@ -61,7 +61,7 @@ RAW_DATABASE_SIZE_TEXT = "≈ 665 MB"
 # endregion
 
 
-# region The panel's own diagrams for the documents
+# region Reading what the diagrams show
 def model_tooltips(row_counts):
     """{table: what shows on hover}: its role, its rows and its definition from the project guide."""
     definitions = project.parse_definitions(
@@ -114,6 +114,10 @@ def page(body, css=""):
     )
 
 
+# endregion
+
+
+# region Data model and deployment
 def build_star_html(mode):
     """[[diagrama:estrella]]: the star schema of «Modelo de datos» (D-147, D-229)."""
     row_counts = project.count_table_rows()
@@ -160,6 +164,10 @@ def build_deployment_html(mode):
     return deployment.build_deployment_html(charts.get_palette(mode), {}, figures, live=False)
 
 
+# endregion
+
+
+# region The weekly load's journey
 def chile_time(started_at):
     """'2026-10-31T04:41:08' (UTC, as the ETL stores it) in Chilean time; a fixed UTC-3 without the time zone database."""
     moment = datetime.fromisoformat(str(started_at)).replace(tzinfo=timezone.utc)
@@ -229,6 +237,10 @@ def build_journey_html(mode):
     )
 
 
+# endregion
+
+
+# region DevOps and security
 def build_cicd_html(mode):
     """[[diagrama:cicd]]: how a change reaches production, the «CI/CD» tab of «Centro de operación» (D-243, D-276)."""
     return devops.build_cicd_html(charts.get_palette(mode))
@@ -244,6 +256,10 @@ def build_security_html(mode):
     return security_map.build_security_html(charts.get_palette(mode))
 
 
+# endregion
+
+
+# region Quality and business
 @functools.lru_cache(maxsize=2)
 def read_quality(database_key):
     """The measures and the evidence of «Controles de datos», read once per database, as the page does (D-196)."""

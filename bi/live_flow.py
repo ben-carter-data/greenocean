@@ -22,6 +22,7 @@ from zoneinfo import ZoneInfo
 
 from bi import architecture, brand_icons, charts, control, i18n, static_files
 
+# region Constants
 WIDTH, HEIGHT = 1320, 650
 TOP = -8  # the deduced redeploy runs above GitHub
 FOCUS_BOX = (-10, TOP, 1190, 525)  # the run window: sources, GitHub and the runner
@@ -39,14 +40,19 @@ GROUP_COLORS = {
 REQUEST_COLOR = "#5b9cf0"
 ANSWER_COLOR = "#22b35a"
 WORKING_COLOR = "#eda100"
+# endregion
 
 
+# region Pieces
 def t(pair: tuple[str, str]) -> str:
     return pair[1] if i18n.is_english() else pair[0]
 
 
 def esc(value: Any) -> str:
     return html.escape(str(value))
+
+
+# endregion
 
 
 # region Icons: the logos of the stack, and plain line drawings for the rest

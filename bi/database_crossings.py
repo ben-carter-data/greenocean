@@ -138,7 +138,7 @@ STATUS_COLORS = {"ok": "#22b35a", "fail": "#d03b3b", "warn": "#d97706", "pending
 # endregion
 
 
-# region Where two databases meet
+# region Checks of each crossing
 def read_checks(database_file=queries.DATABASE_FILE, backup_file=None):
     """{crossing key: (status, text)} of what can be measured in this server."""
     from bi import quality
@@ -192,6 +192,10 @@ BACKUP_X = (804, 988)
 CHIP_HEIGHT = 32
 
 
+# endregion
+
+
+# region Layout
 def center(column):
     left, right = COLUMNS[column]
     return (left + right) // 2
@@ -284,6 +288,10 @@ LABELS = {
 JOIN_Y = {"work": layer_top("work") + 64 + CHIP_HEIGHT // 2, "served": layer_top("served") + 16 + CHIP_HEIGHT // 2}
 
 
+# endregion
+
+
+# region Drawing
 def esc(value):
     return html.escape(str(value))
 

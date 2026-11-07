@@ -11,6 +11,7 @@ from pathlib import Path
 
 import streamlit as st
 
+# region Constants
 SPANISH, ENGLISH = "es", "en"
 LANGUAGES = (SPANISH, ENGLISH)
 LANGUAGE_PARAMETER = "lang"
@@ -622,6 +623,22 @@ EN = {
 }
 
 
+# D-381: the official documents live in one folder per subject, in docs/ and in docs/en/ alike.
+DOCUMENT_FOLDERS = {
+    "PRD.md": "negocio",
+    "ACTA_DE_CIERRE.md": "negocio",  # D-529
+    "GLOSARIO.md": "negocio",
+    "SAD.md": "arquitectura",
+    "ADR.md": "arquitectura",
+    "INDICE_DECISIONES.md": "arquitectura",
+    "PLAN_DE_CALIDAD.md": "calidad",
+    "PLAN_PRUEBAS.md": "calidad",
+    "MANUAL.md": "operacion",
+}
+# endregion
+
+
+# region The language of the visit and the documents
 def get_language():
     """The language of the visit; Spanish until the reader chooses English."""
     language = st.session_state.get(LANGUAGE_STATE)
@@ -669,20 +686,6 @@ def documents_dir(language=None):
     return DOCS_DIR / "en" if (language or get_language()) == ENGLISH else DOCS_DIR
 
 
-# D-381: the official documents live in one folder per subject, in docs/ and in docs/en/ alike.
-DOCUMENT_FOLDERS = {
-    "PRD.md": "negocio",
-    "ACTA_DE_CIERRE.md": "negocio",  # D-529
-    "GLOSARIO.md": "negocio",
-    "SAD.md": "arquitectura",
-    "ADR.md": "arquitectura",
-    "INDICE_DECISIONES.md": "arquitectura",
-    "PLAN_DE_CALIDAD.md": "calidad",
-    "PLAN_PRUEBAS.md": "calidad",
-    "MANUAL.md": "operacion",
-}
-
-
 def document_path(filename, language=None):
     """The file of an official document in the language of the visit (or the one given), inside its folder."""
     folder = DOCUMENT_FOLDERS.get(filename)
@@ -692,6 +695,9 @@ def document_path(filename, language=None):
 
 def document_field(name, language=None):
     return DOCUMENT_FIELDS[language or get_language()][name]
+
+
+# endregion
 
 
 # region Translation at render time (D-284)
@@ -810,6 +816,10 @@ PLACEHOLDERS = {
 PLACEHOLDER = _re.compile(r"\{[nmd]?\}")
 
 
+# endregion
+
+
+# region Translating texts and markup
 def compile_templates():
     """Entries with placeholders become patterns, the most specific first."""
     patterns = []
@@ -940,6 +950,10 @@ def join_names(names):
 QUOTED = _re.compile(r"""(["'])((?:(?!\1).){2,}?)\1""")
 
 
+# endregion
+
+
+# region Translating data and charts
 def translate_dataset(data):
     """A chart's data as Streamlit carries it, Arrow bytes (D-294): its text cells that are a whole entry, translated
     like the same names in the scales and conditions. Without it, a series renamed in its scale («Food CPI (INE)»)
@@ -1010,6 +1024,10 @@ def translate_frame(frame):
     return frame
 
 
+# endregion
+
+
+# region Translating Streamlit's calls
 def _translated_call(self, method, first, keys, frame, options, /, *args, **kwargs):
     """A Streamlit method that translates its texts first when the reader chose English. Its own settings are
     positional only, so a Streamlit argument of the same name (options=, for instance) never collides with them."""

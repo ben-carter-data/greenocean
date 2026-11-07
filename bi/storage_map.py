@@ -120,7 +120,7 @@ STREAMLIT_DISC = ("#ff8f98", "#e0303f", "#ffffff")
 # endregion
 
 
-# region «Dónde viven los datos»
+# region Pieces
 def esc(value):
     return html.escape(str(value))
 
@@ -197,6 +197,10 @@ def card_box(x_range, row_y, height=CARD_HEIGHT):
     return (left, row_y - height // 2, right - left, height)
 
 
+# endregion
+
+
+# region Style and tips
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
     ink, text, muted, card, border, accent = (
@@ -254,6 +258,10 @@ def thousands(value):
     return database_map.thousands(value)
 
 
+# endregion
+
+
+# region Drawing the map
 def build_store(key, kind, row, x_range, slug, name, file, size):
     """One store as a card: its mark on the left, its name, file and size on the right."""
     left, top, width, height = card_box(x_range, ROWS[row])

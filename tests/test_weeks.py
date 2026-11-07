@@ -62,9 +62,10 @@ def test_d374_the_notices_tables_and_reports_name_the_week_by_its_range():
     page = home_mockup.products_table([], "12–18 oct", "5–11 oct")
     assert "Precio</span> 5–11 oct" in page and "Precio</span> 12–18 oct" in page
     # No screen writes a week as «semana del 19-10» any more; the data keep the Monday as the week's key.
-    for path in sorted((ROOT / "bi").glob("*.py")):
-        text = path.read_text(encoding="utf-8")
-        assert not re.search(r"[Ss]emana del (\{|\d)", text), path.name
+    from tests import code_shape
+
+    for tree in code_shape.folder_trees(ROOT / "bi"):  # the texts the panel writes
+        assert not [text for text in code_shape.texts(tree) if re.search(r"[Ss]emana del (\{|\d)", text)]
 
 
 @needs_database

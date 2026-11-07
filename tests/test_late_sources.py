@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 # endregion
 # region A source that is late

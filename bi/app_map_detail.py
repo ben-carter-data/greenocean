@@ -16,6 +16,7 @@ from pathlib import Path
 
 from bi import devops, quality_metrics
 
+# region Constants
 ROOT = Path(__file__).resolve().parent.parent
 NOT_VERIFIED = "no verificado aquí"
 
@@ -36,8 +37,10 @@ RHYTHMS = [
     ("always", "Al abrir el panel"),  # D-473: nothing runs all the time; the panel works when opened
 ]
 RHYTHM_OWNER = {"week": "semanal", "month": "ine", "push": "pruebas", "manual": "author", "always": "streamlit"}
+# endregion
 
 
+# region Pieces
 def esc(value):
     return html.escape(str(value), quote=True)
 
@@ -46,6 +49,9 @@ def number(value):
     """A figure written the Spanish way (821.072): the English layer rewrites the figures of the texts it translates, so
     a figure already in English would be turned around (5,000 → 5.000)."""
     return quality_metrics.number(value, 0) if isinstance(value, int) else str(value)
+
+
+# endregion
 
 
 # region Reading what the system records

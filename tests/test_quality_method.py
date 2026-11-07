@@ -15,6 +15,7 @@ from streamlit.testing.v1 import AppTest
 
 from bi import i18n, quality_method, quality_metrics
 
+# region Constants
 # D-475: indicators added after the construction series closed (C-1 to C-7 keep their twelve).
 ADDED_AFTER_BUILD = {"ausencias_region_canal", "atipicos_pct"}
 ROOT = Path(__file__).resolve().parent.parent
@@ -50,8 +51,10 @@ REPORT = {
         "navegadores": {"chromium": {"checks": 3, "passed": 3, "failed": []}},
     },
 }
+# endregion
 
 
+# region The indicators and the verifier
 def test_d323_the_indicators_are_read_from_the_measurement_and_checked_against_the_goals():
     goals = quality_metrics.read(quality_metrics.GOALS_FILE)
     values = quality_metrics.values(REPORT)
@@ -271,6 +274,9 @@ def test_d332_the_page_has_two_tabs_and_the_quality_section_holds_it_in_both_lan
     content = " ".join(block.value for block in page.markdown if "qm-" in block.value)
     assert "qm-overview" in content and "qm-reports" in content
     assert not re.search(r"month_start|>None<|\bnan\b", content)
+
+
+# endregion
 
 
 # region Acceptables, goals and insights (D-330)
@@ -652,6 +658,7 @@ def test_d347_the_viewer_is_a_presentation_with_thumbnails_counter_fullscreen_an
 # endregion
 
 
+# region The failure log and old alerts
 def test_d354_each_occurrence_is_one_short_line_per_field_and_the_policy_says_so():
     plan = quality_metrics.read(quality_metrics.FOLDER / "plan_mitigacion.json")["fallas"]
     for item in plan:
@@ -764,6 +771,9 @@ def test_d419_the_alert_hides_what_is_resolved_reads_the_external_incident_and_w
     assert figures["detalle"] == "7 de 9" and english["detalle"] == "7 of 9"
 
 
+# endregion
+
+
 # region The weekly report (D-431)
 def test_d431_the_weekly_report_is_four_pages_measured_by_the_sqap_with_one_table_of_issues(tmp_path):
     from bi import quality_viewer
@@ -817,6 +827,7 @@ def test_d431_the_construction_series_is_named_c_and_opens_by_its_own_address():
 # endregion
 
 
+# region Thresholds and causes
 def test_d433_the_comparable_prices_acceptable_is_the_fifth_percentile_and_the_closed_reports_keep_theirs():
     goals = quality_metrics.read(quality_metrics.GOALS_FILE)
     policy = quality_metrics.read(quality_metrics.POLICY_FILE)
@@ -963,3 +974,6 @@ def test_d475_comparables_count_only_last_weeks_prices_and_two_data_indicators_w
     assert "Son los 14 indicadores del plan de calidad: 8 del código y 6 de los datos." in sqap and "97 %" in sqap
     adr = i18n.document_path("ADR.md", "es").read_text(encoding="utf-8")
     assert "**Revisión (D-475, 03-11-2026):**" in adr and "| 5 | 97,1 % |" in adr
+
+
+# endregion

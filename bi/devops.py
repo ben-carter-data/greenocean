@@ -18,8 +18,7 @@ from pathlib import Path
 
 from bi import brand_icons, charts, database_map, static_files
 
-# region Constants and variables
-WORKFLOWS_DIR = Path(__file__).resolve().parent.parent / ".github" / "workflows"
+# region Constants
 # What CI and CD mean, in two short sentences each (shown over the diagram and in the glossary).
 DEFINITION = (
     (
@@ -32,14 +31,6 @@ DEFINITION = (
         "Lo que pasa todas las pruebas llega a producción sin pasos manuales. Aquí, la base de cada "
         "martes y el panel que la muestra.",
     ),
-)
-DISCS = dict(
-    database_map.BRANDS,
-    git=("#ff9b7d", "#d6402a", "#ffffff"),
-    streamlit=("#ff8f98", "#e0303f", "#ffffff"),
-    pytest=("#7fc4ff", "#1f6fb5", "#ffffff"),
-    check=("#7ee2b0", "#14855a", "#ffffff"),
-    fail=("#ffb3a7", "#c2410c", "#ffffff"),
 )
 # Steps: (key, lane, mark, name, detail, what it does, where, marker in the workflow, kind).
 # kind: "gate" (nothing passes if it fails), "optional" (runs only when asked), "platform" (not in the repository).
@@ -275,7 +266,20 @@ ROW_NOTE = "Si un paso falla, los siguientes no corren y la base publicada no ca
 # endregion
 
 
-# region CI/CD and orchestration of the project
+# region Variables
+WORKFLOWS_DIR = Path(__file__).resolve().parent.parent / ".github" / "workflows"
+DISCS = dict(
+    database_map.BRANDS,
+    git=("#ff9b7d", "#d6402a", "#ffffff"),
+    streamlit=("#ff8f98", "#e0303f", "#ffffff"),
+    pytest=("#7fc4ff", "#1f6fb5", "#ffffff"),
+    check=("#7ee2b0", "#14855a", "#ffffff"),
+    fail=("#ffb3a7", "#c2410c", "#ffffff"),
+)
+# endregion
+
+
+# region Reading the workflows
 def workflow_line(marker):
     """«semanal.yml, línea 46»: where the marker text is in its workflow, read from the file itself."""
     if not marker:
@@ -287,6 +291,10 @@ def workflow_line(marker):
     return name
 
 
+# endregion
+
+
+# region Pieces and style
 def esc(value):
     return html.escape(str(value))
 
@@ -343,6 +351,10 @@ def build_css(palette):
     )
 
 
+# endregion
+
+
+# region Drawing CI/CD
 def describe(step):
     """What a step does and where it is, for its hover."""
     key, lane, mark, name, detail, what, where, marker, kind = step

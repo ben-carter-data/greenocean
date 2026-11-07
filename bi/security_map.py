@@ -288,7 +288,7 @@ LINKS = [
 # endregion
 
 
-# region «Arquitectura de seguridad»
+# region Pieces and style
 def esc(value):
     return html.escape(str(value))
 
@@ -356,6 +356,10 @@ def build_css(palette):
     )
 
 
+# endregion
+
+
+# region Marks and tips
 def number_mark(number, x, y, declared):
     return (
         f'<g class="num{" declared" if declared else ""}"><circle cx="{x}" cy="{y}" r="10"/>'
@@ -408,6 +412,10 @@ def build_mark(kind, cx, cy):
     return icon(kind[5:], x + 2, y + 2, 40)  # icon:<name>
 
 
+# endregion
+
+
+# region Nodes and threats
 def build_node(key, controls):
     kind, cx, cy, title, line, number, lx, width, cases = NODES[key]
     declared = number is not None and not controls[number][7]
@@ -469,6 +477,10 @@ def build_threat_tip(threat, controls):
     )
 
 
+# endregion
+
+
+# region Drawing the map
 def build_zones():
     return (
         '<rect class="zone" x="20" y="8" width="960" height="94" rx="18" stroke-dasharray="6 6"/>'

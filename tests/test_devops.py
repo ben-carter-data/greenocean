@@ -7,7 +7,7 @@ import pytest
 
 from bi import charts, devops, tech_glossary
 
-# region Constants and variables
+# region Variables
 WORKFLOWS = Path(__file__).resolve().parent.parent / ".github" / "workflows"
 # endregion
 
@@ -62,9 +62,16 @@ def test_each_step_says_on_which_line_of_its_workflow_it_is():
         assert text in read_workflow(name).splitlines()[number - 1], step[0]
 
 
-def test_the_panel_never_asks_for_the_simulated_failure():
-    control = (Path(__file__).resolve().parent.parent / "bi" / "control.py").read_text(encoding="utf-8")
-    assert '"simulate_failure": False' in control
+def test_the_panel_never_asks_for_the_simulated_failure(monkeypatch):
+    from types import SimpleNamespace
+
+    from bi import control
+
+    sent = []
+    answer = SimpleNamespace(raise_for_status=lambda: None)
+    monkeypatch.setattr(control.requests, "post", lambda url, **options: sent.append(options["json"]) or answer)
+    control.start_workflow_run("clave")  # the run the panel starts by hand
+    assert sent == [{"ref": control.BRANCH, "inputs": {"simulate_failure": False}}]
     fail = next(step for step in devops.STEPS if step[0] == "cd_fail")
     assert fail[8] == "optional" and "nunca" in fail[5]
 

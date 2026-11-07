@@ -132,10 +132,12 @@ def test_d522_the_file_names_the_package_each_price_compares():
 
 
 def test_d509_every_text_of_the_file_has_its_english():
-    source = Path(price_export.__file__).read_text(encoding="utf-8")
-    import re
+    from tests import code_shape
 
-    for text in re.findall(r'tr\("((?:[^"\\]|\\.)+)"\)', source):
+    shown = [
+        code_shape.literal(call.args[0]) for call in code_shape.calls_named(code_shape.tree_of(price_export), "tr")
+    ]
+    for text in filter(None, shown):
         assert text in i18n.EN, text
     for name, _ in price_export.COLUMNS:
         assert name in i18n.EN, name

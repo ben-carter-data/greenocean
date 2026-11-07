@@ -7,7 +7,7 @@ import pytest
 
 from bi import charts, control, monitoring, queries
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 # endregion
 

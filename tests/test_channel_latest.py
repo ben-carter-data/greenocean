@@ -11,7 +11,7 @@ from streamlit.testing.v1 import AppTest
 
 from bi import channel_latest, dashboard, home_mockup, i18n
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
 # endregion

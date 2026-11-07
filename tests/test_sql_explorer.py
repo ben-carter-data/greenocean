@@ -9,11 +9,14 @@ from streamlit.testing.v1 import AppTest
 
 from bi import charts, dashboard, i18n, queries, sql_explorer
 
+# region Constants
 REPOSITORY = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(REPOSITORY / "bi" / "dashboard.py")
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.duckdb is not built")
+# endregion
 
 
+# region Queries allowed and refused
 @needs_database
 @pytest.mark.parametrize("example", sql_explorer.EXAMPLES, ids=[e[0] for e in sql_explorer.EXAMPLES])
 def test_every_example_query_returns_rows(example):
@@ -287,6 +290,9 @@ def test_d516_every_text_of_the_templates_and_the_views_reads_in_english(monkeyp
         assert i18n.tr(script) != script, script
 
 
+# endregion
+
+
 # region The answers of the PRD, recomputed another way (D-244)
 def example_sql(title):
     return next(sql for name, _, sql in sql_explorer.EXAMPLES if name == title)
@@ -363,6 +369,7 @@ def test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas():
 # endregion
 
 
+# region Views and their columns
 @needs_database
 def test_views_have_readable_columns_and_real_counts():
     catalog = {
@@ -388,3 +395,6 @@ def test_views_have_readable_columns_and_real_counts():
         assert expected in columns
     for _, (_, view_columns) in catalog.items():
         assert not [column for column in view_columns if column.endswith("_id")]
+
+
+# endregion

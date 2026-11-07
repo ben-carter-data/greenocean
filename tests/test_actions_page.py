@@ -11,7 +11,7 @@ from bi import control, dashboard, github_actions, i18n
 from tests import code_shape  # noqa: E402
 from tests.test_github_actions import LOG, READ_TOKEN, SHAPED, TOKEN, Answer, Network
 
-# region Constants and variables
+# region Variables
 DASHBOARD_FILE = str(Path(__file__).resolve().parent.parent / "bi" / "dashboard.py")
 # endregion
 

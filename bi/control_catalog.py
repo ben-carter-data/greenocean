@@ -10,8 +10,7 @@ from typing import Any
 
 from bi import charts, static_files, transformation_rules, unit_review
 
-# region Constants and variables
-CATALOG_FILE = Path(__file__).resolve().parent.parent / "docs" / "calidad" / "catalogo_controles.json"
+# region Constants
 MOMENTS = {
     "descarga": ("Al descargar", "When downloading"),
     "transformacion": ("Al transformar", "When transforming"),
@@ -60,6 +59,11 @@ TEXTS = {
     "fails": ("Si falla", "If it fails"),
     "backing": ("Respaldo", "Backing"),
 }
+# endregion
+
+
+# region Variables
+CATALOG_FILE = Path(__file__).resolve().parent.parent / "docs" / "calidad" / "catalogo_controles.json"
 # endregion
 
 

@@ -11,6 +11,7 @@ import html
 from bi import charts, doc_views, i18n, queries, static_files
 
 
+# region Pieces
 def say(spanish, english):
     """The text in the language of the visit."""
     return english if i18n.is_english() else spanish
@@ -59,6 +60,9 @@ def logo(mark, x, y, size=30):
     return svg.replace(
         '<svg class="logo" ', f'<svg x="{x - size / 2:.1f}" y="{y - size / 2:.1f}" width="{size}" height="{size}" ', 1
     )
+
+
+# endregion
 
 
 # region Builders
@@ -343,10 +347,10 @@ def bars(mode, title, rows, note=""):
 # endregion
 
 
+# region C4 views and the procedure (D-297): the system context, its containers and the security procedure, drawn as
 BLUE, GREEN, AMBER, VIOLET, RED, GREY = "#3987e5", "#199e70", "#c98500", "#8b5cf6", "#e5484d", "#8b8fa3"
 
 
-# region C4 views and the procedure (D-297): the system context, its containers and the security procedure, drawn as
 # icons and right-angle arrows instead of boxes.
 def sad_context(mode):
     return graph(
@@ -2184,6 +2188,7 @@ def closure_audience(mode):
 # endregion
 
 
+# region Constants
 FIGURES = {
     "ciclo_semanal": weekly_cycle,  # D-377: also the «Proceso» block of «Análisis de negocio y sistemas»
     "contexto": sad_context,
@@ -2214,3 +2219,4 @@ FIGURES = {
     "esperado_real": closure_expectations,
     "para_quien": closure_audience,
 }
+# endregion

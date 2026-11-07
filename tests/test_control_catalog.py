@@ -5,7 +5,7 @@ import pytest
 
 from bi import charts, control_catalog, queries, report, transformation_rules, unit_review
 
-# region Constants and variables
+# region Variables
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
 PALETTE = charts.get_palette(charts.MODE_DARK)
 # endregion

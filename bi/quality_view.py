@@ -39,6 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import charts, weeks  # noqa: E402
 from etl import etl  # noqa: E402
 
+# region Constants
 EXPANDER_KEY = "qa_evidence"
 
 # Pill colors, the same in every theme: solid with white text (≥ 4.5:1 on each).
@@ -80,6 +81,7 @@ RESULT_CARDS = [
         "No hay una comparación independiente de precios con otra fuente equivalente.",
     ),
 ]
+# endregion
 
 
 # region Evidence

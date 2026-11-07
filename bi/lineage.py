@@ -22,6 +22,7 @@ import pandas as pd
 from bi import architecture, brand_icons, charts, control, static_files, tech_glossary
 from bi.i18n import tr
 
+# region Constants
 LAYERS = [
     ("bronze", "Bronce", "Parquet"),
     ("staging", "Staging", "vistas"),
@@ -136,6 +137,7 @@ ACCEPTED_VALUES_RULES = {
     "reason": "RN-11",
     "real_factor": "D-155",
 }
+# endregion
 
 
 # region Reading

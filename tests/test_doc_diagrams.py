@@ -7,8 +7,7 @@ import pytest
 
 from bi import charts, doc_diagrams, doc_figures, doc_views, i18n
 
-# region Constants and variables
-DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
+# region Constants
 DOCUMENTS = [
     "PRD.md",
     "SAD.md",
@@ -20,6 +19,11 @@ DOCUMENTS = [
     "PLAN_DE_CALIDAD.md",
     "ACTA_DE_CIERRE.md",
 ]
+# endregion
+
+
+# region Variables
+DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 MARKER = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 # endregion
 
@@ -128,9 +132,11 @@ def test_d210_the_weak_views_are_gone():
 
 
 def test_doc_diagrams_does_not_depend_on_streamlit():
+    from tests import code_shape
+
     for module in (doc_diagrams, doc_views):
-        source = Path(module.__file__).read_text(encoding="utf-8")
-        assert "streamlit as st" not in source and "import streamlit" not in source
+        imported = code_shape.imports(code_shape.tree_of(module))
+        assert not {name for name in imported if name.split(".")[0] == "streamlit"}, module.__name__
 
 
 def test_d297_the_containers_view_is_c4_level_2_with_real_files_and_right_angle_links():
@@ -176,14 +182,14 @@ def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architectu
     root = Path(__file__).resolve().parent.parent
     text = i18n.document_path("PLAN_PRUEBAS.md", "es").read_text(encoding="utf-8")
     assert [case[0] for case in security_plan.CASES] == [f"S-{n:02d}" for n in range(1, 15)]  # S-11 to S-14 since D-364
+    from tests import code_shape
+
     for case_id, short, attack, expected, owasp, tests in security_plan.CASES:
         assert owasp in security_map.OWASP or owasp == "—", case_id
         assert tests, case_id
         for reference in tests:
             path, name = reference.split("::")
-            assert re.search(rf"^def {re.escape(name)}\(", (root / path).read_text(encoding="utf-8"), re.MULTILINE), (
-                reference
-            )
+            assert name in code_shape.defined(code_shape.file_tree(root / path)), reference
     cases = {case[0] for case in security_plan.CASES}
     for threat in security_map.THREATS:
         assert set(threat[4]) <= cases, threat[0]

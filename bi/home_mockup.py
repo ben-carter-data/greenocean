@@ -34,7 +34,7 @@ FAMILY_ART_FILES = {
 # endregion
 
 
-# region Pixel-directed home dashboard
+# region Pieces and style
 @lru_cache(maxsize=None)
 def family_art_data_uri(group):
     """Return a compact, self-contained family image for Streamlit HTML."""
@@ -113,6 +113,10 @@ def style(mode, palette):
     return '<style>' + css + '</style>'
 
 
+# endregion
+
+
+# region Products, packages and movements
 def product_label(row, full=False):
     parts = [str(row['product'])]
     for field in ('variety', 'quality') if full else ('variety',):
@@ -293,6 +297,10 @@ def table(rows, focus_link, data_link, selected=None, scope='Promedio nacional',
     )
 
 
+# endregion
+
+
+# region The map of Chile
 @lru_cache(maxsize=1)
 def chile_regions_geometry():
     """Local, simplified administrative geometry; prices are joined at runtime."""
@@ -451,6 +459,10 @@ LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una región', 4:
 SEARCH_DARK, SEARCH_LIGHT = '#39ff14', '#00a83a'  # D-450: fluorescent green
 
 
+# endregion
+
+
+# region Steps and locks
 def step_chip(step, texts=None):
     """D-352: the number of the panel in the reading order, before its kicker. D-372: the number in a big circle of
     colour, its text at a readable size."""
@@ -479,6 +491,10 @@ def lock_overlay(step, texts=None):
     return f'<div class="mock-lock" role="note">{lock}<span>{esc((texts or LOCK_TEXTS)[step])}</span></div>'
 
 
+# endregion
+
+
+# region Trend and basket
 def trend_label(scope='todo Chile'):
     """D-480: said on hover; D-499: of all of Chile or of the region chosen."""
     return f'Mediana semanal de las últimas 8 semanas, {scope}'
@@ -548,6 +564,10 @@ def basket_median(rows):
     return statistics.median(values) if values else None
 
 
+# endregion
+
+
+# region The regional map
 def regional_map(
     rows, region_link, week_label, previous_label, selected_region=None, step=None, all_link=None, prompt=False
 ):
@@ -672,6 +692,10 @@ def change_state(value):
 QUESTION = '¿Qué familias de alimentos subieron y bajaron?'
 
 
+# endregion
+
+
+# region Dashboard bar, channels and families
 def dashboard_bar(path, week_label, family_rows, regional_rows, region, compared=None, available=None, next_label=None):
     """The Resumen's only header (D-264): one thin bar with the path, the question and the week's figures as chips.
     Every figure comes from the same weekly model the charts below use; each chip says in full what it counts on hover.
@@ -845,6 +869,10 @@ def family_movement(
     )
 
 
+# endregion
+
+
+# region Products, alerts and coverage
 def products_note(published, hidden=0):
     """The fixed line above the table (D-327): what the prices are, what is left out and why, and how many products
     are not shown. «published» is the number of regions the source publishes. One span per sentence."""
@@ -1109,6 +1137,10 @@ def coverage_note(model, quality_link, methodology_link, family=None):
     )
 
 
+# endregion
+
+
+# region Family tables and panels
 def family_table_rows(rows, order):
     """The rows eligible for one family's table under the selected ranking."""
     if order == 'Subidas':

@@ -18,13 +18,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import dashboard, queries  # noqa: E402
 from etl import etl  # noqa: E402
 
+# region Constants
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.db has not been built")
 needs_raw = pytest.mark.skipif(not etl.RAW_DATABASE_FILE.exists(), reason="etl/raw.db is not in the repository (D-020)")
 SAMPLE_SIZE = 60
+# endregion
 
 
+# region Reading the database
 def read(sql, parameters=()):
     return queries.run_sql(sql, parameters=parameters)
+
+
+# endregion
 
 
 # region Weekly calendar and keys

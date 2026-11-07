@@ -9,15 +9,8 @@ from streamlit.testing.v1 import AppTest
 
 from bi import dashboard, documents_folder, i18n
 
-# region Constants and variables
-ROOT = Path(__file__).resolve().parent.parent
-BI_DIR = ROOT / "bi"
-DOCS_DIR = ROOT / "docs"
-EN_DIR = DOCS_DIR / "en"
-DASHBOARD_FILE = str(BI_DIR / "dashboard.py")
+# region Constants
 FOLDER_FILES = [dashboard.PROJECT_DOCUMENTS[page][0] for page in dashboard.FOLDER_ORDER]
-TR_CALL = re.compile(r"""\btr\(\s*(?:f?"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')\s*\)""")
-IDENTIFIER = re.compile(r"\b(?:RF|RNF|P|ADR|S|D|RN|K)-\d+\b|\bT\d\b")
 ENGLISH_FIELDS = (
     "Project",
     "Document type",
@@ -29,6 +22,17 @@ ENGLISH_FIELDS = (
     "Audience",
     "Related documents",
 )
+# endregion
+
+
+# region Variables
+ROOT = Path(__file__).resolve().parent.parent
+BI_DIR = ROOT / "bi"
+DOCS_DIR = ROOT / "docs"
+EN_DIR = DOCS_DIR / "en"
+DASHBOARD_FILE = str(BI_DIR / "dashboard.py")
+TR_CALL = re.compile(r"""\btr\(\s*(?:f?"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')\s*\)""")
+IDENTIFIER = re.compile(r"\b(?:RF|RNF|P|ADR|S|D|RN|K)-\d+\b|\bT\d\b")
 # endregion
 
 

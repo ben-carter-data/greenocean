@@ -27,6 +27,7 @@ KEY_COLUMNS = ["product_group", "product", "variety", "quality", "normalized_uni
 # endregion
 
 
+# region Data access
 SAME_PACKAGE_TABLE = "weekly_same_package"
 SAME_PACKAGE_BEFORE_THE_RULE = """(
     SELECT now.week_start, now.product_id, now.region_id, now.channel_id, now.normalized_unit,
@@ -42,7 +43,6 @@ SAME_PACKAGE_BEFORE_THE_RULE = """(
 )"""
 
 
-# region Data access
 def load_queries(queries_file: Path = QUERIES_FILE) -> dict[str, str]:
     """Read queries.sql and return a dictionary {query name: SQL text}."""
     text = queries_file.read_text(encoding="utf-8")

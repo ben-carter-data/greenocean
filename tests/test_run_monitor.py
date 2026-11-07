@@ -7,10 +7,14 @@ from streamlit.testing.v1 import AppTest
 
 from bi import control, run_monitor
 
-# region Constants and variables
+# region Constants
+TOKEN = "github_pat_" + "FAKE0123456789ABCDEFGHIJKLMNOP"
+# endregion
+
+
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
-TOKEN = "github_pat_" + "FAKE0123456789ABCDEFGHIJKLMNOP"
 NOW = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
 # endregion
 
@@ -73,14 +77,18 @@ def test_d351_the_log_and_the_copy_button_never_carry_the_token():
     assert "clipboard.writeText" in page and TOKEN not in page and "Copiar" in page
 
 
-def test_d351_cancelling_is_the_only_write_and_the_read_only_module_still_has_none():
-    source = (ROOT / "bi" / "github_actions.py").read_text(encoding="utf-8")
-    assert "requests.post" not in source and source.count("requests.get(") == 1
-    assert "actions/runs/{run_id}/cancel" in (ROOT / "bi" / "control.py").read_text(encoding="utf-8")
-    monitor = (ROOT / "bi" / "run_monitor.py").read_text(encoding="utf-8")
-    assert (
-        "requests.post" not in monitor and "requests.get" not in monitor
-    )  # it goes through control and github_actions
+def test_d351_cancelling_is_the_only_write_and_the_read_only_module_still_has_none(monkeypatch):
+    from types import SimpleNamespace
+
+    from tests import code_shape
+
+    sent = []
+    answer = SimpleNamespace(raise_for_status=lambda: None)
+    monkeypatch.setattr(control.requests, "post", lambda url, **options: sent.append(url) or answer)
+    control.cancel_workflow_run(42, "clave")
+    assert sent == [f"{control.API_URL}/repos/{control.REPOSITORY}/actions/runs/42/cancel"]
+    monitor = code_shape.tree_of(run_monitor)  # it goes through control and github_actions
+    assert not code_shape.calls(monitor, "requests.post") and not code_shape.calls(monitor, "requests.get")
     assert "no tiene permiso para cancelar" in control.describe_cancel_error(_http(403))
     assert "ya había terminado" in control.describe_cancel_error(_http(409))
 

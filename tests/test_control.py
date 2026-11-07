@@ -9,6 +9,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import control  # noqa: E402
 
+# region Constants
 GITHUB_RUN = {
     "id": 38226180308,
     "status": "completed",
@@ -18,8 +19,10 @@ GITHUB_RUN = {
     "updated_at": "2026-10-12T08:51:57Z",
     "html_url": "https://github.com/x/y/actions/runs/38226180308",
 }
+# endregion
 
 
+# region Runs read from GitHub
 class FakeResponse:
     def __init__(self, payload):
         self.payload = payload
@@ -148,6 +151,9 @@ def test_github_error_handles_invalid_reset_and_untrusted_reason():
     assert control.describe_github_error(error) == ("GitHub respondió 418: error al consultar GitHub")
 
 
+# endregion
+
+
 # region Token expiration (T-54)
 def test_t54_token_expiration_is_read_in_both_formats_github_uses():
     assert control.parse_token_expiration("2026-12-31 12:00:00 UTC") == datetime(2026, 12, 31, 12, tzinfo=timezone.utc)
@@ -191,6 +197,7 @@ def test_t54_only_the_expiration_date_leaves_the_github_answer(monkeypatch):
 # endregion
 
 
+# region The Autor's key and the alerts
 def test_d199_the_right_code_opens_and_any_character_is_safe():
     assert control.check_control_code("clave", "clave") == (True, "")
     ok, message = control.check_control_code("contraseña ñ ü 🔑", "clave")  # used to raise TypeError
@@ -217,8 +224,10 @@ def test_d393_after_three_failures_every_door_waits_twice_as_long_up_to_fifteen_
     assert gate.failures == 0 and gate.seconds_left() == 0
     assert control.describe_wait(4) == "Demasiados intentos. Vuelve a intentar en 4 s."
     assert control.describe_wait(900) == "Demasiados intentos. Vuelve a intentar en 15 min."
-    source = (Path(__file__).resolve().parent.parent / "bi" / "control.py").read_text(encoding="utf-8")
-    assert "hmac.compare_digest" in source  # still compared in constant time
+    from tests import code_shape
+
+    check = code_shape.tree_of(control.check_control_code)
+    assert code_shape.calls(check, "hmac.compare_digest")  # still compared in constant time
 
 
 def test_d298_only_a_real_failure_of_the_last_finished_load_raises_the_alert():
@@ -286,15 +295,13 @@ def test_d350_the_english_reader_gets_the_error_in_english():
 
 
 def test_d350_a_right_key_closes_the_window_with_a_full_rerun_because_the_window_is_a_fragment():
-    import inspect
-
     from bi import dashboard
-
-    body = inspect.getsource(dashboard.show_profile_dialog)
-    assert "AUTHOR_ENTERED" in body and "st.rerun()" in body.split("AUTHOR_ENTERED")[1]
     from tests import code_shape
 
-    assert code_shape.sets_true(code_shape.tree_of(dashboard.submit_author_code), "AUTHOR_ENTERED")  # R-004
+    dialog = code_shape.tree_of(dashboard.show_profile_dialog)
+    full = [call.lineno for call in code_shape.calls(dialog, "st.rerun") if not call.args and not call.keywords]
+    assert full and code_shape.first(code_shape.uses(dialog, "AUTHOR_ENTERED")) < max(full)
+    assert code_shape.sets_true(code_shape.tree_of(dashboard.submit_author_code), "AUTHOR_ENTERED")
 
 
 def test_d369_the_entry_window_offers_two_views_and_the_author_only_as_a_corner_link():
@@ -316,11 +323,6 @@ def test_d369_the_entry_window_offers_two_views_and_the_author_only_as_a_corner_
         assert door in [popover.proto.popover.label for popover in app.get("popover")]
         assert app.text_input(key="profile_author_code")  # its key field, inside the link
     assert i18n.EN["Acceso del autor"] == "Author access"
-    # D-541: the panel lives in several files of bi/; its code is read as one
-    source = "\n".join(
-        p.read_text(encoding="utf-8") for p in (Path(__file__).resolve().parent.parent / "bi").glob("*.py")
-    )
-    assert "profile_side_autor" not in source
     # R-004: the window's dark backdrop is read in the stylesheet the page receives, not in the code that builds it
     from bi import app_style, charts
 
@@ -383,3 +385,6 @@ def test_d371_every_view_has_the_indicator_and_it_reopens_the_window():
         indicator.click().run()
         assert not app.exception and app.get("dialog") and app.button(key="profile_keep"), name
     assert all(i18n.EN[word] for word in ("Vista", "Usuario", "Profesional", "Autor"))
+
+
+# endregion

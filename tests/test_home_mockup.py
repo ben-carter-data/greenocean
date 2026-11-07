@@ -8,9 +8,12 @@ import pytest
 from streamlit.testing.v1 import AppTest
 from bi import dashboard, home_mockup, page_weekly, queries
 
+# region Constants
 ROOT = Path(__file__).resolve().parents[1]
+# endregion
 
 
+# region Tables and rankings
 def test_table_uses_real_predecessor_and_escapes_labels():
     row = dict(
         product='<script>',
@@ -140,10 +143,12 @@ def test_d497_the_filter_sits_beside_the_search_and_rests_while_an_alert_is_chos
     app.button(key='home_alert_trigger').click().run()
     assert not app.selectbox(key='home_products_direction').disabled
     # it is drawn in the alert line, right after the search
-    source = (ROOT / 'bi/page_weekly.py').read_text(encoding='utf-8')  # D-541: «Semanal» left bi/dashboard.py
-    line = source[source.index('def show_alert_line') :]
-    line = line[: line.index('\ndef ', 1)]
-    assert line.index('key="home_products_search"') < line.index('key="home_products_direction"')
+    from bi import page_weekly
+    from tests import code_shape
+
+    line = code_shape.tree_of(page_weekly.show_alert_line)
+    keyed = {code_shape.keyword(call, 'key'): call.lineno for call in code_shape.every_call(line)}
+    assert keyed[code_shape.normal('"home_products_search"')] < keyed[code_shape.normal('"home_products_direction"')]
 
 
 def test_d498_the_window_brings_the_channel_back_when_it_reruns_alone(monkeypatch):
@@ -472,6 +477,9 @@ def test_d304_the_regions_column_says_which_regions_on_hover():
     assert '<li class="fall"><span>Biobío</span>' in page
 
 
+# endregion
+
+
 # region The products table explains itself (D-327)
 ZAPALLO = {
     'product': 'Zapallo',
@@ -539,6 +547,7 @@ def test_d327_a_change_resting_on_one_region_sorts_last():
 # endregion
 
 
+# region Families, basket and steps
 def test_d329_the_families_and_the_map_say_what_they_are_calculated_from():
     note = home_mockup.movement_note({'available': 305, 'missing': 19, 'coverage_changed': 121, 'national': True})
     assert 'Con 286 de 305 precios de la semana' in note and 'En 121 quedó fuera una región sin precio' in note
@@ -582,3 +591,6 @@ def test_d480_step_three_says_how_each_figure_is_computed():
     heading = home_mockup.products_heading('Pan', 0.01, 'todo Chile', 1, 1, step=3)
     assert 'mock-hint' in heading and 'Regiones ↑ / ↓' in heading and '0,05 %' in heading
     assert '<title>' in home_mockup.sparkline([1, 2, 3]) and 'todo Chile' in home_mockup.trend_label()
+
+
+# endregion

@@ -5,9 +5,13 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
-# region Constants and variables
-DASHBOARD_FILE = str(Path(__file__).resolve().parent.parent / "bi" / "dashboard.py")
+# region Constants
 KEY = "clave-larga"
+# endregion
+
+
+# region Variables
+DASHBOARD_FILE = str(Path(__file__).resolve().parent.parent / "bi" / "dashboard.py")
 # endregion
 
 
@@ -86,15 +90,14 @@ def test_d373_the_view_button_sits_under_the_logo_before_the_menu_and_left_the_f
         assert button.label == label and button.proto.icon == ":material/account_circle:"
         if language == "es":  # AppTest cannot rerun the English Dashboard's selectboxes; the label is checked above
             assert app.button(key="profile_indicator").click().run().get("dialog")  # it reopens «Elige tu vista»
-    source = Path(dashboard.__file__).read_text(encoding="utf-8")
-    navigation = source[source.index("def show_sidebar_navigation") :]
-    navigation = navigation[: navigation.index("\ndef ")]
-    assert navigation.index("show_profile_indicator()") < navigation.index("show_run_indicator()")
-    assert navigation.index("show_profile_indicator()") < navigation.index(
-        "for key, title, pages in visible_menu_blocks()"
-    )
-    footer = source[source.index("def show_sidebar_footer") :]
-    assert "profile_indicator" not in footer[: footer.index("\ndef ")]  # gone from beside «Apariencia»
+    from tests import code_shape
+
+    navigation = code_shape.tree_of(dashboard.show_sidebar_navigation)
+    profile = code_shape.first(code_shape.calls_named(navigation, "show_profile_indicator"))
+    assert profile < code_shape.first(code_shape.calls_named(navigation, "show_run_indicator"))
+    assert profile < code_shape.first(code_shape.calls_named(navigation, "visible_menu_blocks"))
+    footer = code_shape.tree_of(dashboard.show_sidebar_footer)
+    assert not code_shape.calls_named(footer, "show_profile_indicator")  # gone from beside «Apariencia»
 
 
 def test_d373_a_click_on_the_logo_reopens_the_window():

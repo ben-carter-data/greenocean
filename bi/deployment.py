@@ -18,10 +18,9 @@ from urllib.parse import urlparse
 
 from bi import architecture, charts, control, project, quality_view, queries, static_files
 
-# region Constants and variables
+# region Constants
 WIDTH, HEIGHT = 1210, 566  # D-422: wider, not taller, so it keeps its height on screen
 DEPTH = 12
-REPOSITORY = Path(__file__).resolve().parent.parent
 # Nodes: key -> (x, y, width, height, stereotype, name). (x, y) is the front face; the top and the side stick out DEPTH.
 NODES = {
     "odepa": (20, 40, 230, 92, "dispositivo", "ODEPA"),
@@ -95,7 +94,12 @@ TIPS = {
 # endregion
 
 
-# region «Despliegue»
+# region Variables
+REPOSITORY = Path(__file__).resolve().parent.parent
+# endregion
+
+
+# region Pieces and style
 def esc(value):
     return html.escape(str(value))
 
@@ -164,6 +168,10 @@ def state_dot(x, y, state):
     return f'<circle cx="{x}" cy="{y}" r="5.5" fill="{color}"/>' if color else ""
 
 
+# endregion
+
+
+# region The hosts and their contents
 def read_hosts():
     ine_host = urlparse(project.INE_IPC_SOURCE_URL).netloc
     odepa_host = urlparse(project.WHOLESALE_SOURCE_URL).netloc
@@ -257,6 +265,10 @@ def build_contents(states, figures, live=True):
     return parts, envs
 
 
+# endregion
+
+
+# region Drawing the deployment
 def build_deployment_html(palette, states, figures, live=True):
     """The nodes, the environments inside them and the communication paths, with the live state of each piece.
     D-448: the SAD draws it with live=False, a fixed picture without the state dots and the next run."""

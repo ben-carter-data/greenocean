@@ -5,8 +5,7 @@ from pathlib import Path
 
 from bi import charts, database_map, storage_map
 
-# region Constants and variables
-ROOT = Path(__file__).resolve().parent.parent
+# region Constants
 COUNTS = {
     "weekly_price": 814610,
     "dim_product": 1609,
@@ -24,6 +23,11 @@ COUNTS = {
     "dbt_result": 47,
 }
 SIZES = {"raw": "≈ 665 MB", "served": "19 MB", "backup": "34 MB"}
+# endregion
+
+
+# region Variables
+ROOT = Path(__file__).resolve().parent.parent
 # endregion
 
 

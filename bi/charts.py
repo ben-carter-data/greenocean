@@ -371,6 +371,7 @@ CONTEXT_CHANNELS = {"Feria libre": "#2563C9", "Supermercado": "#D9622B"}
 # endregion
 
 
+# region Contrast
 def relative_luminance(color: str) -> float:
     """WCAG 2.1 relative luminance of a #rrggbb colour."""
     channels = [int(color.lstrip("#")[index : index + 2], 16) / 255 for index in (0, 2, 4)]
@@ -405,3 +406,6 @@ def legible(color: str, background: str, minimum: float = 4.5) -> str:
         if contrast_ratio(mixed, background) >= minimum:
             return mixed
     return target
+
+
+# endregion

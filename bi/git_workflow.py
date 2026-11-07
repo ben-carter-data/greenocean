@@ -372,7 +372,7 @@ STATIONS: list[dict[str, Any]] = [
 # endregion
 
 
-# region «Cambios e incidentes»
+# region Reading the changes and incidents
 def pick(pair: tuple[str, str], language: str) -> str:
     return pair[1] if language == "en" else pair[0]
 
@@ -447,6 +447,10 @@ GATE_EXITS = {
 }
 
 
+# endregion
+
+
+# region Layout
 def lane_top(lane: str) -> int:
     return "abc".index(lane) * (LANE_HEIGHT + LANE_GAP) + 6
 
@@ -474,6 +478,10 @@ def wrap(text: str, size: float, width: float) -> list[str]:
     return lines
 
 
+# endregion
+
+
+# region Drawing the map
 def svg_station(item: dict[str, Any], station: dict[str, Any]) -> str:
     """One station: number, tile (a diamond for a checkpoint, a green circle for the end), title, line and command."""
     x, y = place(item)
@@ -629,6 +637,10 @@ LOG_LABEL = {
 }
 
 
+# endregion
+
+
+# region The incident log
 def log_summary(row: dict[str, Any], language: str) -> str:
     """The one line of an incident: date, id, what happened and its state."""
     state = pick(LABELS["open"] if row["estado"] == "abierta" else LABELS["solved"], language)

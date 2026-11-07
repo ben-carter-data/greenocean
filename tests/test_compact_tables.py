@@ -1,6 +1,5 @@
 """Compact lists (D-348): no table that grows shows more than 20 rows at once, rows are collapsed and one opens at a time."""
 
-import re
 import copy
 from pathlib import Path
 
@@ -8,7 +7,7 @@ from streamlit.testing.v1 import AppTest
 
 from bi import compact_table, git_workflow
 
-# region Constants and variables
+# region Variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
 # endregion
@@ -83,12 +82,19 @@ def test_d348_the_incident_log_pages_by_twenty_and_the_diagnosis_is_the_authors(
 
 def test_d348_the_log_is_a_fixed_height_box_closed_by_default_and_the_reports_list_uses_the_same_component():
     # D-541: the panel's code spans bi/; each page keeps its functions together in its own module
-    source = "\n".join(p.read_text(encoding="utf-8") for p in sorted(Path(DASHBOARD_FILE).parent.glob("*.py")))
-    block = source[source.index("def show_workflow_detail") : source.index("def show_actions_page")]
-    assert "st.expander(" in block and "expanded=False" in block and "st.container(height=300)" in block
-    # R-004: the call is found whatever its indentation or line breaks
-    assert re.search(r'compact_table\.show_compact_rows\(\s*"cr_reports"', source)
-    assert re.search(r'compact_table\.show_compact_rows\(\s*"cr_actions"', source)
+    from bi import page_devops, page_quality
+    from tests import code_shape
+
+    detail = code_shape.tree_of(page_devops.show_workflow_detail)
+    assert "False" in {code_shape.keyword(call, "expanded") for call in code_shape.calls(detail, "st.expander")}
+    assert "300" in {code_shape.keyword(call, "height") for call in code_shape.calls(detail, "st.container")}
+    lists = {
+        code_shape.literal(call.args[0])
+        for module in (page_devops, page_quality)
+        for call in code_shape.calls(code_shape.tree_of(module), "compact_table.show_compact_rows")
+        if call.args
+    }
+    assert {"cr_reports", "cr_actions"} <= lists
 
 
 # endregion

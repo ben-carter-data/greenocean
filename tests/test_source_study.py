@@ -6,7 +6,7 @@ from streamlit.testing.v1 import AppTest
 
 from bi import dashboard, source_study
 
-# region Constants and variables
+# region Variables
 DASHBOARD_FILE = str(Path(dashboard.__file__))
 # endregion
 
