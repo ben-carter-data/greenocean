@@ -180,7 +180,7 @@ def test_d498_the_enlarged_table_has_the_line_of_the_panel_and_opens_with_its_ch
     assert filtered.disabled and filtered.value == 'Todo'
     markup = ' '.join(block.value for block in app.markdown)
     assert markup.count('class="mock-level ') == 2 * len(sharp) > 0  # the panel's table and the window's
-    source = (ROOT / 'bi/dashboard.py').read_text(encoding='utf-8')
+    source = (ROOT / 'bi/app_style.py').read_text(encoding='utf-8')  # D-541: the stylesheet left bi/dashboard.py
     assert '.st-key-dialog_alert_trigger button' in source and '.st-key-dialog_drop_trigger button' in source
 
 
