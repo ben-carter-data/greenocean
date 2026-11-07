@@ -24,6 +24,7 @@ from bi import (
     control,
     home_mockup,
     i18n,
+    lineage,
     live_mark,
     overview,
     page_bar,
@@ -37,6 +38,7 @@ from bi.app_style import (
 )
 from bi.constants import (
     ADMIN_UNLOCKED,
+    ATTRIBUTION_TEXT,
     AUTHOR_ONLY_PAGES,
     BA_TAB_OF_VIEW,
     BA_TAB_PARAMETER,
@@ -131,10 +133,12 @@ from bi.constants import (
 )
 from bi.data_access import (
     format_chile_time,
+    get_database_version,
     get_secret,
     parse_run_start,
     read_cached_token_expiration,
     read_latest_run,
+    read_lineage,
     read_pipeline_runs,
     to_chile_time,
 )
@@ -1405,6 +1409,15 @@ def describe_late_sources(message):
                 )
             )
     return " · ".join(parts)
+
+
+def show_attribution():
+    """Footer of every page: the data source. The project links live only in
+    Operaciones (D-056)."""
+    st.divider()
+    summary = lineage.summarize_build(*read_lineage(get_database_version()))
+    st.markdown(f'<div class="page-lineage">{lineage.build_badge_html(summary)}</div>', unsafe_allow_html=True)
+    st.caption(tr(ATTRIBUTION_TEXT))
 
 
 # endregion

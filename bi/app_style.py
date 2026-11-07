@@ -1461,3 +1461,47 @@ def build_sidebar_css(mode):
 
 
 # endregion
+
+
+# region Shared page styles
+def build_runs_css(mode):
+    palette = charts.get_palette(mode)
+    return f"""<style>
+    /* D-421: the only key is typed in «Elige tu vista» (a password field there); this page asks for none. */
+    /* The manual run is a round power button (D-149): deep glossy blue, a brushed
+       metal ring, the white power symbol. The words sit under it. */
+    .st-key-runs_run_now {{display:flex; justify-content:center; align-self:center; margin:10px auto 2px;}}
+    .st-key-runs_run_now > div, .st-key-runs_run_now [data-testid="stButton"],
+    .st-key-runs_run_now [data-testid="stTooltipHoverTarget"] {{display:flex; justify-content:center; width:100%;}}
+    .st-key-runs_run_now button {{width:52px; height:52px; min-height:52px; flex:0 0 52px; padding:0; border-radius:50% !important;
+        border:2px solid #ffffff !important; color:#fff !important;
+        background:radial-gradient(circle at 50% 30%, #4f8dff 0%, #1d5fe0 38%, #0a37a6 72%, #06246f 100%) !important;
+        box-shadow:0 0 0 4px #dfe3ea, 0 0 0 5px #aab3c0,
+                   inset 0 7px 10px -5px rgba(255,255,255,.55), inset 0 -7px 11px -5px rgba(0,0,0,.45),
+                   0 10px 18px -8px rgba(10,55,166,.6);
+        transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;}}
+    .st-key-runs_run_now button:hover:not(:disabled) {{transform:translateY(-2px); filter:brightness(1.08);}}
+    .st-key-runs_run_now button:active:not(:disabled) {{transform:translateY(1px) scale(.98);}}
+    .st-key-runs_run_now button p, .st-key-runs_run_now button [data-testid="stMarkdownContainer"] {{display:none !important;}}
+    .st-key-runs_run_now button > div {{display:flex; align-items:center; justify-content:center; gap:0 !important;
+        width:100%; height:100%; margin:0;}}
+    .st-key-runs_run_now button [data-testid="stIconMaterial"] {{font-size:24px !important; width:24px; height:24px; line-height:1; margin:0 !important; color:#fff;
+        text-shadow:0 1px 2px rgba(0,0,0,.35);}}
+    .st-key-runs_run_now button:disabled {{opacity:.72; cursor:not-allowed;}}
+    .run-now-label {{text-align:center; font-weight:500; font-size:.92rem; color:{palette['strong_text']}; margin:10px 0 0;}}
+    .run-now-note {{text-align:center; font-size:.78rem; color:{palette['text']}; margin-top:2px;}}
+    .runs-card-title {{display:flex; align-items:center; gap:7px; font-size:.92rem; font-weight:500;
+        color:{palette['strong_text']}; margin:0 0 10px;}}
+    .runs-table {{width:100%; border-collapse:collapse; font-size:.84rem;}}
+    .runs-table th {{text-align:left; font-size:.68rem; font-weight:500; letter-spacing:.05em;
+        text-transform:uppercase; color:{palette['reference']}; padding:6px 8px;
+        border-bottom:1px solid {palette['card_border']};}}
+    .runs-table td {{padding:9px 8px; border-bottom:1px solid {palette['card_border']};
+        color:{palette['strong_text']}; font-variant-numeric:tabular-nums;}}
+    .runs-table tr:last-child td {{border-bottom:0;}}
+    .runs-table tbody tr:hover td {{background:color-mix(in srgb,{palette['accent']} 5%,transparent);}}
+    .runs-link {{text-align:right;}}
+    </style>"""
+
+
+# endregion
