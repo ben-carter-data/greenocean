@@ -563,8 +563,8 @@
     "When averaging, a bin would weigh the same as a box, although it brings about 26 times more."
    ],
    "ejemplo": [
-    "El boletín de ODEPA lo expresa por envase («Malla 18 kilos»), salvo cuando la unidad dice «(volumen en unidades)».",
-    "ODEPA's bulletin expresses it per package («Malla 18 kilos»), except when the unit says «(volumen en unidades)»."
+    "El boletín de ODEPA lo expresa por envase («Malla 18 kilos»). Cuando la unidad dice «(volumen en unidades)», el volumen cuenta piezas enteras, como zapallos o sandías, y cada una pesa como un kilo: su peso no se conoce.",
+    "ODEPA's bulletin expresses it per package («Malla 18 kilos»). When the unit says «(volumen en unidades)», the volume counts whole pieces, such as pumpkins or watermelons, and each weighs as one kilo: its weight is unknown."
    ],
    "inferencia": [
     "`$/kilo (en caja de 17 kilos)` se lee como cajas, no kilos. Con cajas, una fila típica de palta da 2.550 kilos, igual que los 2.400 de sus bandejas; con kilos serían 150. ODEPA no lo declara: si contara kilos, 1.357 precios semanales cambiarían más de 5 %.",

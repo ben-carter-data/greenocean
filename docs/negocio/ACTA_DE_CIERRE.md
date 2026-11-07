@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Acta de cierre del proyecto |
-| Versión | 1.0 |
-| Fecha | 04-11-2026 |
+| Versión | 1.1 |
+| Fecha | 07-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Dejar escrito cómo empezó el proyecto, qué se quiso demostrar, qué se encontró en los datos, qué se aprendió y a quién sirve, ahora que queda en mantenimiento. |
@@ -112,7 +112,6 @@ Menos fuertes:
 ## 10. Qué queda
 
 - Publicar el proyecto en una comunidad de ingeniería de datos y recibir la revisión de profesionales con más experiencia; esta acta es la primera pieza para esa conversación.
-- Confirmar con ODEPA las tres inferencias: qué cuenta el volumen, «cien» como 100 unidades y la caja de 17 kilos leída como caja.
 - Pagar las deudas de la sección 8 si el proyecto sigue creciendo: dividir el panel en módulos, acortar la suite y empaquetar el despliegue.
 - Seguir profundizando donde el autor se sintió menos firme: DevOps más allá de GitHub Actions, estadística para las alertas y diseño de pruebas de datos a gran escala.
 
@@ -125,3 +124,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 04-11-2026 | Primera versión, al cerrar el proyecto como portafolio (D-529) |
+| 1.1 | 07-11-2026 | Sin consulta pendiente a ODEPA: las tres inferencias quedan como tales (D-534) |

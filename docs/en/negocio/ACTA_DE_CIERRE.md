@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Project closure record |
-| Version | 1.0 |
-| Date | 2026-11-04 |
+| Version | 1.1 |
+| Date | 2026-11-07 |
 | Status | Current |
 | Owner | The author |
 | Purpose | To leave in writing how the project started, what it set out to show, what was found in the data, what was learned and whom it serves, now that it moves into maintenance. |
@@ -112,7 +112,6 @@ Weaker:
 ## 10. What remains
 
 - To publish the project in a data engineering community and receive the review of more experienced professionals; this record is the first piece for that conversation.
-- To confirm the three inferences with ODEPA: what the volume counts, «cien» as 100 units and the 17-kilo box read as a box.
 - To pay the debts of section 8 if the project keeps growing: splitting the panel into modules, shortening the suite and packaging the deployment.
 - To keep going deeper where the author felt least firm: DevOps beyond GitHub Actions, statistics for the alerts and the design of data tests at scale.
 
@@ -125,3 +124,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | Version | Date | Changes |
 |---|---|---|
 | 1.0 | 2026-11-04 | First version, on closing the project as a portfolio piece (D-529) |
+| 1.1 | 2026-11-07 | No pending query to ODEPA: the three inferences stay as such (D-534) |
