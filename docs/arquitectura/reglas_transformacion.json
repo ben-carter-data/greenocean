@@ -1501,7 +1501,7 @@
    ],
    "codigo": [
     {
-     "archivo": "bi/dashboard.py",
+     "archivo": "bi/data_access.py",
      "ancla": "def read_channel_national_prices"
     }
    ]
