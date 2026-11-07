@@ -578,6 +578,16 @@ def show_quality_report_dialog(ref):
     )
 
 
+def show_open_report_button(report):
+    """The button under a report's detail in «Informes»: it opens the report as slides, with its PDF."""
+    if st.button(
+        tr("Abrir el informe o su PDF"),
+        key=f"cr_reports_open_{quality_metrics.report_ref(report)}",
+        icon=":material/description:",
+    ):
+        show_quality_report_dialog(quality_metrics.report_ref(report))
+
+
 def show_method_page(mode):
     """«Plan de calidad» (D-320, D-323, D-330, D-332, D-333): how the quality of the published data and of the code is
     managed. Two tabs: «Resumen» (each indicator against its acceptable) and «Informes» (the numbered reports)."""
@@ -655,22 +665,13 @@ def show_method_page(mode):
         if not shown:
             st.caption(tr("Ningún informe coincide."))
         else:
-
-            def open_report_button(report):
-                if st.button(
-                    tr("Abrir el informe o su PDF"),
-                    key=f"cr_reports_open_{quality_metrics.report_ref(report)}",
-                    icon=":material/description:",
-                ):
-                    show_quality_report_dialog(quality_metrics.report_ref(report))
-
             compact_table.show_compact_rows(
                 "cr_reports",
                 sorted(shown, key=lambda item: -item["numero"]),
                 quality_method.report_summary,
                 lambda report: quality_method.build_report_detail(report, reports),
                 signature=f"{reports[0].get('serie') if reports else ''}|{year}|{month}|{week}|{query}",
-                after_detail=open_report_button,
+                after_detail=show_open_report_button,
             )
 
 

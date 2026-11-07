@@ -3,6 +3,7 @@
 and the operation pages also draw.
 """
 
+import functools
 import html
 import re
 from datetime import datetime, timezone
@@ -342,33 +343,35 @@ def build_journey_legend_html():
     )
 
 
+def layer_color_style(layer):
+    """The colour of a layer of the pipeline diagram, for a figure of its chip."""
+    return f' style="color:{architecture.LAYER_COLORS[layer]}"'
+
+
 def build_pipeline_chips(summary):
     """The four real figures of the latest load and dbt build (D-253), as chips of the page bar (D-267), each number in
     the colour of its layer in the diagram."""
     run = read_latest_run()
     number = charts.format_thousands
 
-    def color(layer):
-        return f' style="color:{architecture.LAYER_COLORS[layer]}"'
-
     chips = [
         (
-            f'<b{color("ingestion")}>{number(run["rows_read"])}</b><small>leídas</small>',
+            f'<b{layer_color_style("ingestion")}>{number(run["rows_read"])}</b><small>leídas</small>',
             f'{number(run["rows_read"])} filas leídas de ODEPA en la última carga',
         ),
         (
-            f'<b{color("gold")}>{number(run["rows_loaded"])}</b><small>cargadas</small>',
+            f'<b{layer_color_style("gold")}>{number(run["rows_loaded"])}</b><small>cargadas</small>',
             f'{number(run["rows_loaded"])} filas cargadas y {number(run["rows_rejected"])} rechazadas en la última carga',
         ),
     ]
     if summary:
         chips += [
             (
-                f'<b{color("processing")}>{summary["models"]}</b><small>modelos</small>',
+                f'<b{layer_color_style("processing")}>{summary["models"]}</b><small>modelos</small>',
                 f'{summary["models"]} modelos dbt, de staging a marts',
             ),
             (
-                f'<b{color("quality")}>{summary["passing"]}/{summary["tests"]}</b><small>pruebas</small>',
+                f'<b{layer_color_style("quality")}>{summary["passing"]}/{summary["tests"]}</b><small>pruebas</small>',
                 f'{summary["passing"]} de {summary["tests"]} pruebas dbt superadas en el último build',
             ),
         ]
@@ -798,29 +801,30 @@ def show_live_flow(mode):
         st.caption(" · ".join(notes))
 
 
+def choose_stack_view(view_holder):
+    """The two views of «Stack y evidencia», drawn in the page bar; the chosen one is kept in `view_holder`."""
+    view_holder["view"] = (
+        st.segmented_control(
+            tr("Vista"),
+            STACK_VIEWS,
+            default=STACK_VIEWS[0],
+            format_func=tr,
+            key=STACK_VIEW_KEY,
+            label_visibility="collapsed",
+        )
+        or STACK_VIEWS[0]
+    )
+
+
 def show_stack_page(mode):
     """«Stack y evidencia» (D-211, D-266): the stack as an architecture diagram; each tool explains itself and
     opens the page where it works. D-412: its second view is the live flow of the whole system."""
     view_holder = {}
-
-    def choose_view():
-        view_holder["view"] = (
-            st.segmented_control(
-                tr("Vista"),
-                STACK_VIEWS,
-                default=STACK_VIEWS[0],
-                format_func=tr,
-                key=STACK_VIEW_KEY,
-                label_visibility="collapsed",
-            )
-            or STACK_VIEWS[0]
-        )
-
     show_page_bar(
         PAGE_STACK,
         PAGE_STACK,
         "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.",
-        side=choose_view,
+        side=functools.partial(choose_stack_view, view_holder),
         live="weekly_price, dbt_node y etl_run se cuentan en la Base DuckDB al abrir la página; las pruebas de pytest, en "
         "la carpeta tests/.",
     )  # D-398: «Mapa de la app» is the next line of the menu, not a link of the header

@@ -3,6 +3,7 @@ annexes, each document's page with its diagrams, links and print button, the fol
 with its notebooks, and the Autor's links page.
 """
 
+import functools
 import html
 import re
 from urllib.parse import parse_qs, urlencode
@@ -245,6 +246,19 @@ def heading_anchor(text):
     return re.sub(r"[^\w\- ]", "", text.strip().lower()).replace(" ", "-")
 
 
+def build_document_address(pages, match):
+    """The address a link to a project document points to: its page in the panel, or its file on GitHub."""
+    filename, anchor = match.group(1), match.group(2) or ""
+    address = (
+        build_page_address(pages[filename])
+        if filename in pages
+        else project.build_github_url(
+            f"docs/{i18n.DOCUMENT_FOLDERS.get(filename, '')}/{filename}".replace("docs//", "docs/")
+        )
+    )
+    return f"]({address}{anchor})"
+
+
 def link_document_views(text):
     """Each [[vista:…]] of a document as a link to its page in the panel; each link to another document of docs/
     to that document's page, or to GitHub when it has none; each heading with the anchor its index points to."""
@@ -258,18 +272,7 @@ def link_document_views(text):
     )
     pages = {filename: title for title, (filename, _) in PROJECT_DOCUMENTS.items()}
 
-    def document_address(match):
-        filename, anchor = match.group(1), match.group(2) or ""
-        address = (
-            build_page_address(pages[filename])
-            if filename in pages
-            else project.build_github_url(
-                f"docs/{i18n.DOCUMENT_FOLDERS.get(filename, '')}/{filename}".replace("docs//", "docs/")
-            )
-        )
-        return f"]({address}{anchor})"
-
-    text = DOCUMENT_LINK.sub(document_address, text)
+    text = DOCUMENT_LINK.sub(functools.partial(build_document_address, pages), text)
     if not is_author():  # D-500: for anyone else, a link to GitHub reads as plain text, in every document
         text = REPOSITORY_LINK.sub(r"\1", text)
     return HEADING.sub(

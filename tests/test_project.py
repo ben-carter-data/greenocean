@@ -177,3 +177,49 @@ def test_d338_the_comments_of_the_code_stay_in_english():
                     if any(letter in outside for letter in "áéíóúñ¿¡"):
                         offenders.append(f"{path.relative_to(root)}:{token.start[0]}")
     assert offenders == [], offenders
+
+
+SPLIT_PANEL = [
+    "dashboard.py",
+    "constants.py",
+    "data_access.py",
+    "app_style.py",
+    "app_frame.py",
+    "page_weekly.py",
+    "page_analysis.py",
+    "page_engineering.py",
+    "page_quality.py",
+    "page_devops.py",
+    "page_documents.py",
+]
+
+
+@pytest.mark.parametrize("name", SPLIT_PANEL)
+def test_d541_every_file_of_the_split_panel_keeps_the_layout_of_the_agent(name):
+    """R-001 of AKGRO.md, with agent/agent.py as the model: a docstring, the imports, then regions, each closed, the
+    constants and variables before the functions, and no function inside another (a one-line lambda Streamlit asks for
+    as an argument is not a function of the module)."""
+    import ast
+
+    path = Path(__file__).resolve().parent.parent / "bi" / name
+    text = path.read_text(encoding="utf-8")
+    tree = ast.parse(text)
+    assert ast.get_docstring(tree), name
+    lines = text.split("\n")
+    regions = [line for line in lines if line.startswith("# region ")]
+    assert regions and len(regions) == sum(line == "# endregion" for line in lines), name
+    first_region = lines.index(regions[0])
+    imports = [node for node in tree.body if isinstance(node, (ast.Import, ast.ImportFrom))]
+    assert all(node.lineno <= first_region + 1 or name == "dashboard.py" for node in imports), name
+    titles = [line[len("# region ") :] for line in regions]
+    for kind in ("Constants", "Variables"):
+        if kind in titles:
+            assert titles.index(kind) <= 2, (name, titles)  # right after the imports
+    nested = [
+        f"{top.name}>{node.name}"
+        for top in tree.body
+        if isinstance(top, (ast.FunctionDef, ast.AsyncFunctionDef))
+        for node in ast.walk(top)
+        if node is not top and isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ]
+    assert nested == [], (name, nested)

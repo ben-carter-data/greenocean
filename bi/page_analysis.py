@@ -2,6 +2,7 @@
 «Método», with the family cards, the price context and the texts of the analysis.
 """
 
+import functools
 import html
 import re
 
@@ -118,14 +119,16 @@ SYSTEM_DECISION_PAGES = {"sqap": PAGE_QUALITY_PLAN, "git": PAGE_GIT}
 def build_interest_map_html(rows, palette, address_of_view):
     """D-444: the interest map of «Interesados»; D-455: drawn by bi/interest_map.py, which the PRD draws too. A
     stakeholder whose page this view's menu does not lead to says where it opens instead."""
-
-    def link_of(row):
-        view = next((page for page in (find_menu_page(name) for name in row["pages"]) if page), None)
-        if view and can_open(view):
-            return address_of_view(view), ""
-        return None, tr("Se abre en la vista Profesional.")
-
+    link_of = functools.partial(interest_link, address_of_view)
     return interest_map.build_map_html(rows, palette, link_of, tr, criterion=not DRAWN_TAB.get())
+
+
+def interest_link(address_of_view, row):
+    """The address of a stakeholder's page when this view's menu leads to it; otherwise where it opens instead."""
+    view = next((page for page in (find_menu_page(name) for name in row["pages"]) if page), None)
+    if view and can_open(view):
+        return address_of_view(view), ""
+    return None, tr("Se abre en la vista Profesional.")
 
 
 def show_ba_page(mode):
@@ -596,13 +599,20 @@ def read_product_inflation(database_version):
     return rows, summary, family_of
 
 
+def format_family_percent(value):
+    """A family's change for its panel title, or a dash when it has none."""
+    return "—" if value is None or pd.isna(value) else charts.format_signed_percent(value)
+
+
+def format_cpi_month(pair):
+    """(2026, 9) as «septiembre 2026», in the words of the charts."""
+    return f"{charts.CHILE_LOCALE['time']['months'][pair[1] - 1]} {pair[0]}"
+
+
 def build_family_panel_titles(summary, ipc_total=None):
     """{family: "Hortalizas|+60,2 % · más que la inflación"}, biggest gap first; with
     ipc_total, the food IPC closes the list as the basket every family is measured against."""
-
-    def percent(value):
-        return "—" if value is None or pd.isna(value) else charts.format_signed_percent(value)
-
+    percent = format_family_percent
     titles = {
         row.family: f"{home_mockup.short_family(row.family)}|{percent(row.total)} · {row.verdict}"
         for row in summary.itertuples()
@@ -726,9 +736,7 @@ def show_price_context_page(mode):
         st.info(NO_DATA_TEXT)
         return
 
-    def month(pair):
-        return f"{charts.CHILE_LOCALE['time']['months'][pair[1] - 1]} {pair[0]}"
-
+    month = format_cpi_month
     above = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "más que la inflación", "family"]]
     below = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "menos que la inflación", "family"]]
     join = i18n.join_names

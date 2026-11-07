@@ -14,6 +14,7 @@ activity bar, and main(). The rest of the panel lives in the modules it imports 
 Texts shown to the reader are in Spanish (bi/i18n.py gives their English); code and comments are in English.
 """
 
+import functools
 import ast
 import base64
 import hashlib
@@ -796,15 +797,17 @@ def build_window_page(window, order, start, pages):
 
 def build_redirect_page(url_path, view, windows_by_title):
     """A hidden page at an old address that opens its window on the same view (D-065)."""
-
-    def redirect():
-        parameters = {key: value for key, value in st.query_params.to_dict().items()}
-        window = WINDOW_OF_VIEW[view]
-        if view != read_window_views(window)[0]:
-            parameters[VIEW_PARAMETER] = view
-        st.switch_page(windows_by_title[window], query_params=parameters)
-
+    redirect = functools.partial(redirect_to_view, view, windows_by_title)
     return st.Page(redirect, title=view, url_path=url_path, visibility="hidden")
+
+
+def redirect_to_view(view, windows_by_title):
+    """What a hidden page at an old address does: it opens its window on the same view, with the same parameters."""
+    parameters = {key: value for key, value in st.query_params.to_dict().items()}
+    window = WINDOW_OF_VIEW[view]
+    if view != read_window_views(window)[0]:
+        parameters[VIEW_PARAMETER] = view
+    st.switch_page(windows_by_title[window], query_params=parameters)
 
 
 def redirect_moved_tab(current_page, windows_by_title):

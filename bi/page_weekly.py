@@ -3,6 +3,7 @@ price alerts, the line of alerts and search over step 4, the enlarged window and
 """
 
 import base64
+import functools
 import importlib
 import json
 import math
@@ -865,18 +866,20 @@ def keep_direction(rows, direction):
     return rows if state is None else [row for row in rows if home_mockup.change_state(row['variation']) == state]
 
 
+def product_names(row):
+    """The readable order of the family table among equal changes: product, variety, channel."""
+    return (str(row['product']), str(row['variety']), str(row['channel']))
+
+
+def rests_on_little(row):
+    """D-327: a change that rests on one quote, or on one region, is the least solid and goes last."""
+    return bool(row.get('_single_quote')) or row.get('_same_regions') == 1
+
+
 def sort_family_products(rows):
     """The family table, the largest change first; ties stay in a stable, readable order.
     A change resting on a single quote or a single region sorts after the others (D-146, D-327)."""
-
-    def names(row):
-        return (str(row['product']), str(row['variety']), str(row['channel']))
-
-    def thin(row):
-        # D-327: a change that rests on one quote, or on one region, is the least solid and goes last.
-        return bool(row.get('_single_quote')) or row.get('_same_regions') == 1
-
-    return sorted(rows, key=lambda row: (thin(row), -abs(row['variation']), names(row)))
+    return sorted(rows, key=lambda row: (rests_on_little(row), -abs(row['variation']), product_names(row)))
 
 
 @st.dialog("Productos", width="large")
@@ -1068,6 +1071,175 @@ def alert_download_rows(week, family, alert, query, region, family_rows):
 
 
 # region The page
+def build_overview_link(week, chosen_region, chosen_family, step=None, alert=None):
+    """The address of «Semanal» on a region, a family, a step or an alert of the week shown."""
+    address = scope_address()  # D-405: a channel page links to itself
+    parameters = {'_home_region': chosen_region or ALL_VALUES, '_home_week': week}
+    if chosen_family:
+        parameters['familia'] = chosen_family
+    if alert:
+        parameters['alerta'] = alert
+    if step:
+        parameters[HOME_STEP_PARAMETER] = step
+    return address + ('&' if '?' in address else '?') + urlencode(parameters)
+
+
+def build_channel_link(region, family, chosen_channel):
+    """The address of a channel of step 2, or of every channel when none is chosen."""
+    # D-494: step 2 keeps the region and the family; without «_home_week» a channel opens on its own latest week
+    address = channel_address(chosen_channel) if chosen_channel else build_page_address(PAGE_HOME)
+    parameters = {'_home_region': region}
+    if family:
+        parameters['familia'] = family
+    return address + ('&' if '?' in address else '?') + urlencode(parameters)
+
+
+def show_products(alert, choices):
+    """Step 4: the products of the chosen family, or the alerts table when an alert is chosen (D-541: the page's
+    choices arrive in `choices`, the same values this part read inside the page before)."""
+    week, region, family, family_open = choices['week'], choices['region'], choices['family'], choices['family_open']
+    products_family, model, scope, place = (
+        choices['products_family'],
+        choices['model'],
+        choices['scope'],
+        choices['place'],
+    )
+    averages, updated = choices['averages'], choices['updated']
+    with st.container(key='home_products'):
+        query = st.session_state.get('home_products_search', '').strip()  # D-492: typed in the alert line
+        if not family_open:
+            st.markdown(f'<div class="greenocean-mockup">{home_mockup.lock_overlay(4)}</div>', unsafe_allow_html=True)
+        rows = [
+            row
+            for row in model['family_rows']
+            if products_family == ALL_VALUES or row['product_group'] == products_family
+        ]
+        family_rows = list(rows)
+        average = (
+            home_mockup.basket_median(model['family_rows'])
+            if products_family == ALL_VALUES
+            else next((value for name, value, _ in averages if name == products_family), None)
+        )
+        direction = st.session_state.get('home_products_direction', PRODUCT_DIRECTIONS[0])  # D-497: alert line
+        total = len(rows)
+        rows = keep_direction(rows, direction)
+        if query:
+            rows = [row for row in rows if matches_product_search(row, query)]
+        rows = sort_family_products(rows)
+        published = None
+        note = ''
+        if region == ALL_VALUES:
+            # D-327: what every row was calculated from, and the one line that says how to read the prices.
+            calculation, published = read_cached_region_calculation(get_database_version(), week)
+            coverage = model.get('family_coverage', {})
+            stats = (
+                {key: sum(item.get(key, 0) for item in coverage.values()) for key in ('available', 'comparable')}
+                if products_family == ALL_VALUES
+                else coverage.get(products_family) or {}
+            )
+            note = home_mockup.products_note(published, stats.get('available', 0) - stats.get('comparable', 0))
+            for row in family_rows:
+                row['_calc'] = calculation.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
+        # D-497: with the filter in the alert line, «Ampliar» shares the heading's line and the table keeps the height
+        with st.container(key='home_products_head', horizontal=True, vertical_alignment='center'):
+            st.markdown(
+                '<div class="greenocean-mockup">'
+                + (
+                    home_mockup.alert_heading(step=4, region=place)
+                    if alert
+                    else home_mockup.products_heading(
+                        products_family or 'Sin familia', average, scope, len(rows), total, note, step=4
+                    )
+                )
+                + '</div>',
+                unsafe_allow_html=True,
+                width='stretch',
+            )
+            with st.container(key='home_products_tools'):
+                show_price_download(
+                    # D-525: with an alert chosen, the file carries the alerts table, the one in sight
+                    alert_download_rows(week, family, alert, query, place, family_rows) if alert else rows,
+                    model,
+                    scope,
+                    week,
+                    updated,
+                    published,
+                    describe_price_filters(region, current_channel(), products_family, direction, query, alert),
+                    'home',
+                )
+            enlarge = st.button(
+                tr('Ampliar'),
+                icon=':material/open_in_full:',
+                key='home_products_enlarge',
+                help=tr('Ampliar la tabla de productos'),
+            )
+        directions = read_cached_region_directions(get_database_version(), week)
+        for row in rows:
+            row['_regions'] = directions.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
+        table_html = (
+            family_alerts_table(week, family, alert, query, place)
+            if alert
+            else '<div class="greenocean-mockup">'
+            + home_mockup.products_table(
+                rows,
+                model['week_label'],
+                model['previous_label'],
+                query.strip(),
+                None if region == ALL_VALUES else region,
+                published,
+                show_family=products_family == ALL_VALUES,
+                empty_note=NOTHING_MOVED.get(direction, ''),
+            )
+            + '</div>'
+        )
+        st.markdown(table_html, unsafe_allow_html=True)
+        if enlarge:
+            for row in family_rows:
+                row['_regions'] = directions.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
+            st.session_state.update(
+                {
+                    'dialog_products_search': query,
+                    'dialog_products_direction': direction,
+                    'dialog_products_alert': alert,
+                }
+            )
+            show_products_dialog(
+                current_channel(),
+                family or 'Sin familia',
+                average,
+                scope,
+                family_rows,
+                week,
+                model,
+                None if region == ALL_VALUES else region,
+                published,
+                note,
+                updated,
+            )
+
+
+@st.fragment
+def show_products_section(choices):
+    """D-532: the alert line and step 4 rerun on their own: a search, a filter, an alert button or «Ampliar»
+    no longer redraw the map and steps 1 to 3. D-489, D-491: ▲ or ▼ shows only the chosen family's sharp rises
+    or drops in step 4; choosing a family again brings back every product. The alert is read here, because this
+    part reruns without the page. D-541: Streamlit keeps `choices` from the last run of the page for each rerun."""
+    chosen = st.query_params.get('alerta') if choices['family_open'] else None
+    chosen = chosen if chosen in ALERT_KINDS else None
+    show_alert_line(
+        choices['week'],
+        choices['products_family'],
+        choices['family_open'],
+        chosen,
+        choices['place'],
+        rerun_scope='fragment',
+    )
+    if st.session_state.get('home_products_search'):  # D-372: the glow stops here too, between page runs
+        st.session_state[scoped(HOME_SEARCHED)] = True
+        st.markdown(f'<style>{SEARCH_STILL_CSS}</style>', unsafe_allow_html=True)
+    show_products(chosen, choices)
+
+
 def show_market_overview(mode, prefix):
     """Map, movement by family and products of one family on one screen (D-092)."""
     # Streamlit reruns this file without reimporting helpers; keep the live page
@@ -1103,25 +1275,6 @@ def show_market_overview(mode, prefix):
     if not family_open:
         family = None  # no family is chosen for the reader
     products_family = family or (families[0] if families else None)  # what the locked table shows, dimmed
-
-    def overview_link(chosen_region, chosen_family, step=None, alert=None):
-        address = scope_address()  # D-405: a channel page links to itself
-        parameters = {'_home_region': chosen_region or ALL_VALUES, '_home_week': week}
-        if chosen_family:
-            parameters['familia'] = chosen_family
-        if alert:
-            parameters['alerta'] = alert
-        if step:
-            parameters[HOME_STEP_PARAMETER] = step
-        return address + ('&' if '?' in address else '?') + urlencode(parameters)
-
-    def channel_link(chosen_channel):
-        # D-494: step 2 keeps the region and the family; without «_home_week» a channel opens on its own latest week
-        address = channel_address(chosen_channel) if chosen_channel else build_page_address(PAGE_HOME)
-        parameters = {'_home_region': region}
-        if family:
-            parameters['familia'] = family
-        return address + ('&' if '?' in address else '?') + urlencode(parameters)
 
     flash = st.session_state.pop(scoped(HOME_FLASH), None)
     palette = charts.get_palette(mode)
@@ -1181,121 +1334,6 @@ def show_market_overview(mode, prefix):
             st.caption(notice)  # D-356: a quiet line; the week is not filled in, it waits for the source
     # D-452: a channel page behaves exactly as the Dashboard: its three panels stay together (D-446), nothing folds.
 
-    def show_products(alert):
-        with st.container(key='home_products'):
-            query = st.session_state.get('home_products_search', '').strip()  # D-492: typed in the alert line
-            if not family_open:
-                st.markdown(
-                    f'<div class="greenocean-mockup">{home_mockup.lock_overlay(4)}</div>', unsafe_allow_html=True
-                )
-            rows = [
-                row
-                for row in model['family_rows']
-                if products_family == ALL_VALUES or row['product_group'] == products_family
-            ]
-            family_rows = list(rows)
-            average = (
-                home_mockup.basket_median(model['family_rows'])
-                if products_family == ALL_VALUES
-                else next((value for name, value, _ in averages if name == products_family), None)
-            )
-            direction = st.session_state.get('home_products_direction', PRODUCT_DIRECTIONS[0])  # D-497: alert line
-            total = len(rows)
-            rows = keep_direction(rows, direction)
-            if query:
-                rows = [row for row in rows if matches_product_search(row, query)]
-            rows = sort_family_products(rows)
-            published = None
-            note = ''
-            if region == ALL_VALUES:
-                # D-327: what every row was calculated from, and the one line that says how to read the prices.
-                calculation, published = read_cached_region_calculation(get_database_version(), week)
-                coverage = model.get('family_coverage', {})
-                stats = (
-                    {key: sum(item.get(key, 0) for item in coverage.values()) for key in ('available', 'comparable')}
-                    if products_family == ALL_VALUES
-                    else coverage.get(products_family) or {}
-                )
-                note = home_mockup.products_note(published, stats.get('available', 0) - stats.get('comparable', 0))
-                for row in family_rows:
-                    row['_calc'] = calculation.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
-            # D-497: with the filter in the alert line, «Ampliar» shares the heading's line and the table keeps the height
-            with st.container(key='home_products_head', horizontal=True, vertical_alignment='center'):
-                st.markdown(
-                    '<div class="greenocean-mockup">'
-                    + (
-                        home_mockup.alert_heading(step=4, region=place)
-                        if alert
-                        else home_mockup.products_heading(
-                            products_family or 'Sin familia', average, scope, len(rows), total, note, step=4
-                        )
-                    )
-                    + '</div>',
-                    unsafe_allow_html=True,
-                    width='stretch',
-                )
-                with st.container(key='home_products_tools'):
-                    show_price_download(
-                        # D-525: with an alert chosen, the file carries the alerts table, the one in sight
-                        alert_download_rows(week, family, alert, query, place, family_rows) if alert else rows,
-                        model,
-                        scope,
-                        week,
-                        updated,
-                        published,
-                        describe_price_filters(region, current_channel(), products_family, direction, query, alert),
-                        'home',
-                    )
-                enlarge = st.button(
-                    tr('Ampliar'),
-                    icon=':material/open_in_full:',
-                    key='home_products_enlarge',
-                    help=tr('Ampliar la tabla de productos'),
-                )
-            directions = read_cached_region_directions(get_database_version(), week)
-            for row in rows:
-                row['_regions'] = directions.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
-            table_html = (
-                family_alerts_table(week, family, alert, query, place)
-                if alert
-                else '<div class="greenocean-mockup">'
-                + home_mockup.products_table(
-                    rows,
-                    model['week_label'],
-                    model['previous_label'],
-                    query.strip(),
-                    None if region == ALL_VALUES else region,
-                    published,
-                    show_family=products_family == ALL_VALUES,
-                    empty_note=NOTHING_MOVED.get(direction, ''),
-                )
-                + '</div>'
-            )
-            st.markdown(table_html, unsafe_allow_html=True)
-            if enlarge:
-                for row in family_rows:
-                    row['_regions'] = directions.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
-                st.session_state.update(
-                    {
-                        'dialog_products_search': query,
-                        'dialog_products_direction': direction,
-                        'dialog_products_alert': alert,
-                    }
-                )
-                show_products_dialog(
-                    current_channel(),
-                    family or 'Sin familia',
-                    average,
-                    scope,
-                    family_rows,
-                    week,
-                    model,
-                    None if region == ALL_VALUES else region,
-                    published,
-                    note,
-                    updated,
-                )
-
     # D-494: the map gives a little room to the right side: steps 2 (the channels) and 3 (the families) side by side, of
     # one height, and under both the alert line and the products, across the whole width.
     map_column, detail_column = st.container(key='home_overview').columns([0.6, 1.6], gap='small')
@@ -1305,12 +1343,12 @@ def show_market_overview(mode, prefix):
         '<div class="greenocean-mockup">'
         + home_mockup.regional_map(
             regional_rows,
-            lambda chosen: overview_link(chosen, family, 'region'),
+            lambda chosen: build_overview_link(week, chosen, family, 'region'),
             model['week_label'],
             model['previous_label'],
             None if region == ALL_VALUES else region,
             step=1,
-            all_link=overview_link(None, family, 'region'),
+            all_link=build_overview_link(week, None, family, 'region'),
             prompt=not region_open,
         )
         + '</div>',
@@ -1326,9 +1364,9 @@ def show_market_overview(mode, prefix):
                 '<div class="greenocean-mockup">'
                 + home_mockup.channel_list(
                     read_channel_cards(get_database_version(), place),
-                    channel_link,
+                    functools.partial(build_channel_link, region, family),
                     current_channel(),
-                    channel_link(None),
+                    build_channel_link(region, family, None),
                     lambda name: channel_icons.image(name, 20),
                     step=2,
                 )
@@ -1344,7 +1382,9 @@ def show_market_overview(mode, prefix):
                 '<div class="greenocean-mockup">'
                 + home_mockup.family_movement(
                     model['family_rows'],
-                    lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen, 'family'),
+                    lambda chosen: build_overview_link(
+                        week, None if region == ALL_VALUES else region, chosen, 'family'
+                    ),
                     family,
                     scope,
                     home_mockup.movement_note(model),
@@ -1354,27 +1394,28 @@ def show_market_overview(mode, prefix):
                     if basket_value is None
                     # D-506: the counts behind the median, from the same comparable prices
                     else (basket_value, basket_trend, home_mockup.basket_counts(model['family_rows'])),
-                    basket_link=overview_link(None if region == ALL_VALUES else region, ALL_VALUES, 'family'),
+                    basket_link=build_overview_link(
+                        week, None if region == ALL_VALUES else region, ALL_VALUES, 'family'
+                    ),
                 )
                 + '</div>',
                 unsafe_allow_html=True,
             )
 
-        @st.fragment
-        def show_products_section():
-            """D-532: the alert line and step 4 rerun on their own: a search, a filter, an alert button or «Ampliar»
-            no longer redraw the map and steps 1 to 3. D-489, D-491: ▲ or ▼ shows only the chosen family's sharp rises
-            or drops in step 4; choosing a family again brings back every product. The alert is read here, because this
-            part reruns without the page."""
-            chosen = st.query_params.get('alerta') if family_open else None
-            chosen = chosen if chosen in ALERT_KINDS else None
-            show_alert_line(week, products_family, family_open, chosen, place, rerun_scope='fragment')
-            if st.session_state.get('home_products_search'):  # D-372: the glow stops here too, between page runs
-                st.session_state[scoped(HOME_SEARCHED)] = True
-                st.markdown(f'<style>{SEARCH_STILL_CSS}</style>', unsafe_allow_html=True)
-            show_products(chosen)
-
-        show_products_section()
+        show_products_section(
+            {
+                'week': week,
+                'region': region,
+                'family': family,
+                'family_open': family_open,
+                'products_family': products_family,
+                'model': model,
+                'scope': scope,
+                'place': place,
+                'averages': averages,
+                'updated': updated,
+            }
+        )
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown(
         '<div class="greenocean-mockup">'

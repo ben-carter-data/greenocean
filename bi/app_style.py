@@ -1224,12 +1224,14 @@ def build_section_colors_css(dark):
 """
 
 
+def build_icon_mask(name):
+    """D-540: one icon of the activity bar as a CSS mask image."""
+    encoded = base64.b64encode(activity_bar.build_icon_svg(name).encode()).decode()
+    return f'url("data:image/svg+xml;base64,{encoded}")'
+
+
 def build_bar_icons_css(quiet, bright):
     """D-540: the icon of each button of the activity bar, as a CSS mask in one tone, like VS Code's."""
-
-    def mask(name):
-        encoded = base64.b64encode(activity_bar.build_icon_svg(name).encode()).decode()
-        return f'url("data:image/svg+xml;base64,{encoded}")'
 
     buttons = {
         '[class*="st-key-nav_folder_tile_0"] [data-testid="stPageLink"] a': "documents",
@@ -1238,8 +1240,8 @@ def build_bar_icons_css(quiet, bright):
     } | {f".st-key-stack_tile_{key} button": icon for key, _, icon, _ in activity_bar.STACK_AREAS}
     rules = [
         f"{selector}::before {{content:\"\"; flex:none; width:22px !important; height:22px !important;"
-        f" background:{quiet} !important; -webkit-mask:{mask(icon)} center / contain no-repeat;"
-        f" mask:{mask(icon)} center / contain no-repeat; transition:background .15s ease;}}"
+        f" background:{quiet} !important; -webkit-mask:{build_icon_mask(icon)} center / contain no-repeat;"
+        f" mask:{build_icon_mask(icon)} center / contain no-repeat; transition:background .15s ease;}}"
         for selector, icon in buttons.items()
     ]
     lit = ", ".join(f"{selector}:hover::before" for selector in buttons)

@@ -426,6 +426,11 @@ def build_operation_facts(latest_load, published, now):
     )
 
 
+def describe_recent_run(run, words):
+    """One recent load in a line: its Chile time, how it started and how it ended."""
+    return f'{to_chile_time(run["started_at"]):%d-%m %H:%M} · {run["trigger"].lower()} · {words.get(run["state"], "")}'
+
+
 def build_recent_runs_html(runs):
     """The latest runs, one line each with its colour and a link to its logs."""
     colors = {
@@ -440,17 +445,12 @@ def build_recent_runs_html(runs):
         control.RUN_SIMULATED_FAILURE: "falla simulada",
     }
 
-    def describe(run):
-        return (
-            f'{to_chile_time(run["started_at"]):%d-%m %H:%M} · {run["trigger"].lower()} · {words.get(run["state"], "")}'
-        )
-
     # One line each; a narrow column cuts it with «…» and the pointer shows it whole (D-271).
     lines = "".join(
         f'<a class="oc-run" href="{html.escape(run["url"], quote=True)}" target="_blank" rel="noopener noreferrer" '
-        f'title="{html.escape(describe(run), quote=True)}">'
+        f'title="{html.escape(describe_recent_run(run, words), quote=True)}">'
         f'<span class="oc-dot" style="background:{colors.get(run["state"], charts.STATUS_COLORS["unknown"])}"></span>'
-        f'{html.escape(describe(run))} ↗</a>'
+        f'{html.escape(describe_recent_run(run, words))} ↗</a>'
         for run in runs[:OPERATION_RECENT_RUNS]
     )
     return f'<div class="oc-runs"><span class="oc-fact-label">Últimas ejecuciones</span>{lines}</div>'
