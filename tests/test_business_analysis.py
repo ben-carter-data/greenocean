@@ -83,9 +83,21 @@ def test_d377_the_weekly_cycle_figure_names_the_five_stages():
 
 
 def test_d377_the_kpi_definitions_left_insights_for_the_analysis_page():
-    source = Path(dashboard.__file__).read_text(encoding="utf-8")
-    assert '["Preguntas", "KPIs"]' not in source and "OVERVIEW_INSIGHT_VIEW" not in source
-    assert source.count("overview.KPIS") == 1
+    # D-541: the panel's code spans dashboard.py and the files it was split into; only the analysis texts of
+    # bi/page_analysis.py may draw the KPI definitions
+    folder = Path(dashboard.__file__).parent
+    split = [
+        "dashboard.py",
+        "constants.py",
+        "data_access.py",
+        "app_style.py",
+        "app_frame.py",
+        *sorted(f.name for f in folder.glob("page_*.py")),
+    ]
+    panel = "\n".join((folder / name).read_text(encoding="utf-8") for name in split)
+    assert '["Preguntas", "KPIs"]' not in panel and "OVERVIEW_INSIGHT_VIEW" not in panel
+    assert panel.count("overview.KPIS") == 1
+    source = (folder / "page_analysis.py").read_text(encoding="utf-8")
     before = source[: source.index("overview.KPIS")]
     assert before[before.rindex("\ndef ") : before.rindex("\ndef ") + 30].startswith("\ndef show_analysis_block")
 
