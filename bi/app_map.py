@@ -1050,7 +1050,7 @@ LINK_EVIDENCE = {
     ("streamlit", "charts"): ("bi/dashboard.py", "st.altair_chart("),
     ("visitor", "streamlit"): ("bi/dashboard.py", 'st.button(tr("Usuario")'),
     ("professional", "streamlit"): ("bi/sql_explorer.py", "ROW_LIMIT = 5000"),
-    ("author", "devops"): ("bi/dashboard.py", 'SECRET_CONTROL_CODE = "CONTROL_CODE"'),
+    ("author", "devops"): ("bi/constants.py", 'SECRET_CONTROL_CODE = "CONTROL_CODE"'),
     ("author", "github"): (PLATFORM, "GitHub"),
     ("github", "semanal"): (".github/workflows/semanal.yml", 'cron: "7,22,37,52 12-14 * * 2"'),
     ("semanal", "agent"): (".github/workflows/semanal.yml", "run: python agent/agent.py"),
