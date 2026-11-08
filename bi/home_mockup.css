@@ -642,6 +642,9 @@ ul.mock-calc-out li em {font-style:normal;}
    scrolls by itself, never the page; 110 px is its least. Every box from the overview down to the table is a flex column,
    so the height reaches the table without a figure fixed in advance. */
 .st-key-home_overview {height:auto!important;min-height:calc(100vh - 136px);}
+/* D-560: on a low window (a laptop of 700 px) the panels leave room for the coverage line under them and a small margin,
+   so «Semanal» ends inside the window; the products table gives the height and scrolls by itself. */
+@media (max-height:760px) {.st-key-home_overview {min-height:calc(100vh - 188px);}}
 .st-key-home_overview > [data-testid="stLayoutWrapper"]:has(> [data-testid="stHorizontalBlock"]) {flex:1 1 auto;display:flex;flex-direction:column;}
 .st-key-home_overview [data-testid="stHorizontalBlock"] {flex:1 1 auto;align-items:stretch!important;}
 .st-key-home_overview [data-testid="stColumn"] {display:flex!important;flex-direction:column;}

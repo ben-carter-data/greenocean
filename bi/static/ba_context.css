@@ -10,3 +10,12 @@
 .ba-insight { min-height:0; padding:5px 14px; margin:0 0 20px; cursor:help; }
 [data-testid="stMain"]:has(.ba-insight) .ba-table { max-height:max(calc(100vh - var(--go-table-reserved-insight-room)px),
   var(--go-table-floor)px); }
+/* D-560: the green box of «Histórico» also takes its room from the charts, so the page ends inside the window with a
+   small margin under the table. */
+[data-testid="stMain"]:has(.ba-insight) [class*="st-key-ba_tile_"] {
+  min-height:max(calc(100vh - var(--go-tiles-reserved-insight)px), var(--go-tiles-floor)px); }
+@media (max-width:1399px) { [data-testid="stMain"]:has(.ba-insight) [class*="st-key-ba_tile_"] {
+  min-height:max(calc(100vh - var(--go-tiles-reserved-insight)px), var(--go-narrow-floor)px); } }
+/* D-560: on a low window the charts of «Histórico» accept a lower floor, so the page still ends inside it. */
+@media (max-height:760px) { [data-testid="stMain"]:has(.ba-insight) [class*="st-key-ba_tile_"] {
+  min-height:max(calc(100vh - var(--go-tiles-reserved-insight)px), var(--go-low-floor)px); } }

@@ -33,6 +33,8 @@ ZOOM_HEIGHT = 300  # the enlarged chart, in the window its green magnifier opens
 # D-458: a tile takes the window's height less what is above and below it (the header, the green panel, the tabs, the
 # cards and the table), never less than the floor.
 TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 603, 230, 210
+# D-560: the floor of the charts of «Histórico» on a window of 760 px or lower, so the page ends inside it.
+LOW_FLOOR = 160
 # D-461: on a low window the charts keep their floor and the table scrolls inside its own box, under the charts.
 TABLE_RESERVED, TABLE_FLOOR = 588, 140
 # D-556: two typical sizes of change read as «parecido» when the larger is at most this many times the smaller, measured
@@ -41,6 +43,8 @@ SIMILAR_SIZE = 1.25
 # D-556: the share of the chart's height left past the longest bar on each side, for its count.
 LABEL_ROOM = 0.18
 INSIGHT_ROOM = 43  # D-518: the height of the green box of «Histórico», taken from the table so the page still fits
+# D-560: what the green box takes from the charts too: its 36 px, the gap under it and a margin of 8 px at the foot.
+INSIGHT_TILE_ROOM = 52
 
 # One chart of a tab: its title, the months it shows, what it measures, what follows from it, how to draw it at a
 # width and a height, and what each colour and line of it means (D-554).
@@ -1230,6 +1234,10 @@ def build_context_css(palette: dict[str, str], green: str) -> str:
             'var(--go-green)': green,
             'var(--go-text)': palette["text"],
             'var(--go-strong_text)': palette["strong_text"],
+            'var(--go-tiles-reserved-insight)': TILES_RESERVED + INSIGHT_TILE_ROOM,
+            'var(--go-tiles-floor)': TILES_FLOOR,
+            'var(--go-narrow-floor)': NARROW_FLOOR,
+            'var(--go-low-floor)': LOW_FLOOR,
             'var(--go-table-reserved-insight-room)': TABLE_RESERVED + INSIGHT_ROOM,
             'var(--go-table-floor)': TABLE_FLOOR,
         },
