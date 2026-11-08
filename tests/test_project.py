@@ -1,5 +1,6 @@
 """Tests for the content of the project page (T-43): documents, SQL, files, examples."""
 
+import ast
 import re
 import sys
 from pathlib import Path
@@ -10,6 +11,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import project, queries  # noqa: E402
+from tests import code_shape  # noqa: E402
 
 # region Constants
 # Units, SQL types and the date pattern read as words, not acronyms to define.
@@ -182,8 +184,6 @@ def test_d541_every_file_of_the_split_panel_keeps_the_layout_of_the_agent(name):
     """R-001 of AKGRO.md, with agent/agent.py as the model: a docstring, the imports, then regions, each closed, and the
     constants and variables first. D-546: dashboard.py too keeps its imports above the regions, and that no function
     sits inside another is checked for every file of the project below."""
-    import ast
-
     path = Path(__file__).resolve().parent.parent / "bi" / name
     text = path.read_text(encoding="utf-8")
     tree = ast.parse(text)
@@ -205,8 +205,6 @@ def test_d542_every_python_file_of_the_project_has_its_regions_closed_and_not_ne
     the docstring, the imports and the sys.path.insert that lets a script reach the project stay above them), no region
     joins «Constants and variables», and no assignment of the module comes after its first function. A package's
     __init__.py only marks the folder."""
-    import ast
-
     root = Path(__file__).resolve().parent.parent
     wrong = []
     for folder in ("bi", "etl", "agent", "scripts", "tests"):  # D-544: the tests too
@@ -256,8 +254,6 @@ def test_d543_no_function_of_the_project_is_written_inside_another():
     """R-002 of AKGRO.md: functions are separate. What a function needs from another travels as a parameter, or with
     functools.partial where a callable is handed over; a one-line lambda Streamlit asks for is not a function of the
     module. D-546: the tests too, and a method of a class as much as a function."""
-    import ast
-
     root = Path(__file__).resolve().parent.parent
     nested = []
     for folder in ("bi", "etl", "agent", "scripts", "tests"):
@@ -278,22 +274,14 @@ def test_d543_no_function_of_the_project_is_written_inside_another():
 def test_d543_javascript_and_html_live_in_their_own_files():
     """R-003 of AKGRO.md: no script hides in a Python string, long or short (D-545); it lives in bi/static/ and the
     module reads it. A text with two marks of JavaScript (a listener, the page, an arrow function) is a script."""
-    import ast
-
     root = Path(__file__).resolve().parent.parent
     marks = re.compile(r"(addEventListener|document\.|window\.|=>|function\s*\(|querySelector|location\.)")
     scripts = []
     for folder in ("bi", "etl", "agent", "scripts"):
         for path in sorted((root / folder).glob("*.py")):
-            source = path.read_text(encoding="utf-8")
-            tree = ast.parse(source)
-            parts = {id(part) for node in ast.walk(tree) if isinstance(node, ast.JoinedStr) for part in node.values}
-            for node in ast.walk(tree):
-                if isinstance(node, (ast.JoinedStr, ast.Constant)) and id(node) not in parts:
-                    text = ast.get_source_segment(source, node) or ""
-                    if isinstance(node, ast.JoinedStr) or isinstance(node.value, str):
-                        if len(marks.findall(text)) >= 2 or text.count("\n") > 100:
-                            scripts.append(f"{folder}/{path.name}:{node.lineno}")
+            for line, text, _ in code_shape.string_literals(path.read_text(encoding="utf-8")):
+                if len(marks.findall(text)) >= 2 or text.count("\n") > 100:
+                    scripts.append(f"{folder}/{path.name}:{line}")
     assert scripts == [], scripts
     assert {path.name for path in (root / "bi" / "static").iterdir()} >= {"app_map.js", "zoom.js", "sql_editor.html"}
 
@@ -301,8 +289,6 @@ def test_d543_javascript_and_html_live_in_their_own_files():
 def test_d544_no_stylesheet_is_written_inside_python():
     """R-003 of AKGRO.md: CSS lives in bi/static/; a function only fills the marks of its file with the theme's values
     (bi/static_files.py). A string of more than 300 characters that reads like CSS is a stylesheet in the wrong place."""
-    import ast
-
     root = Path(__file__).resolve().parent.parent
     css = re.compile(r"[{]{1,2}\s*[a-z-]+\s*:")
     # An SVG drawing built from computed coordinates is code that draws, not a fixed text of another language.
@@ -310,16 +296,11 @@ def test_d544_no_stylesheet_is_written_inside_python():
     inside = []
     for folder in ("bi", "etl", "agent", "scripts"):
         for path in sorted((root / folder).glob("*.py")):
-            source = path.read_text(encoding="utf-8")
-            tree = ast.parse(source)
-            parts = {id(part) for node in ast.walk(tree) if isinstance(node, ast.JoinedStr) for part in node.values}
-            for node in ast.walk(tree):
-                if isinstance(node, (ast.JoinedStr, ast.Constant)) and id(node) not in parts:
-                    text = ast.get_source_segment(source, node) or ""
-                    if drawing.search(text):
-                        continue
-                    if len(text) > 300 and css.search(text) and re.search(r"(px|!important|color|display)", text):
-                        inside.append(f"{folder}/{path.name}:{node.lineno}")
+            for line, text, _ in code_shape.string_literals(path.read_text(encoding="utf-8")):
+                if drawing.search(text):
+                    continue
+                if len(text) > 300 and css.search(text) and re.search(r"(px|!important|color|display)", text):
+                    inside.append(f"{folder}/{path.name}:{line}")
     assert inside == [], inside
 
 

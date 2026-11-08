@@ -152,6 +152,29 @@ def folder_trees(folder):
     return [file_tree(path) for path in sorted(folder.glob("*.py"))]
 
 
+def string_literals(source):
+    """Every string a module writes, whole (an f-string once, not each of its parts), with its source text: (line,
+    text, node). D-557: the text is cut from lines split once per file; ast.get_source_segment splits the whole file
+    again for each string, and on Python 3.11 in the CI that took four and a half minutes per test."""
+    tree = ast.parse(source)
+    lines = source.encode("utf-8").splitlines(keepends=True)
+    parts = {id(part) for node in ast.walk(tree) if isinstance(node, ast.JoinedStr) for part in node.values}
+    found = []
+    for node in ast.walk(tree):
+        is_text = isinstance(node, ast.JoinedStr) or (isinstance(node, ast.Constant) and isinstance(node.value, str))
+        if not is_text or id(node) in parts:
+            continue
+        first, last = node.lineno - 1, node.end_lineno - 1
+        if first == last:
+            text = lines[first][node.col_offset : node.end_col_offset]
+        else:
+            text = (
+                lines[first][node.col_offset :] + b"".join(lines[first + 1 : last]) + lines[last][: node.end_col_offset]
+            )
+        found.append((node.lineno, text.decode("utf-8"), node))
+    return found
+
+
 # endregion
 
 

@@ -2658,6 +2658,28 @@
           "estacion": 14,
           "estado": "resuelta",
           "referencia": "D-557"
+        },
+        {
+          "fecha": "2026-11-08",
+          "ocurrencia": [
+            "Tras el arreglo, el grupo 1 de Python 3.11 seguía en 11 minutos.",
+            "After the fix, group 1 on Python 3.11 still took 11 minutes."
+          ],
+          "diagnostico": [
+            "Dos pruebas partían el archivo entero en líneas por cada cadena de texto: 4,5 minutos cada una.",
+            "Two tests split the whole file into lines for each string: 4.5 minutes each."
+          ],
+          "solucion": [
+            "Cada archivo se parte una sola vez; las mismas cadenas, de 36 segundos a menos de 1.",
+            "Each file is split once; the same strings, from 36 seconds to under 1."
+          ],
+          "comentario": [
+            "Los avisos de las pruebas más lentas nombraron a las culpables sin abrir el registro.",
+            "The slowest-test notices named the culprits without opening the log."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-558"
         }
       ]
     }
