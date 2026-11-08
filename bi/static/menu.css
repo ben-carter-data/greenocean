@@ -27,6 +27,10 @@
         bottom:0 !important; left:0 !important; width:var(--go-activity-bar)px !important; max-width:none; margin:0 !important;
         z-index:8;}
     [data-testid="stSidebarNav"] {display:none;}
+    /* D-561: the view button stays in sight right under the logo when the menu scrolls (the Autor's menu, on a low
+       window), on the menu's own surface so the rows pass under it. */
+    [data-testid="stSidebarUserContent"] [data-testid="stLayoutWrapper"]:has(> .st-key-profile_indicator_top) {
+        position:sticky !important; top:72px; z-index:5; background:var(--go-sidebar);}
     /* insert: section-colors-dark */
     /* GitHub's mark on a light pill in the footer (D-124): a near-black logo on a
        near-white background reads on every sidebar, where the blue mark almost vanished. */
