@@ -146,33 +146,61 @@ def measure_mypy(tools, python=None):
     }
 
 
-def measure_coverage(python):
+def run_suite_with_coverage(python, report):
+    """The whole suite here, with coverage written to `report`: (exit code, passed, skipped)."""
+    command = [
+        python,
+        "-m",
+        "pytest",
+        "-q",
+        "-m",
+        "not rendimiento",  # D-341: speed budgets run locally, never on a shared runner
+        "-p",
+        "no:cacheprovider",
+        *[f"--cov={name}" for name in CODE],
+        f"--cov-report=json:{report}",
+    ]
+    code, out = run(command)
+    match = re.search(r"(\d+) passed(?:, (\d+) skipped)?", out)
+    return code, int(match.group(1)) if match else None, int(match.group(2) or 0) if match else None
+
+
+def combine_group_coverage(python, folder, report):
+    """D-555: the coverage the CI groups of pruebas.yml already measured, combined into `report`, so the suite does not
+    run a third time: (exit code, passed, skipped) from their .coverage.N and junit-N.xml files, or None without them."""
+    parts = sorted(str(part) for part in Path(folder).rglob(".coverage.*"))
+    if not parts:
+        return None
+    data = Path(report).with_suffix(".data")
+    run([python, "-m", "coverage", "combine", "--keep", f"--data-file={data}", *parts])
+    code, _ = run([python, "-m", "coverage", "json", f"--data-file={data}", "-o", str(report), "-q"])
+    counts = {"tests": 0, "skipped": 0, "failures": 0, "errors": 0}
+    for junit in sorted(Path(folder).rglob("junit-*.xml")):
+        suite = re.search(r"<testsuite\b[^>]*>", junit.read_text(encoding="utf-8"))
+        for name in counts:
+            found = re.search(rf'\b{name}="(\d+)"', suite.group(0)) if suite else None
+            counts[name] += int(found.group(1)) if found else 0
+    broken = counts["failures"] + counts["errors"]
+    return int(code or broken > 0), counts["tests"] - counts["skipped"] - broken, counts["skipped"]
+
+
+def measure_coverage(python, groups=None):
     with tempfile.TemporaryDirectory() as folder:
         report = Path(folder) / "coverage.json"
-        command = [
-            python,
-            "-m",
-            "pytest",
-            "-q",
-            "-m",
-            "not rendimiento",  # D-341: speed budgets run locally, never on a shared runner
-            "-p",
-            "no:cacheprovider",
-            *[f"--cov={name}" for name in CODE],
-            f"--cov-report=json:{report}",
-        ]
-        code, out = run(command)
+        combined = combine_group_coverage(python, groups, report) if groups else None
+        code, passed, skipped = combined or run_suite_with_coverage(python, report)
         if not report.exists():
             return {"estado": NOT_VERIFIED, "motivo": "pytest-cov no está instalado en el entorno del proyecto"}
         data = json.loads(report.read_text())
     files = data["files"]
     covered = sum(files[name]["summary"]["covered_lines"] for name in CRITICAL_MODULES if name in files)
     statements = sum(files[name]["summary"]["num_statements"] for name in CRITICAL_MODULES if name in files)
-    match = re.search(r"(\d+) passed(?:, (\d+) skipped)?", out)
     return {
-        "orden": 'pytest -q -m "not rendimiento" ' + " ".join(f"--cov={name}" for name in CODE),
-        "pruebas_ok": int(match.group(1)) if match else None,
-        "pruebas_omitidas": int(match.group(2) or 0) if match else None,
+        "orden": 'pytest -q -m "not rendimiento" '
+        + " ".join(f"--cov={name}" for name in CODE)
+        + (" (los grupos de pruebas.yml, combinados)" if combined else ""),
+        "pruebas_ok": passed,
+        "pruebas_omitidas": skipped,
         "salida": code,
         "total": round(data["totals"]["percent_covered"], 1),
         "logica_critica": round(covered / statements * 100, 1) if statements else None,
@@ -430,6 +458,10 @@ def main():
     )
     parser.add_argument("--python", default=str(ROOT / ".venv" / "bin" / "python"), help="the project's own Python")
     parser.add_argument("--output", default=str(OUTPUT), help="where to write the JSON")
+    parser.add_argument(
+        "--coverage",
+        help="folder with the .coverage.N and junit-N.xml of the CI groups (D-555); without it, the suite runs",
+    )
     arguments = parser.parse_args()
     _, commit = run(["git", "rev-parse", "--short", "HEAD"])
     report = {
@@ -439,7 +471,7 @@ def main():
         # D-330: only the quality of the published data and of the code that treats it.
         "ruff": measure_ruff(arguments.tools),
         "mypy": measure_mypy(arguments.tools, arguments.python),
-        "cobertura": measure_coverage(arguments.python),
+        "cobertura": measure_coverage(arguments.python, arguments.coverage),
         "bandit": measure_bandit(arguments.tools),
         "pip_audit": measure_audit(arguments.tools),
         "secretos": measure_secrets(arguments.tools),

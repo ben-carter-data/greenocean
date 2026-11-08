@@ -2556,6 +2556,58 @@
           "referencia": "D-549"
         }
       ]
+    },
+    {
+      "id": "F-46",
+      "categoria": "código",
+      "falla": [
+        "La medición de calidad del CI quedó en rojo y después se cortó por tiempo",
+        "The CI quality measurement went red and then was cut off for time"
+      ],
+      "deteccion": [
+        "El autor vio en GitHub Actions una ejecución de calidad cancelada",
+        "The author saw a cancelled quality run in GitHub Actions"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "El detector de secretos marcaba una frase nueva del menú, y la suite completa corría tres veces en cada push",
+        "The secret detector flagged a new menu sentence, and the whole suite ran three times on every push"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "El código publicado no cambió; solo la insignia de calidad quedó en rojo",
+        "The published code did not change; only the quality badge stayed red"
+      ],
+      "correctiva": [
+        "La frase queda revisada, las pruebas corren en tres grupos a la vez y la calidad reutiliza su cobertura",
+        "The sentence is marked as reviewed, the tests run in three groups at once and the quality run reuses their coverage"
+      ],
+      "estacion": 14,
+      "caso_real": "D-555",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-08",
+          "ocurrencia": [
+            "calidad.yml terminó en rojo en dos subidas y se canceló a los 40 minutos en la tercera.",
+            "calidad.yml ended red on two pushes and was cancelled at 40 minutes on the third."
+          ],
+          "diagnostico": [
+            "Un falso positivo del detector de secretos sin revisar, y la suite repetida tres veces por push.",
+            "An unreviewed secret-detector false positive, and the suite repeated three times per push."
+          ],
+          "solucion": [
+            "El falso positivo entra a la lista revisada, y la suite corre una vez, en tres grupos en paralelo.",
+            "The false positive joins the reviewed list, and the suite runs once, in three parallel groups."
+          ],
+          "comentario": [
+            "Una explicación que nombra una herramienta de secretos puede parecer un secreto.",
+            "A note that names a secrets tool can look like a secret."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-555"
+        }
+      ]
     }
   ]
 }

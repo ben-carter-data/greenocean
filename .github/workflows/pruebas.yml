@@ -24,15 +24,33 @@ jobs:
       matrix:
         # The supported versions (docs/operacion/MANUAL.md): dbt Core runs on 3.11 and 3.12.
         python-version: ["3.11", "3.12"]
+        # D-555: the suite in three groups that run at the same time (scripts/grupo_pruebas.py), about a third each.
+        group: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -r requirements-pipeline.txt pytest-cov
-      # The dbt project must compile on every change (models, tests, sources).
-      - run: dbt parse --project-dir dbt --profiles-dir dbt
+      # The dbt project must compile on every change (models, tests, sources): once per version.
+      - if: matrix.group == 1
+        run: dbt parse --project-dir dbt --profiles-dir dbt
       # The served database is not in git (D-270): the tests read the one the last load published.
       - run: python bi/served_database.py
-      # Coverage under 90 % fails the job (pyproject.toml).
-      - run: pytest -q -m "not rendimiento" -o faulthandler_timeout=90 --cov --cov-report=term
+      # D-555: on 3.11 each group keeps its coverage and its counts; calidad.yml combines them and checks the 90 %.
+      - run: |
+          files=$(python scripts/grupo_pruebas.py ${{ matrix.group }} 3)
+          if [ "${{ matrix.python-version }}" = "3.11" ]; then
+            COVERAGE_FILE=.coverage.${{ matrix.group }} pytest -q -m "not rendimiento" -o faulthandler_timeout=90 \
+              --cov --cov-report= --cov-fail-under=0 --junitxml=junit-${{ matrix.group }}.xml $files
+          else
+            pytest -q -m "not rendimiento" -o faulthandler_timeout=90 $files
+          fi
+      - if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-${{ matrix.group }}
+          path: |
+            .coverage.${{ matrix.group }}
+            junit-${{ matrix.group }}.xml
+          include-hidden-files: true

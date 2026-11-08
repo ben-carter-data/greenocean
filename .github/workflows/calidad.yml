@@ -5,7 +5,8 @@
 # into the next weekly report (docs/calidad/informes/semanales/) and propose it to the author in a pull request
 # «Actualizar medición de calidad», with the comparison against the previous report; a push only measures. It never
 # changes the code. D-436: the request is merged by itself when every code indicator is within its acceptable; otherwise
-# the author merges it. The page «Método y calidad» shows a report only once it is merged.
+# the author merges it. The page «Método y calidad» shows a report only once it is merged. D-555: the suite runs once per
+# push, in the groups of pruebas.yml; this run waits for them and reuses their coverage instead of running it again.
 # Opening the request needs Settings → Actions → General → «Allow GitHub Actions to create and approve pull requests».
 name: calidad
 on:
@@ -18,6 +19,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: read
 jobs:
   medir:
     runs-on: ubuntu-latest
@@ -39,8 +41,29 @@ jobs:
           python -m venv /tmp/tools
           # D-330: only the tools of the two qualities (data and code); no browsers.
           /tmp/tools/bin/pip install ruff==0.17.2 mypy==2.4.0 bandit==1.9.4 pip-audit==2.10.1 detect-secrets==1.5.0
+      - name: Cobertura de pruebas.yml
+        # D-555: on a push, the run of pruebas.yml of the same commit; after a weekly load, the last green one of main. Only
+        # a run in green lends its coverage; otherwise «Medir» runs the suite itself.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            for attempt in $(seq 1 20); do
+              run=$(gh run list --workflow pruebas.yml --commit "$GITHUB_SHA" --json databaseId --jq '.[0].databaseId')
+              [ -n "$run" ] && break
+              sleep 15
+            done
+            gh run watch "$run" --interval 30 > /dev/null || true
+          else
+            run=$(gh run list --workflow pruebas.yml --branch main --status success --limit 1 --json databaseId \
+              --jq '.[0].databaseId')
+          fi
+          if [ "$(gh run view "$run" --json conclusion --jq .conclusion)" = "success" ]; then
+            gh run download "$run" --pattern 'cobertura-*' --dir cobertura
+          fi
       - name: Medir
-        run: .venv/bin/python scripts/medir_calidad.py --tools /tmp/tools/bin --output medicion.json
+        run: .venv/bin/python scripts/medir_calidad.py --tools /tmp/tools/bin --output medicion.json --coverage cobertura
       - uses: actions/upload-artifact@v4
         with:
           name: medicion-${{ github.sha }}

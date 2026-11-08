@@ -2174,6 +2174,7 @@ PAGES = {
     "Publicar": "Publish",
     "Informe": "Report",
     "Medir": "Measure",
+    "Cobertura de pruebas.yml": "Coverage from pruebas.yml",
     "Resultado": "Result",
     "Indicadores": "Indicators",
     "dos tokens": "two tokens",
