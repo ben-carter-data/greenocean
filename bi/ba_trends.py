@@ -38,6 +38,8 @@ TABLE_RESERVED, TABLE_FLOOR = 588, 140
 # D-556: two typical sizes of change read as «parecido» when the larger is at most this many times the smaller, measured
 # as a ratio of prices (a −16,7 % drop is undone by a +20 % rise).
 SIMILAR_SIZE = 1.25
+# D-556: the share of the chart's height left past the longest bar on each side, for its count.
+LABEL_ROOM = 0.18
 INSIGHT_ROOM = 43  # D-518: the height of the green box of «Histórico», taken from the table so the page still fits
 
 # One chart of a tab: its title, the months it shows, what it measures, what follows from it, how to draw it at a
@@ -855,26 +857,40 @@ def extremes_chart(
             .rename(columns={"size": "count"})
         )
         frame["height"] = frame["count"].where(frame["kind"] == rises, -frame["count"])
-    chart = (
-        alt.Chart(frame)
-        .mark_bar()
-        .encode(
-            x=alt.X("mes:N", title=None, scale=alt.Scale(domain=order), axis=month_axis(height)),
-            y=alt.Y(
-                "height:Q",
-                title=None,
-                axis=alt.Axis(labelFontSize=label_size(height), tickCount=4, labelExpr="abs(datum.value)"),
-            ),
-            color=alt.Color(
-                "kind:N", scale=alt.Scale(domain=[rises, falls], range=[palette["rise"], palette["fall"]]), legend=None
-            ),
-            tooltip=[
-                alt.Tooltip("mes:N", title=say("Mes", "Month")),
-                alt.Tooltip("kind:N", title=say("Tipo", "Kind")),
-                alt.Tooltip("count:Q", title=say("Cantidad", "Count")),
-            ],
-        )
+    # D-556: room past the longest bar on each side, so its count never touches the months or the top
+    top = float(frame["height"].max()) if not frame.empty else 1.0
+    bottom = float(frame["height"].min()) if not frame.empty else -1.0
+    room = LABEL_ROOM * (max(top, 0) - min(bottom, 0) or 1)
+    base = alt.Chart(frame).encode(
+        x=alt.X("mes:N", title=None, scale=alt.Scale(domain=order), axis=month_axis(height)),
+        y=alt.Y(
+            "height:Q",
+            title=None,
+            scale=alt.Scale(domain=[min(bottom, 0) - room, max(top, 0) + room], nice=False),
+            axis=alt.Axis(labelFontSize=label_size(height), tickCount=4, labelExpr="abs(datum.value)"),
+        ),
+        color=alt.Color(
+            "kind:N", scale=alt.Scale(domain=[rises, falls], range=[palette["rise"], palette["fall"]]), legend=None
+        ),
     )
+    bars = base.mark_bar().encode(
+        tooltip=[
+            alt.Tooltip("mes:N", title=say("Mes", "Month")),
+            alt.Tooltip("kind:N", title=say("Tipo", "Kind")),
+            alt.Tooltip("count:Q", title=say("Cantidad", "Count")),
+        ]
+    )
+    # D-556: each bar says its count at its end, above the rises and under the drops, in the colour of its bar.
+    size = label_size(height)
+    above = (
+        base.transform_filter("datum.height > 0")
+        .mark_text(baseline="bottom", dy=-3, fontSize=size)
+        .encode(text="count:Q")
+    )
+    below = (
+        base.transform_filter("datum.height < 0").mark_text(baseline="top", dy=3, fontSize=size).encode(text="count:Q")
+    )
+    chart = alt.layer(bars, above, below)
     return sized(chart, width, height, mode)
 
 

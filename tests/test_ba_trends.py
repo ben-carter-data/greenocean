@@ -221,11 +221,11 @@ def test_d456_every_time_chart_starts_at_the_start_of_its_period():
     assert ba_trends.months_between((2025, 11), (2026, 2)) == [(2025, 11), (2025, 12), (2026, 1), (2026, 2)]
     frame = pd.DataFrame({"week_start": ["2022-04-04"], "variation": [0.2]})
     spec = ba_trends.extremes_chart(frame, (2022, 1), (2022, 12), "Vantablack").to_dict()
-    assert spec["encoding"]["x"]["scale"]["domain"] == [f"{month} 2022" for month in weeks.MONTHS]
+    assert spec["layer"][0]["encoding"]["x"]["scale"]["domain"] == [f"{month} 2022" for month in weeks.MONTHS]
     last_year = ba_trends.extremes_chart(frame.iloc[:0], (2025, 9), (2026, 9), "Vantablack").to_dict()
     assert (
-        last_year["encoding"]["x"]["scale"]["domain"][0] == "oct 2025"
-        and len(last_year["encoding"]["x"]["scale"]["domain"]) == 12
+        last_year["layer"][0]["encoding"]["x"]["scale"]["domain"][0] == "oct 2025"
+        and len(last_year["layer"][0]["encoding"]["x"]["scale"]["domain"]) == 12
     )
 
 
@@ -254,10 +254,11 @@ def test_d457_every_month_of_a_period_has_its_point_and_its_label():
     assert whole["encoding"]["x"]["axis"]["format"] == "%Y" and "point" not in whole["mark"]  # «Histórico»: years
     frame = pd.DataFrame({"week_start": ["2025-10-06", "2025-11-03"], "variation": [0.2, -0.15]})
     bars = ba_trends.extremes_chart(frame, (2025, 9), (2026, 9), "Vantablack").to_dict()
-    axis = bars["encoding"]["x"]["axis"]  # every month of the sharp changes, too, «oct 2025» split in two
+    axis = bars["layer"][0]["encoding"]["x"]["axis"]  # every month of the sharp changes, too, «oct 2025» split in two
     assert axis["labelOverlap"] == "parity" and "split(datum.value, ' ')[0] == 'ene'" in axis["labelExpr"]
     heights = {row["kind"]: row["height"] for row in bars["datasets"][bars["data"]["name"]]}
     assert heights == {"Alzas fuertes": 1, "Bajas fuertes": -1}  # D-556: the drops hang below the line
+    assert [layer["mark"]["type"] for layer in bars["layer"]] == ["bar", "text", "text"]  # each bar says its count
 
 
 # endregion
