@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Project closure record |
-| Version | 1.1 |
-| Date | 2026-11-07 |
+| Version | 1.2 |
+| Date | 2026-11-08 |
 | Status | Current |
 | Owner | The author |
 | Purpose | To leave in writing how the project started, what it set out to show, what was found in the data, what was learned and whom it serves, now that it moves into maintenance. |
@@ -95,7 +95,7 @@ Strong:
 
 Weaker:
 
-- The panel lives in a single file of almost 10,000 lines: it works, but it is hard to maintain for someone new.
+- The panel was a single file of almost 10,000 lines; after the closure it was split into files by responsibility (D-541), but it is still large and some functions are long.
 - The full suite takes about 15 minutes in the checks of each push; locally, five.
 - Three readings of the data are still inferences without confirmation from ODEPA, marked as such.
 - A single deployment, on Streamlit Community Cloud, without a container that reproduces it elsewhere.
@@ -112,7 +112,7 @@ Weaker:
 ## 10. What remains
 
 - To publish the project in a data engineering community and receive the review of more experienced professionals; this record is the first piece for that conversation.
-- To pay the debts of section 8 if the project keeps growing: splitting the panel into modules, shortening the suite and packaging the deployment.
+- To pay the debts of section 8 if the project keeps growing: shortening the longest functions of the panel, shortening the suite and packaging the deployment.
 - To keep going deeper where the author felt least firm: DevOps beyond GitHub Actions, statistics for the alerts and the design of data tests at scale.
 
 ## 11. Glossary
@@ -125,3 +125,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 |---|---|---|
 | 1.0 | 2026-11-04 | First version, on closing the project as a portfolio piece (D-529) |
 | 1.1 | 2026-11-07 | No pending query to ODEPA: the three inferences stay as such (D-534) |
+| 1.2 | 2026-11-08 | The panel is now split by responsibility: its weaker points and what remains are updated (D-548) |

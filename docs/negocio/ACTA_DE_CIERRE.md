@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Acta de cierre del proyecto |
-| Versión | 1.1 |
-| Fecha | 07-11-2026 |
+| Versión | 1.2 |
+| Fecha | 08-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Dejar escrito cómo empezó el proyecto, qué se quiso demostrar, qué se encontró en los datos, qué se aprendió y a quién sirve, ahora que queda en mantenimiento. |
@@ -95,7 +95,7 @@ Fuertes:
 
 Menos fuertes:
 
-- El panel vive en un solo archivo de casi 10.000 líneas: funciona, pero cuesta mantenerlo para alguien nuevo.
+- El panel era un solo archivo de casi 10.000 líneas; después del cierre se dividió en archivos por responsabilidad (D-541), pero sigue siendo grande y algunas funciones son largas.
 - La suite completa tarda unos 15 minutos en el CI; en local, cinco.
 - Tres lecturas de los datos siguen siendo inferencias sin confirmación de ODEPA, marcadas como tales.
 - Un solo despliegue, en Streamlit Community Cloud, sin un contenedor que lo reproduzca en otra parte.
@@ -112,7 +112,7 @@ Menos fuertes:
 ## 10. Qué queda
 
 - Publicar el proyecto en una comunidad de ingeniería de datos y recibir la revisión de profesionales con más experiencia; esta acta es la primera pieza para esa conversación.
-- Pagar las deudas de la sección 8 si el proyecto sigue creciendo: dividir el panel en módulos, acortar la suite y empaquetar el despliegue.
+- Pagar las deudas de la sección 8 si el proyecto sigue creciendo: acortar las funciones más largas del panel, acortar la suite y empaquetar el despliegue.
 - Seguir profundizando donde el autor se sintió menos firme: DevOps más allá de GitHub Actions, estadística para las alertas y diseño de pruebas de datos a gran escala.
 
 ## 11. Glosario
@@ -125,3 +125,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 |---|---|---|
 | 1.0 | 04-11-2026 | Primera versión, al cerrar el proyecto como portafolio (D-529) |
 | 1.1 | 07-11-2026 | Sin consulta pendiente a ODEPA: las tres inferencias quedan como tales (D-534) |
+| 1.2 | 08-11-2026 | El panel ya está dividido por responsabilidad: se actualizan sus puntos menos fuertes y lo que queda (D-548) |
