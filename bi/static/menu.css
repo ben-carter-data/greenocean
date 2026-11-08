@@ -192,7 +192,19 @@
     [class*="st-key-stack_tile_"] button [data-testid="stIconMaterial"],
     [class*="st-key-stack_tile_"] button > div > div:has([data-testid="stIconMaterial"]) {display:none !important;}
     [class*="st-key-stack_tile_"] button > div {display:contents;}
-    .stack-list .stack-title {margin:0 0 6px !important; font-size:12px !important; font-weight:600; color:var(--go-text);}
+    .stack-list .stack-title {margin:0 0 6px !important; font-size:12px !important; font-weight:600; color:inherit;}
     .stack-list ol {margin:0; padding-left:22px; font-size:12.5px; line-height:1.6;}
-    .stack-list li::marker {color:var(--go-quiet); font-variant-numeric:tabular-nums;}
+    .stack-list li::marker {color:rgba(127, 127, 127, .9); font-variant-numeric:tabular-nums;}
+    /* D-550: what a name is and where the project uses it shows at the foot of the window, on hover or with the
+       keyboard; the foot keeps its room, so the list never moves. */
+    .stack-list {position:relative; width:min(320px, 76vw); padding-bottom:92px;}
+    .stack-list li {cursor:default; border-radius:4px; outline:none;}
+    .stack-list li:hover, .stack-list li:focus {background:rgba(127, 127, 127, .16);}
+    .stack-list .stack-hint, .stack-list .stack-help {position:absolute; left:0; right:0; bottom:0; height:80px;
+        margin:0 !important; padding-top:8px; border-top:1px solid rgba(127, 127, 127, .3); font-size:11.5px;
+        line-height:1.45; overflow:hidden;}
+    .stack-list .stack-hint {display:none; color:inherit;}
+    .stack-list .stack-help {color:inherit; opacity:.6;}
+    .stack-list li:hover .stack-hint, .stack-list li:focus .stack-hint {display:block;}
+    .stack-list:has(li:hover) .stack-help, .stack-list:has(li:focus) .stack-help {visibility:hidden;}
     
