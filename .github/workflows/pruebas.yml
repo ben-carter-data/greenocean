@@ -37,16 +37,20 @@ jobs:
         run: dbt parse --project-dir dbt --profiles-dir dbt
       # The served database is not in git (D-270): the tests read the one the last load published.
       - run: python bi/served_database.py
-      # D-555: on 3.11 each group keeps its coverage and its counts; calidad.yml combines them and checks the 90 %.
+      # D-555: on 3.12 each group keeps its coverage and its counts; calidad.yml combines them and checks the 90 %.
+      # D-557: 3.12 measures with sys.monitoring (COVERAGE_CORE=sysmon): the old tracer of 3.11 took one group from
+      # 5 to 29 minutes. Every group leaves its slowest tests as notices, readable without opening the log.
       - run: |
           files=$(python scripts/grupo_pruebas.py ${{ matrix.group }} 3)
-          if [ "${{ matrix.python-version }}" = "3.11" ]; then
-            COVERAGE_FILE=.coverage.${{ matrix.group }} pytest -q -m "not rendimiento" -o faulthandler_timeout=90 \
-              --cov --cov-report= --cov-fail-under=0 --junitxml=junit-${{ matrix.group }}.xml $files
+          if [ "${{ matrix.python-version }}" = "3.12" ]; then
+            COVERAGE_CORE=sysmon COVERAGE_FILE=.coverage.${{ matrix.group }} pytest -q -m "not rendimiento" \
+              -o faulthandler_timeout=90 --cov --cov-report= --cov-fail-under=0 --junitxml=junit-${{ matrix.group }}.xml $files
           else
-            pytest -q -m "not rendimiento" -o faulthandler_timeout=90 $files
+            pytest -q -m "not rendimiento" -o faulthandler_timeout=90 --junitxml=junit-${{ matrix.group }}.xml $files
           fi
-      - if: matrix.python-version == '3.11'
+      - if: always()
+        run: python scripts/pruebas_lentas.py junit-${{ matrix.group }}.xml "Más lentas · ${{ matrix.python-version }} · grupo ${{ matrix.group }}"
+      - if: matrix.python-version == '3.12'
         uses: actions/upload-artifact@v4
         with:
           name: cobertura-${{ matrix.group }}

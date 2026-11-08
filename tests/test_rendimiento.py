@@ -37,7 +37,8 @@ def test_d341_no_shared_runner_measures_speed_the_ci_the_weekly_load_and_the_qua
     root = Path(__file__).resolve().parent.parent
     for workflow in ("pruebas.yml", "semanal.yml"):
         text = (root / ".github" / "workflows" / workflow).read_text(encoding="utf-8")
-        runs = [line for line in text.splitlines() if "run: pytest" in line]  # the runs of the suite, not its install
+        # the runs of the suite, not its install; D-555: also inside a step of several lines
+        runs = [line for line in text.splitlines() if "pytest -q" in line]
         assert runs and all('not rendimiento"' in line for line in runs), workflow
     # D-366: the weekly load runs only the data and pipeline tests; a screen test never stops the data.
     load = (root / ".github" / "workflows" / "semanal.yml").read_text(encoding="utf-8")

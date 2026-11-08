@@ -2608,6 +2608,58 @@
           "referencia": "D-555"
         }
       ]
+    },
+    {
+      "id": "F-47",
+      "categoria": "código",
+      "falla": [
+        "La división de las pruebas en grupos dejó un grupo en rojo y otro muy lento en el CI",
+        "Splitting the tests into groups left one group red and another very slow on the CI"
+      ],
+      "deteccion": [
+        "El autor envió la captura de GitHub Actions con las ejecuciones aún en curso",
+        "The author sent the GitHub Actions screenshot with the runs still going"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Una prueba leía el workflow línea por línea y la cobertura de Python 3.11 frenaba un grupo",
+        "A test read the workflow line by line and Python 3.11 coverage slowed one group down"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "El código publicado no cambió; solo el CI quedó en rojo",
+        "The published code did not change; only the CI stayed red"
+      ],
+      "correctiva": [
+        "La prueba busca la orden en cualquier línea y la cobertura se mide en 3.12 con sys.monitoring",
+        "The test looks for the command on any line and coverage is measured on 3.12 with sys.monitoring"
+      ],
+      "estacion": 14,
+      "caso_real": "D-557",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-08",
+          "ocurrencia": [
+            "El grupo 3 falló en las dos versiones y el grupo 1 tardó 29 minutos en Python 3.11.",
+            "Group 3 failed on both versions and group 1 took 29 minutes on Python 3.11."
+          ],
+          "diagnostico": [
+            "La prueba no veía pytest dentro de un paso de varias líneas, y el trazador antiguo de 3.11 era lento.",
+            "The test missed pytest inside a step of several lines, and the old 3.11 tracer was slow."
+          ],
+          "solucion": [
+            "La prueba busca pytest -q, y la cobertura pasa a 3.12 con sysmon; cada grupo nombra sus pruebas lentas.",
+            "The test looks for pytest -q, and coverage moves to 3.12 with sysmon; each group names its slow tests."
+          ],
+          "comentario": [
+            "Una prueba que lee un archivo de configuración debe tolerar su forma, no solo su contenido.",
+            "A test that reads a configuration file must tolerate its layout, not only its content."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-557"
+        }
+      ]
     }
   ]
 }
