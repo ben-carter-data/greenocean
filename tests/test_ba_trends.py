@@ -30,9 +30,8 @@ def history():
         basket=True,
     )
     margins = ba_trends.add_month_key(queries.run_query("k1_margin"))
-    seasonal = ba_trends.add_month_key(queries.run_query("k4_seasonal_index"))
     found = ba_trends.add_month_key(alerts.find_price_alerts(queries.run_query("k6_national_weekly_price")))
-    return rows, last, margins, seasonal, found
+    return rows, last, margins, found
 
 
 def label(pair):
@@ -73,11 +72,11 @@ def test_d457_a_month_without_an_index_stays_a_gap():
 
 @needs_database
 def test_d457_the_months_chain_to_the_change_of_their_period_and_the_years_to_the_change_since_2022(history):
-    rows, last, margins, seasonal, found = history
+    rows, last, margins, found = history
     for family in [ba_trends.BASKET] + ba_trends.families(rows):
         for period in ba_trends.periods(last):
             start, end = ba_trends.bounds(period, last)
-            figures = ba_trends.monthly(rows, margins, seasonal, found, family, start, end)
+            figures = ba_trends.monthly(rows, margins, found, family, start, end)
             months = ba_trends.monthly_changes(rows, family, start, end)
             assert len(months) == (end[0] - start[0]) * 12 + end[1] - start[1], (family, period)
             if months["change"].notna().all():
@@ -88,7 +87,7 @@ def test_d457_the_months_chain_to_the_change_of_their_period_and_the_years_to_th
                 top = months.loc[months["change"].idxmax()]
                 assert figures["top"][:2] == (top["year"], top["month"])
                 assert figures["rising"] == int((months["change"] > 0).sum())
-        whole = ba_trends.history(rows, margins, seasonal, found, family, last)
+        whole = ba_trends.history(rows, margins, found, family, last)
         years = whole["years"]
         assert list(years["year"]) == [str(year) for year in range(2022, last[0] + 1)], family
         assert ((years["change"] / 100 + 1).prod() - 1) * 100 == pytest.approx(whole["change"]), family
@@ -103,51 +102,46 @@ def test_d457_the_months_chain_to_the_change_of_their_period_and_the_years_to_th
 
 @needs_database
 def test_d456_the_figures_are_those_of_prices_and_inflation_and_recompute_from_the_queries(history):
-    rows, last, margins, seasonal, found = history
+    rows, last, margins, found = history
     summary, ipc_total, ipc_year = inflation_view.summarize_families(
         rows[rows["product_group"] != inflation_view.BASKET_NAME], last
     )
     start, end = ba_trends.bounds(ba_trends.LAST_YEAR, last)
     for family in summary["family"]:
-        figures = ba_trends.summarize(rows, margins, seasonal, found, family, start, end)
+        figures = ba_trends.summarize(rows, margins, found, family, start, end)
         expected = summary.set_index("family").loc[family, "yearly"]
         assert figures["change"] == pytest.approx(expected), family  # the 12 months of «Precios e inflación»
         assert figures["ipc"] == pytest.approx(ipc_year)
         assert figures["gap"] == pytest.approx(figures["change"] - ipc_year)
-        whole = ba_trends.history(rows, margins, seasonal, found, family, last)
+        whole = ba_trends.history(rows, margins, found, family, last)
         assert whole["change"] == pytest.approx(summary.set_index("family").loc[family, "total"]), family
         assert whole["ipc"] == pytest.approx(ipc_total)
-    # K1, K6 and K4 recomputed by hand for the whole basket in the last 12 months
+    # K1 and K6 recomputed by hand for the whole basket in the last 12 months
     months = ba_trends.counted_months(start, end)
     stamp = pd.to_datetime(margins["week_start"])
     key = stamp.dt.year * 100 + stamp.dt.month
     chosen = margins[key.between(*months)]
-    figures = ba_trends.summarize(rows, margins, seasonal, found, ba_trends.BASKET, start, end)
+    figures = ba_trends.summarize(rows, margins, found, ba_trends.BASKET, start, end)
     assert figures["margin"] == pytest.approx(chosen["margin"].median() * 100) and figures["pairs"] == len(chosen)
     alert_key = pd.to_datetime(found["week_start"]).dt.year * 100 + pd.to_datetime(found["week_start"]).dt.month
     picked = found[alert_key.between(*months)]
     assert figures["alerts"] == len(picked) == figures["rises"] + figures["falls"]
-    season_key = pd.to_datetime(seasonal["week_start"])
-    in_period = seasonal[(season_key.dt.year * 100 + season_key.dt.month).between(*months)]
-    by_month = in_period.groupby(pd.to_datetime(in_period["week_start"]).dt.month)["seasonal_index"].median()
-    assert figures["cheapest"][0] == int(by_month.idxmin()) and figures["dearest"][0] == int(by_month.idxmax())
-    assert figures["cheapest"][1] == pytest.approx((by_month.min() - 1) * 100)
     # K1 exists only where ODEPA has a wholesale price
     assert ba_trends.wholesale_families(margins) == sorted(set(margins["product_group"]))
 
 
 @needs_database
 def test_d457_each_chart_says_its_months_and_its_hover_holds_the_figures_it_explains(history):
-    rows, last, margins, seasonal, found = history
+    rows, last, margins, found = history
     start, end = ba_trends.bounds(ba_trends.LAST_YEAR, last)
-    figures = ba_trends.monthly(rows, margins, seasonal, found, ba_trends.BASKET, start, end)
-    (_, price_note, _, price, _), (_, month_note, _, moves, _), (_, alert_note, _, outliers, _) = (
+    figures = ba_trends.monthly(rows, margins, found, ba_trends.BASKET, start, end)
+    (_, price_note, _, price, _, _), (_, month_note, _, moves, _, _), (_, alert_note, _, outliers, _, _) = (
         ba_trends.monthly_tiles(rows, figures, start, end, "Vantablack")
     )
     first = (start[0] + 1, 1) if start[1] == 12 else (start[0], start[1] + 1)
     assert price_note == f"{label(start)} – {label(end)} · base {label(start)} = 100"
     assert month_note == f"{label(first)} – {label(end)} · frente al mes anterior"
-    assert alert_note == f"{label(first)} – {label(end)} · alzas fuertes y bajas fuertes (K6)"
+    assert alert_note == f"{label(first)} – {label(end)} · cambios fuera de lo normal (K6)"
     assert price.startswith(
         f"De {label(start)} a {label(end)} cambió {charts.format_signed_percent(figures['change'])}"
     )
@@ -159,50 +153,64 @@ def test_d457_each_chart_says_its_months_and_its_hover_holds_the_figures_it_expl
     busiest = int(per_month.idxmax())
     assert outliers.startswith(f"{charts.format_thousands(figures['alerts'])} alertas")
     assert f"{label((busiest // 100, busiest % 100))}, con {charts.format_thousands(per_month.max())}" in outliers
-    # «Histórico»: from January 2022, the change of each year and the season
-    whole = ba_trends.history(rows, margins, seasonal, found, ba_trends.BASKET, last)
-    (_, since_note, _, since, _), (_, year_note, _, yearly, _), (_, season_note, _, season, _) = (
-        ba_trends.history_tiles(rows, whole, last, "Vantablack")
+    # «Histórico»: from January 2022 and the change of each year
+    whole = ba_trends.history(rows, margins, found, ba_trends.BASKET, last)
+    (_, since_note, _, since, _, _), (_, year_note, _, yearly, _, _) = ba_trends.history_tiles(
+        rows, whole, last, "Vantablack"
     )
     assert since_note == f"ene 2022 – {label(last)} · base ene 2022 = 100"
-    assert year_note == f"2022–{last[0]} · de diciembre a diciembre" and season_note.startswith(f"2022–{last[0]} · ")
+    assert year_note == f"2022–{last[0]} · de diciembre a diciembre"
     assert since.startswith(f"De ene 2022 a {label(last)} cambió {charts.format_signed_percent(whole['change'])}")
     assert f"El año que más subió fue {whole['best'][0]} ({charts.format_signed_percent(whole['best'][1])}" in yearly
     assert f"en {len(whole['above'])} de {len(whole['years'])} años" in yearly or not whole["above"]
-    cheapest = ba_trends.full_month(whole["cheapest"][0])
-    assert season.startswith(
-        f"{cheapest} suele ser el mes más barato ({charts.format_signed_percent(whole['cheapest'][1])}"
-    )
     # the first alert of the history can only come after 12 weeks: the year 2022 says so
     start, end = ba_trends.bounds("2022", last)
-    first_year = ba_trends.monthly(rows, margins, seasonal, found, ba_trends.BASKET, start, end)
+    first_year = ba_trends.monthly(rows, margins, found, ba_trends.BASKET, start, end)
     alerts_measure = ba_trends.monthly_tiles(rows, first_year, start, end, "Vantablack")[2][2]
     assert "La primera alerta posible es de abril 2022" in alerts_measure
     assert pd.to_datetime(found["week_start"]).min() >= pd.Timestamp("2022-04-01")
 
 
+@needs_database
+def test_d554_each_chart_names_under_its_title_every_colour_it_draws(history):
+    rows, last, margins, found = history
+    start, end = ba_trends.bounds(ba_trends.LAST_YEAR, last)
+    monthly = ba_trends.monthly(rows, margins, found, ba_trends.BASKET, start, end)
+    whole = ba_trends.history(rows, margins, found, ba_trends.BASKET, last)
+    tiles = ba_trends.monthly_tiles(rows, monthly, start, end, "Vantablack") + ba_trends.history_tiles(
+        rows, whole, last, "Vantablack"
+    )
+    for title, _, _, _, draw, legend in tiles:
+        spec = draw().to_dict()
+        layers = spec.get("layer") or [spec]
+        scales = [layer["encoding"]["color"]["scale"] for layer in layers if "color" in layer.get("encoding", {})]
+        colours = [colour for scale in scales for _, colour in zip(scale["domain"], scale["range"])]
+        colours += [layer["mark"]["color"] for layer in layers if "color" in layer["mark"]]
+        assert colours and all(colour in legend for colour in colours), title
+
+
 def test_d457_every_card_and_column_explains_itself_on_hover_with_the_definitions_of_metodo():
     figures = {
         "family": ba_trends.BASKET, "change": 6.1, "ipc": 3.9, "gap": 2.2, "verdict": "más que la inflación",
-        "margin": 78.9, "pairs": 31354, "alerts": 916, "rises": 635, "falls": 281, "cheapest": (2, -3.6),
-        "dearest": (11, 2.5), "top": (2026, 7, 3.9), "low": (2025, 10, -1.9), "best": ("2022", 16.4, "desde ene"),
+        "margin": 78.9, "pairs": 31354, "alerts": 916, "rises": 635, "falls": 281, "top": (2026, 7, 3.9),
+        "low": (2025, 10, -1.9), "best": ("2022", 16.4, "desde ene"),
     }  # fmt: skip
     definitions = {name: how for name, how, _ in overview.KPIS}
     monthly = ba_trends.monthly_cards(figures, (2025, 9), (2026, 9), ["Frutas", "Hortalizas"])
     whole = ba_trends.history_cards(figures, (2026, 9))
-    for cards in (monthly, whole):
-        assert cards.count('class="ba-card" tabindex="0" title="') == 5
+    for cards, count in ((monthly, 5), (whole, 4)):
+        assert cards.count('class="ba-card" tabindex="0" title="') == count
         for text in ("K6: " + alerts.describe_rule(), definitions["Alza frente al IPC"]):
             assert text in cards, text
     assert "K1: " + definitions["Brecha consumidor–mayorista"] in monthly
     assert "Solo Frutas y Hortalizas tienen precio mayorista" in monthly
     assert "sep 2025 → sep 2026" in monthly and "ene 2022 → sep 2026" in whole
-    assert ">jul 2026<" in monthly and ">2022<" in whole and ">Febrero<" in whole
-    for table in (
-        ba_trends.monthly_table([dict(figures, months=None)], ba_trends.BASKET),
-        ba_trends.history_table([figures], ba_trends.BASKET),
+    assert ">jul 2026<" in monthly and ">2022<" in whole
+    for table, count in (
+        (ba_trends.monthly_table([dict(figures, months=None)], ba_trends.BASKET), 5),
+        (ba_trends.history_table([figures], ba_trends.BASKET), 4),
     ):
-        assert table.count("<th title=") == 5 and 'class="ba-chosen"' in table
+        assert table.count("<th title=") == count and 'class="ba-chosen"' in table
 
 
 def test_d456_every_time_chart_starts_at_the_start_of_its_period():
@@ -251,22 +259,6 @@ def test_d457_every_month_of_a_period_has_its_point_and_its_label():
     assert axis["labelOverlap"] == "parity" and "split(datum.value, ' ')[0] == 'ene'" in axis["labelExpr"]
 
 
-def test_d456_the_season_says_which_years_each_calendar_month_gathers():
-    # A bar of «Temporada» is a month of the calendar, not of one year: with several years it gathers that month of
-    # each of them, and each bar says its years on hover.
-    weeks_found = pd.DataFrame(
-        {
-            "week_start": ["2024-02-05", "2025-02-03", "2025-03-03", "2026-02-02"],
-            "seasonal_index": [0.97, 0.95, 1.02, 0.99],
-        }
-    )
-    profile = ba_trends.season(weeks_found).set_index("month")
-    assert profile.loc[2, "years"] == "2024–2026" and profile.loc[3, "years"] == "2025"
-    assert profile.loc[2, "change"] == pytest.approx((0.97 - 1) * 100) and profile.loc[2, "weeks"] == 3
-    spec = ba_trends.season_chart(ba_trends.season(weeks_found), "Vantablack").to_dict()
-    assert any(item.get("field") == "years" for item in spec["encoding"]["tooltip"])
-
-
 # endregion
 
 
@@ -291,7 +283,7 @@ def test_d460_the_green_magnifier_opens_the_chart_large_in_a_window():
 
 @needs_database
 @pytest.mark.parametrize("tab", [dashboard.BA_MONTHLY_TAB, dashboard.BA_HISTORY_TAB])
-def test_d460_each_tab_draws_three_charts_and_each_magnifier_opens_its_window(tab):
+def test_d460_each_tab_draws_its_charts_and_each_magnifier_opens_its_window(tab):
     app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=120)
     app.session_state["visitor_profile"] = "profesional"
     app.session_state[dashboard.BA_TAB_KEY] = tab
@@ -299,16 +291,15 @@ def test_d460_each_tab_draws_three_charts_and_each_magnifier_opens_its_window(ta
     app.run()
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    assert markup.count('class="ba-chart-title"') == 3 and "<b>Qué mide</b>" not in markup
-    assert len(app.get("arrow_vega_lite_chart") + app.get("vega_lite_chart")) == 3
+    count = 3 if tab == dashboard.BA_MONTHLY_TAB else 2  # D-554: «Histórico» draws two, wider
+    assert markup.count('class="ba-chart-title"') == count and "<b>Qué mide</b>" not in markup
+    assert len(app.get("arrow_vega_lite_chart") + app.get("vega_lite_chart")) == count
     assert [box.key for box in app.selectbox if box.key in ("ba_period", "ba_family")] == (
         ["ba_period", "ba_family"] if tab == dashboard.BA_MONTHLY_TAB else ["ba_family"]
     )
     # D-460: its green magnifier opens a chart large in a window, with what it measures and what follows from it
     assert [button.key for button in app.button if str(button.key).startswith("ba_enlarge_")] == [
-        "ba_enlarge_0",
-        "ba_enlarge_1",
-        "ba_enlarge_2",
+        f"ba_enlarge_{index}" for index in range(count)
     ]
     app.button(key="ba_enlarge_1").click().run()
     assert not app.exception
@@ -404,16 +395,14 @@ def test_d466_each_year_has_its_own_colour():
 
 @needs_database
 def test_d478_a_family_is_the_sum_of_its_products(history):
-    rows, last, margins, seasonal, found = history
+    rows, last, margins, found = history
     series = queries.run_sql(inflation_view.SERIES_SQL)
     ipc = queries.run_sql("SELECT year, month, food_index FROM ipc_monthly")
-    product_rows, product_margins, product_seasonal, product_found, family_of = ba_trends.product_frames(
-        series, ipc, margins, seasonal, found
-    )
+    product_rows, product_margins, product_found, family_of = ba_trends.product_frames(series, ipc, margins, found)
     for family in ba_trends.families(rows):
-        whole = ba_trends.history(rows, margins, seasonal, found, family, last)
+        whole = ba_trends.history(rows, margins, found, family, last)
         parts = [
-            ba_trends.history(product_rows, product_margins, product_seasonal, product_found, key, last)
+            ba_trends.history(product_rows, product_margins, product_found, key, last)
             for key in ba_trends.products_of(family_of, family)
         ]
         # what is counted adds up exactly: the family's alerts and K1 pairs are its products'

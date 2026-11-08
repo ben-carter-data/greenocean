@@ -1853,17 +1853,17 @@
     "The latest, dearer years would look like the dearest months."
    ],
    "por_que_no": [
-    "Parte de K4, que compara cada semana con el promedio de su año.",
-    "It comes from K4, which compares each week with its year's average."
+    "No compara una semana con la anterior: compara cada mes con la mediana de su año en la misma serie, en pesos reales.",
+    "It does not compare one week with the one before: it compares each month with its year's median in the same series, in real pesos."
    ],
    "usa_mismo_envase": false,
    "respaldo": [
-    "D-457"
+    "D-185"
    ],
    "codigo": [
     {
-     "archivo": "bi/ba_trends.py",
-     "ancla": "grouped[\"seasonal_index\"].median()"
+     "archivo": "bi/sql_explorer.py",
+     "ancla": "median(precio_real) / median(median(precio_real)) OVER ("
     }
    ]
   },

@@ -135,7 +135,7 @@ EN = {
     "Los últimos 12 meses o un año, mes a mes, hasta {}, el último mes que publicó el INE. Un año se mide de diciembre a diciembre, como el IPC.": "The last 12 months or one year, month by month, up to {}, the last month the INE published. A year is measured December to December, like the CPI.",
     "Método": "Method",
     "Toda la canasta": "The whole basket",
-    "La historia de los precios por mes, año y temporada, con sus valores atípicos; los precios frente a la inflación, las respuestas de hoy, quién usa los datos y cómo se calcula cada cifra.": "The history of prices by month, year and season, with its outliers; prices against inflation, today's answers, who uses the data and how each figure is computed.",
+    "La historia de los precios por mes y por año, con sus valores atípicos; los precios frente a la inflación, las respuestas de hoy, quién usa los datos y cómo se calcula cada cifra.": "The history of prices by month and by year, with its outliers; prices against inflation, today's answers, who uses the data and how each figure is computed.",
     "Últimos 12 meses": "Last 12 months",
     "{n} pts": "{} pts",
     "Ver último dato por canal": "See latest data by channel",

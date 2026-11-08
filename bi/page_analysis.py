@@ -156,7 +156,7 @@ def show_ba_page(mode):
     show_page_bar(
         PAGE_BA,
         PAGE_BA,
-        "La historia de los precios por mes, año y temporada, con sus valores atípicos; los precios frente a la "
+        "La historia de los precios por mes y por año, con sus valores atípicos; los precios frente a la "
         "inflación, las respuestas de hoy, quién usa los datos y cómo se calcula cada cifra.",
         live="weekly_price, ipc_weekly y las alertas K6 se leen en la Base DuckDB al abrir la página.",
     )
@@ -195,8 +195,7 @@ def show_ba_page(mode):
 @st.cache_data(show_spinner=False)
 def read_ba_history(database_version):
     """The history behind «Mensual» and «Histórico» (D-456, D-457), read once per database: the monthly index of the
-    families and of the whole basket against the IPC (D-163), K1, K4 and the K6 alerts, each with the month of its
-    week."""
+    families and of the whole basket against the IPC (D-163), K1 and the K6 alerts, each with the month of its week."""
     rows, last = inflation_view.build_family_index(
         queries.run_sql(inflation_view.SERIES_SQL),
         queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"),
@@ -205,23 +204,19 @@ def read_ba_history(database_version):
     margins = ba_trends.add_month_key(
         queries.run_query("k1_margin")[["week_start", "product_group", "product", "margin"]]
     )
-    seasonal = ba_trends.add_month_key(
-        queries.run_query("k4_seasonal_index")[["week_start", "product_group", "product", "seasonal_index"]]
-    )
     found = read_cached_price_alerts_all(database_version)
     alerts_found = ba_trends.add_month_key(found[["week_start", "product_group", "product", "variation"]])
-    return rows, last, margins, seasonal, alerts_found
+    return rows, last, margins, alerts_found
 
 
 @st.cache_data(show_spinner=False)
 def read_ba_products(database_version):
     """D-478: the same history one level down, each product of the consumer series as a family is computed."""
-    _, _, margins, seasonal, alerts_found = read_ba_history(database_version)
+    _, _, margins, alerts_found = read_ba_history(database_version)
     return ba_trends.product_frames(
         queries.run_sql(inflation_view.SERIES_SQL),
         queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"),
         margins,
-        seasonal,
         alerts_found,
     )
 
@@ -323,15 +318,15 @@ def chosen_ba_family(rows):
     return choices, st.session_state.get("ba_family") if st.session_state.get("ba_family") in choices else choices[0]
 
 
-def chosen_ba_level(rows, margins, seasonal, found):
+def chosen_ba_level(rows, margins, found):
     """D-478: what «Mensual» and «Histórico» show: the frames and name of the subject (the basket, a family or a
     product) and the table's rows, one level under the family (the families under the basket, a family's products
     under it, with the family first), each as (frames, name)."""
     choices, family = chosen_ba_family(rows)
-    family_frames = (rows, margins, seasonal, found)
+    family_frames = (rows, margins, found)
     product = st.session_state.get("ba_product")
-    product_rows, product_margins, product_seasonal, product_found, family_of = read_ba_products(get_database_version())
-    product_frames = (product_rows, product_margins, product_seasonal, product_found)
+    product_rows, product_margins, product_found, family_of = read_ba_products(get_database_version())
+    product_frames = (product_rows, product_margins, product_found)
     if product not in family_of:
         product = None
     if product:
@@ -349,12 +344,12 @@ def show_ba_monthly(mode):
     """«Mensual» (D-457): one period, the last 12 months or one year, month by month: five KPI cards, three charts and
     the table by family. Every card and column says on hover how it is computed; every chart, which months it shows."""
     palette = charts.get_palette(mode)
-    rows, last, margins, seasonal, found = read_ba_history(get_database_version())
+    rows, last, margins, found = read_ba_history(get_database_version())
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
     st.markdown(ba_trends.build_css(palette, ba_green(mode)), unsafe_allow_html=True)
-    (frames, subject), table = chosen_ba_level(rows, margins, seasonal, found)
+    (frames, subject), table = chosen_ba_level(rows, margins, found)
     period = st.session_state.get("ba_period")
     if period not in ba_trends.periods(last):
         period = ba_trends.periods(last)[0]
@@ -369,15 +364,15 @@ def show_ba_monthly(mode):
 
 
 def show_ba_history(mode):
-    """«Histórico» (D-457): the whole history, from January 2022 to the last month, year by year and by season: five
-    KPI cards, three charts and the table by family."""
+    """«Histórico» (D-457): the whole history, from January 2022 to the last month, year by year: its KPI cards, its
+    charts and the table by family."""
     palette = charts.get_palette(mode)
-    rows, last, margins, seasonal, found = read_ba_history(get_database_version())
+    rows, last, margins, found = read_ba_history(get_database_version())
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
     st.markdown(ba_trends.build_css(palette, ba_green(mode)), unsafe_allow_html=True)
-    (frames, subject), table = chosen_ba_level(rows, margins, seasonal, found)
+    (frames, subject), table = chosen_ba_level(rows, margins, found)
     figures = ba_trends.history(*frames, subject, last)
     st.markdown(ba_trends.history_cards(figures, last), unsafe_allow_html=True)
     show_ba_tiles(ba_trends.history_tiles(frames[0], figures, last, mode))
@@ -389,10 +384,13 @@ def show_ba_history(mode):
 
 
 def show_ba_tiles(tiles):
-    """D-457, D-460: three charts side by side, each with its title and the months it shows. Its green magnifier opens it
+    """D-457, D-460: the charts of a tab side by side, each with its title, the months it shows and what each of its
+    colours and lines means; three in «Mensual» and two, wider, in «Histórico» (D-554). Its green magnifier opens it
     large in a window, with what it measures and what follows from it."""
-    for index, (column, (title, note, measures, deduce, draw)) in enumerate(zip(st.columns(3, gap="medium"), tiles)):
-        heading = f'<p class="ba-chart-title">{html.escape(title)}<span>{html.escape(note)}</span></p>'
+    for index, (column, (title, note, measures, deduce, draw, legend)) in enumerate(
+        zip(st.columns(len(tiles), gap="medium"), tiles)
+    ):
+        heading = f'<p class="ba-chart-title">{html.escape(title)}<span>{html.escape(note)}</span>{legend}</p>'
         with column, st.container(key=f"ba_tile_{index}"):
             # its own key: a key that started with «ba_tile_» would take the tile's height rules and leave the chart none
             with st.container(key=f"ba_chart_head_{index}", horizontal=True, vertical_alignment="top"):
@@ -400,15 +398,16 @@ def show_ba_tiles(tiles):
                 if st.button(
                     tr("Ampliar"), icon=":material/zoom_in:", key=f"ba_enlarge_{index}", help=tr("Ampliar el gráfico")
                 ):
-                    st.dialog(title, width="large")(show_ba_chart_dialog)(title, note, measures, deduce, draw)
+                    st.dialog(title, width="large")(show_ba_chart_dialog)(title, note, measures, deduce, draw, legend)
             st.altair_chart(draw(height="container"), width="stretch", height="stretch", theme=None)
 
 
-def show_ba_chart_dialog(title, note, measures, deduce, draw):
-    """D-460: a chart of «Mensual» or «Histórico» at the size of the window, with its months, what it measures and what
-    follows from it. The window's own title is hidden in every dialog (D-316), so the chart's title opens its content."""
+def show_ba_chart_dialog(title, note, measures, deduce, draw, legend):
+    """D-460: a chart of «Mensual» or «Histórico» at the size of the window, with its months, what each colour means,
+    what it measures and what follows from it. The window's own title is hidden in every dialog (D-316), so the chart's
+    title opens its content."""
     st.markdown(
-        f'<p class="ba-zoom-title">{html.escape(title)}<span>{html.escape(note)}</span></p>'
+        f'<p class="ba-zoom-title">{html.escape(title)}<span>{html.escape(note)}</span>{legend}</p>'
         + ba_trends.zoom_text(measures, deduce),
         unsafe_allow_html=True,
     )

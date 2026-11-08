@@ -1,9 +1,10 @@
 """«Análisis» (D-456, D-457): the history of food prices, read two ways that never mix. «Mensual» is one
 period, the last 12 months or one year, month by month; «Histórico» is the whole history, from January 2022 to the last
-month the INE published, year by year and by season. Each chart says which months it shows; on hover it grows and says
-what it measures and what follows from it, in words computed from the same figures it draws. Every figure comes from
-the queries and rules the rest of the panel uses: the monthly index of «Precios e inflación» (D-163), K1 (the gap), K4
-(the season) and K6 (the alerts); every definition, from «Método» (overview.KPIS). Nothing here is typed by hand."""
+month the INE published, year by year. Each chart says which months it shows and, under its title, what each colour
+and line means (D-554); on hover it grows and says what it measures and what follows from it, in words computed from
+the same figures it draws. Every figure comes from the queries and rules the rest of the panel uses: the monthly index
+of «Precios e inflación» (D-163), K1 (the gap) and K6 (the alerts); every definition, from «Método» (overview.KPIS).
+Nothing here is typed by hand."""
 
 from __future__ import annotations
 
@@ -35,9 +36,9 @@ TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 603, 230, 210
 TABLE_RESERVED, TABLE_FLOOR = 588, 140
 INSIGHT_ROOM = 43  # D-518: the height of the green box of «Histórico», taken from the table so the page still fits
 
-# One chart of a tab: its title, the months it shows, what it measures, what follows from it, and how to draw it at a
-# width and a height.
-Tile = tuple[str, str, str, str, Callable[..., Any]]
+# One chart of a tab: its title, the months it shows, what it measures, what follows from it, how to draw it at a
+# width and a height, and what each colour and line of it means (D-554).
+Tile = tuple[str, str, str, str, Callable[..., Any], str]
 # D-466: one colour per year in «Cambio de cada año», so each year reads apart; the bar's height says whether it rose.
 YEAR_COLORS = ["#5aa9ea", "#5fd39b", "#b49cff", "#f2b05e", "#ef7d8e", "#4dd0e1", "#f48fb1"]
 # endregion
@@ -223,22 +224,6 @@ def within(frame: pd.DataFrame, start: tuple[int, int], end: tuple[int, int], fa
 
 
 # region Figures
-def season(seasonal: pd.DataFrame) -> pd.DataFrame:
-    """K4 by calendar month: the median of the weekly seasonal index (price over the average of its year), as a % over
-    or under that average, with the weeks behind each month and the years they come from: a month of the calendar
-    gathers its weeks of every year of the period, so the chart says which."""
-    if seasonal.empty:
-        return pd.DataFrame(columns=["month", "change", "weeks", "years"])
-    if "month_key" not in seasonal.columns:
-        seasonal = add_month_key(seasonal)
-    grouped = seasonal.assign(month=seasonal["month_key"] % 100, year=seasonal["month_key"] // 100).groupby("month")
-    result = grouped["seasonal_index"].median().sub(1).mul(100).rename("change").to_frame()
-    result["weeks"] = grouped["week_start"].nunique()
-    first, last = grouped["year"].min(), grouped["year"].max()
-    result["years"] = [str(a) if a == b else f"{a}–{b}" for a, b in zip(first, last)]
-    return result.reset_index()
-
-
 def monthly_changes(rows: pd.DataFrame, family: str, start: tuple[int, int], end: tuple[int, int]) -> pd.DataFrame:
     """The change of each month of a period against the month before, for the family and for the food IPC, in %. The
     months are those after the start, so chained together they give the change of the whole period; a month without
@@ -293,7 +278,6 @@ def yearly_changes(rows: pd.DataFrame, family: str, last: tuple[int, int]) -> pd
 def summarize(
     rows: pd.DataFrame,
     margins: pd.DataFrame,
-    seasonal: pd.DataFrame,
     alerts_found: pd.DataFrame,
     family: str,
     start: tuple[int, int],
@@ -305,9 +289,6 @@ def summarize(
     gap = None if change is None or ipc is None else change - ipc
     margin_rows = within(margins, start, end, family)
     alert_rows = within(alerts_found, start, end, family)
-    profile = season(within(seasonal, start, end, family))
-    cheapest = profile.loc[profile["change"].idxmin()] if not profile.empty else None
-    dearest = profile.loc[profile["change"].idxmax()] if not profile.empty else None
     return {
         "family": family,
         "change": change,
@@ -320,15 +301,12 @@ def summarize(
         "rises": int((alert_rows["variation"] > 0).sum()) if not alert_rows.empty else 0,
         "falls": int((alert_rows["variation"] < 0).sum()) if not alert_rows.empty else 0,
         "alert_rows": alert_rows,
-        "cheapest": None if cheapest is None else (int(cheapest["month"]), float(cheapest["change"])),
-        "dearest": None if dearest is None else (int(dearest["month"]), float(dearest["change"])),
-        "profile": profile,
     }
 
 
-def monthly(rows, margins, seasonal, alerts_found, family, start, end) -> dict[str, Any]:
+def monthly(rows, margins, alerts_found, family, start, end) -> dict[str, Any]:
     """«Mensual»: the figures of the period, the change of each of its months and their highest and lowest."""
-    figures = summarize(rows, margins, seasonal, alerts_found, family, start, end)
+    figures = summarize(rows, margins, alerts_found, family, start, end)
     months = monthly_changes(rows, family, start, end).dropna(subset=["change"])
     figures["months"] = months
     figures["top"] = figures["low"] = None
@@ -340,9 +318,9 @@ def monthly(rows, margins, seasonal, alerts_found, family, start, end) -> dict[s
     return figures
 
 
-def history(rows, margins, seasonal, alerts_found, family, last) -> dict[str, Any]:
+def history(rows, margins, alerts_found, family, last) -> dict[str, Any]:
     """«Histórico»: the figures from January 2022 to the last month, and the change of each year."""
-    figures = summarize(rows, margins, seasonal, alerts_found, family, BASE, last)
+    figures = summarize(rows, margins, alerts_found, family, BASE, last)
     years = yearly_changes(rows, family, last).dropna(subset=["change"])
     figures["years"] = years
     figures["best"] = None
@@ -362,23 +340,22 @@ def _product_frames_down(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def product_frames(
-    series: pd.DataFrame, ipc: pd.DataFrame, margins: pd.DataFrame, seasonal: pd.DataFrame, alerts_found: pd.DataFrame
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, str]]:
+    series: pd.DataFrame, ipc: pd.DataFrame, margins: pd.DataFrame, alerts_found: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, str]]:
     """D-478: the frames of «Mensual» and «Histórico» one level down. Each product is keyed PRODUCT + its name, its
-    index is the median of its own consumer series against January 2022 (the family's rule), and K1, K4 and K6 keep
-    their rows under the product. The last item says the family of every product found in any of them, so a family's
+    index is the median of its own consumer series against January 2022 (the family's rule), and K1 and K6 keep their
+    rows under the product. The last item says the family of every product found in any of them, so a family's
     alerts and K1 pairs are exactly the sum of its products' (a product without an index shows «—», never a guess)."""
     rows, _ = inflation_view.build_family_index(series.assign(product_group=PRODUCT + series["product"]), ipc)
 
     family_of = {
         PRODUCT + product: family
-        for frame in (series, margins, seasonal, alerts_found)
+        for frame in (series, margins, alerts_found)
         for product, family in zip(frame["product"], frame["product_group"])
     }
     return (
         rows,
         _product_frames_down(margins),
-        _product_frames_down(seasonal),
         _product_frames_down(alerts_found),
         family_of,
     )
@@ -406,9 +383,51 @@ def busiest_month(alert_rows: pd.DataFrame) -> tuple[int, int, int] | None:
 # endregion
 
 
+# region Legends
+def ipc_label() -> str:
+    """The name of the food CPI in a chart and in its legend."""
+    return say("IPC de alimentos", "Food CPI")
+
+
+def change_kinds() -> tuple[str, str]:
+    """A month that rose and one that fell, in «Cambio de cada mes» and in its legend."""
+    return say("Subió", "Rose"), say("Bajó", "Fell")
+
+
+def alert_kinds() -> tuple[str, str]:
+    """The two kinds of price alert (K6), as «Semanal» calls them, in the chart of the alerts and in its legend."""
+    return say("Alzas fuertes", "Sharp rises"), say("Bajas fuertes", "Sharp drops")
+
+
+def series_color(family: str, palette: dict[str, str]) -> str:
+    """The colour of the line of a family, the basket or a product: the same in its chart and in its legend."""
+    return inflation_view.FAMILY_COLORS.get(family, palette["accent"])
+
+
+def year_swatch(count: int) -> str:
+    """The colours of the first `count` years side by side (D-466), for the legend of «Cambio de cada año»."""
+    colors = YEAR_COLORS[: max(count, 1)]
+    step = 100 / len(colors)
+    stops = ", ".join(f"{color} {index * step:.0f}% {(index + 1) * step:.0f}%" for index, color in enumerate(colors))
+    return f"linear-gradient(90deg, {stops})"
+
+
+def legend(keys: list[tuple[str, str, str]]) -> str:
+    """D-554: what each colour and line of a chart means, under its title: (mark, colour, label) for each key. The mark
+    is drawn as in the chart: «box» a bar, «line» a line, «dash» a dashed line, «tick» the short line of the IPC."""
+    items = "".join(
+        f'<span class="ba-key"><i class="ba-mark {mark}" style="--key-color:{color}"></i>{html.escape(label)}</span>'
+        for mark, color, label in keys
+    )
+    return f'<span class="ba-legend">{items}</span>'
+
+
+# endregion
+
+
 # region Tiles
 def trend_tile(rows, figures, start, end, mode, title: str, since: str) -> Tile:
-    name = family_name(figures["family"])
+    name, palette = family_name(figures["family"]), charts.get_palette(mode)
     return (
         title,
         say(
@@ -430,12 +449,19 @@ def trend_tile(rows, figures, start, end, mode, title: str, since: str) -> Tile:
             f"{since[:1].upper()}{since[1:]} it changed {against_ipc(figures)}.",
         ),
         partial(trend_chart, rows, figures["family"], start, end, mode),
+        legend(
+            [
+                ("line", series_color(figures["family"], palette), family_label(figures["family"])),
+                ("dash", palette["strong_text"], ipc_label()),
+            ]
+        ),
     )
 
 
 def monthly_tiles(rows, figures: dict[str, Any], start, end, mode: str) -> list[Tile]:
     """The three charts of «Mensual»: the price, the change of each month and the alerts of each month."""
     name, top, low = family_name(figures["family"]), figures["top"], figures["low"]
+    palette, (went_up, went_down), (rises, falls) = charts.get_palette(mode), change_kinds(), alert_kinds()
     first_bar, first_week = next_month(start), first_counted(start, end)
     if top is None:
         moves = "—"
@@ -492,12 +518,19 @@ def monthly_tiles(rows, figures: dict[str, Any], start, end, mode: str) -> list[
             ),
             moves,
             partial(months_chart, figures["months"], mode),
+            legend(
+                [
+                    ("box", palette["rise"], went_up),
+                    ("box", palette["fall"], went_down),
+                    ("tick", palette["strong_text"], ipc_label()),
+                ]
+            ),
         ),
         (
             say("Alertas de precio por mes", "Price alerts by month"),
             say(
-                f"{span(first_week, end)} · alzas fuertes y bajas fuertes (K6)",
-                f"{span(first_week, end)} · sharp rises and sharp drops (K6)",
+                f"{span(first_week, end)} · cambios fuera de lo normal (K6)",
+                f"{span(first_week, end)} · changes out of the ordinary (K6)",
             ),
             say(
                 f"Las semanas en que un producto de {name} cambió fuera de su rango habitual (K6): los valores "
@@ -515,13 +548,15 @@ def monthly_tiles(rows, figures: dict[str, Any], start, end, mode: str) -> list[
                 f"{month_label(busiest[:2])}, with {charts.format_thousands(busiest[2])}.",
             ),
             partial(alerts_chart, figures["alert_rows"], start, end, mode),
+            legend([("box", palette["rise"], rises), ("box", palette["fall"], falls)]),
         ),
     ]
 
 
 def history_tiles(rows, figures: dict[str, Any], last: tuple[int, int], mode: str) -> list[Tile]:
-    """The three charts of «Histórico»: the price since January 2022, the change of each year and the season."""
+    """The charts of «Histórico»: the price since January 2022 and the change of each year."""
     name, best, above, years = family_name(figures["family"]), figures["best"], figures["above"], figures["years"]
+    palette = charts.get_palette(mode)
     shorter = [f"{year} {note}" for year, note in zip(years["year"], years["note"]) if note]
     if best is None:
         yearly = "—"
@@ -543,7 +578,6 @@ def history_tiles(rows, figures: dict[str, Any], last: tuple[int, int], mode: st
             f"El año que más subió fue {best[0]} ({percent(best[1])}{note}). {beat}",
             f"The year that rose most was {best[0]} ({percent(best[1])}{note}). {beat}",
         )
-    cheapest, dearest = figures["cheapest"], figures["dearest"]
     return [
         trend_tile(
             rows,
@@ -565,30 +599,12 @@ def history_tiles(rows, figures: dict[str, Any], last: tuple[int, int], mode: st
             ),
             yearly,
             partial(years_chart, years, mode),
-        ),
-        (
-            say("Temporada", "Season"),
-            say(
-                f"{BASE[0]}–{last[0]} · cada mes frente al promedio de su año",
-                f"{BASE[0]}–{last[0]} · each month against its year's average",
+            legend(
+                [
+                    ("box", year_swatch(len(years)), family_label(figures["family"])),
+                    ("tick", palette["strong_text"], ipc_label()),
+                ]
             ),
-            say(
-                f"K4: el precio de cada semana sobre el promedio de su año; cada barra es la mediana de ese mes del "
-                f"calendario, de {BASE[0]} a {last[0]}. Son precios del día: cuando suben durante el año, los primeros "
-                "meses quedan bajo su promedio y los últimos sobre él.",
-                f"K4: each week's price over the average of its year; each bar is the median of that calendar month, "
-                f"from {BASE[0]} to {last[0]}. These are prices of the day: when they rise during the year, the first "
-                "months stay under its average and the last ones over it.",
-            ),
-            "—"
-            if cheapest is None
-            else say(
-                f"{full_month(cheapest[0])} suele ser el mes más barato ({percent(cheapest[1])} frente al promedio de "
-                f"su año) y {full_month(dearest[0]).lower()} el más caro ({percent(dearest[1])}).",
-                f"{full_month(cheapest[0])} tends to be the cheapest month ({percent(cheapest[1])} against the average "
-                f"of its year) and {full_month(dearest[0])} the dearest ({percent(dearest[1])}).",
-            ),
-            partial(season_chart, figures["profile"], mode),
         ),
     ]
 
@@ -605,6 +621,11 @@ def card(label: str, value: str, note: str, hint: str, tone: str = "") -> str:
         f'{html.escape(label)}</span><b class="ba-card-value {tone}">{html.escape(value)}</b>'
         f'<span class="ba-card-note">{html.escape(note)}</span></div>'
     )
+
+
+def cards_row(cards: list[str]) -> str:
+    """The cards of a tab in one row, as many columns as cards (D-554: «Histórico» has four)."""
+    return f'<div class="ba-cards" style="--cards:{len(cards)}">' + "".join(cards) + "</div>"
 
 
 def tone(value: float | None) -> str:
@@ -697,12 +718,12 @@ def monthly_cards(figures: dict[str, Any], start, end, wholesale: list[str]) -> 
             ),
         ),
     ]
-    return '<div class="ba-cards">' + "".join(cards) + "</div>"
+    return cards_row(cards)
 
 
 def history_cards(figures: dict[str, Any], last: tuple[int, int]) -> str:
-    """The five KPI cards of «Histórico»."""
-    best, cheapest, dearest = figures["best"], figures["cheapest"], figures["dearest"]
+    """The KPI cards of «Histórico»."""
+    best = figures["best"]
     cards = [
         change_card(say("Cambio desde ene 2022", "Change since Jan 2022"), figures, BASE, last),
         ipc_card(figures),
@@ -717,24 +738,9 @@ def history_cards(figures: dict[str, Any], last: tuple[int, int]) -> str:
                 "up to the last month published.",
             ),
         ),
-        card(
-            say("Mes más barato", "Cheapest month"),
-            "—" if cheapest is None else full_month(cheapest[0]),
-            "—"
-            if cheapest is None
-            else say(
-                f"{percent(cheapest[1])} · más caro: {month_name(dearest[0])}",
-                f"{percent(cheapest[1])} · dearest: {month_name(dearest[0])}",
-            ),
-            say(
-                "K4: el precio de cada semana sobre el promedio de su año; la mediana de cada mes del calendario, de "
-                "todos los años.",
-                "K4: each week's price over the average of its year; the median of each calendar month, of every year.",
-            ),
-        ),
         alert_card(figures),
     ]
-    return '<div class="ba-cards">' + "".join(cards) + "</div>"
+    return cards_row(cards)
 
 
 # endregion
@@ -799,13 +805,13 @@ def trend_chart(
         rows["product_group"].isin([family, IPC]) & key.between(start[0] * 100 + start[1], end[0] * 100 + end[1])
     ]
     first = panel[(panel["year"] == start[0]) & (panel["month"] == start[1])].set_index("product_group")["index"]
-    names = [family_label(family), say("IPC de alimentos", "Food CPI")]
+    names = [family_label(family), ipc_label()]
     panel = panel[panel["product_group"].isin(first.index)].assign(
         # astype: pandas 3.1 maps an empty selection to text, which cannot divide (D-486)
         value=lambda frame: frame["index"] / frame["product_group"].map(first).astype(float) * 100,
         serie=lambda frame: frame["product_group"].map({family: names[0], IPC: names[1]}),
     )
-    color = inflation_view.FAMILY_COLORS.get(family, palette["accent"])
+    color = series_color(family, palette)
     several_years = end[0] - start[0] > 2
     if several_years:
         line = alt.Chart(panel).mark_line(interpolate="monotone", strokeWidth=2.4)
@@ -840,7 +846,7 @@ def trend_chart(
 def months_chart(months: pd.DataFrame, mode: str, width: Any = "container", height: int = 150) -> Any:
     """Each month's change against the month before: a bar for the family, a short line for the food IPC."""
     palette = charts.get_palette(mode)
-    rose, fell = say("subió", "rose"), say("bajó", "fell")
+    rose, fell = change_kinds()
     frame = months.assign(
         mes=[month_label((int(year), int(month))) for year, month in zip(months["year"], months["month"])],
         tone=[rose if value > 0 else fell for value in months["change"]],
@@ -886,7 +892,7 @@ def alerts_chart(
     """The K6 alerts of each month, rises over falls. The axis names every month of the period, also those without an
     alert: no alert can be raised in the first 12 weeks of the history, so 2022 starts with three empty months."""
     palette = charts.get_palette(mode)
-    rises, falls = say("Subidas", "Rises"), say("Bajadas", "Falls")
+    rises, falls = alert_kinds()
     order = [month_label(pair) for pair in months_between(first_counted(start, end), end)]
     if alert_rows.empty:
         frame = pd.DataFrame(columns=["mes", "kind", "alerts"])
@@ -948,47 +954,6 @@ def years_chart(years: pd.DataFrame, mode: str, width: Any = "container", height
         .encode(x="year:N", y="ipc:Q", tooltip=tooltip)
     )
     return sized(alt.layer(bars, marks), width, height, mode)
-
-
-def season_chart(profile: pd.DataFrame, mode: str, width: Any = "container", height: int = 150) -> Any:
-    """Each calendar month against the average of its year (K4); a bar gathers that month of every year."""
-    palette = charts.get_palette(mode)
-    cheaper, dearer = say("más barato", "cheaper"), say("más caro", "dearer")
-    frame = profile.assign(
-        mes=[month_name(month) for month in profile["month"]],
-        tone=[cheaper if value < 0 else dearer for value in profile["change"]],
-    )
-    order = [month_name(month) for month in range(1, 13)]
-    chart = (
-        alt.Chart(frame)
-        .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
-        .encode(
-            x=alt.X("mes:N", sort=order, title=None, axis=alt.Axis(labelAngle=0, labelFontSize=label_size(height))),
-            y=alt.Y(
-                "change:Q",
-                title=None,
-                axis=alt.Axis(
-                    labelFontSize=label_size(height),
-                    tickCount=4,
-                    labelExpr="datum.value > 0 ? '+' + datum.label : datum.label",
-                ),
-            ),
-            color=alt.Color(
-                "tone:N",
-                scale=alt.Scale(domain=[cheaper, dearer], range=[palette["fall"], palette["rise"]]),
-                legend=None,
-            ),
-            tooltip=[
-                alt.Tooltip("mes:N", title=say("Mes", "Month")),
-                alt.Tooltip(
-                    "change:Q", title=say("% frente al promedio del año", "% against the year's average"), format="+.1f"
-                ),
-                alt.Tooltip("years:N", title=say("Años", "Years")),
-                alt.Tooltip("weeks:Q", title=say("Semanas", "Weeks")),
-            ],
-        )
-    )
-    return sized(chart, width, height, mode)
 
 
 # endregion
@@ -1087,11 +1052,6 @@ def history_table(summaries: list[dict[str, Any]], chosen: str) -> str:
                     "",
                     False,
                 ),
-            ),
-            (
-                say("Mes más barato", "Cheapest month"),
-                say("El mes con el menor K4, de todos los años.", "The month with the lowest K4, of every year."),
-                lambda item: ("—" if item["cheapest"] is None else full_month(item["cheapest"][0]), "", False),
             ),
             (
                 say("Alertas", "Alerts"),
