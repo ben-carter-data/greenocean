@@ -344,19 +344,4 @@ def build_cases_html(mode):
     return wrap_document(palette, body)
 
 
-def orthogonal(start, end, half_width, half_height, gap=6):
-    """The arrow between two boxes with right angles only: straight down or up where the boxes share columns, straight
-    across where they share rows, and otherwise out of the side of the first box and down or up into the second."""
-    (x1, y1), (x2, y2) = start, end
-    down = 1 if y2 > y1 else -1
-    if abs(x2 - x1) < 2 * half_width - 40:  # one above the other: a vertical line in the middle of the shared columns
-        x = (max(x1, x2) - half_width + min(x1, x2) + half_width) / 2
-        return f"M{x:.1f} {y1 + down * half_height:.1f} V{y2 - down * (half_height + gap):.1f}"
-    right = 1 if x2 > x1 else -1
-    if abs(y2 - y1) < 2 * half_height - 20:  # side by side: a horizontal line in the middle of the shared rows
-        y = (y1 + y2) / 2
-        return f"M{x1 + right * half_width:.1f} {y:.1f} H{x2 - right * (half_width + gap):.1f}"
-    return f"M{x1 + right * half_width:.1f} {y1:.1f} H{x2:.1f} V{y2 - down * (half_height + gap):.1f}"
-
-
 # endregion

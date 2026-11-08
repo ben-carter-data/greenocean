@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.17 |
-| Date | 2026-11-03 |
+| Version | 2.18 |
+| Date | 2026-11-08 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Define once the acronyms and terms used by the panel and the documents. |
@@ -97,6 +97,7 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | IEEE | Institute of Electrical and Electronics Engineers; it publishes the IEEE 730 standard, which gives the structure of the SQAP. | — | Documents |
 | IEC | International Electrotechnical Commission; with the ISO it signs the standards ISO/IEC 25010 (software quality) and ISO/IEC 25012 (data quality). | Quality plan | Documents |
 | ADR | Architecture Decision Record. | — | Documents |
+| BPMN | Business Process Model and Notation: the standard to draw a process with its events, tasks, decisions and participants. | App map | Documents |
 | MADR | Standard format for writing an ADR (*Markdown Architectural Decision Records*). | — | Documents |
 | arc42 | Standard template for software architecture documentation. | — | Documents |
 | C4 | Model of architecture diagrams by levels: context, containers, components and code. | — | Documents |
@@ -128,3 +129,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.15 | 2026-11-03 | The load's cron: 12:17 UTC and two more attempts (D-485) |
 | 2.16 | 2026-11-03 | The load's cron: 12:07 UTC, an attempt every 15 minutes until 14:52 and every hour until 02:07 (D-487) |
 | 2.17 | 2026-11-03 | The price alert in Weekly, with the price of the chosen region (D-499) |
+| 2.18 | 2026-11-08 | BPMN, the notation of the «App map» (D-562) |

@@ -5,20 +5,63 @@ Cloud). In the middle, the pool «Carga semanal» with four lanes (ingestion, tr
 publication): a timer start event every Tuesday, the collapsed subprocesses with their logos, the data stores, the
 exclusive gateway of the publication gate and its two end events. Below, the pool «Integración continua», started by
 a message (a push), the readers as collapsed pools and a BPMN group with what watches and supports the system. The
-grey sequence flow is always drawn; the blue connections of each piece come with a click. A legend names every
-symbol. The sheet is a fixed mid grey in every theme, so the diagram reads as a document. Pure functions: no Streamlit.
+grey sequence flow joins the steps and dotted associations join them to their stores. A legend names every symbol.
+The sheet is a fixed mid grey in every theme, so the diagram reads as a document. Pure functions: no Streamlit.
 """
 
+import base64
 import html
 
-from bi import app_map, charts, i18n, static_files
+from bi import brand_icons, charts, database_map, doc_views, i18n, static_files
 
 # region Constants
 WIDTH, HEIGHT = 1440, 778
 INK, MUTED, LINE, CARD = "#1f2328", "#454c56", "#98a0ab", "#f5f6f8"
-GREEN, RED, AMBER, BLUE, SHEET = "#1a7f37", "#cf222e", "#8a5a00", "#0550ae", "#c3c9d1"
+GREEN, RED, AMBER, SHEET = "#1a7f37", "#cf222e", "#8a5a00", "#c3c9d1"
 LANE_SHADES = ["#d3d8de", "#c9cfd6"]
 TASK_W, TASK_H = 118, 76
+# The logo of each piece (the same as «Stack y evidencia»): a brand, a source, a person or a thin line icon.
+LOGOS = {
+    "odepa": "source:odepa",
+    "odepa_consumer": "source:odepa",
+    "ine": "source:ine",
+    "agent": "brand:python",
+    "sqlite": "brand:sqlite",
+    "parquet": "brand:apacheparquet",
+    "dbt": "brand:dbt",
+    "duckdb": "brand:duckdb",
+    "gates": "icon:gate",
+    "release": "icon:tag",
+    "streamlit": "brand:streamlit",
+    "visitor": "person:visitor",
+    "professional": "person:professional",
+    "author": "person:author",
+    "github": "brand:github",
+    "pypi": "icon:box",
+    "stcloud": "icon:cloud",
+    "pruebas": "icon:workflow",
+    "ci": "brand:pytest",
+    "calidad": "icon:workflow",
+}
+# Thin line icons for the pieces that are not a brand, drawn in the accent of the light theme (24-unit grid).
+LINE_ICONS = {
+    "workflow": '<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><rect x="14.5" y="9.5" width="6" '
+    'height="5" rx="1.2"/><path d="M6 8.5v7"/><path d="M8.5 6h2.5a2.5 2.5 0 0 1 2.5 2.5V12h1"/>',
+    "tag": '<path d="M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8.5 8.5-9 9z"/><circle cx="8" cy="8" r="1.6"/>',
+    "gate": '<path d="M4 21V5"/><path d="M20 21V5"/><path d="M4 9h16"/><path d="M4 14h16"/><path d="m8 9 4 5m0-5 4 5"/>',
+    "shield": '<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+    "code": '<path d="m8 8-4 4 4 4"/><path d="m16 8 4 4-4 4"/><path d="m13.5 5-3 14"/>',
+    "chart": '<path d="M4 20V4"/><path d="M4 20h16"/><path d="m7 15 4-5 3 3 5-7"/>',
+    "parity": '<path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/>',
+    "pulse": '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
+    "files": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>',
+    "ruler": '<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/>',
+    "key": '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9"/><path d="m16 7 3 3"/><path d="m14 9 2 2"/>',
+    "spark": '<path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="m6.5 6.5 2.5 2.5M15 15l2.5 2.5M17.5 6.5 15 9M9 15l-2.5 2.5"/>',
+    "box": '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/>',
+    "cloud": '<path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 9.5 4.3 4.3 0 0 0 7 18z"/>',
+    "console": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3"/><path d="M12 15h5"/>',
+}
 # The light theme's logos: they keep their colour on the grey sheet in every theme.
 LOGO_THEME = charts.MODE_LIGHT
 # The participants outside the process: (id, node keys of its logos, label, x, y, width, height).
@@ -41,7 +84,7 @@ LOAD_LANES = [
     (400, 110, "Publicación"),
 ]
 CI_POOL = (40, 520, 1360, 126, "Integración continua")
-# Collapsed subprocesses: (node key, x, y, label); a «+» says they open with a click.
+# Collapsed subprocesses: (node key, x, y, label); a «+» says each groups several steps.
 TASKS = [
     ("agent", 260, 125, "Ingesta de ODEPA\ne INE"),
     ("dbt", 590, 235, "Transformación\ndbt Core"),
@@ -93,30 +136,30 @@ ANNOTATION = (
 )
 # A BPMN group: the pieces that watch and support the system, outside the flow of the data.
 GROUP = (650, 656, 750, 60, "Grupo · vigilancia y soporte")
-GROUP_KEYS = [
-    "semanal",
-    "secrets",
-    "devops",
-    "web",
-    "charts",
-    "parity",
-    "security",
-    "monitoring",
-    "docs",
-    "measurement",
-    "ai",
+GROUP_PIECES = [
+    ("semanal", "icon:workflow", "semanal.yml"),
+    ("secrets", "icon:key", "Secretos del panel"),
+    ("devops", "icon:console", "DevOps y seguridad"),
+    ("web", "icon:code", "HTML · CSS · JavaScript"),
+    ("charts", "icon:chart", "Altair · Vega-Lite"),
+    ("parity", "icon:parity", "Respaldo y paridad"),
+    ("security", "icon:shield", "Seguridad"),
+    ("monitoring", "icon:pulse", "Observabilidad"),
+    ("docs", "icon:files", "Documentos"),
+    ("measurement", "icon:ruler", "Medición de pantallas"),
+    ("ai", "icon:spark", "Apoyo con IA"),
 ]
 # The marker that gives the page's frame the height the window leaves (as «Modelo de datos» does, D-236).
 FIT = static_files.read("app_bpmn_fit.html")
 LEGEND = [
     ("box", "Pool contraído: participante externo, caja negra"),
-    ("task", "Subproceso contraído: clic para ver adentro"),
+    ("task", "Subproceso contraído: agrupa varios pasos"),
     ("store", "Almacén de datos"),
     ("start", "Evento de inicio (temporizador o mensaje)"),
     ("gateway", "Compuerta exclusiva"),
     ("end", "Evento de fin (en rojo, fin de error)"),
     ("sequence", "Flujo de secuencia"),
-    ("message", "Flujo de mensaje y asociación (al hacer clic)"),
+    ("association", "Asociación: lee o escribe un almacén"),
 ]
 # endregion
 
@@ -137,9 +180,37 @@ def text(x, y, value, size=11, color=INK, anchor="middle", weight=400):
     return f'<text x="{x}" y="{y}" fill="{color}" font-size="{size}" text-anchor="{anchor}" font-weight="{weight}">{spans}</text>'
 
 
-def logo(key, x, y, size):
-    """The logo of a piece of the app map (the same as «Stack y evidencia»), centred on (x, y)."""
-    href = app_map.logo_data(app_map.NODES[key][1], charts.get_palette(LOGO_THEME))
+def logo_data(spec, palette):
+    """A logo as a data address, in its own colour."""
+    kind, name = spec.split(":")
+    if kind == "brand":
+        color = (
+            palette["strong_text"]
+            if name in ("github", "git")
+            else doc_views.DISCS.get(name, ("", palette["accent"]))[1]
+        )
+        svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="{color}">{brand_icons.logo_body(name)}</svg>'
+    elif kind == "source":
+        svg = database_map.source_logo(name).replace(
+            '<svg class="logo" ', '<svg xmlns="http://www.w3.org/2000/svg" ', 1
+        )
+    elif kind == "person":
+        color = doc_views.PERSON_DISCS[name][1]
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="{color}">'
+            '<circle cx="18" cy="12" r="6"/><path d="M6 31c1-8 6-12 12-12s11 4 12 12z"/></svg>'
+        )
+    else:
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{palette["accent"]}" '
+            f'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{LINE_ICONS[name]}</svg>'
+        )
+    return f"data:image/svg+xml;base64,{base64.b64encode(svg.encode()).decode()}"
+
+
+def logo(spec, x, y, size):
+    """A logo (the same as «Stack y evidencia»), centred on (x, y)."""
+    href = logo_data(spec, charts.get_palette(LOGO_THEME))
     return f'<image href="{href}" x="{x - size / 2}" y="{y - size / 2}" width="{size}" height="{size}"/>'
 
 
@@ -167,10 +238,10 @@ def draw_pool(x, y, width, height, title, lanes=()):
 
 
 def draw_black_box(box_id, keys, label, x, y, width, height):
-    """A collapsed pool: an external participant, a black box whose inside opens with a click."""
-    logos = "".join(logo(key, x + 22 + index * 30, y + height / 2, 22) for index, key in enumerate(keys))
+    """A collapsed pool: an external participant, a black box."""
+    logos = "".join(logo(LOGOS[key], x + 22 + index * 30, y + height / 2, 22) for index, key in enumerate(keys))
     return (
-        f'<g class="bp-piece" id="bp-{box_id}" data-key="{box_id}">'
+        f'<g class="bp-piece" id="bp-{box_id}">'
         f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="3" fill="{CARD}" stroke="{MUTED}"/>'
         + logos
         + text(x + 22 + len(keys) * 30, y + height / 2 + 4, label, 11.5, INK, "start")
@@ -179,12 +250,12 @@ def draw_black_box(box_id, keys, label, x, y, width, height):
 
 
 def draw_task(key, x, y, label):
-    """A collapsed subprocess: a rounded task with its logo, its name and the «+» that opens it."""
+    """A collapsed subprocess: a rounded task with its logo, its name and the «+» that says it groups several steps."""
     left, top = x - TASK_W / 2, y - TASK_H / 2
     return (
-        f'<g class="bp-piece" id="bp-{key}" data-key="{key}">'
+        f'<g class="bp-piece" id="bp-{key}">'
         f'<rect x="{left}" y="{top}" width="{TASK_W}" height="{TASK_H}" rx="10" fill="{CARD}" stroke="{INK}" stroke-width="1.3"/>'
-        + logo(key, x, y - 16, 26)
+        + logo(LOGOS[key], x, y - 16, 26)
         + text(x, y + 9, label, 10.5)
         + f'<rect x="{x - 6}" y="{top + TASK_H - 12}" width="12" height="12" fill="none" stroke="{MUTED}"/>'
         + text(x, top + TASK_H - 2.5, "+", 11, MUTED)
@@ -196,10 +267,10 @@ def draw_store(key, x, y, label, side):
     """A data store, the BPMN cylinder, with the logo of its technology and its name below it or at its right."""
     name = text(x, y + 34, label, 10, MUTED) if side == "below" else text(x + 30, y + 4, label, 10, MUTED, "start")
     return (
-        f'<g class="bp-piece" id="bp-{key}" data-key="{key}">'
+        f'<g class="bp-piece" id="bp-{key}">'
         f'<path d="M{x - 22} {y - 18} v32 a22 7 0 0 0 44 0 v-32" fill="{CARD}" stroke="{MUTED}"/>'
         f'<ellipse cx="{x}" cy="{y - 18}" rx="22" ry="7" fill="{CARD}" stroke="{MUTED}"/>'
-        + logo(key, x, y + 2, 20)
+        + logo(LOGOS[key], x, y + 2, 20)
         + name
         + "</g>"
     )
@@ -258,13 +329,13 @@ def draw_annotation(x, y, note):
 def draw_group():
     """The BPMN group (dashed and dotted): what watches and supports the system, each piece with its logo."""
     x, y, width, height, title = GROUP
-    step = (width - 20) / len(GROUP_KEYS)
+    step = (width - 20) / len(GROUP_PIECES)
     pieces = "".join(
-        f'<g class="bp-piece" id="bp-{key}" data-key="{key}"><rect x="{x + 10 + index * step}" y="{y + 18}" '
+        f'<g class="bp-piece" id="bp-{key}"><rect x="{x + 10 + index * step}" y="{y + 18}" '
         f'width="{step - 6}" height="{height - 24}" rx="6" fill="{CARD}" stroke="{LINE}"/>'
-        + logo(key, x + 10 + index * step + (step - 6) / 2, y + height / 2 + 6, 22)
-        + f"<title>{html.escape(say(app_map.NODES[key][0]))}</title></g>"
-        for index, key in enumerate(GROUP_KEYS)
+        + logo(spec, x + 10 + index * step + (step - 6) / 2, y + height / 2 + 6, 22)
+        + f"<title>{html.escape(say(name))}</title></g>"
+        for index, (key, spec, name) in enumerate(GROUP_PIECES)
     )
     return (
         f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="8" fill="none" stroke="{MUTED}" '
@@ -334,7 +405,7 @@ def legend_symbol(kind, x, y):
         "gateway": f'<path d="M{x + 8} {y - 7} l7 7 l-7 7 l-7 -7z" fill="none" stroke="{AMBER}"/>',
         "end": f'<circle cx="{x + 8}" cy="{y}" r="6" fill="none" stroke="{GREEN}" stroke-width="2.5"/>',
         "sequence": f'<path d="M{x} {y} h16" stroke="{MUTED}" marker-end="url(#bp-arrow)"/>',
-        "message": f'<path d="M{x} {y} h16" stroke="{BLUE}" stroke-dasharray="4 3"/>',
+        "association": f'<path d="M{x} {y} h16" stroke="{MUTED}" stroke-width="1.3" stroke-dasharray="2 3"/>',
     }[kind]
 
 

@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Decision Index |
-| Version | 2.5 |
-| Date | 2026-11-03 |
+| Version | 2.6 |
+| Date | 2026-11-08 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Gather, by theme, the decisions that change the architecture, the data, the security or the operations. |
@@ -165,7 +165,7 @@ How the panel reads on a single screen and in two languages.
 | Buttons and links share a single component | — | D-281 |
 | The panel and the documents exist in Spanish and English | — | D-283 |
 | Each page is translated into English as it is drawn | — | D-284 |
-| An app map shows the whole system in one view | — | D-285 |
+| The app map shows the whole system in a BPMN diagram, in one view | — | D-285, D-562 |
 | The dark theme is the default | — | D-349 |
 | The page «Latest data by channel» shows the latest week of each source | — | D-365 |
 | «Weekly» reads in three steps that open in order | — | D-372 |
@@ -207,3 +207,4 @@ How the project is explained.
 | 2.3 | 2026-11-02 | The folding of the steps applies only to the channels; the Dashboard stays whole (D-446) |
 | 2.4 | 2026-11-02 | Each channel behaves exactly like the Dashboard and no longer folds its steps (D-452) |
 | 2.5 | 2026-11-03 | The ADR-35 link uses the official name «DuckDB database» (D-474); the panel is named «Weekly»; ADR-36, the language rule, the two alerts, the step from family to products and the figures with no silent calculation are added (D-433, D-443, D-475, D-477, D-478, D-480) |
+| 2.6 | 2026-11-08 | The app map becomes a BPMN diagram (D-562) |

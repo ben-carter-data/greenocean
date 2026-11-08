@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Índice de decisiones |
-| Versión | 2.5 |
-| Fecha | 03-11-2026 |
+| Versión | 2.6 |
+| Fecha | 08-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Reunir, por tema, las decisiones que cambian la arquitectura, los datos, la seguridad o la operación. |
@@ -165,7 +165,7 @@ Cómo se lee el panel en una sola pantalla y en dos idiomas.
 | Botones y enlaces comparten un solo componente | — | D-281 |
 | El panel y los documentos existen en español y en inglés | — | D-283 |
 | Cada página se traduce al inglés mientras se dibuja | — | D-284 |
-| Un mapa de la app muestra todo el sistema en una vista | — | D-285 |
+| El mapa de la app muestra todo el sistema en un diagrama BPMN, en una vista | — | D-285, D-562 |
 | El tema oscuro es el predeterminado | — | D-349 |
 | La página «Último dato por canal» muestra la última semana de cada fuente | — | D-365 |
 | «Semanal» se lee en tres pasos que se abren en orden | — | D-372 |
@@ -207,3 +207,4 @@ Cómo se explica el proyecto.
 | 2.3 | 02-11-2026 | El pliegue de los pasos vale solo para los canales; el Dashboard queda completo (D-446) |
 | 2.4 | 02-11-2026 | Cada canal se comporta igual que el Dashboard y deja de plegar sus pasos (D-452) |
 | 2.5 | 03-11-2026 | El enlace de ADR-35 usa el nombre oficial «Base DuckDB» (D-474); el panel se nombra «Semanal»; se suman ADR-36, la regla de idioma, las dos alertas, el paso de familia a productos y las cifras sin cálculo silencioso (D-433, D-443, D-475, D-477, D-478, D-480) |
+| 2.6 | 08-11-2026 | El mapa de la app pasa a ser un diagrama BPMN (D-562) |

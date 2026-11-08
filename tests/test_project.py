@@ -283,7 +283,7 @@ def test_d543_javascript_and_html_live_in_their_own_files():
                 if len(marks.findall(text)) >= 2 or text.count("\n") > 100:
                     scripts.append(f"{folder}/{path.name}:{line}")
     assert scripts == [], scripts
-    assert {path.name for path in (root / "bi" / "static").iterdir()} >= {"app_map.js", "zoom.js", "sql_editor.html"}
+    assert {path.name for path in (root / "bi" / "static").iterdir()} >= {"lineage.js", "zoom.js", "sql_editor.html"}
 
 
 def test_d544_no_stylesheet_is_written_inside_python():

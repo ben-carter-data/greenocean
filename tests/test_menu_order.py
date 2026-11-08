@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from bi import app_map, dashboard, i18n, queries
+from bi import dashboard, i18n, queries
 
 # region Constants
 DEVOPS = [view for key, _, pages in dashboard.MENU_BLOCKS if key == "devops" for view in pages]
@@ -90,19 +90,6 @@ def test_d378_choosing_a_view_opens_the_dashboard():
     assert [
         box for box in app.selectbox if box.key == "home_products_direction"
     ]  # D-371: the Dashboard, not the first link
-
-
-def test_d378_the_app_map_names_the_menu_pages_in_the_menu_order():
-    pages = next(text for tool, text in app_map.NODES["streamlit"][8] if tool == "Páginas")
-    menu = [
-        view
-        for view in dashboard.MENU_ORDER
-        if view not in dashboard.AUTHOR_ONLY_PAGES and view not in dashboard.FOLDER_TILES  # D-533: footer tiles
-    ]
-    expected = [dashboard.SIDEBAR_LABELS.get(view, view) for view in menu]  # D-456: «Análisis» names its tabs beside it
-    positions = [pages.index(label) for label in expected]
-    assert positions == sorted(positions), expected  # every page is named, in the menu's order
-    assert pages in i18n.PAGES  # and the map's sentence has its English
 
 
 def test_d387_the_readme_lists_every_page_of_the_menu_in_the_menu_order():

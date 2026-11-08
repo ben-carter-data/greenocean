@@ -1162,7 +1162,7 @@ def show_app_map_page(mode):
     show_page_bar(
         PAGE_APP_MAP,
         PAGE_APP_MAP,
-        "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y con qué se conecta.",
+        "Todo el sistema en un diagrama BPMN: la carga semanal, la integración continua y quién participa.",
     )
     st.markdown(app_bpmn.FIT, unsafe_allow_html=True)
     st.iframe(app_bpmn.build_view(), height=600)
