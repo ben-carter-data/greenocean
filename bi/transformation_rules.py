@@ -14,7 +14,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-from bi import charts, doc_views, project, static_files
+from bi import charts, doc_views, i18n, project, static_files
+from bi.constants import KPI_PRESENTATION
 
 # region Constants
 PIPELINE_TAB, CALCULATIONS_TAB = "pipeline", "calculos"
@@ -77,14 +78,107 @@ ENDS: dict[str, tuple[tuple[tuple[str, str], tuple[str, str], tuple[str, str], i
         ),
     ),
 }
+# D-552: what each stage is: one line for its band in the list, and a card for its icon in the drawing.
+LAYER_TEXTS = {
+    "ingesta": (
+        (
+            "trae los archivos, revisa que estén sanos y los guarda tal como vienen",
+            "brings the files, checks they are sound and keeps them as they come",
+        ),
+        (
+            "Ingesta — El primer paso: trae los datos de su fuente. Aquí: descarga los archivos de ODEPA y del INE, revisa "
+            "que estén sanos y los guarda tal como vienen, en raw.db y en la capa bronce.",
+            "Ingestion — The first step: it brings the data from its source. Here: it downloads the ODEPA and INE files, "
+            "checks they are sound and keeps them as they come, in raw.db and in the bronze layer.",
+        ),
+    ),
+    "staging": (
+        ("ordena lo que llegó, sin cambiar su contenido", "tidies what arrived, without changing its content"),
+        (
+            "Staging — La primera capa de dbt: ordena lo que llegó, sin cambiar su contenido. Aquí: da a cada columna su "
+            "tipo y un nombre común, convierte la coma decimal y limpia los espacios.",
+            "Staging — The first layer of dbt: it tidies what arrived, without changing its content. Here: it gives each "
+            "column its type and a common name, converts the decimal comma and cleans the spaces.",
+        ),
+    ),
+    "intermedio": (
+        ("aplica las reglas de negocio", "applies the business rules"),
+        (
+            "Intermedio — La capa del medio de dbt (en inglés, intermediate): aplica las reglas de negocio. Aquí: rechaza "
+            "lo imposible, lleva cada envase a kilo, unidad o litro, arma cada semana y marca los atípicos.",
+            "Intermediate — The middle layer of dbt: it applies the business rules. Here: it rejects the impossible, "
+            "brings each package to kilo, unit or litre, builds each week and flags the outliers.",
+        ),
+    ),
+    "marts": (
+        ("arma las tablas listas para usar", "builds the tables ready to use"),
+        (
+            "Marts — La capa final de dbt: arma las tablas listas para usar. Aquí: el catálogo de productos, las regiones, "
+            "el calendario, la tabla central de precios y el IPC de cada semana.",
+            "Marts — The final layer of dbt: it builds the tables ready to use. Here: the product catalog, the regions, "
+            "the calendar, the central price table and the CPI of each week.",
+        ),
+    ),
+    "publicacion": (
+        ("publica la base solo si toda la carga pasó", "publishes the database only if the whole load passed"),
+        (
+            "Publicación — El último paso de la carga. Aquí: revisa la carga entera, recalcula las cifras por otro "
+            "camino y reemplaza la base que lee el panel solo si todo pasó.",
+            "Publication — The last step of the load. Here: it checks the whole load, recomputes the figures another way "
+            "and replaces the database the panel reads only if everything passed.",
+        ),
+    ),
+    "sql": (
+        ("los KPI K1 a K8, escritos como consultas", "the KPIs K1 to K8, written as queries"),
+        (
+            "Indicadores en SQL — Las consultas que calculan los KPI técnicos. Aquí: K1 a K8, en bi/queries.sql, leídos "
+            "de la Base DuckDB.",
+            "SQL indicators — The queries that compute the technical KPIs. Here: K1 to K8, in bi/queries.sql, read from "
+            "the DuckDB database.",
+        ),
+    ),
+    "panel": (
+        ("lo que el panel calcula al dibujar cada página", "what the panel computes as it draws each page"),
+        (
+            "Cálculos del panel — Lo que el panel calcula en Python al dibujar. Aquí: el cambio de cada semana, las "
+            "alertas, la mediana de cada familia, el mapa de regiones y el Excel de «Descargar».",
+            "Panel calculations — What the panel computes in Python as it draws. Here: the change of each week, the "
+            "alerts, the median of each family, the map of regions and the Excel of «Download».",
+        ),
+    ),
+}
+END_TIPS = {
+    "ODEPA": (
+        "ODEPA — La Oficina de Estudios y Políticas Agrarias del Ministerio de Agricultura. Aquí: publica los precios "
+        "mayoristas y al consumidor, en archivos CSV.",
+        "ODEPA — The Office of Agricultural Studies and Policies of Chile's Ministry of Agriculture. Here: it publishes "
+        "the wholesale and consumer prices, in CSV files.",
+    ),
+    "INE": (
+        "INE — El Instituto Nacional de Estadísticas. Aquí: publica el IPC de alimentos, que lleva los precios a pesos "
+        "reales.",
+        "INE — Chile's National Statistics Institute. Here: it publishes the food CPI, which brings prices to real pesos.",
+    ),
+    "Panel web": (
+        "Panel web — El panel de Streamlit que estás viendo. Aquí: lee la base publicada y muestra los resultados.",
+        "Web panel — The Streamlit panel you are looking at. Here: it reads the published database and shows the "
+        "results.",
+    ),
+    "Base DuckDB": (
+        "Base DuckDB — La base que publica la carga semanal. Aquí: de ella parten todos los cálculos de esta pestaña.",
+        "DuckDB database — The database the weekly load publishes. Here: every calculation of this tab starts from it.",
+    ),
+}
+# A rule that is a technical KPI starts with its code: «K1: margen entre mayorista y consumidor».
+KPI_CODE = re.compile(r"^(K\d)\b")
 WIDTH, ICON_Y, ICON, NAME_Y, WHERE_Y, DOTS_Y, ROW, PITCH, DOT = 1320, 34, 46, 80, 96, 118, 25, 25, 10.5
 HEIGHT = DOTS_Y + 2 * ROW - 6
 TEXTS = {
     "tab_pipeline": ("Reglas del pipeline", "Pipeline rules"),
     "tab_calculations": ("Cálculos e indicadores", "Calculations and indicators"),
-    "problem": ("Qué problema resuelve", "What problem it solves"),
-    "without": ("Si no existiera", "If it did not exist"),
-    "example": ("En la práctica", "In practice"),
+    "problem": ("Problema que resuelve", "Problem it solves"),
+    "without": ("Impacto si no existiera", "Impact if it did not exist"),
+    "example": ("Ejemplo", "Example"),
     "inference": ("Inferencia", "Inference"),
     "inference_note": (
         "Inferencia: una lectura que calza con los precios, pero que ODEPA no declara.",
@@ -96,12 +190,16 @@ TEXTS = {
         "Same-package rule: a variation compares only the packages sold both weeks. Prices that only changed package "
         "are left out of the comparison.",
     ),
-    "uses": ("Usa la regla del mismo envase", "Uses the same-package rule"),
     "uses_short": ("usa la regla", "uses the rule"),
-    "not_uses": ("No usa la regla del mismo envase", "Does not use the same-package rule"),
     "not_uses_short": ("no la usa", "does not use it"),
+    "same_package": ("Regla del mismo envase", "Same-package rule"),
+    "yes": ("Sí", "Yes"),
+    "no": ("No", "No"),
+    "kpi": ("KPI", "KPI"),
+    "here": ("Aquí:", "Here:"),
     "backing": ("Respaldo", "Backing"),
-    "where": ("Dónde actúa", "Where it acts"),
+    "stage": ("Etapa", "Stage"),
+    "map": ("Dónde actúa cada regla", "Where each rule acts"),
     "all": ("Ver todas", "See all"),
     "rule": ("Regla", "Rule"),
     "rules": ("reglas", "rules"),
@@ -116,7 +214,7 @@ SCRIPT = static_files.read("transformation_rules.js")  # D-543: the code lives i
 # endregion
 
 
-# region «Reglas de transformación»
+# region Reading the rules and their code
 def pick(pair: Any, language: str) -> str:
     return pair[1] if language == "en" else pair[0]
 
@@ -146,6 +244,17 @@ def code_reference(reference: dict[str, str], author: bool) -> dict[str, str]:
     return found
 
 
+def describe_kpi(title: str, language: str) -> str | None:
+    """«K1 · Brecha de precio: diferencia entre…» for a rule that is a technical KPI (D-552); None for any other."""
+    found = KPI_CODE.match(title)
+    if not found:
+        return None
+    name, _, description = KPI_PRESENTATION[found.group(1)]
+    if language == "en":
+        name, description = i18n.lookup(name) or name, i18n.lookup(description) or description
+    return f"{found.group(1)} · {name}: {description}"
+
+
 def build_rules_data(language: str, author: bool) -> list[dict[str, Any]]:
     """The rules as the page reads them: one language, and the code with its current line."""
     built = []
@@ -164,6 +273,7 @@ def build_rules_data(language: str, author: bool) -> list[dict[str, Any]]:
                 "inference": pick(rule["inferencia"], language) if rule.get("inferencia") else None,
                 "whyNot": pick(rule["por_que_no"], language) if rule.get("por_que_no") else None,
                 "uses": rule.get("usa_mismo_envase"),
+                "kpi": describe_kpi(rule["titulo"][0], language),
                 "backing": rule["respaldo"],
                 "code": [code_reference(reference, author) for reference in rule["codigo"]],
             }
@@ -171,6 +281,10 @@ def build_rules_data(language: str, author: bool) -> list[dict[str, Any]]:
     return built
 
 
+# endregion
+
+
+# region The drawing: where each rule acts
 def place_logo(logo: tuple[str, str], x: float) -> str:
     """A mark of the app, without a background, centred at x on the row of the icons."""
     mark = doc_views.flat_logo(*logo)
@@ -180,8 +294,9 @@ def place_logo(logo: tuple[str, str], x: float) -> str:
 
 def build_end(end: tuple[Any, ...], language: str) -> str:
     name, where, logo, x = end
+    tip = html.escape(pick(END_TIPS[name[0]], language))
     return (
-        f'<g class="end">{place_logo(logo, x)}'
+        f'<g class="end" tabindex="0" data-tip="{tip}">{place_logo(logo, x)}'
         f'<text class="name" x="{x}" y="{NAME_Y}" text-anchor="middle">{html.escape(pick(name, language))}</text>'
         f'<text class="where" x="{x}" y="{WHERE_Y}" text-anchor="middle">{html.escape(pick(where, language))}</text></g>'
     )
@@ -204,7 +319,8 @@ def build_layer(entry: tuple[Any, ...], rules: list[dict[str, Any]], language: s
             f'<text x="{cx}" y="{cy + 3.4}" text-anchor="middle">{rule["n"]}</text></g>'
         )
     return (
-        f'<g class="layer" data-layer="{key}" tabindex="0" role="button">{place_logo(logo, x)}'
+        f'<g class="layer" data-layer="{key}" data-tip="{html.escape(pick(LAYER_TEXTS[key][1], language))}" '
+        f'tabindex="0" role="button">{place_logo(logo, x)}'
         f'<text class="name" x="{x}" y="{NAME_Y}" text-anchor="middle">{html.escape(pick(name, language))}</text>'
         f'<text class="where" x="{x}" y="{WHERE_Y}" text-anchor="middle">{html.escape(pick(where, language))}</text>'
         f'</g>{"".join(dots)}'
@@ -224,7 +340,7 @@ def build_diagram(tab: str, rules: list[dict[str, Any]], language: str) -> str:
         for start, end in zip(stops, stops[1:])
     )
     return (
-        f'<svg class="map" viewBox="0 0 {WIDTH} {HEIGHT}" role="group" aria-label="{html.escape(pick(TEXTS["where"], language))}">'
+        f'<svg class="map" viewBox="0 0 {WIDTH} {HEIGHT}" role="group" aria-label="{html.escape(pick(TEXTS["map"], language))}">'
         f'<defs><marker id="rule-head-{tab}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
         'orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="head"/></marker></defs>'
         f'{arrows}{"".join(build_end(end, language) for end in ends)}'
@@ -232,6 +348,10 @@ def build_diagram(tab: str, rules: list[dict[str, Any]], language: str) -> str:
     )
 
 
+# endregion
+
+
+# region The page: the drawing, the list and the table of each rule
 def build_css(palette: dict[str, str]) -> str:
     dark = palette["base"] == charts.BASE_DARK
     green, amber = ("#3dd68c", "#f5b84b") if dark else ("#1f8f5f", "#a16207")
@@ -260,16 +380,23 @@ def build_page_html(palette: dict[str, str], language: str, author: bool) -> str
     say = {key: pick(pair, language) for key, pair in TEXTS.items()}
     payload = {
         "rules": rules,
+        "layers": {
+            entry[0]: {"name": pick(entry[2], language), "summary": pick(LAYER_TEXTS[entry[0]][0], language)}
+            for entry in LAYERS
+        },
         "labels": {
+            "stage": say["stage"],
+            "kpi": say["kpi"],
             "problem": say["problem"],
             "without": say["without"],
             "example": say["example"],
             "inference": say["inference"],
-            "uses": say["uses"],
-            "notUses": say["not_uses"],
+            "samePackage": say["same_package"],
+            "yes": say["yes"],
+            "no": say["no"],
             "sameRule": say["same_package_note"],
             "backing": say["backing"],
-            "where": say["where"],
+            "here": say["here"],
             "all": say["all"],
         },
     }

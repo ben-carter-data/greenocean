@@ -39,9 +39,13 @@ section[hidden]{display:none}
 .note b{font-weight:500;color:var(--green)}
 .split{display:flex;gap:16px;flex:1;min-height:0;border-top:1px solid var(--line);padding-top:8px}
 .list{flex:0 0 38%;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent;padding-right:6px}
-.group{display:flex;justify-content:space-between;gap:8px;margin:8px 0 2px;font-size:11px;color:var(--muted)}
+/* D-552: each stage opens its own band, with what happens there */
+.group{display:flex;align-items:baseline;gap:8px;margin:14px 0 4px;padding:6px 9px;border-left:3px solid var(--accent);
+  border-radius:0 6px 6px 0;background:color-mix(in srgb,var(--accent) 8%,transparent);font-size:11px;color:var(--muted)}
 .group:first-child{margin-top:0}
-.group button{all:unset;cursor:pointer;color:var(--accent);font-size:11px}
+.group strong{flex:none;color:var(--fg);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.group .summary{flex:1}
+.group button{all:unset;cursor:pointer;color:var(--accent);font-size:11px;flex:none}
 .item{all:unset;box-sizing:border-box;display:flex;gap:8px;width:100%;cursor:pointer;padding:3px 7px;border-radius:6px;
   font-size:12.5px;line-height:1.35;color:var(--text)}
 .item:hover{background:color-mix(in srgb,var(--accent) 9%,transparent)}
@@ -55,19 +59,30 @@ section[hidden]{display:none}
 .item .m.plain{color:var(--muted)}
 .detail{flex:1;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent;padding:0 8px 8px 4px;min-width:0}
 .detail h2{margin:0 0 1px;font-size:16px;font-weight:600;color:var(--fg);letter-spacing:-.005em}
-.detail .kicker{margin:0 0 9px;font-size:11px;color:var(--muted)}
-.block{margin:0 0 9px}
-.block h3{margin:0 0 1px;font-size:11px;font-weight:500;color:var(--muted)}
-.block p{margin:0;font-size:13.5px;color:var(--text);max-width:82ch}
-.block.inference{border-left:2px solid var(--amber);padding-left:9px}
-.block.inference h3{color:var(--amber)}
-.block.uses{border-left:2px solid var(--green);padding-left:9px}
-.block.uses h3{color:var(--green)}
-.block.plain{border-left:2px solid var(--line);padding-left:9px}
-.backing{margin:10px 0 0;padding-top:7px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
-.backing a{color:var(--accent)}
-.backing code{font-size:10.5px;color:var(--muted)}
-.backing a code{color:var(--accent)}
+/* D-552: the rule as a table: the name of each row on the left, its content on the right */
+.facts{width:100%;border-collapse:collapse;margin:8px 0 0}
+.facts th{width:170px;padding:8px 14px 8px 0;text-align:left;vertical-align:top;font-size:11px;font-weight:500;
+  color:var(--muted);border-top:1px solid var(--line)}
+.facts td{padding:8px 0;vertical-align:top;font-size:13.5px;color:var(--text);border-top:1px solid var(--line);max-width:82ch}
+.facts tr:first-child th,.facts tr:first-child td{border-top:0}
+.facts tr.kpi td{color:var(--fg);font-weight:500}
+.facts tr.inference th{color:var(--amber)}
+.facts tr.inference td{box-shadow:inset 2px 0 var(--amber);padding-left:10px}
+.facts tr.uses th{color:var(--green)}
+.facts .backing{font-size:11px;color:var(--muted)}
+.facts .backing a{color:var(--accent)}
+.facts .backing code{font-size:10.5px;color:var(--muted)}
+.facts .backing a code{color:var(--accent)}
+/* D-552: what each piece of the drawing is, on hover or with the keyboard */
+.map .end{cursor:help;outline:none}
+.map .layer:focus-visible .name,.map .end:hover .name,.map .end:focus-visible .name{fill:var(--accent)}
+.tip{position:fixed;z-index:10;max-width:320px;padding:9px 12px;border-radius:10px;background:rgba(15,23,42,.97);
+  color:#e2e8f0;border:1px solid rgba(148,163,184,.35);box-shadow:0 18px 36px -12px rgba(0,0,0,.55);font-size:12.5px;
+  line-height:1.45;pointer-events:none}
+.tip[hidden]{display:none}
+.tip b{display:block;margin-bottom:2px;color:#fff}
+.tip .here{margin-top:5px;color:#cbd5e1}
+.tip .here i{font-style:normal;font-weight:600;color:#fff}
 @media (max-width:760px){.map .where{display:none}}
 @media (max-width:820px){html,body{height:auto}.split{flex-direction:column}.list{flex:none;max-height:40vh}.map{max-height:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}

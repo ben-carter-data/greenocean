@@ -1,4 +1,3 @@
-
 const data = JSON.parse(document.getElementById("data").textContent);
 const labels = data.labels;
 function write(parent, text) {
@@ -14,11 +13,34 @@ function element(tag, className, text) {
   if (text) { write(node, text); }
   return node;
 }
-function block(parent, title, text, className) {
-  if (!text) { return; }
-  const box = element("div", "block " + (className || ""));
-  box.append(element("h3", "", title), element("p", "", text));
-  parent.append(box);
+// D-552: one row of the rule's table: its name on the left, its content on the right.
+function row(table, title, content, className) {
+  if (!content) { return; }
+  const line = element("tr", className || "");
+  const cell = element("td");
+  if (typeof content === "string") { write(cell, content); } else { cell.append(content); }
+  line.append(element("th", "", title), cell);
+  table.append(line);
+}
+function backing(rule) {
+  const cell = element("span", "backing");
+  rule.backing.forEach((code) => { cell.append(`${code} · `); });
+  rule.code.forEach((reference, index) => {
+    const code = element("code");
+    code.textContent = reference.text;
+    if (reference.href) {
+      const link = element("a");
+      link.href = reference.href;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.append(code);
+      cell.append(link);
+    } else {
+      cell.append(code);
+    }
+    if (index < rule.code.length - 1) { cell.append(" · "); }
+  });
+  return cell;
 }
 const state = {};
 function draw(tab) {
@@ -30,8 +52,9 @@ function draw(tab) {
   data.rules.filter((rule) => rule.tab === tab && (!chosen.layer || rule.layer === chosen.layer)).forEach((rule) => {
     if (group !== rule.layer) {
       group = rule.layer;
+      // D-552: each stage opens its own band, with what happens there, apart from the one before
       const head = element("div", "group");
-      head.append(element("span", "", rule.layerName));
+      head.append(element("strong", "", data.layers[rule.layer].name), element("span", "summary", data.layers[rule.layer].summary));
       if (chosen.layer) {
         const all = element("button", "", labels.all);
         all.type = "button";
@@ -57,32 +80,17 @@ function draw(tab) {
   const detail = panel.querySelector(".detail");
   detail.replaceChildren();
   detail.scrollTop = 0;
-  detail.append(element("h2", "", `${rule.n} · ${rule.title}`), element("p", "kicker", `${labels.where}: ${rule.layerName}`));
-  block(detail, labels.problem, rule.problem);
-  block(detail, labels.without, rule.without);
-  block(detail, labels.example, rule.example);
-  block(detail, labels.inference, rule.inference, "inference");
-  if (rule.uses === true) { block(detail, labels.uses, labels.sameRule, "uses"); }
-  if (rule.uses === false) { block(detail, labels.notUses, rule.whyNot, "plain"); }
-  const backing = element("p", "backing");
-  backing.append(`${labels.backing}: `);
-  rule.backing.forEach((code) => { backing.append(`${code} · `); });
-  rule.code.forEach((reference, index) => {
-    const code = element("code");
-    code.textContent = reference.text;
-    if (reference.href) {
-      const link = element("a");
-      link.href = reference.href;
-      link.target = "_blank";
-      link.rel = "noopener";
-      link.append(code);
-      backing.append(link);
-    } else {
-      backing.append(code);
-    }
-    if (index < rule.code.length - 1) { backing.append(" · "); }
-  });
-  detail.append(backing);
+  const table = element("table", "facts");
+  row(table, labels.stage, `${rule.layerName} · ${data.layers[rule.layer].summary}`);
+  row(table, labels.kpi, rule.kpi, "kpi");
+  row(table, labels.problem, rule.problem);
+  row(table, labels.without, rule.without);
+  row(table, labels.example, rule.example);
+  row(table, labels.inference, rule.inference, "inference");
+  if (rule.uses === true) { row(table, labels.samePackage, `${labels.yes}. ${labels.sameRule}`, "uses"); }
+  if (rule.uses === false) { row(table, labels.samePackage, `${labels.no}. ${rule.whyNot}`, "plain"); }
+  row(table, labels.backing, backing(rule));
+  detail.append(element("h2", "", `${rule.n} · ${rule.title}`), table);
   panel.querySelectorAll(".dot").forEach((dot) => dot.classList.toggle("on", Number(dot.dataset.rule) === chosen.rule));
   panel.querySelectorAll(".layer").forEach((layer) => layer.classList.toggle("on", layer.dataset.layer === chosen.layer));
 }
@@ -92,6 +100,35 @@ function activate(node, action) {
     if (event.key === "Enter" || event.key === " ") { event.preventDefault(); action(); }
   });
 }
+// D-552: what each piece of the drawing is, on hover or with the keyboard: «Name — what it is. Aquí: what it does here».
+const tip = element("div", "tip");
+tip.setAttribute("role", "tooltip");
+tip.hidden = true;
+document.body.append(tip);
+function showTip(node) {
+  const parts = node.dataset.tip.split(" — ");
+  const [what, here] = parts.slice(1).join(" — ").split(/\s*(?:Aquí|Here):\s*/);
+  tip.replaceChildren(element("b", "", parts[0]), element("div", "", what));
+  if (here) {
+    const line = element("div", "here");
+    line.append(element("i", "", labels.here), ` ${here}`);
+    tip.append(line);
+  }
+  tip.hidden = false;
+  const box = node.getBoundingClientRect();
+  const width = tip.offsetWidth;
+  const height = tip.offsetHeight;
+  const left = Math.min(Math.max(8, box.left + box.width / 2 - width / 2), window.innerWidth - width - 8);
+  const below = box.bottom + 8;
+  tip.style.left = `${left}px`;
+  tip.style.top = `${below + height > window.innerHeight - 8 ? Math.max(8, box.top - height - 8) : below}px`;
+}
+document.querySelectorAll(".map [data-tip]").forEach((node) => {
+  node.addEventListener("mouseenter", () => showTip(node));
+  node.addEventListener("focus", () => showTip(node));
+  node.addEventListener("mouseleave", () => { tip.hidden = true; });
+  node.addEventListener("blur", () => { tip.hidden = true; });
+});
 document.querySelectorAll("section[data-tab]").forEach((panel) => {
   const tab = panel.dataset.tab;
   state[tab] = { layer: null, rule: data.rules.find((rule) => rule.tab === tab).n };
