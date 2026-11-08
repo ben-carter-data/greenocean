@@ -2701,5 +2701,19 @@ PAGES = {
     "una pantalla": "one screen",
     "páginas y PDF": "pages and PDF",
     "revisión, sin RAG": "review, without RAG",
+    # D-551: the table of the KPIs and its window
+    "Qué pregunta responde": "Question it answers",
+    "Ubicación": "Location",
+    "Los KPI del panel": "The panel's KPIs",
+    "Todos se recalculan cada martes, con la carga.": "All of them are recomputed every Tuesday, with the load.",
+    "Aquí, a la derecha": "Here, on the right",
+    "¿Cuánto cambiaron los precios esta semana?": "How much did prices change this week?",
+    "¿El cambio es de todos los productos o de unos pocos?": "Is the change across all products or only a few?",
+    "¿Los precios de una región suben o bajan de verdad, o es azar?": "Do a region's prices really go up or down, or is it chance?",
+    "¿Qué precio se movió fuera de lo normal?": "Which price moved out of the ordinary?",
+    "¿Qué familias subieron más que la inflación?": "Which families rose more than inflation?",
+    "¿Un precio es caro o barato, descontada la inflación?": "Is a price expensive or cheap once inflation is discounted?",
+    "¿Cuánto más paga el consumidor que el mayorista?": "How much more does the consumer pay than the wholesaler?",
+    "¿Se puede confiar en los datos de esta semana?": "Can this week's data be trusted?",
 }
 # endregion

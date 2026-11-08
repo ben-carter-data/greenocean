@@ -225,6 +225,7 @@ def build_bar_icons_css(quiet, bright):
         '[class*="st-key-nav_folder_tile_0"] [data-testid="stPageLink"] a': "documents",
         '[class*="st-key-nav_folder_tile_1"] [data-testid="stPageLink"] a': "study",
         ".st-key-sources_tile button": "sources",
+        ".st-key-stack_tile_kpi button": "kpi",  # D-551: the KPI window, shaped like the stack tiles
     } | {f".st-key-stack_tile_{key} button": icon for key, _, icon, _ in activity_bar.STACK_AREAS}
     rules = [
         static_files.fill(

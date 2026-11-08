@@ -27,10 +27,12 @@ from bi import (
 from bi.app_frame import (
     DRAWN_TAB,
     build_kpi_code_html,
+    build_link_html,
     build_page_address,
     can_open,
     find_menu_page,
     is_dark_theme,
+    is_public_profile,
     keep_context,
     show_page_bar,
     show_view_tabs,
@@ -55,10 +57,13 @@ from bi.constants import (
     PAGE_HOME,
     PAGE_ICONS,
     PAGE_INSIGHTS,
+    PAGE_OPERATIONS,
     PAGE_QUALITY_PLAN,
     PAGE_SEASONALITY,
+    PAGE_SQL,
     PAGE_STAKEHOLDERS,
     SIDEBAR_ICONS,
+    SIDEBAR_LABELS,
     VIEW_PARAMETER,
     WINDOW_OF_VIEW,
     WINDOW_PAGES,
@@ -110,6 +115,21 @@ INTEREST_RESERVED = 215
 
 
 SYSTEM_DECISION_PAGES = {"sqap": PAGE_QUALITY_PLAN, "git": PAGE_GIT}
+# D-551: where the panel shows each KPI: a page, or the page that became a tab of «Análisis».
+KPI_LOCATIONS = {
+    "Cambio típico": PAGE_HOME,
+    "Subieron y bajaron": PAGE_HOME,
+    "Dirección de una región": PAGE_HOME,
+    "Alerta de precio": PAGE_HOME,
+    "Alza frente al IPC": PAGE_SEASONALITY,
+    "Precio real": PAGE_SEASONALITY,
+    "Brecha consumidor–mayorista": PAGE_INSIGHTS,
+    "Calidad de los datos": PAGE_OPERATIONS,
+}
+KPI_HEAD = ["KPI", "Qué pregunta responde", "Cómo se calcula", "Por qué", "Ubicación", "Indicador técnico"]
+KPI_NOTE = "Todos se recalculan cada martes, con la carga."
+# The pages a link of the Usuario view may open (D-502): the two dashboards and the tabs of «Análisis».
+USER_PAGES = (PAGE_HOME, PAGE_BA)
 # endregion
 
 
@@ -775,14 +795,14 @@ def show_overview_insights(mode, version):
         (
             "¿Qué está subiendo y qué está bajando esta semana?",
             "Persona común",
-            PAGE_HOME,
+            build_location_html(PAGE_HOME),
             f"Subieron: {overview.join(rose) or 'ninguna familia'}. Bajaron: {overview.join(fell) or 'ninguna familia'}. "
             "Mediana de cada familia frente a la semana anterior.",
         ),
         (
             "¿Qué alimentos se encarecieron más desde 2022?",
             "Persona común",
-            "Precios e inflación",
+            build_location_html(PAGE_SEASONALITY),
             (
                 f"{overview.join(above)} subieron más de {points} puntos sobre el IPC de alimentos desde enero 2022 "
                 f"({overview.signed(ipc_total)})."
@@ -793,7 +813,7 @@ def show_overview_insights(mode, version):
         (
             "¿La inflación de los alimentos está bajando?",
             "Persona común",
-            "Precios e inflación",
+            build_location_html(PAGE_SEASONALITY),
             # D-480: the answer is computed, never a fixed «Sí», and both months are named
             (
                 f"Sí: en 12 meses a {last_month} bajó {overview.signed(ipc_year)}."
@@ -808,13 +828,13 @@ def show_overview_insights(mode, version):
         (
             "¿Dónde se compra por mayor?",
             "Comerciante mayorista",
-            PAGE_INSIGHTS,
+            html.escape(i18n.translate_text("Aquí, a la derecha")),
             f"{market_count} mercados mayoristas en {len(overview.read_points())} regiones, {santiago} de ellos en Santiago.",
         ),
         (
             "¿Cuánto se agrega entre el mercado mayorista y el consumidor?",
             "Comerciante mayorista",
-            "Consultas SQL · Brecha mayorista",
+            build_location_html(PAGE_SQL, "Brecha mayorista"),
             (
                 f"Mediana de la brecha (K1), semana {weeks.week_range(week)}: "
                 f"{overview.join(f'{short(f)} {overview.signed(v)}' for f, v in gaps.items())}."
@@ -825,7 +845,7 @@ def show_overview_insights(mode, version):
         (
             "¿Puedo confiar en estas cifras?",
             "Quien diseña los datos",
-            "Controles de datos",
+            build_location_html(PAGE_OPERATIONS),
             f"{green} de {len(indicators)} indicadores de calidad de los datos en su umbral y {tests[0]} de {tests[1]} pruebas de datos.",
         ),
     ]
@@ -847,7 +867,9 @@ def show_overview_insights(mode, version):
     left, right = st.columns([1.35, 1], gap="medium")
     with left:
         st.markdown(
-            build_insight_table_html(["Pregunta", "Para quién", "Dónde verlo", "La respuesta de hoy"], questions),
+            build_insight_table_html(
+                ["Pregunta", "Para quién", "Ubicación", "La respuesta de hoy"], questions, markup_columns=(2,)
+            ),
             unsafe_allow_html=True,
         )
         analysis = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_BA])  # absent when a test draws the page alone
@@ -922,6 +944,47 @@ def show_insights_page(mode):
 # endregion
 
 
+# region The KPIs of the panel (D-551)
+def build_location_html(view, detail=None):
+    """Where the panel shows something, as a link that opens that page or tab of «Análisis» («Análisis › Insights»).
+    The Usuario view reads a page outside it as plain text (D-502)."""
+    tab = BA_TAB_OF_VIEW.get(view)
+    parts = [PAGE_BA, tab] if tab else [SIDEBAR_LABELS.get(view, view)]
+    label = " › ".join(i18n.translate_text(part) for part in parts) + (
+        f" · {i18n.translate_text(detail)}" if detail else ""
+    )
+    if is_public_profile() and not tab and view not in USER_PAGES:
+        return html.escape(label)
+    return build_link_html(label, build_page_address(view))
+
+
+def build_kpi_table_html():
+    """Every KPI of the panel in one table, the same in «Método» and in the window of the activity bar: the question it
+    answers, how it is calculated, why, where the panel shows it and its technical indicator (K1 to K8)."""
+    rows = [
+        (
+            name,
+            overview.KPI_QUESTIONS[name],
+            how,
+            why,
+            build_location_html(KPI_LOCATIONS[name]),
+            build_kpi_code_html(name),
+        )
+        for name, how, why in overview.KPIS
+    ]
+    return build_insight_table_html(KPI_HEAD, rows, markup_columns=(4, 5))
+
+
+def show_kpi_window(mode):
+    """The window the KPI button of the activity bar opens."""
+    st.markdown(f"<style>{build_insight_table_css(charts.get_palette(mode))}</style>", unsafe_allow_html=True)
+    st.caption(i18n.translate_text(KPI_NOTE))
+    st.markdown(build_kpi_table_html(), unsafe_allow_html=True)
+
+
+# endregion
+
+
 # region Analysis texts
 def show_analysis_text(paragraphs):
     st.markdown(
@@ -990,14 +1053,8 @@ def show_analysis_block(block, mode):
                 "el panel."
             )
         )
-        # D-385: the technical indicator (K code and its name) next to each KPI, so the two vocabularies meet.
-        rows = [(name, build_kpi_code_html(name), how, why) for name, how, why in overview.KPIS]
-        st.markdown(
-            build_insight_table_html(
-                ["KPI", "Indicador técnico", "Cómo se calcula", "Por qué"], rows, markup_columns=(1,)
-            ),
-            unsafe_allow_html=True,
-        )
+        # D-385, D-551: the one table of the KPIs, also in the window of the activity bar.
+        st.markdown(build_kpi_table_html(), unsafe_allow_html=True)
     elif block == "Decisiones de sistema":
         for item in read.system_decisions():
             text, link = st.columns([4.5, 1], vertical_alignment="center")

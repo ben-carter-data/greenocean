@@ -34,6 +34,17 @@ HEAT_WEEKS = 8
 # What the dashboard answers, the KPIs that answer it and why, and the insights of the current load.
 # D-385: the code of the technical indicator (K1 to K8, «Indicadores explicados») each business KPI is, if any.
 KPI_CODES = {"Alerta de precio": "K6", "Brecha consumidor–mayorista": "K1", "Calidad de los datos": "K8"}
+# D-551: the business question each KPI answers.
+KPI_QUESTIONS = {
+    "Cambio típico": "¿Cuánto cambiaron los precios esta semana?",
+    "Subieron y bajaron": "¿El cambio es de todos los productos o de unos pocos?",
+    "Dirección de una región": "¿Los precios de una región suben o bajan de verdad, o es azar?",
+    "Alerta de precio": "¿Qué precio se movió fuera de lo normal?",
+    "Alza frente al IPC": "¿Qué familias subieron más que la inflación?",
+    "Precio real": "¿Un precio es caro o barato, descontada la inflación?",
+    "Brecha consumidor–mayorista": "¿Cuánto más paga el consumidor que el mayorista?",
+    "Calidad de los datos": "¿Se puede confiar en los datos de esta semana?",
+}
 KPIS = [
     (
         "Cambio típico",

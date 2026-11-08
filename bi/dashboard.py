@@ -116,6 +116,7 @@ from bi.page_analysis import (  # noqa: E402
     show_stakeholders_page,
     show_price_context_page,
     show_insights_page,
+    show_kpi_window,
     FAMILY_FOCUS_KEY,  # noqa: F401  read by the tests through this module
     OVERVIEW_WEEK_KEY,  # noqa: F401  read by the tests through this module
     BA_TAB_KEY,  # noqa: F401  read by the tests through this module
@@ -966,6 +967,11 @@ def show_footer_tiles(windows_by_title, current_window, current_view):
             with st.container(key=f"stack_tile_{key}"):
                 with st.popover(tr(title), help=tr(title)):
                     st.markdown(activity_bar.build_stack_html(title, names), unsafe_allow_html=True)
+        # D-551: the KPIs of the panel, in one window, for every view.
+        with st.container(key="stack_tile_kpi"):
+            title = i18n.translate_text("Los KPI del panel")
+            if st.button(tr("KPI"), key="kpi_window", help=title):
+                st.dialog(title, width="large")(show_kpi_window)(get_mode())
         with st.container(key="sources_tile"):
             with st.popover(tr("Fuentes"), help=tr("Fuentes de datos")):
                 st.markdown(f"**{tr('Fuentes de datos')}**")

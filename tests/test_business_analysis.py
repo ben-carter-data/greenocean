@@ -101,7 +101,9 @@ def test_d377_the_kpi_definitions_left_insights_for_the_analysis_page():
 
     found = [name for name in split for _ in code_shape.uses(code_shape.file_tree(folder / name), "overview.KPIS")]
     assert found == ["page_analysis.py"]
-    assert code_shape.uses(code_shape.tree_of(page_analysis.show_analysis_block), "overview.KPIS")
+    # D-551: one table of the KPIs, drawn by «Método» and by the window of the activity bar
+    assert code_shape.uses(code_shape.tree_of(page_analysis.build_kpi_table_html), "overview.KPIS")
+    assert code_shape.calls(code_shape.tree_of(page_analysis.show_analysis_block), "build_kpi_table_html")
 
 
 @needs_database

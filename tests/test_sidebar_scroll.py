@@ -95,7 +95,8 @@ def test_d540_every_button_of_the_bar_has_a_line_icon_in_one_tone(mode):
     from bi import activity_bar
 
     css = dashboard.build_sidebar_css(mode)
-    assert css.count(" mask:url(") == 3 + len(activity_bar.STACK_AREAS)  # documents, study, sources and the areas
+    # documents, study, sources, the KPI window (D-551) and the areas
+    assert css.count(" mask:url(") == 4 + len(activity_bar.STACK_AREAS)
     for key, _, icon, _ in activity_bar.STACK_AREAS:
         assert f".st-key-stack_tile_{key} button::before" in css and icon in activity_bar.ICONS
 

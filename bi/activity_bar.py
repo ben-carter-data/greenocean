@@ -37,6 +37,8 @@ ICONS = {
         'c-3.5 0-5.5-7-9-7z"/>'
     ),
     "business": '<path d="M4 20h16"/><path d="M7 20v-6"/><path d="M12 20V8"/><path d="M17 20v-10"/>',
+    # D-551: a gauge, for the KPIs of the panel
+    "kpi": '<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><circle cx="12" cy="17" r="1.2"/>',
 }
 
 # (key, title, icon, names): the five areas, in the order of the bar; each list from the most to the least relevant.

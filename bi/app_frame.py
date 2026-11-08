@@ -1037,6 +1037,8 @@ def build_kpi_code_html(name):
     if not code:
         return "—"
     label = f"{code} · {i18n.translate_text(KPI_PRESENTATION[code][0])}"
+    if is_public_profile():  # D-502, D-551: the Usuario view leads to no page of another view
+        return html.escape(label)
     return build_link_html(label, build_page_address(PAGE_KPI, kpi=code))
 
 
