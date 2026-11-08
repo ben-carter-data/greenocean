@@ -385,7 +385,7 @@ def show_ba_history(mode):
 
 def show_ba_tiles(tiles):
     """D-457, D-460: the charts of a tab side by side, each with its title, the months it shows and what each of its
-    colours and lines means; three in «Mensual» and two, wider, in «Histórico» (D-554). Its green magnifier opens it
+    colours and lines means; two in each tab (D-554, D-556). Its green magnifier opens it
     large in a window, with what it measures and what follows from it."""
     for index, (column, (title, note, measures, deduce, draw, legend)) in enumerate(
         zip(st.columns(len(tiles), gap="medium"), tiles)

@@ -9,6 +9,7 @@ Nothing here is typed by hand."""
 from __future__ import annotations
 
 import html
+import math
 from collections.abc import Callable
 from functools import partial
 from typing import Any
@@ -34,6 +35,9 @@ ZOOM_HEIGHT = 300  # the enlarged chart, in the window its green magnifier opens
 TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 603, 230, 210
 # D-461: on a low window the charts keep their floor and the table scrolls inside its own box, under the charts.
 TABLE_RESERVED, TABLE_FLOOR = 588, 140
+# D-556: two typical sizes of change read as «parecido» when the larger is at most this many times the smaller, measured
+# as a ratio of prices (a −16,7 % drop is undone by a +20 % rise).
+SIMILAR_SIZE = 1.25
 INSIGHT_ROOM = 43  # D-518: the height of the green box of «Histórico», taken from the table so the page still fits
 
 # One chart of a tab: its title, the months it shows, what it measures, what follows from it, how to draw it at a
@@ -275,6 +279,14 @@ def yearly_changes(rows: pd.DataFrame, family: str, last: tuple[int, int]) -> pd
     return pd.DataFrame(found).astype({"change": float, "ipc": float})
 
 
+def typical_size(alert_rows: pd.DataFrame, rise: bool) -> float | None:
+    """D-556: the median change in % of the sharp rises (or drops) of a period, or None without any."""
+    if alert_rows.empty:
+        return None
+    changes = alert_rows.loc[alert_rows["variation"] > 0 if rise else alert_rows["variation"] < 0, "variation"]
+    return None if changes.empty else float(changes.median() * 100)
+
+
 def summarize(
     rows: pd.DataFrame,
     margins: pd.DataFrame,
@@ -300,6 +312,8 @@ def summarize(
         "alerts": len(alert_rows),
         "rises": int((alert_rows["variation"] > 0).sum()) if not alert_rows.empty else 0,
         "falls": int((alert_rows["variation"] < 0).sum()) if not alert_rows.empty else 0,
+        "rise_size": typical_size(alert_rows, rise=True),
+        "fall_size": typical_size(alert_rows, rise=False),
         "alert_rows": alert_rows,
     }
 
@@ -371,15 +385,6 @@ def wholesale_families(margins: pd.DataFrame) -> list[str]:
     return sorted(set(margins["product_group"]))
 
 
-def busiest_month(alert_rows: pd.DataFrame) -> tuple[int, int, int] | None:
-    """(year, month, alerts) of the month with most alerts; the earliest on a tie."""
-    if alert_rows.empty:
-        return None
-    per_month = alert_rows.groupby("month_key").size()
-    key = int(per_month.idxmax())
-    return key // 100, key % 100, int(per_month.max())
-
-
 # endregion
 
 
@@ -389,13 +394,8 @@ def ipc_label() -> str:
     return say("IPC de alimentos", "Food CPI")
 
 
-def change_kinds() -> tuple[str, str]:
-    """A month that rose and one that fell, in «Cambio de cada mes» and in its legend."""
-    return say("Subió", "Rose"), say("Bajó", "Fell")
-
-
 def alert_kinds() -> tuple[str, str]:
-    """The two kinds of price alert (K6), as «Semanal» calls them, in the chart of the alerts and in its legend."""
+    """The two kinds of sharp change (K6), as «Semanal» calls them, in their chart and in its legend."""
     return say("Alzas fuertes", "Sharp rises"), say("Bajas fuertes", "Sharp drops")
 
 
@@ -458,39 +458,45 @@ def trend_tile(rows, figures, start, end, mode, title: str, since: str) -> Tile:
     )
 
 
+def extremes_verdict(figures: dict[str, Any]) -> str:
+    """D-556: what the chart of the sharp changes answers: were there more rises or more drops, and of what size."""
+    rises, falls, up, down = figures["rises"], figures["falls"], figures["rise_size"], figures["fall_size"]
+    if not rises and not falls:
+        return say("Ningún cambio fuerte en el período.", "No sharp change in the period.")
+    more = (
+        say("hubo más alzas que bajas", "there were more rises than drops")
+        if rises > falls
+        else say("hubo más bajas que alzas", "there were more drops than rises")
+        if falls > rises
+        else say("hubo tantas alzas como bajas", "there were as many rises as drops")
+    )
+    counted = say(
+        f"{charts.format_thousands(rises)} alzas fuertes y {charts.format_thousands(falls)} bajas fuertes: {more}.",
+        f"{charts.format_thousands(rises)} sharp rises and {charts.format_thousands(falls)} sharp drops: {more}.",
+    )
+    if up is None or down is None:
+        return counted
+    lift, sink = math.log(1 + up / 100), -math.log(1 + down / 100)
+    size = (
+        say("de tamaño parecido", "of a similar size")
+        if max(lift, sink) <= SIMILAR_SIZE * min(lift, sink)
+        else say("las alzas, más grandes", "the rises, larger")
+        if lift > sink
+        else say("las bajas, más grandes", "the drops, larger")
+    )
+    return counted + say(
+        f" Típicas: {percent(up)} y {percent(down)}, {size}.", f" Typical: {percent(up)} and {percent(down)}, {size}."
+    )
+
+
 def monthly_tiles(rows, figures: dict[str, Any], start, end, mode: str) -> list[Tile]:
-    """The three charts of «Mensual»: the price, the change of each month and the alerts of each month."""
-    name, top, low = family_name(figures["family"]), figures["top"], figures["low"]
-    palette, (went_up, went_down), (rises, falls) = charts.get_palette(mode), change_kinds(), alert_kinds()
-    first_bar, first_week = next_month(start), first_counted(start, end)
-    if top is None:
-        moves = "—"
-    else:
-        rose = (
-            say(
-                f"La mayor alza fue {month_label(top[:2])} ({percent(top[2])})",
-                f"The biggest rise was {month_label(top[:2])} ({percent(top[2])})",
-            )
-            if top[2] > 0
-            else say("Ningún mes subió", "No month rose")
-        )
-        fell = (
-            say(
-                f"la mayor baja, {month_label(low[:2])} ({percent(low[2])})",
-                f"the biggest fall, {month_label(low[:2])} ({percent(low[2])})",
-            )
-            if low[2] < 0
-            else say("ningún mes bajó", "no month fell")
-        )
-        moves = say(
-            f"Subió en {figures['rising']} de {len(figures['months'])} meses. {rose} y {fell}.",
-            f"It rose in {figures['rising']} of {len(figures['months'])} months. {rose} and {fell}.",
-        )
-    busiest = busiest_month(figures["alert_rows"])
-    first_alert = (
+    """The two charts of «Mensual» (D-556): the price against the food CPI, and the sharp rises and drops of each month."""
+    name, palette, (rises, falls) = family_name(figures["family"]), charts.get_palette(mode), alert_kinds()
+    first_week = first_counted(start, end)
+    first_change = (
         say(
-            " La primera alerta posible es de abril 2022: necesita 12 semanas previas.",
-            " The first possible alert is from April 2022: it needs 12 previous weeks.",
+            " El primer cambio fuerte posible es de abril 2022: necesita 12 semanas previas.",
+            " The first possible sharp change is from April 2022: it needs 12 previous weeks.",
         )
         if start == BASE
         else ""
@@ -506,49 +512,27 @@ def monthly_tiles(rows, figures: dict[str, Any], start, end, mode: str) -> list[
             say(f"de {month_label(start)} a {month_label(end)}", f"from {month_label(start)} to {month_label(end)}"),
         ),
         (
-            say("Cambio de cada mes", "Change of each month"),
+            say("Alzas y bajas fuertes", "Sharp rises and drops"),
             say(
-                f"{span(first_bar, end)} · frente al mes anterior", f"{span(first_bar, end)} · against the month before"
+                f"{span(first_week, end)} · cuántas hubo cada mes (K6)",
+                f"{span(first_week, end)} · how many each month (K6)",
             ),
             say(
-                f"Cuánto cambió el precio de {name} cada mes frente al mes anterior. La raya corta es el IPC de alimentos "
-                "de ese mes.",
-                f"How much the price of {name} changed each month against the month before. The short line is that "
-                "month's food CPI.",
+                f"Cuántos precios de {name} cambiaron fuera de su rango habitual cada mes (K6): las alzas fuertes hacia "
+                "arriba y las bajas fuertes hacia abajo. Cada una nace en una semana en que el precio se alejó de sus 12 "
+                f"semanas previas; la barra suma las de ese mes.{first_change}",
+                f"How many prices of {name} changed outside their usual range each month (K6): the sharp rises upwards "
+                "and the sharp drops downwards. Each one is born in a week in which the price moved away from its 12 "
+                f"previous weeks; the bar adds up those of that month.{first_change}",
             ),
-            moves,
-            partial(months_chart, figures["months"], mode),
+            extremes_verdict(figures),
+            partial(extremes_chart, figures["alert_rows"], start, end, mode),
             legend(
                 [
-                    ("box", palette["rise"], went_up),
-                    ("box", palette["fall"], went_down),
-                    ("tick", palette["strong_text"], ipc_label()),
+                    ("box", palette["rise"], f"{rises}: {charts.format_thousands(figures['rises'])}"),
+                    ("box", palette["fall"], f"{falls}: {charts.format_thousands(figures['falls'])}"),
                 ]
             ),
-        ),
-        (
-            say("Alertas de precio por mes", "Price alerts by month"),
-            say(
-                f"{span(first_week, end)} · cambios fuera de lo normal (K6)",
-                f"{span(first_week, end)} · changes out of the ordinary (K6)",
-            ),
-            say(
-                f"Las semanas en que un producto de {name} cambió fuera de su rango habitual (K6): los valores "
-                f"atípicos.{first_alert}",
-                f"The weeks in which a product of {name} changed outside its usual range (K6): the outliers.{first_alert}",
-            ),
-            say("Ninguna alerta en el período.", "No alert in the period.")
-            if busiest is None
-            else say(
-                f"{charts.format_thousands(figures['alerts'])} alertas: {charts.format_thousands(figures['rises'])} "
-                f"alzas fuertes y {charts.format_thousands(figures['falls'])} bajas fuertes. El mes con más fue "
-                f"{month_label(busiest[:2])}, con {charts.format_thousands(busiest[2])}.",
-                f"{charts.format_thousands(figures['alerts'])} alerts: {charts.format_thousands(figures['rises'])} sharp "
-                f"rises and {charts.format_thousands(figures['falls'])} sharp drops. The month with most was "
-                f"{month_label(busiest[:2])}, with {charts.format_thousands(busiest[2])}.",
-            ),
-            partial(alerts_chart, figures["alert_rows"], start, end, mode),
-            legend([("box", palette["rise"], rises), ("box", palette["fall"], falls)]),
         ),
     ]
 
@@ -666,7 +650,7 @@ def ipc_card(figures: dict[str, Any]) -> str:
 
 def alert_card(figures: dict[str, Any]) -> str:
     return card(
-        say("Alertas de precio", "Price alerts"),
+        say("Alzas y bajas fuertes", "Sharp rises and drops"),
         charts.format_thousands(figures["alerts"]),
         say(
             f"{charts.format_thousands(figures['rises'])} alzas fuertes · "
@@ -843,45 +827,7 @@ def trend_chart(
     return sized(chart, width, height, mode)
 
 
-def months_chart(months: pd.DataFrame, mode: str, width: Any = "container", height: int = 150) -> Any:
-    """Each month's change against the month before: a bar for the family, a short line for the food IPC."""
-    palette = charts.get_palette(mode)
-    rose, fell = change_kinds()
-    frame = months.assign(
-        mes=[month_label((int(year), int(month))) for year, month in zip(months["year"], months["month"])],
-        tone=[rose if value > 0 else fell for value in months["change"]],
-    )
-    order = list(frame["mes"])
-    tooltip = [
-        alt.Tooltip("mes:N", title=say("Mes", "Month")),
-        alt.Tooltip(
-            "change:Q",
-            title=say("Cambio frente al mes anterior (%)", "Change against the month before (%)"),
-            format="+.1f",
-        ),
-        alt.Tooltip("ipc:Q", title=say("IPC de alimentos (%)", "Food CPI (%)"), format="+.1f"),
-    ]
-    bars = (
-        alt.Chart(frame)
-        .mark_bar(cornerRadiusTopLeft=2, cornerRadiusTopRight=2)
-        .encode(
-            x=alt.X("mes:N", sort=order, title=None, axis=month_axis(height)),
-            y=alt.Y("change:Q", title=None, axis=alt.Axis(labelFontSize=label_size(height), tickCount=4)),
-            color=alt.Color(
-                "tone:N", scale=alt.Scale(domain=[rose, fell], range=[palette["rise"], palette["fall"]]), legend=None
-            ),
-            tooltip=tooltip,
-        )
-    )
-    marks = (
-        alt.Chart(frame)
-        .mark_tick(thickness=2, color=palette["strong_text"])
-        .encode(x=alt.X("mes:N", sort=order), y="ipc:Q", tooltip=tooltip)
-    )
-    return sized(alt.layer(bars, marks), width, height, mode)
-
-
-def alerts_chart(
+def extremes_chart(
     alert_rows: pd.DataFrame,
     start: tuple[int, int],
     end: tuple[int, int],
@@ -889,13 +835,14 @@ def alerts_chart(
     width: Any = "container",
     height: int = 150,
 ) -> Any:
-    """The K6 alerts of each month, rises over falls. The axis names every month of the period, also those without an
-    alert: no alert can be raised in the first 12 weeks of the history, so 2022 starts with three empty months."""
+    """D-556: the sharp rises of each month upwards and its sharp drops downwards, from one line, so the eye sees which
+    dominate. The axis names every month of the period, also those without one: no sharp change can be found in the
+    first 12 weeks of the history, so 2022 starts with three empty months."""
     palette = charts.get_palette(mode)
     rises, falls = alert_kinds()
     order = [month_label(pair) for pair in months_between(first_counted(start, end), end)]
     if alert_rows.empty:
-        frame = pd.DataFrame(columns=["mes", "kind", "alerts"])
+        frame = pd.DataFrame(columns=["mes", "kind", "count", "height"])
     else:
         keys = alert_rows["month_key"] if "month_key" in alert_rows.columns else add_month_key(alert_rows)["month_key"]
         frame = (
@@ -905,21 +852,26 @@ def alerts_chart(
             )
             .groupby(["mes", "kind"], as_index=False)
             .size()
-            .rename(columns={"size": "alerts"})
+            .rename(columns={"size": "count"})
         )
+        frame["height"] = frame["count"].where(frame["kind"] == rises, -frame["count"])
     chart = (
         alt.Chart(frame)
         .mark_bar()
         .encode(
             x=alt.X("mes:N", title=None, scale=alt.Scale(domain=order), axis=month_axis(height)),
-            y=alt.Y("alerts:Q", title=None, stack="zero", axis=alt.Axis(labelFontSize=label_size(height), tickCount=4)),
+            y=alt.Y(
+                "height:Q",
+                title=None,
+                axis=alt.Axis(labelFontSize=label_size(height), tickCount=4, labelExpr="abs(datum.value)"),
+            ),
             color=alt.Color(
                 "kind:N", scale=alt.Scale(domain=[rises, falls], range=[palette["rise"], palette["fall"]]), legend=None
             ),
             tooltip=[
                 alt.Tooltip("mes:N", title=say("Mes", "Month")),
                 alt.Tooltip("kind:N", title=say("Tipo", "Kind")),
-                alt.Tooltip("alerts:Q", title=say("Alertas", "Alerts")),
+                alt.Tooltip("count:Q", title=say("Cantidad", "Count")),
             ],
         )
     )
@@ -1012,8 +964,8 @@ def monthly_table(summaries: list[dict[str, Any]], chosen: str) -> str:
                 lambda item: ("—" if item["margin"] is None else charts.format_percent(item["margin"]), "", True),
             ),
             (
-                say("Alertas", "Alerts"),
-                say("Alertas de precio (K6) del período.", "Price alerts (K6) of the period."),
+                say("Alzas y bajas fuertes", "Sharp rises and drops"),
+                say("Alzas y bajas fuertes (K6) del período.", "Sharp rises and drops (K6) of the period."),
                 lambda item: (charts.format_thousands(item["alerts"]), "", True),
             ),
             (
@@ -1054,8 +1006,8 @@ def history_table(summaries: list[dict[str, Any]], chosen: str) -> str:
                 ),
             ),
             (
-                say("Alertas", "Alerts"),
-                say("Alertas de precio (K6) desde enero 2022.", "Price alerts (K6) since January 2022."),
+                say("Alzas y bajas fuertes", "Sharp rises and drops"),
+                say("Alzas y bajas fuertes (K6) desde enero 2022.", "Sharp rises and drops (K6) since January 2022."),
                 lambda item: (charts.format_thousands(item["alerts"]), "", True),
             ),
         ],
@@ -1108,12 +1060,10 @@ def monthly_context(period: str, last: tuple[int, int]) -> tuple[str, str]:
     ends = inflation_lag(last) if end != (year, 12) else say("Es el año completo.", "It is the whole year.")
     if start == BASE:
         starts = say(
-            f"El precio parte en {month_label(BASE)} = 100, el primer mes de los datos: no hay índice antes, así que "
-            f"el cambio de cada mes empieza en {full_month(next_month(BASE)[1]).lower()}. La primera alerta posible es de abril "
-            f"{BASE[0]}: una alerta necesita 12 semanas previas.",
-            f"The price starts at {month_label(BASE)} = 100, the first month of the data: there is no index before, so "
-            f"the change of each month starts in {full_month(next_month(BASE)[1])}. The first possible alert is from "
-            f"April {BASE[0]}: an alert needs 12 previous weeks.",
+            f"El precio parte en {month_label(BASE)} = 100, el primer mes de los datos: no hay índice antes. El primer "
+            f"cambio fuerte posible es de abril {BASE[0]}: necesita 12 semanas previas.",
+            f"The price starts at {month_label(BASE)} = 100, the first month of the data: there is no index before. The "
+            f"first possible sharp change is from April {BASE[0]}: it needs 12 previous weeks.",
         )
     else:
         measures = (

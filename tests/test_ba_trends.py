@@ -135,24 +135,22 @@ def test_d457_each_chart_says_its_months_and_its_hover_holds_the_figures_it_expl
     rows, last, margins, found = history
     start, end = ba_trends.bounds(ba_trends.LAST_YEAR, last)
     figures = ba_trends.monthly(rows, margins, found, ba_trends.BASKET, start, end)
-    (_, price_note, _, price, _, _), (_, month_note, _, moves, _, _), (_, alert_note, _, outliers, _, _) = (
-        ba_trends.monthly_tiles(rows, figures, start, end, "Vantablack")
+    (_, price_note, _, price, _, _), (_, sharp_note, _, sharp, _, _) = ba_trends.monthly_tiles(
+        rows, figures, start, end, "Vantablack"
     )
     first = (start[0] + 1, 1) if start[1] == 12 else (start[0], start[1] + 1)
     assert price_note == f"{label(start)} – {label(end)} · base {label(start)} = 100"
-    assert month_note == f"{label(first)} – {label(end)} · frente al mes anterior"
-    assert alert_note == f"{label(first)} – {label(end)} · cambios fuera de lo normal (K6)"
+    assert sharp_note == f"{label(first)} – {label(end)} · cuántas hubo cada mes (K6)"
     assert price.startswith(
         f"De {label(start)} a {label(end)} cambió {charts.format_signed_percent(figures['change'])}"
     )
     assert f"({charts.format_signed_percent(figures['ipc'])})" in price and figures["verdict"] in price
-    top = figures["top"]
-    assert f"Subió en {figures['rising']} de {len(figures['months'])} meses" in moves
-    assert f"{label(top[:2])} ({charts.format_signed_percent(top[2])})" in moves
-    per_month = figures["alert_rows"].groupby("month_key").size()
-    busiest = int(per_month.idxmax())
-    assert outliers.startswith(f"{charts.format_thousands(figures['alerts'])} alertas")
-    assert f"{label((busiest // 100, busiest % 100))}, con {charts.format_thousands(per_month.max())}" in outliers
+    # D-556: the sharp changes say which dominate, and their typical sizes, from the alert rows themselves
+    changes = figures["alert_rows"]["variation"] * 100
+    rises, falls = int((changes > 0).sum()), int((changes < 0).sum())
+    assert sharp.startswith(f"{charts.format_thousands(rises)} alzas fuertes y {charts.format_thousands(falls)} bajas")
+    assert ("hubo más alzas que bajas" if rises > falls else "hubo más bajas que alzas") in sharp
+    assert charts.format_signed_percent(changes[changes > 0].median()) in sharp
     # «Histórico»: from January 2022 and the change of each year
     whole = ba_trends.history(rows, margins, found, ba_trends.BASKET, last)
     (_, since_note, _, since, _, _), (_, year_note, _, yearly, _, _) = ba_trends.history_tiles(
@@ -166,8 +164,8 @@ def test_d457_each_chart_says_its_months_and_its_hover_holds_the_figures_it_expl
     # the first alert of the history can only come after 12 weeks: the year 2022 says so
     start, end = ba_trends.bounds("2022", last)
     first_year = ba_trends.monthly(rows, margins, found, ba_trends.BASKET, start, end)
-    alerts_measure = ba_trends.monthly_tiles(rows, first_year, start, end, "Vantablack")[2][2]
-    assert "La primera alerta posible es de abril 2022" in alerts_measure
+    sharp_measure = ba_trends.monthly_tiles(rows, first_year, start, end, "Vantablack")[1][2]
+    assert "El primer cambio fuerte posible es de abril 2022" in sharp_measure
     assert pd.to_datetime(found["week_start"]).min() >= pd.Timestamp("2022-04-01")
 
 
@@ -222,9 +220,9 @@ def test_d456_every_time_chart_starts_at_the_start_of_its_period():
     ]  # local time, like the data: a text date is midnight UTC, the day before in Chile (D-457)
     assert ba_trends.months_between((2025, 11), (2026, 2)) == [(2025, 11), (2025, 12), (2026, 1), (2026, 2)]
     frame = pd.DataFrame({"week_start": ["2022-04-04"], "variation": [0.2]})
-    spec = ba_trends.alerts_chart(frame, (2022, 1), (2022, 12), "Vantablack").to_dict()
+    spec = ba_trends.extremes_chart(frame, (2022, 1), (2022, 12), "Vantablack").to_dict()
     assert spec["encoding"]["x"]["scale"]["domain"] == [f"{month} 2022" for month in weeks.MONTHS]
-    last_year = ba_trends.alerts_chart(frame.iloc[:0], (2025, 9), (2026, 9), "Vantablack").to_dict()
+    last_year = ba_trends.extremes_chart(frame.iloc[:0], (2025, 9), (2026, 9), "Vantablack").to_dict()
     assert (
         last_year["encoding"]["x"]["scale"]["domain"][0] == "oct 2025"
         and len(last_year["encoding"]["x"]["scale"]["domain"]) == 12
@@ -254,9 +252,12 @@ def test_d457_every_month_of_a_period_has_its_point_and_its_label():
     assert large["encoding"]["x"]["axis"]["format"] == "%b %Y" and "labelExpr" not in large["encoding"]["x"]["axis"]
     whole = ba_trends.trend_chart(rows, "Pan", (2022, 1), (2026, 9), "Vantablack").to_dict()
     assert whole["encoding"]["x"]["axis"]["format"] == "%Y" and "point" not in whole["mark"]  # «Histórico»: years
-    bars = ba_trends.months_chart(ba_trends.monthly_changes(rows, "Pan", (2025, 9), (2026, 9)), "Vantablack").to_dict()
-    axis = bars["layer"][0]["encoding"]["x"]["axis"]  # every month of the change, too, «oct 2025» split in two
+    frame = pd.DataFrame({"week_start": ["2025-10-06", "2025-11-03"], "variation": [0.2, -0.15]})
+    bars = ba_trends.extremes_chart(frame, (2025, 9), (2026, 9), "Vantablack").to_dict()
+    axis = bars["encoding"]["x"]["axis"]  # every month of the sharp changes, too, «oct 2025» split in two
     assert axis["labelOverlap"] == "parity" and "split(datum.value, ' ')[0] == 'ene'" in axis["labelExpr"]
+    heights = {row["kind"]: row["height"] for row in bars["datasets"][bars["data"]["name"]]}
+    assert heights == {"Alzas fuertes": 1, "Bajas fuertes": -1}  # D-556: the drops hang below the line
 
 
 # endregion
@@ -291,7 +292,7 @@ def test_d460_each_tab_draws_its_charts_and_each_magnifier_opens_its_window(tab)
     app.run()
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    count = 3 if tab == dashboard.BA_MONTHLY_TAB else 2  # D-554: «Histórico» draws two, wider
+    count = 2  # D-554, D-556: each tab draws two, wider
     assert markup.count('class="ba-chart-title"') == count and "<b>Qué mide</b>" not in markup
     assert len(app.get("arrow_vega_lite_chart") + app.get("vega_lite_chart")) == count
     assert [box.key for box in app.selectbox if box.key in ("ba_period", "ba_family")] == (
@@ -334,8 +335,8 @@ def test_d458_the_green_panel_says_from_which_month_to_which_and_why_for_each_pe
         detail.startswith("Es el año completo.") and "dic 2024 = 100" in detail and "de diciembre a diciembre" in detail
     )
     lead, detail = ba_trends.monthly_context("2022", last)  # no index before January 2022, no alert before April
-    assert "ene 2022 = 100, el primer mes de los datos" in detail and "empieza en febrero" in detail
-    assert "La primera alerta posible es de abril 2022" in detail
+    assert "ene 2022 = 100, el primer mes de los datos" in detail
+    assert "El primer cambio fuerte posible es de abril 2022" in detail
     lead, detail = ba_trends.history_context(last)
     assert lead == "Estás viendo toda la historia: de ene 2022 a sep 2026."
     assert "termina en sep 2026" in detail and detail.endswith("2022 desde enero y 2026 hasta septiembre.")
