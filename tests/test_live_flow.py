@@ -262,7 +262,7 @@ def test_d414_the_sad_carries_the_fixed_picture_in_both_languages():
     for language in ("es", "en"):
         text = i18n.document_path("SAD.md", language).read_text(encoding="utf-8")
         assert "\n[[diagrama:flujo]]\n" in text
-    page = doc_diagrams.DOC_DIAGRAMS["flujo"](charts.MODE_CORPORATE)
+    page = doc_diagrams.builders()["flujo"](charts.MODE_CORPORATE)
     assert "<script" not in page and doc_diagrams.PRINT_STYLE in page and 'id="arrow-deploy"' in page
     published = json.loads(live_flow.POINTER.read_text(encoding="utf-8"))["published_at"]
     assert "Última carga real publicada:" in page and published[:4] in page

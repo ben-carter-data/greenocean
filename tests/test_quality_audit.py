@@ -9,6 +9,28 @@ import pytest
 
 from bi import charts, quality_live, quality_view, queries
 
+# region Constants
+EVIDENCE = dict(
+    rejections=201,
+    run_id=5,
+    run_started="19-10-2026",
+    run_status="LOADED",
+    run_ok=True,
+    manifest_present=True,
+    manifest_files=10,
+    files_matching=0,
+    files_total=10,
+    files_failed=0,
+    weeks=250,
+    first_week="03-01-2022",
+    last_week="12-10-2026",
+    build=dict(models=16, tests=31, passing=31, ok=True, built_at="19-10-2026"),
+    checks=dict(integrity_ok=True, foreign_keys=0, duplicates=0, invalid=0),
+    parity=None,
+)
+# endregion
+
+
 # region Variables
 needs_database = pytest.mark.skipif(not Path(queries.DATABASE_FILE).exists(), reason="datos.duckdb is not here")
 NOW = datetime(2026, 10, 20, tzinfo=timezone.utc)
@@ -41,26 +63,6 @@ def test_a_degraded_measure_turns_its_indicator_and_the_verdict_red(measures):
     assert "fail" in statuses.values() or "warn" in statuses.values()
     kind, sentence = quality_live.build_verdict(indicators)
     assert kind != "ok" and "A revisar" in sentence
-
-
-EVIDENCE = dict(
-    rejections=201,
-    run_id=5,
-    run_started="19-10-2026",
-    run_status="LOADED",
-    run_ok=True,
-    manifest_present=True,
-    manifest_files=10,
-    files_matching=0,
-    files_total=10,
-    files_failed=0,
-    weeks=250,
-    first_week="03-01-2022",
-    last_week="12-10-2026",
-    build=dict(models=16, tests=31, passing=31, ok=True, built_at="19-10-2026"),
-    checks=dict(integrity_ok=True, foreign_keys=0, duplicates=0, invalid=0),
-    parity=None,
-)
 
 
 def draw(measures, columns=()):
@@ -164,16 +166,17 @@ def test_d257_the_number_of_the_verdict_opens_the_list_of_all_the_indicators(mea
     )  # the 11 of the sentence are the 11 of the list
 
 
+def panel_weight(half):
+    """The height of one panel of the audit, in rows: each step's heading and its cards."""
+    return sum(len(cards) + 1 for _, cards in half)
+
+
 def test_d272_the_audit_steps_sit_in_two_panels_in_timeline_order_and_as_even_as_their_rows_allow():
     columns = quality_view.build_columns(EVIDENCE)
     left, right = quality_live.split_steps(columns)
     assert left + right == columns and left and right  # every step, once, in order
-
-    def weight(half):
-        return sum(len(cards) + 1 for _, cards in half)
-
-    best = min(abs(weight(columns[:i]) - weight(columns[i:])) for i in range(1, len(columns)))
-    assert abs(weight(left) - weight(right)) == best
+    best = min(abs(panel_weight(columns[:i]) - panel_weight(columns[i:])) for i in range(1, len(columns)))
+    assert abs(panel_weight(left) - panel_weight(right)) == best
     page = quality_live.build_audit_page_html(charts.get_palette("Vantablack"), columns)
     assert page.count('class="audit"') == 2 and 'class="audit-pair"' in page
 

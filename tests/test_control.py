@@ -1,5 +1,6 @@
 """Tests for the pipeline control: schedule, run states and GitHub answers (faked)."""
 
+import functools
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -57,12 +58,14 @@ def test_a_github_run_is_simplified_for_the_dashboard():
     assert run["duration"] == timedelta(seconds=57)
 
 
-def test_runs_are_read_from_the_github_api(monkeypatch):
-    def fake_get(url, **arguments):
-        assert url.endswith("/actions/workflows/semanal.yml/runs")
-        return FakeResponse({"workflow_runs": [GITHUB_RUN]})
+def fake_runs_get(url, **arguments):
+    """requests.get, faked: GitHub's list of runs of semanal.yml, with one run."""
+    assert url.endswith("/actions/workflows/semanal.yml/runs")
+    return FakeResponse({"workflow_runs": [GITHUB_RUN]})
 
-    monkeypatch.setattr(control.requests, "get", fake_get)
+
+def test_runs_are_read_from_the_github_api(monkeypatch):
+    monkeypatch.setattr(control.requests, "get", fake_runs_get)
     assert [run["id"] for run in control.list_workflow_runs()] == [38226180308]
 
 
@@ -173,21 +176,25 @@ def test_t54_token_warning_is_highlighted_under_14_days():
     assert control.describe_token_expiration(None, now) == ("Tu token no tiene fecha de vencimiento.", False)
 
 
+class ExpirationAnswer:
+    """GitHub's answer to a token: only the header with its expiration date."""
+
+    headers = {control.TOKEN_EXPIRATION_HEADER: "2026-12-31 12:00:00 UTC"}
+
+    def raise_for_status(self):
+        return None
+
+
+def fake_expiration_get(seen, url, headers, timeout):
+    """requests.get, faked: the authorization it was sent is noted in `seen`."""
+    seen["authorization"] = headers["Authorization"]
+    return ExpirationAnswer()
+
+
 def test_t54_only_the_expiration_date_leaves_the_github_answer(monkeypatch):
     secret = "github_pat_FAKE_SECRET_123"
     seen = {}
-
-    class Answer:
-        headers = {control.TOKEN_EXPIRATION_HEADER: "2026-12-31 12:00:00 UTC"}
-
-        def raise_for_status(self):
-            return None
-
-    def fake_get(url, headers, timeout):
-        seen["authorization"] = headers["Authorization"]
-        return Answer()
-
-    monkeypatch.setattr(control.requests, "get", fake_get)
+    monkeypatch.setattr(control.requests, "get", functools.partial(fake_expiration_get, seen))
     expiration = control.read_token_expiration(secret)
     assert seen["authorization"] == f"Bearer {secret}"
     assert expiration == datetime(2026, 12, 31, 12, tzinfo=timezone.utc)
@@ -230,17 +237,19 @@ def test_d393_after_three_failures_every_door_waits_twice_as_long_up_to_fifteen_
     assert code_shape.calls(check, "hmac.compare_digest")  # still compared in constant time
 
 
+def load_run(state, number):
+    """A run of the weekly load, numbered `number`, in `state`."""
+    return {"id": number, "state": state, "started_at": datetime(2026, 10, 20, tzinfo=timezone.utc)}
+
+
 def test_d298_only_a_real_failure_of_the_last_finished_load_raises_the_alert():
-    from datetime import datetime, timezone
-
-    def run(state, number):
-        return {"id": number, "state": state, "started_at": datetime(2026, 10, 20, tzinfo=timezone.utc)}
-
-    assert control.latest_load_failure([run(control.RUN_FAILED, 2), run(control.RUN_OK, 1)])["id"] == 2
-    assert control.latest_load_failure([run(control.RUN_IN_PROGRESS, 3), run(control.RUN_FAILED, 2)])["id"] == 2
-    assert control.latest_load_failure([run(control.RUN_OK, 2), run(control.RUN_FAILED, 1)]) is None
+    assert control.latest_load_failure([load_run(control.RUN_FAILED, 2), load_run(control.RUN_OK, 1)])["id"] == 2
     assert (
-        control.latest_load_failure([run(control.RUN_SIMULATED_FAILURE, 2)]) is None
+        control.latest_load_failure([load_run(control.RUN_IN_PROGRESS, 3), load_run(control.RUN_FAILED, 2)])["id"] == 2
+    )
+    assert control.latest_load_failure([load_run(control.RUN_OK, 2), load_run(control.RUN_FAILED, 1)]) is None
+    assert (
+        control.latest_load_failure([load_run(control.RUN_SIMULATED_FAILURE, 2)]) is None
     )  # a requested test worries nobody
     assert control.latest_load_failure([]) is None
 

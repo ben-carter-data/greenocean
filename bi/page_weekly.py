@@ -57,6 +57,7 @@ from bi.constants import (
     TOP_N_RANGE,
     WINDOW_OF_VIEW,
 )
+from bi.overview import matches_search as matches_product_search  # D-478: one search rule for every table
 from bi.data_access import (
     PRICE_SCOPE,
     current_channel,
@@ -825,12 +826,6 @@ def show_alert_line(week, family, family_open, alert, region=None, rerun_scope="
 
 
 # region Products of step 4
-normalize_search = overview.normalize_search
-
-
-matches_product_search = overview.matches_search  # D-478: one search rule for every table
-
-
 def keep_direction(rows, direction):
     """D-497: «Subidas» or «Bajadas» keep every product that moved that way, sharp or not; a change that rounds to
     0.0 % is neither, as the table paints it (change_state)."""

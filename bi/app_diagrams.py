@@ -58,6 +58,7 @@ TABLE_ROLES = {
 # raw.db is 665 MB on the author's computer and never in the repository (D-020); where the file is missing, the
 # documented size is shown with an approximation sign.
 RAW_DATABASE_SIZE_TEXT = "≈ 665 MB"
+MANIFEST = queries.DATABASE_FILE.parent.parent / "agent" / "downloads" / "manifest.json"
 # endregion
 
 
@@ -182,9 +183,6 @@ def read_manifest():
         return json.loads(MANIFEST.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
-
-
-MANIFEST = queries.DATABASE_FILE.parent.parent / "agent" / "downloads" / "manifest.json"
 
 
 def build_journey_html(mode):

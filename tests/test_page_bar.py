@@ -7,14 +7,11 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
-# region Variables
-PROJECT_DIR = Path(__file__).resolve().parent.parent
-# endregion
-# region The thin header bar of the main pages and the reading of an enlarged family
-sys.path.insert(0, str(PROJECT_DIR))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import charts, dashboard, inflation_view, page_bar, queries  # noqa: E402
 from tests.test_dashboard import DASHBOARD_FILE, draw_page, needs_database  # noqa: E402
 
+# region Constants
 MAIN_PAGES = [
     dashboard.PAGE_BA,  # D-456: with «Precios e inflación» as one of its tabs
     dashboard.PAGE_DIAGRAMS,
@@ -26,8 +23,16 @@ MAIN_PAGES = [
     dashboard.PAGE_SECURITY,
     dashboard.PAGE_STACK,
 ]
+BAR_KEYS = ("page_bar", "home_bar")
+# endregion
 
 
+# region Variables
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+# endregion
+
+
+# region The thin header bar of the main pages and the reading of an enlarged family
 def test_d398_the_bar_says_only_where_the_page_is_and_the_rest_is_content():
     bar = page_bar.build_bar_html("Ingeniería de datos › Modelo de datos", "Cómo se organizan.")
     assert 'aria-label="Página actual: Ingeniería de datos › Modelo de datos"' in bar
@@ -151,21 +156,19 @@ def test_d391_the_inflation_page_sits_in_its_menu_section():
     assert "pestana=Precios+e+inflaci%C3%B3n" in address and "Contexto" not in address
 
 
-BAR_KEYS = ("page_bar", "home_bar")
+def walk_bar(node, inside, found):
+    """Add to `found` the element `node` and those under it that sit inside the header bar."""
+    here = inside or str(getattr(node, "key", "") or "") in BAR_KEYS
+    if here:
+        found.append(node)
+    for child in getattr(node, "children", {}).values():
+        walk_bar(child, here, found)
 
 
 def bar_elements(app):
     """Every element drawn inside the header of the page: the container keyed page_bar or home_bar."""
     found = []
-
-    def walk(node, inside):
-        here = inside or str(getattr(node, "key", "") or "") in BAR_KEYS
-        if here:
-            found.append(node)
-        for child in getattr(node, "children", {}).values():
-            walk(child, here)
-
-    walk(app._tree, False)
+    walk_bar(app._tree, False, found)
     return found
 
 

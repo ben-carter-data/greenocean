@@ -12,7 +12,7 @@ from __future__ import annotations
 import html
 from typing import Any
 
-from bi import charts, i18n, quality_metrics, static_files, weeks
+from bi import charts, i18n, quality_metrics, static_files
 
 # region Constants
 # The five counts that are almost always zero share one line when they all meet their acceptable (D-332).
@@ -26,6 +26,7 @@ COUNTS = {
 STATE_COLORS = {"cumple": "#199e70", "aviso": "#b8860b", "urgente": "#e07b22", "critico": None, "sin_medicion": None}
 SKY = "#38bdf8"  # the sky-blue accent of the reports, on deep black (D-332)
 DEEP = "#05070b"
+STALE_DAYS = 8
 # endregion
 
 
@@ -249,41 +250,6 @@ def build_report_detail(report: dict[str, Any], every: list[dict[str, Any]] | No
     return f'<ul class="cr-detail qm-detail">{body}</ul>'
 
 
-def build_report_view(report: dict[str, Any], policy: dict[str, Any]) -> str:
-    """One report, as the dialog shows it: its identity and every indicator with its reading."""
-    within, nonconforming, measured = quality_metrics.report_counts(report)
-    week = report["semana"]  # D-374: the data week as its range
-    identity = t(
-        f"{report['fecha']} · semana de datos {weeks.week_range(week, True) if week else '—'} · "
-        f"código {report['codigo_evaluado']} · "
-        f"{within} de {measured} dentro de lo aceptable · {nonconforming} no conformidades",
-        f"{report['fecha']} · data week {weeks.week_range(week, True, True) if week else '—'} · "
-        f"code {report['codigo_evaluado']} · "
-        f"{within} of {measured} within the acceptable · {nonconforming} non-conformities",
-    )
-    rows = "".join(
-        f'<tr><td><b>{html.escape(t(*row["nombre"]))}</b></td>'
-        f"<td>{html.escape(t('Datos', 'Data') if row['tipo'] == 'datos' else t('Código', 'Code'))}</td>"
-        f"<td>{html.escape(failure_text(row))}</td><td>{html.escape(failure_text(row, 'falla_aceptable'))}</td>"
-        f'<td><span class="qm-state qm-{row["estado"]}">{html.escape(state_word(row["estado"], policy))}</span></td>'
-        f"<td>{html.escape(t(*row['insight']))}</td></tr>"
-        for row in report["indicadores"]
-    )
-    head = [
-        t("Indicador", "Indicator"),
-        t("Tipo", "Type"),
-        t("Falla", "Failure"),
-        t("Aceptable", "Acceptable"),
-        t("Estado", "State"),
-        t("Lectura", "Reading"),
-    ]
-    columns = "".join(f"<th>{html.escape(cell)}</th>" for cell in head)
-    return (
-        f'<div class="qm-report"><h3>{html.escape(report_title(report))}</h3><p>{html.escape(identity)}</p>'
-        f'<div class="qm-reports"><table><thead><tr>{columns}</tr></thead><tbody>{rows}</tbody></table></div></div>'
-    )
-
-
 # endregion
 
 
@@ -380,9 +346,6 @@ def build_alert(
         f'{html.escape(quality_metrics.report_code(latest, i18n.is_english()))}</a></p>'
     )
     return '<div class="qm-alerts">' + "".join(parts) + "</div>"
-
-
-STALE_DAYS = 8
 
 
 def is_stale(report: dict[str, Any], today: Any = None) -> bool:

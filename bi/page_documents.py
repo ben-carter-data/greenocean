@@ -234,7 +234,7 @@ def show_document_diagram(name, mode):
     if name in doc_diagrams.INLINE:
         st.markdown(doc_diagrams.INLINE[name](mode), unsafe_allow_html=True)
         return
-    st.iframe(doc_diagrams.DOC_DIAGRAMS[name](mode), height=doc_diagrams.HEIGHTS[name])
+    st.iframe(doc_diagrams.builders()[name](mode), height=doc_diagrams.HEIGHTS[name])
 
 
 def build_print_button_html(mode):

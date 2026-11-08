@@ -563,7 +563,7 @@ def build_security_html(palette):
     return (
         '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         + build_css(palette)
-        + f'</head><body>{quality_view.DEFS}<svg class="sec" viewBox="0 0 {WIDTH} {HEIGHT}" '
+        + f'</head><body>{quality_view.defs()}<svg class="sec" viewBox="0 0 {WIDTH} {HEIGHT}" '
         f'preserveAspectRatio="xMidYMid meet" role="img" aria-label="Arquitectura de seguridad">{head}{build_zones()}'
         f'{build_links()}{nodes}{threats}{loop}{tips}{loop_tips}</svg></body></html>'
     )

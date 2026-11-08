@@ -16,16 +16,29 @@ DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md"]
 # D-290: the scalability plan and the data dictionary live in the SAD; the security plan, in the test plan.
 READING = DOCUMENTS + ["MANUAL.md", "GLOSARIO.md", "INDICE_DECISIONES.md", "PLAN_DE_CALIDAD.md", "ACTA_DE_CIERRE.md"]
 MERGED = {"PLAN_PRUEBAS.md": ["SEGURIDAD.md"], "SAD.md": ["ESCALABILIDAD.md", "DICCIONARIO_DATOS.md"]}
+# D-279: forms that do not belong in a professional document.
+FORBIDDEN = [
+    r"\bprompt\b",
+    r"de verdad",
+    r"\bTODO\b",
+    r"lorem",
+    r"\bnota:",
+    r"como pidió",
+    r"para el autor",
+    r"\bClaude\b",
+    r"\btú\b",
+    r"\bvos\b",
+    r"esto se hizo para",
+]
 # endregion
 
 
 # region Variables
 ROOT = Path(__file__).resolve().parent.parent
-DOCS_DIR = ROOT / "docs"
 # endregion
 
 
-# region The project documents
+# region What the documents state matches the project (D-210, D-248, D-252, D-269, D-290)
 @pytest.mark.parametrize("name", DOCUMENTS)
 def test_documents_have_no_code_blocks_and_use_the_project_vocabulary(name):
     text = i18n.document_path(name, "es").read_text(encoding="utf-8")
@@ -71,7 +84,7 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
     }
     for name, markers in names.items():
         assert len(markers) >= (5 if name == "SAD.md" else 3) and len(set(markers)) == len(markers), name
-    drawn = set(dashboard.doc_diagrams.DOC_DIAGRAMS) | set(dashboard.doc_diagrams.INLINE)  # D-455: one drawn inline
+    drawn = set(dashboard.doc_diagrams.builders()) | set(dashboard.doc_diagrams.INLINE)  # D-455: one drawn inline
     assert {marker for markers in names.values() for marker in markers} <= drawn
 
 
@@ -219,22 +232,10 @@ def test_d269_the_documents_say_where_a_failed_load_is_recorded():
         assert "avisa al autor por correo" in text, name
 
 
-# D-279: forms that do not belong in a professional document.
-FORBIDDEN = [
-    r"\bprompt\b",
-    r"de verdad",
-    r"\bTODO\b",
-    r"lorem",
-    r"\bnota:",
-    r"como pidió",
-    r"para el autor",
-    r"\bClaude\b",
-    r"\btú\b",
-    r"\bvos\b",
-    r"esto se hizo para",
-]
+# endregion
 
 
+# region The form of a professional document (D-279, D-288)
 @pytest.mark.parametrize("name", READING)
 def test_d279_every_reading_document_is_written_as_a_professional_document(name):
     text = i18n.document_path(name, "es").read_text(encoding="utf-8")
@@ -368,6 +369,10 @@ def test_d288_each_document_has_a_cover_with_its_version_date_status_owner_and_a
     assert "| Campo |" not in documents_folder.strip_header_table(text)
 
 
+# endregion
+
+
+# region The architecture decisions hold in the code (ADR-04, ADR-31, D-300, D-435)
 def test_adr04_the_raw_data_is_not_in_git():
     import subprocess
 
@@ -414,6 +419,10 @@ def test_d300_each_adr_names_the_test_that_confirms_it_and_the_test_exists():
             )
 
 
+# endregion
+
+
+# region Glossary, print, authorship and risks (D-252, D-358, D-386, D-439)
 def test_d252_the_glossary_names_only_pages_and_tabs_that_exist():
     menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
     tabs = {"Operación", "Despliegue", "CI/CD", "Monitoreo", *dashboard.BA_TABS}  # D-456: and the analysis's tabs

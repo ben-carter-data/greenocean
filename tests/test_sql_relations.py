@@ -7,6 +7,20 @@ from streamlit.testing.v1 import AppTest
 
 from bi import charts, dashboard, er_diagram, i18n, queries, sql_explorer, sql_relations
 
+# region Constants
+# The view that reads each table of the data warehouse, to compare «Relaciones» with «Modelo de datos».
+TABLE_OF_VIEW = {
+    "precios": "weekly_price",
+    "semanas": "dim_date",
+    "productos": "dim_product",
+    "ipc_semanal": "ipc_weekly",
+    "ipc_mensual": "ipc_monthly",
+    "cargas": "etl_run",
+    "rechazos": "rejection",
+}
+# endregion
+
+
 # region Variables
 DASHBOARD_FILE = str(Path(__file__).resolve().parents[1] / "bi" / "dashboard.py")
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
@@ -104,12 +118,14 @@ def test_d516_the_menu_folds_on_entering_the_sql_page_and_the_svg_never_passes_t
     assert ".sqlx-relations svg" in css and "max-height:calc(100vh - 230px)" in css
 
 
-def contrast(first, second):
-    def luminance(color):
-        red, green, blue = (int(color[index : index + 2], 16) / 255 for index in (1, 3, 5))
-        linear = [part / 12.92 if part <= 0.03928 else ((part + 0.055) / 1.055) ** 2.4 for part in (red, green, blue)]
-        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+def luminance(color):
+    """WCAG relative luminance of a #rrggbb colour, computed here and not by the panel."""
+    red, green, blue = (int(color[index : index + 2], 16) / 255 for index in (1, 3, 5))
+    linear = [part / 12.92 if part <= 0.03928 else ((part + 0.055) / 1.055) ** 2.4 for part in (red, green, blue)]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
 
+
+def contrast(first, second):
     high, low = sorted((luminance(first), luminance(second)), reverse=True)
     return (high + 0.05) / (low + 0.05)
 
@@ -153,18 +169,6 @@ def test_d517_the_drawing_paints_each_group_and_names_it_in_both_languages(monke
     for text in ("Data: the ODEPA prices", "Load log: each load of etl_run", "dbt Core: the models and tests"):
         assert text in english, text
     assert "The eight views are in the same DuckDB database" in english and "Las ocho vistas" not in english
-
-
-# The view that reads each table of the data warehouse, to compare «Relaciones» with «Modelo de datos».
-TABLE_OF_VIEW = {
-    "precios": "weekly_price",
-    "semanas": "dim_date",
-    "productos": "dim_product",
-    "ipc_semanal": "ipc_weekly",
-    "ipc_mensual": "ipc_monthly",
-    "cargas": "etl_run",
-    "rechazos": "rejection",
-}
 
 
 def test_d519_every_line_is_a_relation_of_the_entity_relationship_diagram():

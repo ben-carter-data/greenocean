@@ -135,7 +135,7 @@ def test_f33_the_page_reads_the_weekly_series_once_it_has_a_report():
 
 def test_d332_the_reports_tab_lists_every_report_newest_first(construction_series, monkeypatch):
     monkeypatch.setattr(i18n, "is_english", lambda: False)
-    reports, _, policy = quality_method.read_page()
+    reports, *_ = quality_method.read_page()
     for report in reports:  # one line each: number, date and how many indicators are within the acceptable
         within, nonconforming, measured = quality_metrics.report_counts(report)
         line = quality_method.report_summary(report)
@@ -144,8 +144,6 @@ def test_d332_the_reports_tab_lists_every_report_newest_first(construction_serie
         assert f"<li><b>No conformidades:</b> {nonconforming}</li>" in quality_method.build_report_detail(
             report, reports
         )
-    view = quality_method.build_report_view(reports[-1], policy)
-    assert view.count("<tr><td><b>") == 12 and reports[-1]["indicadores"][0]["insight"][0] in view
 
 
 def load_reports_module():

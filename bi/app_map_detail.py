@@ -9,7 +9,7 @@ docs/arquitectura/ADR.md); a test checks that every decision named here exists. 
 """
 
 import csv
-import html
+import functools
 import json
 import re
 from pathlib import Path
@@ -37,14 +37,267 @@ RHYTHMS = [
     ("always", "Al abrir el panel"),  # D-473: nothing runs all the time; the panel works when opened
 ]
 RHYTHM_OWNER = {"week": "semanal", "month": "ine", "push": "pruebas", "manual": "author", "always": "streamlit"}
+# key: (owner, rhythm, what can fail and what happens then, why it is so, [decisions]). The «what it does» is the node's
+# own role in bi/app_map.py, so the hover text and the card never disagree.
+CARDS = {
+    "odepa": (
+        "fuente",
+        "week",
+        "Si cambia las columnas de un archivo, la ingesta lo rechaza con UNEXPECTED_HEADER y la carga se detiene. Si "
+        "lleva más de 2 semanas sin publicar, la carga también se detiene; si solo se atrasa, se publica hasta la "
+        "última semana completa.",
+        "Solo los archivos oficiales: cualquiera puede bajar el mismo CSV y recalcular cada cifra del panel.",
+        ["ADR-01", "D-356"],
+    ),
+    "odepa_consumer": (
+        "fuente",
+        "week",
+        "Lo mismo que la fuente mayorista: encabezado validado y la regla de las fuentes retrasadas.",
+        "Es la fuente que dice qué paga la gente; cruzada con la mayorista, da la brecha entre canales.",
+        ["ADR-01", "D-356"],
+    ),
+    "ine": (
+        "fuente",
+        "month",
+        "Si el INE no responde, la carga usa las filas del IPC que ya están en la Base DuckDB publicada "
+        "(ine_ipc_source); sin ninguna de las dos, la carga se detiene.",
+        "Sin el IPC solo habría precios nominales; con él, el panel compara cada precio con la inflación.",
+        ["ADR-33", "D-155"],
+    ),
+    "agent": (
+        "proyecto",
+        "week",
+        "Un archivo con otras columnas se rechaza con UNEXPECTED_HEADER. Una falla de red solo afecta al año en curso: "
+        "los años cerrados vienen de la caché.",
+        "Guardar cada archivo tal como llegó, con su huella, permite rehacer todo sin volver a descargar y demostrar "
+        "qué entregó la fuente ese día.",
+        ["D-047", "D-164"],
+    ),
+    "sqlite": (
+        "proyecto",
+        "week",
+        "Si el respaldo no da las mismas cifras que la Base DuckDB, la prueba de paridad falla y no se publica.",
+        "Un segundo camino, sin dbt, comprueba que dbt no cambió ninguna cifra. Los datos crudos nunca se suben al "
+        "repositorio.",
+        ["D-020", "ADR-34"],
+    ),
+    "parquet": (
+        "proyecto",
+        "week",
+        "Sin bronce, dbt no tiene fuentes y la carga se detiene antes de construir.",
+        "Parquet por columnas y por año: dbt lee solo lo que necesita, en un formato abierto.",
+        ["ADR-30", "D-154"],
+    ),
+    "dbt": (
+        "proyecto",
+        "week",
+        "Si falla un modelo o una de sus pruebas, la carga se detiene y la base publicada no cambia.",
+        "Las reglas de negocio quedan versionadas y probadas como modelos SQL, no escondidas en un script.",
+        ["ADR-30", "ADR-11"],
+    ),
+    "duckdb": (
+        "proyecto",
+        "week",
+        "Si una carga falla, la base publicada sigue siendo la anterior, con su fecha a la vista.",
+        "Un archivo sin servidor: costo cero, nada que mantener encendido y consultas al instante desde el panel.",
+        ["ADR-31", "ADR-34"],
+    ),
+    "release": (
+        "proyecto",
+        "week",
+        "Si el archivo no coincide con la huella del puntero, el panel no lo usa y sigue con la base que tiene.",
+        "Una sola copia publicada que cada carga reemplaza: el historial de git no crece con los datos.",
+        ["ADR-35", "D-270"],
+    ),
+    "streamlit": (
+        "proyecto",
+        "always",
+        "Sin base nueva, muestra la última con su fecha. Duerme si no tiene visitas; no verificado cuánto tarda.",
+        "Solo lectura por diseño: ningún error de la pantalla puede cambiar un dato.",
+        ["ADR-02", "D-283"],
+    ),
+    "visitor": (
+        "persona",
+        "always",
+        "",
+        "Sin cuenta: los datos son públicos y el panel es de solo lectura.",
+        ["D-295", "D-382"],
+    ),
+    "professional": (
+        "persona",
+        "always",
+        "",
+        "Sin clave: el rol solo ordena el menú; quien quiera revisar todo el proyecto puede hacerlo.",
+        ["D-295", "D-382"],
+    ),
+    "author": (
+        "persona",
+        "manual",
+        "Es el único que recibe avisos: «Acción requerida» al entrar y «La carga del … falló» arriba del menú.",
+        "Una sola clave, comprobada en el servidor antes de cada página y de cada acción.",
+        ["D-421", "D-420"],
+    ),
+    "secrets": (
+        "proyecto",
+        "always",
+        "Sin GITHUB_TOKEN, «Ejecutar pipeline ahora» queda inactivo; sin GITHUB_READ_TOKEN, el panel lee GitHub sin "
+        "clave, con 60 consultas por hora.",
+        "Dos tokens con alcance distinto: el que solo lee no puede lanzar nada.",
+        ["D-397", "D-421"],
+    ),
+    "devops": (
+        "proyecto",
+        "manual",
+        "Sin ser Autor, cada página dice «No tienes acceso»: el servidor lo comprueba antes de dibujarla.",
+        "La operación se ve y se hace desde el mismo panel, sin entrar a GitHub, y solo con la clave.",
+        ["D-420", "D-409"],
+    ),
+    "semanal": (
+        "proyecto",
+        "week",
+        "Si un paso falla, los siguientes no corren y la base publicada no cambia; GitHub manda un correo y el Autor "
+        "ve el aviso. No verificado: qué cuenta como actividad para que GitHub no apague el cron tras 60 días.",
+        "Todo en GitHub Actions para no mantener un servidor propio; publica solo si pasan las pruebas.",
+        ["ADR-02", "ADR-11"],
+    ),
+    "calidad": (
+        "proyecto",
+        "week",
+        "Un indicador de datos fuera de su aceptable no frena la publicación: queda como no conformidad y aparece en "
+        "«Acción requerida».",
+        "Lo que bloquea y lo que avisa quedan separados: un dato malo nunca se publica, un aviso nunca deja el panel "
+        "sin datos.",
+        ["D-431", "D-436"],
+    ),
+    "pruebas": (
+        "proyecto",
+        "push",
+        "El push queda en rojo en GitHub; los datos publicados no se tocan.",
+        "Una falla de pantalla nunca frena la publicación de datos: las pruebas de pantalla corren aquí, no en la carga.",
+        ["D-366", "D-323"],
+    ),
+    "github": (
+        "plataforma",
+        "always",
+        "Sin GitHub no hay carga, ni release, ni estado en vivo; el panel sigue con la última base descargada.",
+        "Gratis y sin vencimiento: aloja el código, corre los workflows y publica la base.",
+        ["ADR-02", "ADR-35"],
+    ),
+    "pypi": (
+        "plataforma",
+        "push",
+        "Una versión nueva incompatible rompió dos cargas: certifi y DuckDB. Desde D-435 cada dependencia tiene tope.",
+        "Actualizar una dependencia pasa a ser una decisión del autor, no una sorpresa de un martes.",
+        ["D-435", "D-227"],
+    ),
+    "stcloud": (
+        "plataforma",
+        "always",
+        "Duerme la app sin visitas, y el visitante debe despertarla. No verificado: cuánto tarda en dormirla y si toma "
+        "un commit nuevo sin «Reboot».",
+        "Junto con GitHub, permite que el proyecto corra sin nube de pago.",
+        ["ADR-02", "ADR-31"],
+    ),
+    "ci": (
+        "proyecto",
+        "push",
+        "Una prueba en rojo deja el push en rojo, o detiene la carga si es una prueba de datos.",
+        "Cada cifra del panel se recalcula desde la fuente en una prueba.",
+        ["D-366", "D-323"],
+    ),
+    "web": (
+        "proyecto",
+        "always",
+        "Si un script del navegador falla, la página sigue mostrando su HTML: se pierden la animación, el zoom o el texto al pasar el cursor. Las pruebas de pantalla corren en cada push con pruebas.yml.",
+        "El panel genera sus propias vistas: nada se descarga de terceros al abrirlo.",
+        [],
+    ),
+    "charts": (
+        "proyecto",
+        "always",
+        "Si el navegador no dibuja un gráfico, el resto de la página se ve igual; sus cifras siguen en la Base DuckDB y en «Consultas SQL».",
+        "Gráficos declarativos con el formato de números del idioma.",
+        [],
+    ),
+    "gates": (
+        "proyecto",
+        "week",
+        "Basta un criterio para detener la carga: la base publicada no cambia y el Autor recibe el aviso.",
+        "Nunca se publica una cifra que no pasó las pruebas: mejor la semana anterior, fechada, que un dato dudoso.",
+        ["ADR-11", "D-356"],
+    ),
+    "parity": (
+        "proyecto",
+        "week",
+        "Si las dos bases no coinciden, una de las dos implementaciones tiene un error y la carga se detiene.",
+        "Dos caminos independientes que coinciden dan más confianza que uno solo bien probado.",
+        ["D-154", "ADR-34"],
+    ),
+    "security": (
+        "proyecto",
+        "push",
+        "Un ataque que pasa deja el push en rojo antes de publicar el cambio.",
+        "Cada control se demuestra con una prueba que lo ataca.",
+        ["D-421", "D-393"],
+    ),
+    "monitoring": (
+        "proyecto",
+        "week",
+        "Si una carga falla, la Base DuckDB publicada no cambia y etl_run no la anota: la falla queda en el log de GitHub Actions, en el correo de GitHub y en el aviso «La carga del … falló» del panel.",
+        "Cada carga deja su registro, así se sabe qué pasó sin entrar a la máquina.",
+        ["D-342"],
+    ),
+    "docs": (
+        "proyecto",
+        "push",
+        "Si un documento pierde una sección, un diagrama o su par en inglés, sus pruebas fallan y pruebas.yml queda en rojo en ese push.",
+        "Cada documento es una página del panel y su PDF es esa página impresa.",
+        ["D-279", "D-248"],
+    ),
+    "measurement": (
+        "proyecto",
+        "manual",
+        "Corre a mano, fuera del CI: si no se corre, un cambio de diseño llega sin medir. Necesita Playwright instalado fuera del proyecto.",
+        "Las pantallas se miden en un navegador real, no a ojo.",
+        ["D-277"],
+    ),
+    "ai": (
+        "fuera",
+        "manual",
+        "No es parte del sistema: sin ella, la carga, el panel y las pruebas corren igual.",
+        "Apoyo para revisar; nunca corre en la carga ni en el panel.",
+        [],
+    ),
+}
+# The phases of each workflow, each with the words of its first step: a step goes to the phase it opens or stays in the
+# one before. The steps themselves are read from the file.
+# The Spanish name of each step of semanal.yml, the same one the DevOps diagram shows: (title, detail, what it does).
+STEP_NAMES = {
+    step[7]: (step[3].split(" · ")[-1], step[4], step[5])
+    for step in devops.STEPS
+    if step[7] and "::" in step[7] and step[3][0].isdigit()
+}
+PHASES = {
+    "semanal.yml": [
+        ("Preparación", ("tuesday's load", "checkout")),
+        ("Lo que ya existe", ("current year",)),
+        ("Ingesta", ("download",)),
+        ("Construcción", ("etl",)),
+        ("Pruebas", ("simulate",)),
+        ("Publicación", ("publish the database",)),
+    ],
+    "calidad.yml": [
+        ("Preparación", ("checkout",)),
+        ("Medición", ("medir",)),
+        ("Comparación", ("comparar",)),
+        ("Informe", ("proponer",)),
+        ("Resultado", ("fallar",)),
+    ],
+}
 # endregion
 
 
 # region Pieces
-def esc(value):
-    return html.escape(str(value), quote=True)
-
-
 def number(value):
     """A figure written the Spanish way (821.072): the English layer rewrites the figures of the texts it translates, so
     a figure already in English would be turned around (5,000 → 5.000)."""
@@ -283,240 +536,6 @@ def goals_of(facts, kind):
 
 
 # region The card of each piece of the map
-# key: (owner, rhythm, what can fail and what happens then, why it is so, [decisions]). The «what it does» is the node's
-# own role in bi/app_map.py, so the hover text and the card never disagree.
-CARDS = {
-    "odepa": (
-        "fuente",
-        "week",
-        "Si cambia las columnas de un archivo, la ingesta lo rechaza con UNEXPECTED_HEADER y la carga se detiene. Si "
-        "lleva más de 2 semanas sin publicar, la carga también se detiene; si solo se atrasa, se publica hasta la "
-        "última semana completa.",
-        "Solo los archivos oficiales: cualquiera puede bajar el mismo CSV y recalcular cada cifra del panel.",
-        ["ADR-01", "D-356"],
-    ),
-    "odepa_consumer": (
-        "fuente",
-        "week",
-        "Lo mismo que la fuente mayorista: encabezado validado y la regla de las fuentes retrasadas.",
-        "Es la fuente que dice qué paga la gente; cruzada con la mayorista, da la brecha entre canales.",
-        ["ADR-01", "D-356"],
-    ),
-    "ine": (
-        "fuente",
-        "month",
-        "Si el INE no responde, la carga usa las filas del IPC que ya están en la Base DuckDB publicada "
-        "(ine_ipc_source); sin ninguna de las dos, la carga se detiene.",
-        "Sin el IPC solo habría precios nominales; con él, el panel compara cada precio con la inflación.",
-        ["ADR-33", "D-155"],
-    ),
-    "agent": (
-        "proyecto",
-        "week",
-        "Un archivo con otras columnas se rechaza con UNEXPECTED_HEADER. Una falla de red solo afecta al año en curso: "
-        "los años cerrados vienen de la caché.",
-        "Guardar cada archivo tal como llegó, con su huella, permite rehacer todo sin volver a descargar y demostrar "
-        "qué entregó la fuente ese día.",
-        ["D-047", "D-164"],
-    ),
-    "sqlite": (
-        "proyecto",
-        "week",
-        "Si el respaldo no da las mismas cifras que la Base DuckDB, la prueba de paridad falla y no se publica.",
-        "Un segundo camino, sin dbt, comprueba que dbt no cambió ninguna cifra. Los datos crudos nunca se suben al "
-        "repositorio.",
-        ["D-020", "ADR-34"],
-    ),
-    "parquet": (
-        "proyecto",
-        "week",
-        "Sin bronce, dbt no tiene fuentes y la carga se detiene antes de construir.",
-        "Parquet por columnas y por año: dbt lee solo lo que necesita, en un formato abierto.",
-        ["ADR-30", "D-154"],
-    ),
-    "dbt": (
-        "proyecto",
-        "week",
-        "Si falla un modelo o una de sus pruebas, la carga se detiene y la base publicada no cambia.",
-        "Las reglas de negocio quedan versionadas y probadas como modelos SQL, no escondidas en un script.",
-        ["ADR-30", "ADR-11"],
-    ),
-    "duckdb": (
-        "proyecto",
-        "week",
-        "Si una carga falla, la base publicada sigue siendo la anterior, con su fecha a la vista.",
-        "Un archivo sin servidor: costo cero, nada que mantener encendido y consultas al instante desde el panel.",
-        ["ADR-31", "ADR-34"],
-    ),
-    "release": (
-        "proyecto",
-        "week",
-        "Si el archivo no coincide con la huella del puntero, el panel no lo usa y sigue con la base que tiene.",
-        "Una sola copia publicada que cada carga reemplaza: el historial de git no crece con los datos.",
-        ["ADR-35", "D-270"],
-    ),
-    "streamlit": (
-        "proyecto",
-        "always",
-        "Sin base nueva, muestra la última con su fecha. Duerme si no tiene visitas; no verificado cuánto tarda.",
-        "Solo lectura por diseño: ningún error de la pantalla puede cambiar un dato.",
-        ["ADR-02", "D-283"],
-    ),
-    "visitor": (
-        "persona",
-        "always",
-        "",
-        "Sin cuenta: los datos son públicos y el panel es de solo lectura.",
-        ["D-295", "D-382"],
-    ),
-    "professional": (
-        "persona",
-        "always",
-        "",
-        "Sin clave: el rol solo ordena el menú; quien quiera revisar todo el proyecto puede hacerlo.",
-        ["D-295", "D-382"],
-    ),
-    "author": (
-        "persona",
-        "manual",
-        "Es el único que recibe avisos: «Acción requerida» al entrar y «La carga del … falló» arriba del menú.",
-        "Una sola clave, comprobada en el servidor antes de cada página y de cada acción.",
-        ["D-421", "D-420"],
-    ),
-    "secrets": (
-        "proyecto",
-        "always",
-        "Sin GITHUB_TOKEN, «Ejecutar pipeline ahora» queda inactivo; sin GITHUB_READ_TOKEN, el panel lee GitHub sin "
-        "clave, con 60 consultas por hora.",
-        "Dos tokens con alcance distinto: el que solo lee no puede lanzar nada.",
-        ["D-397", "D-421"],
-    ),
-    "devops": (
-        "proyecto",
-        "manual",
-        "Sin ser Autor, cada página dice «No tienes acceso»: el servidor lo comprueba antes de dibujarla.",
-        "La operación se ve y se hace desde el mismo panel, sin entrar a GitHub, y solo con la clave.",
-        ["D-420", "D-409"],
-    ),
-    "semanal": (
-        "proyecto",
-        "week",
-        "Si un paso falla, los siguientes no corren y la base publicada no cambia; GitHub manda un correo y el Autor "
-        "ve el aviso. No verificado: qué cuenta como actividad para que GitHub no apague el cron tras 60 días.",
-        "Todo en GitHub Actions para no mantener un servidor propio; publica solo si pasan las pruebas.",
-        ["ADR-02", "ADR-11"],
-    ),
-    "calidad": (
-        "proyecto",
-        "week",
-        "Un indicador de datos fuera de su aceptable no frena la publicación: queda como no conformidad y aparece en "
-        "«Acción requerida».",
-        "Lo que bloquea y lo que avisa quedan separados: un dato malo nunca se publica, un aviso nunca deja el panel "
-        "sin datos.",
-        ["D-431", "D-436"],
-    ),
-    "pruebas": (
-        "proyecto",
-        "push",
-        "El push queda en rojo en GitHub; los datos publicados no se tocan.",
-        "Una falla de pantalla nunca frena la publicación de datos: las pruebas de pantalla corren aquí, no en la carga.",
-        ["D-366", "D-323"],
-    ),
-    "github": (
-        "plataforma",
-        "always",
-        "Sin GitHub no hay carga, ni release, ni estado en vivo; el panel sigue con la última base descargada.",
-        "Gratis y sin vencimiento: aloja el código, corre los workflows y publica la base.",
-        ["ADR-02", "ADR-35"],
-    ),
-    "pypi": (
-        "plataforma",
-        "push",
-        "Una versión nueva incompatible rompió dos cargas: certifi y DuckDB. Desde D-435 cada dependencia tiene tope.",
-        "Actualizar una dependencia pasa a ser una decisión del autor, no una sorpresa de un martes.",
-        ["D-435", "D-227"],
-    ),
-    "stcloud": (
-        "plataforma",
-        "always",
-        "Duerme la app sin visitas, y el visitante debe despertarla. No verificado: cuánto tarda en dormirla y si toma "
-        "un commit nuevo sin «Reboot».",
-        "Junto con GitHub, permite que el proyecto corra sin nube de pago.",
-        ["ADR-02", "ADR-31"],
-    ),
-    "ci": (
-        "proyecto",
-        "push",
-        "Una prueba en rojo deja el push en rojo, o detiene la carga si es una prueba de datos.",
-        "Cada cifra del panel se recalcula desde la fuente en una prueba.",
-        ["D-366", "D-323"],
-    ),
-    "web": (
-        "proyecto",
-        "always",
-        "Si un script del navegador falla, la página sigue mostrando su HTML: se pierden la animación, el zoom o el texto al pasar el cursor. Las pruebas de pantalla corren en cada push con pruebas.yml.",
-        "El panel genera sus propias vistas: nada se descarga de terceros al abrirlo.",
-        [],
-    ),
-    "charts": (
-        "proyecto",
-        "always",
-        "Si el navegador no dibuja un gráfico, el resto de la página se ve igual; sus cifras siguen en la Base DuckDB y en «Consultas SQL».",
-        "Gráficos declarativos con el formato de números del idioma.",
-        [],
-    ),
-    "gates": (
-        "proyecto",
-        "week",
-        "Basta un criterio para detener la carga: la base publicada no cambia y el Autor recibe el aviso.",
-        "Nunca se publica una cifra que no pasó las pruebas: mejor la semana anterior, fechada, que un dato dudoso.",
-        ["ADR-11", "D-356"],
-    ),
-    "parity": (
-        "proyecto",
-        "week",
-        "Si las dos bases no coinciden, una de las dos implementaciones tiene un error y la carga se detiene.",
-        "Dos caminos independientes que coinciden dan más confianza que uno solo bien probado.",
-        ["D-154", "ADR-34"],
-    ),
-    "security": (
-        "proyecto",
-        "push",
-        "Un ataque que pasa deja el push en rojo antes de publicar el cambio.",
-        "Cada control se demuestra con una prueba que lo ataca.",
-        ["D-421", "D-393"],
-    ),
-    "monitoring": (
-        "proyecto",
-        "week",
-        "Si una carga falla, la Base DuckDB publicada no cambia y etl_run no la anota: la falla queda en el log de GitHub Actions, en el correo de GitHub y en el aviso «La carga del … falló» del panel.",
-        "Cada carga deja su registro, así se sabe qué pasó sin entrar a la máquina.",
-        ["D-342"],
-    ),
-    "docs": (
-        "proyecto",
-        "push",
-        "Si un documento pierde una sección, un diagrama o su par en inglés, sus pruebas fallan y pruebas.yml queda en rojo en ese push.",
-        "Cada documento es una página del panel y su PDF es esa página impresa.",
-        ["D-279", "D-248"],
-    ),
-    "measurement": (
-        "proyecto",
-        "manual",
-        "Corre a mano, fuera del CI: si no se corre, un cambio de diseño llega sin medir. Necesita Playwright instalado fuera del proyecto.",
-        "Las pantallas se miden en un navegador real, no a ojo.",
-        ["D-277"],
-    ),
-    "ai": (
-        "fuera",
-        "manual",
-        "No es parte del sistema: sin ella, la carga, el panel y las pruebas corren igual.",
-        "Apoyo para revisar; nunca corre en la carga ni en el panel.",
-        [],
-    ),
-}
-
-
 def inside_of(key, facts):
     """«What it has inside»: its real pieces, read from what the system records when it can be."""
     layers = models_by_layer(facts)
@@ -1308,33 +1327,6 @@ def step_logo(step):
     return "brand:python"
 
 
-# The phases of each workflow, each with the words of its first step: a step goes to the phase it opens or stays in the
-# one before. The steps themselves are read from the file.
-# The Spanish name of each step of semanal.yml, the same one the DevOps diagram shows: (title, detail, what it does).
-STEP_NAMES = {
-    step[7]: (step[3].split(" · ")[-1], step[4], step[5])
-    for step in devops.STEPS
-    if step[7] and "::" in step[7] and step[3][0].isdigit()
-}
-PHASES = {
-    "semanal.yml": [
-        ("Preparación", ("tuesday's load", "checkout")),
-        ("Lo que ya existe", ("current year",)),
-        ("Ingesta", ("download",)),
-        ("Construcción", ("etl",)),
-        ("Pruebas", ("simulate",)),
-        ("Publicación", ("publish the database",)),
-    ],
-    "calidad.yml": [
-        ("Preparación", ("checkout",)),
-        ("Medición", ("medir",)),
-        ("Comparación", ("comparar",)),
-        ("Informe", ("proponer",)),
-        ("Resultado", ("fallar",)),
-    ],
-}
-
-
 def inside_workflow(facts, name):
     """The steps of a workflow in the order of the file, in columns by phase (or by job), joined one after another."""
     found = workflow(facts, name)
@@ -1803,32 +1795,37 @@ def inside_docs(facts):
     }
 
 
-INSIDES = {
-    "odepa": lambda facts: inside_source(facts, "wholesale", "ODEPA mayorista"),
-    "odepa_consumer": lambda facts: inside_source(facts, "consumer", "ODEPA consumidor"),
-    "ine": inside_ine,
-    "agent": inside_agent,
-    "sqlite": inside_sqlite,
-    "parquet": inside_parquet,
-    "dbt": inside_dbt,
-    "duckdb": inside_duckdb,
-    "release": inside_release,
-    "streamlit": inside_panel,
-    "devops": inside_devops,
-    "semanal": inside_semanal,
-    "calidad": inside_calidad,
-    "pruebas": inside_pruebas,
-    "github": inside_github,
-    "pypi": inside_pypi,
-    "stcloud": inside_stcloud,
-    "secrets": inside_secrets,
-    "gates": inside_gates,
-    "parity": inside_parity,
-    "ci": inside_ci,
-    "security": inside_security,
-    "monitoring": inside_monitoring,
-    "docs": inside_docs,
-}
+@functools.cache
+def insides():
+    """The inside of each piece of the map, by its key: what the piece does in GreenOcean (D-441)."""
+    return {
+        "odepa": functools.partial(inside_source, source="wholesale", label="ODEPA mayorista"),
+        "odepa_consumer": functools.partial(inside_source, source="consumer", label="ODEPA consumidor"),
+        "ine": inside_ine,
+        "agent": inside_agent,
+        "sqlite": inside_sqlite,
+        "parquet": inside_parquet,
+        "dbt": inside_dbt,
+        "duckdb": inside_duckdb,
+        "release": inside_release,
+        "streamlit": inside_panel,
+        "devops": inside_devops,
+        "semanal": inside_semanal,
+        "calidad": inside_calidad,
+        "pruebas": inside_pruebas,
+        "github": inside_github,
+        "pypi": inside_pypi,
+        "stcloud": inside_stcloud,
+        "secrets": inside_secrets,
+        "gates": inside_gates,
+        "parity": inside_parity,
+        "ci": inside_ci,
+        "security": inside_security,
+        "monitoring": inside_monitoring,
+        "docs": inside_docs,
+    }
+
+
 # endregion
 
 
@@ -2481,15 +2478,20 @@ def engine_charts(facts):
     )
 
 
-ENGINES = {
-    "duckdb": engine_duckdb,
-    "dbt": engine_dbt,
-    "sqlite": engine_sqlite,
-    "parquet": engine_parquet,
-    "streamlit": engine_streamlit,
-    "github": engine_github,
-    "pypi": engine_pypi,
-    "ci": engine_pytest,
-    "charts": engine_charts,
-}
+@functools.cache
+def engines():
+    """How each tool of the map works, by its key, as GreenOcean uses it (D-441)."""
+    return {
+        "duckdb": engine_duckdb,
+        "dbt": engine_dbt,
+        "sqlite": engine_sqlite,
+        "parquet": engine_parquet,
+        "streamlit": engine_streamlit,
+        "github": engine_github,
+        "pypi": engine_pypi,
+        "ci": engine_pytest,
+        "charts": engine_charts,
+    }
+
+
 # endregion

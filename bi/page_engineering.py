@@ -39,6 +39,7 @@ from bi import (
     weeks,
     zoom,
 )
+from bi.app_diagrams import read_store_sizes
 from bi.app_frame import (
     build_chip,
     build_page_address,
@@ -99,10 +100,6 @@ from etl import etl
 from bi import static_files
 
 # region Constants
-# D-448: the tables' roles and definitions are shared with the SAD, which draws the same model.
-IPC_TABLE_DEFINITIONS, TABLE_ROLES = app_diagrams.IPC_TABLE_DEFINITIONS, app_diagrams.TABLE_ROLES
-
-
 MODEL_DESCRIPTION = "Cómo se organizan los datos: las tablas y sus claves, dónde viven y cómo se cruzan las bases."
 
 
@@ -110,10 +107,6 @@ MODEL_VIEWS = ["Modelo estrella", "Entidad-relación", "Dónde viven los datos",
 
 
 MODEL_VIEW_KEY = "model_view"
-
-
-# D-448: the storage map of the panel and of the SAD reads the same sizes.
-RAW_DATABASE_SIZE_TEXT = app_diagrams.RAW_DATABASE_SIZE_TEXT
 
 
 KPI_LIMITS = {
@@ -208,21 +201,6 @@ KPI_ICONS_SVG = {
     "bars": '<path d="M5 19V11M10 19V6M15 19v-5M20 19V9"/>',
     "code": '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/>',
 }
-
-
-CATALOG_TREND_WEEKS = 26
-
-
-CATALOG_BAR_COUNT = 12
-
-
-PRICE_THEME = "Precios"
-
-
-QUALITY_THEME = "Calidad de datos"
-
-
-LIMIT_NO_DATA = "Sin dato no significa precio cero: esa región, canal o semana no se informó."
 
 
 STACK_VIEWS = ["Herramientas", "Flujo del sistema en vivo"]
@@ -519,9 +497,6 @@ def read_database_map(database_version):
     layers = {row.layer: int(row.n) for row in nodes.itertuples() if row.resource_type == "model"}
     tests = int(nodes.loc[nodes["resource_type"] == "test", "n"].sum())
     return counts, layers, tests
-
-
-format_file_size, read_store_sizes = app_diagrams.format_file_size, app_diagrams.read_store_sizes
 
 
 @st.cache_data

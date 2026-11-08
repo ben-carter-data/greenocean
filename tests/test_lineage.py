@@ -13,6 +13,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import architecture, charts, lineage, queries  # noqa: E402
 from tests.test_tech_glossary import nearest_title, parse, tag  # noqa: E402
 
+# region Constants
+DESCRIBED = re.compile(r"^  - name: (\w+)\n    description:", re.MULTILINE)
+# endregion
+
+# region Variables
+ROOT = Path(__file__).resolve().parent.parent
+# endregion
+
 
 # region The dbt lineage is the zoom of the journey
 @pytest.fixture(scope="module")
@@ -25,10 +33,6 @@ def build():
 
 def drawn_nodes(nodes):
     return nodes[nodes["resource_type"].isin(["model", "source"])]
-
-
-ROOT = Path(__file__).resolve().parent.parent
-DESCRIBED = re.compile(r"^  - name: (\w+)\n    description:", re.MULTILINE)
 
 
 def described_in_the_project():

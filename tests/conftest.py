@@ -42,9 +42,9 @@ def open_the_attempt_gate():
     """D-393: the control code's gate is shared by the whole process; each test starts with it open."""
     from bi import control
 
-    control.GATE.reset()
+    control.attempt_gate().reset()
     yield
-    control.GATE.reset()
+    control.attempt_gate().reset()
 
 
 def pytest_collection_modifyitems(items):

@@ -38,6 +38,8 @@ INSIGHT_ROOM = 43  # D-518: the height of the green box of «Histórico», taken
 # One chart of a tab: its title, the months it shows, what it measures, what follows from it, and how to draw it at a
 # width and a height.
 Tile = tuple[str, str, str, str, Callable[..., Any]]
+# D-466: one colour per year in «Cambio de cada año», so each year reads apart; the bar's height says whether it rose.
+YEAR_COLORS = ["#5aa9ea", "#5fd39b", "#b49cff", "#f2b05e", "#ef7d8e", "#4dd0e1", "#f48fb1"]
 # endregion
 
 
@@ -739,10 +741,6 @@ def history_cards(figures: dict[str, Any], last: tuple[int, int]) -> str:
 
 
 # region Charts
-# D-466: one colour per year in «Cambio de cada año», so each year reads apart; the bar's height says whether it rose.
-YEAR_COLORS = ["#5aa9ea", "#5fd39b", "#b49cff", "#f2b05e", "#ef7d8e", "#4dd0e1", "#f48fb1"]
-
-
 def sized(chart: Any, width: Any, height: int, mode: str) -> Any:
     return charts.apply_chart_style(chart.properties(width=width, height=height), mode)
 

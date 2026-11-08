@@ -7,12 +7,16 @@ import json
 import sys
 from collections import defaultdict
 
+# region Constants
 DESKTOP = [(1440, 700), (1440, 900), (1920, 1080)]
 PHONE = [(390, 844), (844, 390)]
 # A page may leave at most this share of the window empty under its last element.
 MAX_EMPTY = 10
+CHROME = ("app_header", "page_bar", "header_preferences", "report_page", "window_page", "return_to_previous")
+# endregion
 
 
+# region Reading a measurement
 def top(row):
     return row["parts"][0]
 
@@ -29,6 +33,15 @@ def fits(row):
     return bool(main) and main["scroll"] <= main["client"] + 1
 
 
+def pick(data, n, theme, size):
+    """The measured rows of page `n` in `theme` at the window `size`."""
+    return [r for r in data if r["n"] == n and r["theme"] == theme and (r["w"], r["h"]) == size]
+
+
+# endregion
+
+
+# region Cells of the tables
 def cell(rows):
     """Natural height of the content and the verdict, same for both themes or marked."""
     out = []
@@ -42,9 +55,6 @@ def cell(rows):
         else:
             out.append(f"{height} ✔")
     return out[0] if len(set(out)) == 1 else " / ".join(out)
-
-
-CHROME = ("app_header", "page_bar", "header_preferences", "report_page", "window_page", "return_to_previous")
 
 
 def grower(row):
@@ -76,25 +86,25 @@ def issues(rows):
     return worst
 
 
+# endregion
+
+
+# region Entry point
 def main(path):
     data = json.load(open(path))
     pages = []
     for row in data:
         if (row["n"], row["slug"]) not in pages:
             pages.append((row["n"], row["slug"]))
-
-    def pick(n, theme, size):
-        return [r for r in data if r["n"] == n and r["theme"] == theme and (r["w"], r["h"]) == size]
-
     print("## Alto natural y desplazamiento (Vantablack / Blue Light si difieren)\n")
     print("| # | Página | 1440 × 700 | 1440 × 900 | 1920 × 1080 | Qué la hace crecer (1440 × 900) |")
     print("|--:|---|---|---|---|---|")
     for n, slug in pages:
         cells = []
         for size in DESKTOP:
-            rows = [pick(n, t, size)[0] for t in ("Vantablack", "Blue Light") if pick(n, t, size)]
+            rows = [pick(data, n, t, size)[0] for t in ("Vantablack", "Blue Light") if pick(data, n, t, size)]
             cells.append(cell(rows) if rows else "—")
-        ref = pick(n, "Vantablack", (1440, 900))
+        ref = pick(data, n, "Vantablack", (1440, 900))
         print(f"| {n} | {slug} | " + " | ".join(cells) + f" | {grower(ref[0]) if ref else '—'} |")
 
     print("\n## Texto menor de 11 px, superposiciones y recortes (peor caso de ambos temas, 3 pantallas)\n")
@@ -114,7 +124,7 @@ def main(path):
     for n, slug in pages:
         cells = []
         for size in PHONE:
-            rows = pick(n, "Vantablack", size)
+            rows = pick(data, n, "Vantablack", size)
             if not rows:
                 cells.append("—")
                 continue
@@ -125,3 +135,4 @@ def main(path):
 
 if __name__ == "__main__":
     main(sys.argv[1])
+# endregion

@@ -13,6 +13,7 @@ and the files said. No token, header or log ever reaches this module.
 
 from __future__ import annotations
 
+import functools
 import html
 import json
 from datetime import datetime
@@ -40,96 +41,6 @@ GROUP_COLORS = {
 REQUEST_COLOR = "#5b9cf0"
 ANSWER_COLOR = "#22b35a"
 WORKING_COLOR = "#eda100"
-# endregion
-
-
-# region Pieces
-def t(pair: tuple[str, str]) -> str:
-    return pair[1] if i18n.is_english() else pair[0]
-
-
-def esc(value: Any) -> str:
-    return html.escape(str(value))
-
-
-# endregion
-
-
-# region Icons: the logos of the stack, and plain line drawings for the rest
-
-
-def draw_package_icon(x: float, y: float, color: str) -> str:
-    """A box with its lid: a release of GitHub."""
-    return (
-        f'<path d="M{x - 15} {y - 8} l15 -8 l15 8 v17 l-15 8 l-15 -8 z M{x - 15} {y - 8} l15 8 l15 -8 M{x} {y} v17" '
-        f'fill="none" stroke="{color}" stroke-width="2.2" stroke-linejoin="round"/>'
-    )
-
-
-def draw_key_icon(x: float, y: float, color: str) -> str:
-    return (
-        f'<circle cx="{x - 7}" cy="{y}" r="7" fill="none" stroke="{color}" stroke-width="2.2"/>'
-        f'<path d="M{x} {y} h15 m-5 0 v6 m-5 -6 v4" fill="none" stroke="{color}" stroke-width="2.2" '
-        f'stroke-linecap="round"/>'
-    )
-
-
-def draw_lock_icon(x: float, y: float, color: str) -> str:
-    return (
-        f'<rect x="{x - 11}" y="{y - 3}" width="22" height="17" rx="3" fill="none" stroke="{color}" stroke-width="2.2"/>'
-        f'<path d="M{x - 6} {y - 3} v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="{color}" stroke-width="2.2"/>'
-    )
-
-
-def draw_browser_icon(x: float, y: float, color: str) -> str:
-    return (
-        f'<rect x="{x - 16}" y="{y - 12}" width="32" height="24" rx="3" fill="none" stroke="{color}" '
-        f'stroke-width="2.2"/><path d="M{x - 16} {y - 5} h32" stroke="{color}" stroke-width="2"/>'
-        f'<circle cx="{x - 11}" cy="{y - 8.5}" r="1.3" fill="{color}"/>'
-        f'<circle cx="{x - 7}" cy="{y - 8.5}" r="1.3" fill="{color}"/>'
-    )
-
-
-def draw_archive_icon(x: float, y: float, color: str) -> str:
-    """A drawer of files: the Actions cache."""
-    return (
-        f'<rect x="{x - 15}" y="{y - 13}" width="30" height="9" rx="2" fill="none" stroke="{color}" stroke-width="2.2"/>'
-        f'<path d="M{x - 13} {y - 4} v15 h26 v-15 M{x - 5} {y + 2} h10" fill="none" stroke="{color}" '
-        f'stroke-width="2.2" stroke-linecap="round"/>'
-    )
-
-
-def logo(slug: str) -> Any:
-    return lambda x, y, color: brand_icons.logo(slug, x - 17, y - 17, color, 34)
-
-
-ICONS = {
-    "file": architecture.draw_file_icon,
-    "chart": architecture.draw_chart_icon,
-    "package": draw_package_icon,
-    "clock": architecture.draw_clock_icon,
-    "archive": draw_archive_icon,
-    "git": logo("git"),
-    "report": architecture.draw_report_icon,
-    "code": architecture.draw_code_icon,
-    "python": logo("python"),
-    "sqlite": logo("sqlite"),
-    "parquet": logo("apacheparquet"),
-    "dbt": logo("dbt"),
-    "duckdb": logo("duckdb"),
-    "pytest": logo("pytest"),
-    "streamlit": logo("streamlit"),
-    "browser": draw_browser_icon,
-    "shield": architecture.draw_shield_icon,
-    "key": draw_key_icon,
-    "lock": draw_lock_icon,
-}
-
-# endregion
-
-
-# region The pieces and the messages
-
 # id: (group, x, y, icon, title, detail, evidence file, text in that file that proves the piece is real)
 PIECES: dict[str, tuple[str, int, int, str, tuple[str, str], tuple[str, str], str, str]] = {
     "pypi": (
@@ -356,7 +267,6 @@ GROUPS = [
     ("cloud", 900, 262, 270, 200, ("STREAMLIT COMMUNITY CLOUD", "STREAMLIT COMMUNITY CLOUD")),
     ("devsecops", 170, 500, 1130, 140, ("DEVSECOPS", "DEVSECOPS")),
 ]
-
 # id: who asks, who answers, path drawn from the one who asks, where its label goes, label, what is asked, what comes
 # back, when, what for, deduced (nothing in GitHub or the database says it: it is how the service works).
 ARROWS: dict[str, dict[str, Any]] = {
@@ -604,8 +514,121 @@ STEP_ELEMENTS: dict[str, list[str]] = {
     "Post Run actions/checkout@v4": ["repo"],
     "Complete job": ["start"],
 }
+LABELS = {
+    "ask": ("Pide", "Asks"),
+    "answer": ("Responde", "Answers"),
+    "when": ("Cuándo", "When"),
+    "why": ("Para qué", "What for"),
+    "last": ("En la última ejecución real", "In the latest real run"),
+    "deduced": (
+        "Deducido: no se puede leer en GitHub ni en la base.",
+        "Deduced: it cannot be read on GitHub or in the database.",
+    ),
+    "replay": ("Repetir la última ejecución", "Replay the latest run"),
+    "pause": ("Pausar", "Pause"),
+    "resume": ("Seguir", "Resume"),
+    "close": ("Cerrar", "Close"),
+    "hint": ("Clic en una flecha: qué viaja, de ida y de vuelta.", "Click an arrow: what travels, there and back."),
+    "open": ("Abrir la ejecución en GitHub", "Open the run on GitHub"),
+}
+# endregion
+
+# region Variables
+# The animation, as the author asked: a piece that works alone lights up and pulses; a communication is a message
+# that travels from whoever asks to whoever answers, and the answer comes back along the same path.
+SCRIPT = static_files.read("live_flow.js")  # D-543: the code lives in bi/static/live_flow.js
+POINTER = Path(__file__).resolve().parent.parent / "etl" / "datos.version"
+# endregion
 
 
+# region Pieces
+def t(pair: tuple[str, str]) -> str:
+    return pair[1] if i18n.is_english() else pair[0]
+
+
+def esc(value: Any) -> str:
+    return html.escape(str(value))
+
+
+# endregion
+
+
+# region Icons: the logos of the stack, and plain line drawings for the rest
+def draw_package_icon(x: float, y: float, color: str) -> str:
+    """A box with its lid: a release of GitHub."""
+    return (
+        f'<path d="M{x - 15} {y - 8} l15 -8 l15 8 v17 l-15 8 l-15 -8 z M{x - 15} {y - 8} l15 8 l15 -8 M{x} {y} v17" '
+        f'fill="none" stroke="{color}" stroke-width="2.2" stroke-linejoin="round"/>'
+    )
+
+
+def draw_key_icon(x: float, y: float, color: str) -> str:
+    return (
+        f'<circle cx="{x - 7}" cy="{y}" r="7" fill="none" stroke="{color}" stroke-width="2.2"/>'
+        f'<path d="M{x} {y} h15 m-5 0 v6 m-5 -6 v4" fill="none" stroke="{color}" stroke-width="2.2" '
+        f'stroke-linecap="round"/>'
+    )
+
+
+def draw_lock_icon(x: float, y: float, color: str) -> str:
+    return (
+        f'<rect x="{x - 11}" y="{y - 3}" width="22" height="17" rx="3" fill="none" stroke="{color}" stroke-width="2.2"/>'
+        f'<path d="M{x - 6} {y - 3} v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="{color}" stroke-width="2.2"/>'
+    )
+
+
+def draw_browser_icon(x: float, y: float, color: str) -> str:
+    return (
+        f'<rect x="{x - 16}" y="{y - 12}" width="32" height="24" rx="3" fill="none" stroke="{color}" '
+        f'stroke-width="2.2"/><path d="M{x - 16} {y - 5} h32" stroke="{color}" stroke-width="2"/>'
+        f'<circle cx="{x - 11}" cy="{y - 8.5}" r="1.3" fill="{color}"/>'
+        f'<circle cx="{x - 7}" cy="{y - 8.5}" r="1.3" fill="{color}"/>'
+    )
+
+
+def draw_archive_icon(x: float, y: float, color: str) -> str:
+    """A drawer of files: the Actions cache."""
+    return (
+        f'<rect x="{x - 15}" y="{y - 13}" width="30" height="9" rx="2" fill="none" stroke="{color}" stroke-width="2.2"/>'
+        f'<path d="M{x - 13} {y - 4} v15 h26 v-15 M{x - 5} {y + 2} h10" fill="none" stroke="{color}" '
+        f'stroke-width="2.2" stroke-linecap="round"/>'
+    )
+
+
+def logo(slug: str) -> Any:
+    return lambda x, y, color: brand_icons.logo(slug, x - 17, y - 17, color, 34)
+
+
+@functools.cache
+def icons() -> dict[str, Any]:
+    """The drawing of each icon of the flow, by its name: the logos of the stack, and plain line drawings for the rest."""
+    return {
+        "file": architecture.draw_file_icon,
+        "chart": architecture.draw_chart_icon,
+        "package": draw_package_icon,
+        "clock": architecture.draw_clock_icon,
+        "archive": draw_archive_icon,
+        "git": logo("git"),
+        "report": architecture.draw_report_icon,
+        "code": architecture.draw_code_icon,
+        "python": logo("python"),
+        "sqlite": logo("sqlite"),
+        "parquet": logo("apacheparquet"),
+        "dbt": logo("dbt"),
+        "duckdb": logo("duckdb"),
+        "pytest": logo("pytest"),
+        "streamlit": logo("streamlit"),
+        "browser": draw_browser_icon,
+        "shield": architecture.draw_shield_icon,
+        "key": draw_key_icon,
+        "lock": draw_lock_icon,
+    }
+
+
+# endregion
+
+
+# region The pieces and the messages
 def step_elements(name: str) -> list[str]:
     """What a step moves; a step GitHub adds that is not in the table works inside the runner."""
     return STEP_ELEMENTS.get(name, [RUNNER])
@@ -615,8 +638,6 @@ def step_elements(name: str) -> list[str]:
 
 
 # region The model: what is shown, from what GitHub, the database and the files said
-
-
 def format_moment(moment: datetime | None) -> str:
     if moment is None:
         return "—"
@@ -699,8 +720,6 @@ def build_model(runs: list[dict[str, Any]], steps: list[dict[str, Any]], facts: 
 
 
 # region Drawing
-
-
 def build_piece(piece_id: str, palette: dict[str, str], clickable: bool = True) -> str:
     group, x, y, icon, title, detail, *_ = PIECES[piece_id]
     color = GROUP_COLORS[group]
@@ -711,7 +730,7 @@ def build_piece(piece_id: str, palette: dict[str, str], clickable: bool = True) 
         f'<g class="lf-piece" id="piece-{piece_id}" data-id="{piece_id}">{tip}'
         f'<rect class="lf-tile" x="{x - half}" y="{y - half}" width="{TILE}" height="{TILE}" rx="14" '
         f'fill="{palette["card"]}" stroke="{color}" stroke-width="1.6"/>'
-        f"{ICONS[icon](x, y, color)}"
+        f"{icons()[icon](x, y, color)}"
         f'<text x="{x}" y="{y + half + 18}" text-anchor="middle" font-size="15" font-weight="700" '
         f'fill="{palette["strong_text"]}">{esc(t(title))}</text>'
         f'<text x="{x}" y="{y + half + 35}" text-anchor="middle" font-size="12.5" fill="{palette["text"]}">'
@@ -798,25 +817,6 @@ def arrow_texts() -> dict[str, dict[str, Any]]:
     }
 
 
-LABELS = {
-    "ask": ("Pide", "Asks"),
-    "answer": ("Responde", "Answers"),
-    "when": ("Cuándo", "When"),
-    "why": ("Para qué", "What for"),
-    "last": ("En la última ejecución real", "In the latest real run"),
-    "deduced": (
-        "Deducido: no se puede leer en GitHub ni en la base.",
-        "Deduced: it cannot be read on GitHub or in the database.",
-    ),
-    "replay": ("Repetir la última ejecución", "Replay the latest run"),
-    "pause": ("Pausar", "Pause"),
-    "resume": ("Seguir", "Resume"),
-    "close": ("Cerrar", "Close"),
-    "hint": ("Clic en una flecha: qué viaja, de ida y de vuelta.", "Click an arrow: what travels, there and back."),
-    "open": ("Abrir la ejecución en GitHub", "Open the run on GitHub"),
-}
-
-
 def build_css(palette: dict[str, str]) -> str:
     return static_files.fill(
         "live_flow.css",
@@ -834,11 +834,6 @@ def build_css(palette: dict[str, str]) -> str:
             'var(--go-charts-status-colors-warning)': charts.STATUS_COLORS["warning"],
         },
     )
-
-
-# The animation, as the author asked: a piece that works alone lights up and pulses; a communication is a message
-# that travels from whoever asks to whoever answers, and the answer comes back along the same path.
-SCRIPT = static_files.read("live_flow.js")  # D-543: the code lives in bi/static/live_flow.js
 
 
 def build_html(palette: dict[str, str], model: dict[str, Any], focus: bool = False) -> str:
@@ -879,9 +874,6 @@ def build_html(palette: dict[str, str], model: dict[str, Any], focus: bool = Fal
         f'<script type="application/json" id="lf-data">{payload}</script>'
         f"<script>{SCRIPT}</script></body></html>"
     )
-
-
-POINTER = Path(__file__).resolve().parent.parent / "etl" / "datos.version"
 
 
 def build_document_html(mode: str) -> str:

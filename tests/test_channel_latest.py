@@ -14,6 +14,7 @@ from bi import channel_latest, dashboard, home_mockup, i18n
 # region Variables
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
+needs_database = pytest.mark.skipif(not dashboard.queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
 # endregion
 
 
@@ -54,8 +55,6 @@ def test_d365_each_source_reads_its_own_latest_week_and_says_which_one_it_has_no
     assert (week, before) == ("2026-10-19", "2026-10-12")
     week, before, rows = channel_latest.build_rows(frame, "wholesale")
     assert (week, before) == ("2026-10-12", "2026-10-05") and all(row["product"] != "Pera" for row in rows)
-    assert channel_latest.late_week(frame, "wholesale") == "2026-10-19"  # the week the consumer source has
-    assert channel_latest.late_week(frame, "consumer") is None
 
 
 def test_d365_the_change_of_each_product_is_recomputed_by_sql_from_the_table():
@@ -102,9 +101,6 @@ def test_d365_the_table_is_served_and_documented():
     # D-494: the page left the menu; its channels are step 2 of «Semanal», and its old address opens it
     assert dashboard.PAGE_CHANNELS not in next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
     assert dashboard.RETIRED_VIEWS[dashboard.PAGE_CHANNELS] == dashboard.HOME_PAGE
-
-
-needs_database = pytest.mark.skipif(not dashboard.queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
 
 
 @needs_database
@@ -221,7 +217,7 @@ def test_d453_each_channel_card_has_its_own_3d_icon_in_its_own_colours():
         "Panadería",
         "Mercado Mayorista",
     ]
-    assert set(channels) <= set(channel_icons.ICONS)
+    assert set(channels) <= set(channel_icons.icons())
     drawings = [channel_icons.svg(channel) for channel in channels]
     assert len(set(drawings)) == len(channels)  # one drawing each
     for drawing in drawings:

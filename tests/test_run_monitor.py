@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import requests
 from streamlit.testing.v1 import AppTest
 
 from bi import control, run_monitor
@@ -44,6 +45,11 @@ def test_d351_the_window_stops_asking_after_the_workflow_timeout_and_points_to_g
     assert f"timeout-minutes: {run_monitor.MAX_MINUTES}" in workflow  # GitHub cuts it at the same minute
 
 
+def broken_find_run(token, requested_at):
+    """The question to GitHub for the run, failing with the token in its message."""
+    raise requests.ConnectionError(TOKEN)
+
+
 def test_d351_a_run_github_never_shows_is_reported_and_a_failed_question_is_kept_not_raised(monkeypatch):
     monkeypatch.setattr(run_monitor, "find_run", lambda token, requested_at: None)
     watch = run_monitor.new_watch(NOW)
@@ -51,12 +57,7 @@ def test_d351_a_run_github_never_shows_is_reported_and_a_failed_question_is_kept
     assert watch["phase"] == run_monitor.STARTING
     run_monitor.refresh(watch, TOKEN, NOW + timedelta(seconds=run_monitor.CONFIRM_SECONDS + 1))
     assert watch["phase"] == run_monitor.UNCONFIRMED
-    import requests
-
-    def broken(token, requested_at):
-        raise requests.ConnectionError(TOKEN)
-
-    monkeypatch.setattr(run_monitor, "find_run", broken)
+    monkeypatch.setattr(run_monitor, "find_run", broken_find_run)
     again = run_monitor.new_watch(NOW)
     run_monitor.refresh(again, TOKEN, NOW)
     assert again["error"] and TOKEN not in again["error"] and again["phase"] == run_monitor.STARTING

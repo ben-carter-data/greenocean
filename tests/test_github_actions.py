@@ -15,6 +15,15 @@ TOKEN = "github_pat_" + "FAKE0123456789ABCDEFGHIJKLMNOP"
 READ_TOKEN = "github_pat_" + "READ0123456789ABCDEFGHIJKLMNO"
 SHAPED = "ghp_" + "abcdefghijklmnopqrstuv"
 BASE = f"{control.API_URL}/repos/{control.REPOSITORY}"
+LOG = (
+    f"2026-10-29T13:13:00.1234567Z collected 996 items\n"
+    f"2026-10-29T13:13:50.0000000Z \x1b[31mFAILED tests/test_a.py::test_one - AssertionError\x1b[0m\n"
+    f"2026-10-29T13:13:50.0000001Z FAILED tests/test_b.py::test_two[es] - KeyError\n"
+    f"2026-10-29T13:13:50.0000002Z FAILED tests/test_a.py::test_one - AssertionError\n"
+    f"2026-10-29T13:13:51.0000000Z Authorization: Bearer {TOKEN}\n"
+    f"2026-10-29T13:13:52.0000000Z token was {READ_TOKEN} and {SHAPED}\n"
+    + "".join(f"2026-10-29T13:14:{n:02d}.0000000Z line {n}\n" for n in range(10, 70))
+)
 # endregion
 
 
@@ -45,17 +54,6 @@ def run(number, conclusion="failure", status="completed", **extra):
         "html_url": f"https://github.com/{control.REPOSITORY}/actions/runs/{number}",
         **extra,
     }
-
-
-LOG = (
-    f"2026-10-29T13:13:00.1234567Z collected 996 items\n"
-    f"2026-10-29T13:13:50.0000000Z \x1b[31mFAILED tests/test_a.py::test_one - AssertionError\x1b[0m\n"
-    f"2026-10-29T13:13:50.0000001Z FAILED tests/test_b.py::test_two[es] - KeyError\n"
-    f"2026-10-29T13:13:50.0000002Z FAILED tests/test_a.py::test_one - AssertionError\n"
-    f"2026-10-29T13:13:51.0000000Z Authorization: Bearer {TOKEN}\n"
-    f"2026-10-29T13:13:52.0000000Z token was {READ_TOKEN} and {SHAPED}\n"
-    + "".join(f"2026-10-29T13:14:{n:02d}.0000000Z line {n}\n" for n in range(10, 70))
-)
 
 
 class Network:

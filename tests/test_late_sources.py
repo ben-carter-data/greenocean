@@ -8,16 +8,20 @@ from pathlib import Path
 
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from etl import etl, pipeline  # noqa: E402
+
+# region Constants
+RUN_DATE = date(2026, 10, 30)  # a Thursday: the last complete week starts on 2026-10-19
+# endregion
+
+
 # region Variables
 ROOT = Path(__file__).resolve().parent.parent
 # endregion
+
+
 # region A source that is late
-sys.path.insert(0, str(ROOT))
-from etl import etl, pipeline  # noqa: E402
-
-RUN_DATE = date(2026, 10, 30)  # a Thursday: the last complete week starts on 2026-10-19
-
-
 def prices(weeks_by_source):
     rows = [
         {

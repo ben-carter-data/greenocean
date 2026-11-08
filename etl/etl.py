@@ -22,22 +22,11 @@ from pathlib import Path
 
 import pandas as pd
 
-# region Variables
-BASE_DIR = Path(__file__).resolve().parent
-# Raw database: large, rebuilt on every run and never committed to the repository.
-RAW_DATABASE_FILE = BASE_DIR / "raw.db"
-RAW_SCHEMA_FILE = BASE_DIR / "raw_schema.sql"
-# Indicator database: weekly prices, committed so the dashboard can read it.
-DATABASE_FILE = BASE_DIR / "datos.db"
-SCHEMA_FILE = BASE_DIR / "schema.sql"
-DOWNLOAD_DIR = BASE_DIR.parent / "agent" / "downloads"
-
+# region Constants
 STATUS_LOADED = "LOADED"
 STATUS_UNCHANGED = "UNCHANGED"
 STATUS_FAILED = "FAILED"
-# endregion
 
-# region Constants
 SOURCE_WHOLESALE = "wholesale"
 SOURCE_CONSUMER = "consumer"
 SOURCES = [SOURCE_WHOLESALE, SOURCE_CONSUMER]
@@ -205,6 +194,47 @@ keys_with_margin AS (
 )
 SELECT (SELECT COUNT(*) FROM keys_with_margin), (SELECT COUNT(*) FROM consumer_keys)
 """
+MONTH_NAMES = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+]
+# Southern hemisphere: summer is December to February.
+SEASON_BY_MONTH = {
+    12: "verano",
+    1: "verano",
+    2: "verano",
+    3: "otoño",
+    4: "otoño",
+    5: "otoño",
+    6: "invierno",
+    7: "invierno",
+    8: "invierno",
+    9: "primavera",
+    10: "primavera",
+    11: "primavera",
+}
+DIM_DATE_COLUMNS = ["week_start", "iso_year", "iso_week", "month", "month_name", "year", "season"]
+# endregion
+
+# region Variables
+BASE_DIR = Path(__file__).resolve().parent
+# Raw database: large, rebuilt on every run and never committed to the repository.
+RAW_DATABASE_FILE = BASE_DIR / "raw.db"
+RAW_SCHEMA_FILE = BASE_DIR / "raw_schema.sql"
+# Indicator database: weekly prices, committed so the dashboard can read it.
+DATABASE_FILE = BASE_DIR / "datos.db"
+SCHEMA_FILE = BASE_DIR / "schema.sql"
+DOWNLOAD_DIR = BASE_DIR.parent / "agent" / "downloads"
 # endregion
 
 
@@ -645,38 +675,6 @@ def attach_dimension_identifiers(connection: sqlite3.Connection, weekly_prices: 
     rows = weekly_prices.merge(products, on=PRODUCT_COLUMNS).merge(channels, on=CHANNEL_COLUMNS)
     rows["week_start"] = rows["week_start"].dt.strftime("%Y-%m-%d")
     return rows[WEEKLY_PRICE_COLUMNS]
-
-
-MONTH_NAMES = [
-    "enero",
-    "febrero",
-    "marzo",
-    "abril",
-    "mayo",
-    "junio",
-    "julio",
-    "agosto",
-    "septiembre",
-    "octubre",
-    "noviembre",
-    "diciembre",
-]
-# Southern hemisphere: summer is December to February.
-SEASON_BY_MONTH = {
-    12: "verano",
-    1: "verano",
-    2: "verano",
-    3: "otoño",
-    4: "otoño",
-    5: "otoño",
-    6: "invierno",
-    7: "invierno",
-    8: "invierno",
-    9: "primavera",
-    10: "primavera",
-    11: "primavera",
-}
-DIM_DATE_COLUMNS = ["week_start", "iso_year", "iso_week", "month", "month_name", "year", "season"]
 
 
 def build_dim_date(first_week: Any, last_week: Any) -> pd.DataFrame:

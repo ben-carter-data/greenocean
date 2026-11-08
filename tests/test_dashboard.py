@@ -10,16 +10,33 @@ import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
-PROJECT_DIR = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_DIR))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import github_page, charts, control, dashboard, i18n, project, queries, stack_page  # noqa: E402
 from tests import code_shape  # noqa: E402
 
 # region Constants
+ALL_PAGES = [p for views in dashboard.WINDOWS.values() for p in views]
+# The home page opens on the latest week and its most moved family, both of which
+# change every Tuesday; tests that read figures pin the week of 2026-10-05.
+PINNED_HOME = {"_home_region": "Todas", "_home_week": "2026-10-05", "familia": "Hortalizas"}
+HOME_DONE = {dashboard.HOME_REGION_DONE: True, dashboard.HOME_FAMILY_DONE: True}  # D-531: chosen in the session
+# D-409: the administration links live in «Configuración», read from the runbook's GitHub guide.
+ADMIN_ADDRESSES = ["https://github.com/settings/personal-access-tokens", "https://share.streamlit.io"]
+FAKE_TOKEN = "github_pat_FAKE_SECRET_123"
+MENU_BLOCKS = {
+    'Negocio · BA y BI': [],  # D-456: only its three dashboard tiles
+    'Ingeniería de datos': ['Pipeline y linaje', 'Reglas de transformación', 'Modelo de datos', 'Consultas SQL'],
+    # D-420: «DevOps y seguridad» is the Autor's; security reads in «Stack y evidencia»
+    'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app', 'Arquitectura de seguridad'],
+    'Calidad': ['Plan de calidad', 'Controles de datos', 'Cambios e incidentes'],  # D-507
+}
+# endregion
+
+# region Variables
+PROJECT_DIR = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(PROJECT_DIR / "bi" / "dashboard.py")
 # These tests draw the real dashboard, so they need the committed database.
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.db has not been built")
-ALL_PAGES = [p for views in dashboard.WINDOWS.values() for p in views]
 # endregion
 
 
@@ -62,12 +79,6 @@ def draw_page(title, state=None, query=None):
         + f"dashboard.render_page({title!r})\n"
     )
     return AppTest.from_string(script, default_timeout=60).run()
-
-
-# The home page opens on the latest week and its most moved family, both of which
-# change every Tuesday; tests that read figures pin the week of 2026-10-05.
-PINNED_HOME = {"_home_region": "Todas", "_home_week": "2026-10-05", "familia": "Hortalizas"}
-HOME_DONE = {dashboard.HOME_REGION_DONE: True, dashboard.HOME_FAMILY_DONE: True}  # D-531: chosen in the session
 
 
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
@@ -280,7 +291,7 @@ def test_d071_four_themes_and_vantablack_is_the_default():
     assert dashboard.RETIRED_THEMES["Grafito"] == "Dark Grey"
     for theme in charts.THEMES:
         palette = charts.get_palette(theme)
-        assert theme in charts.HEAT_RAMPS and palette["base"] in (charts.BASE_DARK, charts.BASE_LIGHT)
+        assert palette["base"] in (charts.BASE_DARK, charts.BASE_LIGHT)
 
 
 def test_t44_base_mode_switch_writes_streamlit_choice_and_tries_only_once():
@@ -301,11 +312,6 @@ def test_t44_base_mode_switch_writes_streamlit_choice_and_tries_only_once():
 
 
 # region Administration (T-54)
-# D-409: the administration links live in «Configuración», read from the runbook's GitHub guide.
-ADMIN_ADDRESSES = ["https://github.com/settings/personal-access-tokens", "https://share.streamlit.io"]
-FAKE_TOKEN = "github_pat_FAKE_SECRET_123"
-
-
 def draw_control_page(secrets, run_state="ok", dialog=False, cancel_error=None, unlocked=None):
     """The Operaciones page with GitHub replaced by fixed answers, no network. A manual
     run is accepted; GitHub answers that it is «run_state» (ok, failed or in_progress) with one
@@ -382,12 +388,6 @@ def open_run_dialog(app, code=None):
 
 def button_keys(app):
     return [button.key for button in app.button]
-
-
-def open_author_access(app, code):
-    """D-203: Enter in the field opens the door; there is no «Abrir» button."""
-    app.text_input(key="author_access_code").input(code).run()
-    return read_page_text(app)
 
 
 @needs_database
@@ -710,16 +710,20 @@ def test_analysis_sections_are_direct_destinations_without_tabs():
         assert title in " ".join(block.value for block in app.markdown)
 
 
+def luminance(color):
+    """WCAG relative luminance of a #rrggbb colour, computed here and not by the panel."""
+    channels = [int(color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
+    channels = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+
+
+def contrast(first, second):
+    """WCAG contrast ratio between two #rrggbb colours."""
+    lighter, darker = sorted([luminance(first), luminance(second)], reverse=True)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
 def test_status_text_is_readable_on_light_themes():
-    def contrast(first, second):
-        def luminance(color):
-            channels = [int(color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
-            channels = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
-            return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
-
-        lighter, darker = sorted([luminance(first), luminance(second)], reverse=True)
-        return (lighter + 0.05) / (darker + 0.05)
-
     for status in charts.STATUS_TEXT_ON_LIGHT:
         assert contrast(charts.get_status_text_color(status, charts.MODE_LIGHT), "#ffffff") >= 4.5
         assert charts.get_status_text_color(status, charts.MODE_DARK) == charts.STATUS_COLORS[status]
@@ -1060,6 +1064,24 @@ def test_return_context_restores_only_supported_selection_fields():
         app.session_state['dashboard_product']
 
 
+def product_rows(app):
+    """Each row of the products table of step 4: whether it rests on one quote or one region, and its change."""
+    markup = ' '.join(block.value for block in app.markdown)
+    table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
+    return [
+        # D-327: a change on one quote or on one region goes last; only the first carries the mark in the row,
+        # the second says «Ver cálculo · 1 de N regiones».
+        ('1 cotización' in row or 'Ver cálculo · 1 de ' in row, float(value.replace('−', '-').replace(',', '.')))
+        for row in table.split('<tr')[2:]
+        for value in re.findall(r'<td class="num (?:rise|fall|neutral)"><b>([+−]?[\d,]+) %</b>', row)
+    ]
+
+
+def product_changes(app):
+    """The changes of the products table of step 4, in the order shown."""
+    return [value for _, value in product_rows(app)]
+
+
 @needs_database
 def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
@@ -1067,38 +1089,23 @@ def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
     app.run()
     assert not app.exception
     assert app.selectbox(key='home_products_direction').options == ['Todo', 'Subidas', 'Bajadas']
-
-    def rows():
-        markup = ' '.join(block.value for block in app.markdown)
-        table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
-        return [
-            # D-327: a change on one quote or on one region goes last; only the first carries the mark in the row,
-            # the second says «Ver cálculo · 1 de N regiones».
-            ('1 cotización' in row or 'Ver cálculo · 1 de ' in row, float(value.replace('−', '-').replace(',', '.')))
-            for row in table.split('<tr')[2:]
-            for value in re.findall(r'<td class="num (?:rise|fall|neutral)"><b>([+−]?[\d,]+) %</b>', row)
-        ]
-
-    def changes():
-        return [value for _, value in rows()]
-
     # D-146: changes resting on one quote go after the others; each group is sorted.
-    shown = rows()
+    shown = product_rows(app)
     flags = [thin for thin, _ in shown]
     assert flags == sorted(flags)
     for group in (True, False):
         values = [abs(value) for thin, value in shown if thin == group]
         assert values == sorted(values, reverse=True)
-    largest = changes()
+    largest = product_changes(app)
     # D-497: «Subidas» and «Bajadas» keep only that way, the largest first, and the heading counts what stayed
     kept = {}
     for direction, sign in (('Subidas', 1), ('Bajadas', -1)):
         app.selectbox(key='home_products_direction').set_value(direction).run()
         assert not app.exception
-        kept[direction] = changes()
+        kept[direction] = product_changes(app)
         assert all(value * sign > 0 for value in kept[direction])
         for group in (True, False):
-            values = [abs(value) for thin, value in rows() if thin == group]
+            values = [abs(value) for thin, value in product_rows(app) if thin == group]
             assert values == sorted(values, reverse=True)
         markup = ' '.join(block.value for block in app.markdown)
         assert f'{len(kept[direction])} de {len(largest)} precios' in markup
@@ -1473,15 +1480,6 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
     assert 'aria-label="Modelo entidad-relación de datos.duckdb"' in joined
     assert joined.count('class="er-table ') == 9 and "PK, FK" in joined
     assert 'aria-label="Modelo estrella de datos.duckdb"' not in joined  # one view at a time
-
-
-MENU_BLOCKS = {
-    'Negocio · BA y BI': [],  # D-456: only its three dashboard tiles
-    'Ingeniería de datos': ['Pipeline y linaje', 'Reglas de transformación', 'Modelo de datos', 'Consultas SQL'],
-    # D-420: «DevOps y seguridad» is the Autor's; security reads in «Stack y evidencia»
-    'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app', 'Arquitectura de seguridad'],
-    'Calidad': ['Plan de calidad', 'Controles de datos', 'Cambios e incidentes'],  # D-507
-}
 
 
 @needs_database

@@ -90,84 +90,14 @@ INDICATORS = [
     ("vigencia_dias", "Días desde la última carga", "Days since the last load", "días", "fiabilidad", "etl_run"),
 ]
 
-# What is measured by itself and what the author reviews by hand, and how often: (what, how, when), each in both languages.
-SCHEDULE = [
-    (
-        (
-            "Los 14 indicadores del plan de calidad: 8 de código y 6 de datos",
-            "The 14 indicators of the quality plan: 8 of code and 6 of data",
-        ),
-        ("Automático: workflow «calidad» (scripts/medir_calidad.py)", "Automatic: «calidad» workflow"),
-        (
-            "En cada push (el código, en el CI); el informe semanal, tras cada carga en verde (D-431)",
-            "On every push (the code, in the CI); the weekly report, after each load in green (D-431)",
-        ),
-    ),
-    (
-        ("Calidad de los datos servidos", "Quality of the served data"),
-        (
-            "Automático: el código del proyecto lee la Base DuckDB",
-            "Automatic: the project code reads the DuckDB database",
-        ),
-        ("En cada push", "On every push"),
-    ),
-    (
-        ("Comparación con las metas", "Comparison with the goals"),
-        (
-            "Automático: scripts/verificar_calidad.py; el CI falla si un indicador de código pasa lo aceptable",
-            "Automatic: scripts/verificar_calidad.py; CI fails if a code indicator goes past its acceptable",
-        ),
-        ("En cada push", "On every push"),
-    ),
-    (
-        ("Publicar una medición en esta página", "Publishing a measurement on this page"),
-        (
-            "Automático: el workflow fusiona «Actualizar medición de calidad» si el código está en su aceptable; si no, el autor",
-            "Automatic: the workflow merges «Actualizar medición de calidad» if the code is within its acceptable; else, the author",
-        ),
-        ("Cada vez que el workflow lo abre", "Each time the workflow opens one"),
-    ),
-    (
-        ("Rúbrica ISO/IEC 25010", "ISO/IEC 25010 rubric"),
-        ("Manual: el autor revisa y confirma docs/calidad/rubrica.json", "Manual: the author reviews and confirms it"),
-        ("Una vez por versión", "Once per version"),
-    ),
-    (
-        ("OWASP Top 10 y Twelve-Factor App", "OWASP Top 10 and Twelve-Factor App"),
-        ("Manual: revisión por categoría en el informe", "Manual: review by category in the report"),
-        ("Una vez por versión", "Once per version"),
-    ),
-    (
-        ("Posibles secretos y hallazgos medios de Bandit", "Possible secrets and medium Bandit findings"),
-        (
-            "Manual: cada candidato nuevo se revisa y se anota en .secrets.baseline",
-            "Manual: each new candidate is reviewed and noted in .secrets.baseline",
-        ),
-        ("Cuando aparece uno nuevo", "When a new one appears"),
-    ),
-    (
-        ("Las metas", "The goals"),
-        (
-            "Manual: decisión del autor en docs/calidad/metas.json",
-            "Manual: the author's decision in docs/calidad/metas.json",
-        ),
-        ("Cuando el autor lo decide", "When the author decides"),
-    ),
-    (
-        ("Recorrido con teclado y lector de pantalla", "Walk-through with keyboard and screen reader"),
-        ("Manual", "Manual"),
-        ("Pendiente: aún no se ha hecho", "Pending: not done yet"),
-    ),
-]
+UNITS_EN = {"días": "days"}
 # endregion
 
 
 # region Variables
 FOLDER = Path(__file__).resolve().parent.parent / "docs" / "calidad"
 GOALS_FILE = FOLDER / "metas.json"
-BASELINE_FILE = FOLDER / "linea_base.json"
 REPORT_FILE = FOLDER / "medicion.json"
-RUBRIC_FILE = FOLDER / "rubrica.json"
 HISTORY_FILE = FOLDER / "historial.json"
 POLICY_FILE = FOLDER / "politica.json"
 SQAP_FILE = FOLDER / "PLAN_DE_CALIDAD.md"
@@ -189,9 +119,6 @@ def number(value: Any, decimals: int = 0, english: bool = False) -> str:
         return "—"
     text = f"{value:,}" if isinstance(value, int) and decimals == 0 else f"{float(value):,.{decimals}f}"
     return text if english else text.replace(",", "§").replace(".", ",").replace("§", ".")
-
-
-UNITS_EN = {"días": "days"}
 
 
 def unit_text(unit: str, english: bool = False) -> str:
@@ -302,12 +229,6 @@ def gaps(report: dict[str, Any], goals: dict[str, Any]) -> dict[str, list[tuple[
     return found
 
 
-def met(now: dict[str, Any], goals: dict[str, Any]) -> tuple[int, int]:
-    """(indicators that meet their goal, indicators measured) for one set of values."""
-    states = [meets(now.get(key), goals.get(key, {})) for key, *_ in INDICATORS]
-    return sum(1 for state in states if state), sum(1 for state in states if state is not None)
-
-
 # endregion
 
 
@@ -320,9 +241,6 @@ def add_to_history(history: dict[str, Any], report: dict[str, Any]) -> dict[str,
     """The history with this measurement last; a measurement of a commit already there replaces it."""
     entries = [entry for entry in history.get("mediciones", []) if entry["commit"] != report.get("commit")]
     return {**history, "mediciones": entries + [history_entry(report)]}
-
-
-STATES = ("cumple", "aviso", "urgente", "critico")
 
 
 def state(value: Any, goal: dict[str, Any]) -> str:

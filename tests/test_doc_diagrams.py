@@ -28,13 +28,13 @@ MARKER = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 # endregion
 
 
-# region Test doc diagrams
+# region Every marker names one diagram, used once (D-205)
 def read_markers():
     return {name: MARKER.findall(i18n.document_path(name, "es").read_text(encoding="utf-8")) for name in DOCUMENTS}
 
 
 def test_every_marker_names_a_diagram_that_exists():
-    known = set(doc_diagrams.DOC_DIAGRAMS) | set(doc_diagrams.INLINE)  # D-455: the interest map is drawn inline
+    known = set(doc_diagrams.builders()) | set(doc_diagrams.INLINE)  # D-455: the interest map is drawn inline
     for name, markers in read_markers().items():
         assert set(markers) <= known, (name, set(markers) - known)
 
@@ -46,19 +46,23 @@ def test_no_diagram_appears_twice_across_the_documents():
 
 def test_every_document_diagram_is_used_by_a_document():
     used = {marker for found in read_markers().values() for marker in found}
-    assert set(doc_diagrams.DOC_DIAGRAMS) | set(doc_diagrams.INLINE) <= used
+    assert set(doc_diagrams.builders()) | set(doc_diagrams.INLINE) <= used
 
 
 @pytest.mark.parametrize("mode", [charts.MODE_LIGHT, charts.MODE_DARK])
-@pytest.mark.parametrize("name", list(doc_diagrams.DOC_DIAGRAMS))
+@pytest.mark.parametrize("name", list(doc_diagrams.builders()))
 def test_d205_each_view_is_one_html_document_without_script(name, mode):
-    page = doc_diagrams.DOC_DIAGRAMS[name](mode)
+    page = doc_diagrams.builders()[name](mode)
     assert page.startswith("<!doctype html>") and "<script" not in page
     # the word, not the bytes of an embedded image: a capture's base64 can spell it by chance
     words = re.sub(r"data:[^\"')\s]+", "", page).lower()
     assert "robot" not in words and name in doc_diagrams.HEIGHTS
 
 
+# endregion
+
+
+# region The C4 views turn at right angles (D-210, D-247, D-297)
 def graph_lines(page):
     """The lines of an icon diagram (D-297), as lists of points."""
     return [
@@ -82,7 +86,7 @@ def assert_right_angles(page):
 
 
 def test_d297_the_context_view_is_the_system_with_its_people_and_external_systems_as_icons():
-    page = doc_diagrams.DOC_DIAGRAMS["contexto"](charts.MODE_DARK)
+    page = doc_diagrams.builders()["contexto"](charts.MODE_DARK)
     for name in (
         "GreenOcean",
         "ODEPA",
@@ -107,7 +111,7 @@ def test_d210_the_weak_views_are_gone():
     from bi import doc_figures
 
     # D-414: and the fixed picture of the live system flow, drawn by bi/live_flow.py.
-    assert set(doc_diagrams.DOC_DIAGRAMS) == {
+    assert set(doc_diagrams.builders()) == {
         "contexto",
         "contenedores",
         "mockups",
@@ -128,7 +132,7 @@ def test_d210_the_weak_views_are_gone():
         "seguridad",
         "calidad",
         "git_workflow",
-    } | set(doc_figures.FIGURES)
+    } | set(doc_figures.figures())
 
 
 def test_doc_diagrams_does_not_depend_on_streamlit():
@@ -143,7 +147,7 @@ def test_d297_the_containers_view_is_c4_level_2_with_real_files_and_right_angle_
     from pathlib import Path
 
     root = Path(__file__).resolve().parent.parent
-    page = doc_diagrams.DOC_DIAGRAMS["contenedores"](charts.MODE_DARK)
+    page = doc_diagrams.builders()["contenedores"](charts.MODE_DARK)
     for name in ("Carga semanal", "Panel web", "Archivos de trabajo"):
         assert f">{name}<" in page, name
     # D-426: the official names, each with its file
@@ -176,6 +180,10 @@ def test_d247_every_view_a_document_links_to_is_a_page_of_the_menu():
             assert dashboard.find_menu_page(label), (name, label)
 
 
+# endregion
+
+
+# region The security cases, the procedure and right angles everywhere (D-258, D-260, D-297)
 def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architecture_uses_them():
     from bi import security_map, security_plan
 
@@ -200,7 +208,7 @@ def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architectu
 def test_d258_the_ten_cases_open_their_attack_result_owasp_threat_and_test():
     from bi import security_plan
 
-    page = doc_diagrams.DOC_DIAGRAMS["pruebas"](charts.MODE_DARK)
+    page = doc_diagrams.builders()["pruebas"](charts.MODE_DARK)
     for case_id, short, attack, expected, owasp, tests in security_plan.CASES:
         assert f'href="#c-{case_id}"' in page and f'id="c-{case_id}"' in page, case_id
         for text in (attack, expected, *tests):
@@ -215,7 +223,7 @@ def test_d258_the_ten_cases_open_their_attack_result_owasp_threat_and_test():
 
 
 def test_d297_the_procedure_is_a_cycle_of_five_steps_and_says_that_ci_warns_but_does_not_stop_main():
-    page = doc_diagrams.DOC_DIAGRAMS["sop"](charts.MODE_DARK)
+    page = doc_diagrams.builders()["sop"](charts.MODE_DARK)
     for step in ("1 · Preparar", "2 · Ejecutar", "3 · Comprobar", "4 · Registrar", "5 · Decidir"):
         assert f">{step}<" in page, step
     assert "falla: se corrige y se repite desde el 2" in plain(page) and "pasa: el cambio queda verificado" in plain(
@@ -228,7 +236,7 @@ def test_d297_the_procedure_is_a_cycle_of_five_steps_and_says_that_ci_warns_but_
 def test_d260_each_case_shows_the_logo_of_its_technology_and_every_line_turns_at_right_angles():
     from bi import security_plan
 
-    page = doc_diagrams.DOC_DIAGRAMS["pruebas"](charts.MODE_DARK)
+    page = doc_diagrams.builders()["pruebas"](charts.MODE_DARK)
     assert set(security_plan.TECH) == set(security_plan.CASE_PLACES) == {case[0] for case in security_plan.CASES}
     for case_id, tech in security_plan.TECH.items():
         assert tech in doc_views.DISCS, case_id
@@ -245,14 +253,18 @@ def test_d260_each_case_shows_the_logo_of_its_technology_and_every_line_turns_at
         assert re.fullmatch(r"M[\d.]+ [\d.]+( [HV][\d.]+)+", d), d
 
 
-@pytest.mark.parametrize("name", sorted(doc_figures.FIGURES))
+@pytest.mark.parametrize("name", sorted(doc_figures.figures()))
 def test_d297_every_icon_diagram_turns_only_at_right_angles_and_has_no_cards(name):
-    page = doc_diagrams.DOC_DIAGRAMS[name](charts.MODE_CORPORATE)
+    page = doc_diagrams.builders()[name](charts.MODE_CORPORATE)
     assert 'class="col"' not in page and 'class="item"' not in page and 'class="root"' not in page
     if 'class="fig-title"' in page and "<path d=\"M" in page and " L" in page:
         assert_right_angles(page)
 
 
+# endregion
+
+
+# region No background, flat logos and a white sheet (D-280)
 # D-280: the document diagrams have no background; they sit on the white sheet of the PDF and on every theme.
 def filled_canvas_rects(page):
     """The rectangles that fill at least 95 % of the canvas of their SVG, with a fill that is not none."""
@@ -272,9 +284,9 @@ def filled_canvas_rects(page):
 
 
 @pytest.mark.parametrize("theme", charts.THEMES)
-@pytest.mark.parametrize("name", sorted(doc_diagrams.DOC_DIAGRAMS))
+@pytest.mark.parametrize("name", sorted(doc_diagrams.builders()))
 def test_d280_no_document_diagram_has_a_background(name, theme):
-    page = doc_diagrams.DOC_DIAGRAMS[name](theme)
+    page = doc_diagrams.builders()[name](theme)
     assert not filled_canvas_rects(page), name
     for rule in re.findall(r"html, ?body ?\{([^}]*)\}", page):
         assert "background:transparent" in rule.replace(" ", ""), (name, rule)
@@ -282,7 +294,7 @@ def test_d280_no_document_diagram_has_a_background(name, theme):
 
 @pytest.mark.parametrize("name", ["contexto", "contenedores", "pruebas", "sop"])
 def test_d280_the_document_logos_are_flat_marks_in_their_own_color(name):
-    page = doc_diagrams.DOC_DIAGRAMS[name](charts.MODE_CORPORATE)
+    page = doc_diagrams.builders()[name](charts.MODE_CORPORATE)
     assert 'fill="url(#disc-' not in page and "-actors" not in page, name
 
 
@@ -306,12 +318,16 @@ def test_d280_the_pdf_is_a_white_sheet_in_every_theme():
 
 
 def test_d280_on_paper_the_diagrams_have_no_shadows():
-    for name, builder in doc_diagrams.DOC_DIAGRAMS.items():
+    for name, builder in doc_diagrams.builders().items():
         assert doc_diagrams.PRINT_STYLE in builder(charts.MODE_CORPORATE), name
 
 
+# endregion
+
+
+# region The captures of the panel (D-205, D-386, D-392)
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
-    page = doc_diagrams.DOC_DIAGRAMS["mockups"](charts.MODE_DARK)
+    page = doc_diagrams.builders()["mockups"](charts.MODE_DARK)
     assert (
         page.count("data:image/jpeg;base64,") == len(doc_views.MOCKUPS) == 6
     )  # D-299: the dashboard and the pipeline too
@@ -351,30 +367,40 @@ def test_d392_the_english_captions_of_the_captures_are_in_english(monkeypatch):
     assert doc_views.mockup_detail("Vantablack", "Profesional") == "Vantablack theme · Professional view"
 
 
+# endregion
+
+
+# region The scenarios and the panel own diagrams (D-425, D-429, D-455)
+def actor_words(page, actor):
+    """The text of one profile's section of the scenarios, read as one line."""
+    block = re.search(rf'data-actor="{actor}".*?</section>', page, re.DOTALL).group(0)
+    return " ".join(re.findall(r">([^<>]+)<", block))
+
+
+def menu_label(labels, view):
+    """The name the menu gives a page."""
+    return labels.get(view, view)
+
+
 def test_d425_the_scenarios_show_every_page_and_action_each_profile_really_reaches():
     from bi import dashboard
 
     page = doc_figures.sad_scenarios(charts.MODE_DARK)
-
-    def words(actor):
-        # the text of one profile's section, read as one line
-        block = re.search(rf'data-actor="{actor}".*?</section>', page, re.DOTALL).group(0)
-        return " ".join(re.findall(r">([^<>]+)<", block))
-
-    user, professional, author = words("usuario"), words("profesional"), words("autor")
-
-    def label(view):
-        return dashboard.SIDEBAR_LABELS.get(view, view)
-
+    user, professional, author = (
+        actor_words(page, "usuario"),
+        actor_words(page, "profesional"),
+        actor_words(page, "autor"),
+    )
+    labels = dashboard.SIDEBAR_LABELS
     blocks = {key: pages for key, _, pages in dashboard.MENU_BLOCKS if pages is not dashboard.SOURCE_LINKS}
     # each page of the menu sits in the section of the first profile that sees it, and in no section before it
     for view in blocks["negocio"]:
-        assert label(view) in user, view
+        assert menu_label(labels, view) in user, view
     for key in ("ingenieria", "stack", "calidad"):
         for view in blocks[key]:
-            assert label(view) in professional and label(view) not in user, view
+            assert menu_label(labels, view) in professional and menu_label(labels, view) not in user, view
     for view in dashboard.AUTHOR_ONLY_PAGES:
-        assert label(view) in author and label(view) not in user + professional, view
+        assert menu_label(labels, view) in author and menu_label(labels, view) not in user + professional, view
     # the panel launches semanal.yml (never pruebas.yml) with GITHUB_TOKEN and reads with GITHUB_READ_TOKEN
     from bi import control
 
@@ -402,7 +428,7 @@ def test_d455_the_documents_draw_the_panels_own_diagrams_and_no_invented_profile
     use cases with profiles the panel does not have are gone."""
     from bi import architecture, devops, git_workflow, interest_map, monitoring, security_map
 
-    assert "casos" not in doc_diagrams.DOC_DIAGRAMS and "build_use_cases_html" not in dir(doc_views)
+    assert "casos" not in doc_diagrams.builders() and "build_use_cases_html" not in dir(doc_views)
     for name, mark in (
         ("recorrido", "Recorrido de los datos de ODEPA al panel"),
         ("cicd", devops.build_cicd_html(charts.get_palette(charts.MODE_DARK))[-200:]),
@@ -410,7 +436,7 @@ def test_d455_the_documents_draw_the_panels_own_diagrams_and_no_invented_profile
         ("seguridad", security_map.build_security_html(charts.get_palette(charts.MODE_DARK))[-200:]),
         ("git_workflow", '<svg class="flow" viewBox="0 0 '),
     ):
-        assert mark in doc_diagrams.DOC_DIAGRAMS[name](charts.MODE_DARK), name
+        assert mark in doc_diagrams.builders()[name](charts.MODE_DARK), name
     assert architecture.build_journey_svg and git_workflow.build_svg
     page = doc_diagrams.INLINE["interes"](charts.MODE_DARK)
     assert page.count('class="im-node"') == 7 and "<a " not in page  # a picture: no stakeholder is a link in a document

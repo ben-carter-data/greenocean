@@ -21,7 +21,7 @@ needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="
 # endregion
 
 
-# region «Análisis» · «Mensual» and «Histórico»
+# region «Análisis» · «Mensual» and «Histórico»: periods, figures and charts (D-456, D-457)
 @pytest.fixture(scope="module")
 def history():
     rows, last = inflation_view.build_family_index(
@@ -267,6 +267,10 @@ def test_d456_the_season_says_which_years_each_calendar_month_gathers():
     assert any(item.get("field") == "years" for item in spec["encoding"]["tooltip"])
 
 
+# endregion
+
+
+# region The magnifier, the old address and the green panel (D-457, D-458, D-460)
 def test_d460_the_green_magnifier_opens_the_chart_large_in_a_window():
     css = ba_trends.build_css(charts.get_palette("Vantablack"), "#39ff14")
     assert '[class*="st-key-ba_enlarge_"] button [data-testid="stIconMaterial"] { color:#39ff14 !important;' in css
@@ -354,29 +358,35 @@ def test_d458_the_green_panel_says_from_which_month_to_which_and_why_for_each_pe
     assert "min-height:calc(2.9em + 16px)" in ba_trends.build_context_css(charts.get_palette("Vantablack"), "#39ff14")
 
 
+def draw_ba_page(state):
+    """The markdown «Análisis» draws for a Profesional with `state` in the session."""
+    app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=120)
+    app.session_state["visitor_profile"] = "profesional"
+    for key, value in state.items():
+        app.session_state[key] = value
+    app.query_params.update({"vista": dashboard.PAGE_BA})
+    app.run()
+    assert not app.exception
+    return " ".join(block.value for block in app.markdown)
+
+
 @needs_database
 def test_d458_the_panel_sits_above_the_tabs_and_follows_the_tab_and_the_period():
-    def draw(state):
-        app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=120)
-        app.session_state["visitor_profile"] = "profesional"
-        for key, value in state.items():
-            app.session_state[key] = value
-        app.query_params.update({"vista": dashboard.PAGE_BA})
-        app.run()
-        assert not app.exception
-        return " ".join(block.value for block in app.markdown)
-
-    markup = draw({})
+    markup = draw_ba_page({})
     assert markup.index('class="ba-context"') < markup.index('class="ba-card"')  # above the tabs and the report
     assert "Estás viendo los últimos 12 meses" in markup
-    assert "Estás viendo 2024: de ene 2024 a dic 2024." in draw({"ba_period": "2024"})
-    assert "Estás viendo toda la historia" in draw({dashboard.BA_TAB_KEY: dashboard.BA_HISTORY_TAB})
-    inflation = draw({dashboard.BA_TAB_KEY: "Precios e inflación"})  # its note moved into the panel, said once
+    assert "Estás viendo 2024: de ene 2024 a dic 2024." in draw_ba_page({"ba_period": "2024"})
+    assert "Estás viendo toda la historia" in draw_ba_page({dashboard.BA_TAB_KEY: dashboard.BA_HISTORY_TAB})
+    inflation = draw_ba_page({dashboard.BA_TAB_KEY: "Precios e inflación"})  # its note moved into the panel, said once
     assert inflation.count("no prueba que la inflación cause la subida") == 1
-    stakeholders = draw({dashboard.BA_TAB_KEY: "Interesados"})  # the rule of the rings too
+    stakeholders = draw_ba_page({dashboard.BA_TAB_KEY: "Interesados"})  # the rule of the rings too
     assert stakeholders.count("Cada anillo dice cuánto depende") == 1 and 'class="im-criterion"' not in stakeholders
 
 
+# endregion
+
+
+# region The colour of each year and a family made of its products (D-466, D-478)
 def test_d466_each_year_has_its_own_colour():
     years = pd.DataFrame(
         {
@@ -445,6 +455,10 @@ def test_d478_mensual_shows_a_family_over_its_products():
     )  # the chosen one under its family
 
 
+# endregion
+
+
+# region The insight of the food CPI (D-518)
 def food_cpi(decembers, tail=None):
     """A monthly food CPI with only its Decembers, plus the months in «tail»: (year, month, index)."""
     rows = [(year, 12, value) for year, value in decembers.items()] + list(tail or [])
@@ -503,21 +517,10 @@ def test_d518_the_box_shows_only_in_historico_with_figures_recomputed_from_the_b
     assert f"desde {changes.index[0]}." in lead
     after = changes[changes.index > changes.idxmax()]
     assert charts.format_percent(after.min()) in detail and charts.format_percent(after.max()) in detail
-
-    def draw(state):
-        app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=120)
-        app.session_state["visitor_profile"] = "profesional"
-        for key, value in state.items():
-            app.session_state[key] = value
-        app.query_params.update({"vista": dashboard.PAGE_BA})
-        app.run()
-        assert not app.exception
-        return " ".join(block.value for block in app.markdown)
-
-    history = draw({dashboard.BA_TAB_KEY: dashboard.BA_HISTORY_TAB})
+    history = draw_ba_page({dashboard.BA_TAB_KEY: dashboard.BA_HISTORY_TAB})
     box = ba_trends.insight_html(lead, detail, hover)
     assert box in history and history.index('class="ba-card"') < history.index(box) < history.index('class="ba-table"')
-    assert 'ba-insight"' not in draw({dashboard.BA_TAB_KEY: dashboard.BA_MONTHLY_TAB})
+    assert 'ba-insight"' not in draw_ba_page({dashboard.BA_TAB_KEY: dashboard.BA_MONTHLY_TAB})
     # the line of the chart and the sentence on hover give the same figure
     rows, last, *_ = dashboard.read_ba_history(dashboard.get_database_version())
     years = ba_trends.yearly_changes(rows, ba_trends.IPC, last).set_index("year")

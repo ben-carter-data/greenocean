@@ -10,6 +10,12 @@ from streamlit.testing.v1 import AppTest
 
 from bi import app_map, dashboard, i18n, queries
 
+# region Constants
+DEVOPS = [view for key, _, pages in dashboard.MENU_BLOCKS if key == "devops" for view in pages]
+DEVOPS_LABELS = [dashboard.SIDEBAR_LABELS.get(view, view) for view in DEVOPS]
+# endregion
+
+
 # region Variables
 DASHBOARD_FILE = str(Path(dashboard.__file__))
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
@@ -59,17 +65,17 @@ def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_o
         assert [link.proto.label for link in professional.sidebar.get("page_link")][:2] == expected
 
 
+def route_footer(view):
+    """The previous and next links a page draws at its foot, as a Profesional sees it."""
+    app = draw("profesional", view)
+    assert not app.exception
+    return [link.proto.label for link in app.main.get("page_link") if link.proto.label.startswith(("←", "Siguiente"))]
+
+
 @needs_database
 def test_d378_the_main_pages_of_the_section_have_no_route_footer_and_the_next_section_follows_the_last_one():
-    def footer(view):
-        app = draw("profesional", view)
-        assert not app.exception
-        return [
-            link.proto.label for link in app.main.get("page_link") if link.proto.label.startswith(("←", "Siguiente"))
-        ]
-
     for view in TILES:  # a main page is one screen with one thin bar (D-264, D-267): the menu is its route
-        assert view in dashboard.OVERVIEW_CLASS_BY_VIEW and footer(view) == [], view
+        assert view in dashboard.OVERVIEW_CLASS_BY_VIEW and route_footer(view) == [], view
     # The next section still follows the last page of this one, so the previous/next footers of the rest do not change.
     assert dashboard.MENU_ORDER[1:3] == [dashboard.PAGE_BA, dashboard.PAGE_DIAGRAMS]
 
@@ -112,10 +118,6 @@ def test_d387_the_readme_lists_every_page_of_the_menu_in_the_menu_order():
     assert positions == sorted(positions), labels
     assert "Documentos del proyecto" in line and "Análisis de la fuente de datos" in line  # D-533
     assert "Precios e inflación" in line
-
-
-DEVOPS = [view for key, _, pages in dashboard.MENU_BLOCKS if key == "devops" for view in pages]
-DEVOPS_LABELS = [dashboard.SIDEBAR_LABELS.get(view, view) for view in DEVOPS]
 
 
 @pytest.mark.parametrize("profile", ["consulta", "profesional"])

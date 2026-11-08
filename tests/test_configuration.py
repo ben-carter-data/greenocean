@@ -9,6 +9,10 @@ from bi import configuration, control, dashboard, i18n
 from tests.test_actions_page import draw, everything_drawn, menu_labels, network  # noqa: F401
 from tests.test_github_actions import READ_TOKEN, TOKEN
 
+# region Constants
+NOW = datetime(2026, 11, 1, 12, tzinfo=timezone.utc)
+# endregion
+
 
 # region «Configuración»
 def draw_author(language):
@@ -17,9 +21,6 @@ def draw_author(language):
     app = draw(view="Configuración", language=language, run=False)
     app.session_state["visitor_profile"] = "profesional"
     return app.run()
-
-
-NOW = datetime(2026, 11, 1, 12, tzinfo=timezone.utc)
 
 
 def test_d409_only_the_author_has_the_page_in_devops_and_security(network):  # noqa: F811
@@ -50,19 +51,21 @@ def test_d409_the_page_shows_six_states_five_cases_and_never_a_token(network, la
     assert "Automático" in page if language == "es" else "Automatic" in page
 
 
-def test_d409_a_token_is_amber_at_fifteen_days_or_fewer_and_red_when_it_expired_or_is_missing():
-    def state(**kwargs):
-        values = {"present": True, "expiration": None, "error": None} | kwargs
-        return configuration.token_card("t", "Token", values["present"], values["expiration"], values["error"], NOW)
+def token_state(**kwargs):
+    """The card of a token on the day NOW: present, with no expiration and no error unless `kwargs` say otherwise."""
+    values = {"present": True, "expiration": None, "error": None} | kwargs
+    return configuration.token_card("t", "Token", values["present"], values["expiration"], values["error"], NOW)
 
+
+def test_d409_a_token_is_amber_at_fifteen_days_or_fewer_and_red_when_it_expired_or_is_missing():
     assert control.TOKEN_WARNING_DAYS == 15
-    assert state(expiration=NOW + timedelta(days=16, hours=1))["state"] == configuration.OK
-    amber = state(expiration=NOW + timedelta(days=15, hours=1))
+    assert token_state(expiration=NOW + timedelta(days=16, hours=1))["state"] == configuration.OK
+    amber = token_state(expiration=NOW + timedelta(days=15, hours=1))
     assert amber["state"] == configuration.WARN and amber["value"] == "15 días" and "16-11-2026" in amber["detail"]
-    assert state(expiration=NOW - timedelta(days=1))["state"] == configuration.FAIL
-    assert state(present=False)["state"] == configuration.FAIL and state(present=False)["value"] == "Falta"
-    assert state(error="GitHub no respondió")["state"] == configuration.UNKNOWN
-    assert state()["value"] == "Sin vencimiento"
+    assert token_state(expiration=NOW - timedelta(days=1))["state"] == configuration.FAIL
+    assert token_state(present=False)["state"] == configuration.FAIL and token_state(present=False)["value"] == "Falta"
+    assert token_state(error="GitHub no respondió")["state"] == configuration.UNKNOWN
+    assert token_state()["value"] == "Sin vencimiento"
     # the panel's own warning follows the same rule
     assert control.describe_token_expiration(NOW + timedelta(days=15, hours=1), NOW)[1]
     assert not control.describe_token_expiration(NOW + timedelta(days=16, hours=1), NOW)[1]

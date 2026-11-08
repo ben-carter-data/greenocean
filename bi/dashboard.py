@@ -28,7 +28,6 @@ from pathlib import Path
 import streamlit as st
 from bi import static_files
 
-# region Imports of the project
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -124,6 +123,7 @@ from bi.page_analysis import (  # noqa: E402
     read_ba_history,  # noqa: F401  read by the tests through this module
     read_family_inflation,  # noqa: F401  read by the tests through this module
 )
+from bi.app_diagrams import format_file_size, read_store_sizes  # noqa: E402, F401  read by the tests through this module
 from bi.page_engineering import (  # noqa: E402
     show_diagrams_page,
     show_architecture_page,
@@ -136,8 +136,6 @@ from bi.page_engineering import (  # noqa: E402
     KPI_NODE_HEIGHTS,  # noqa: F401  read by the tests through this module
     build_journey_states,  # noqa: F401  read by the tests through this module
     read_database_map,  # noqa: F401  read by the tests through this module
-    format_file_size,  # noqa: F401  read by the tests through this module
-    read_store_sizes,  # noqa: F401  read by the tests through this module
     build_query_address,  # noqa: F401  read by the tests through this module
     read_catalog_sql,  # noqa: F401  read by the tests through this module
     find_catalog_line,  # noqa: F401  read by the tests through this module
@@ -371,12 +369,9 @@ from bi.constants import (  # noqa: E402  D-541: the fixed names live in bi/cons
     WINDOW_PAGES,
 )
 
+# region Constants
 # D-283: every text a reader sees goes through tr, which gives its English when the reader chose English.
 tr = i18n.tr
-# endregion
-
-
-# region Constants
 SHOW_PAGE_BY_TITLE = {
     PAGE_DOCUMENTATION: lambda mode: show_project_document(mode, PAGE_PRD),
     PAGE_PRD: lambda mode: show_project_document(mode, PAGE_PRD),

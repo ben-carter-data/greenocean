@@ -2452,6 +2452,58 @@
           "referencia": "D-540"
         }
       ]
+    },
+    {
+      "id": "F-44",
+      "categoria": "código",
+      "falla": [
+        "Una prueba usaba como fábrica una descarga falsa que la limpieza del código había cambiado",
+        "A test used as a factory a fake download that the cleanup of the code had changed"
+      ],
+      "deteccion": [
+        "La suite completa en local, antes del commit",
+        "The full suite run locally, before the commit"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Al subir al primer nivel la descarga falsa de tests/test_agent.py cambió su forma, y tests/test_raw_load.py la importaba",
+        "Lifting the fake download of tests/test_agent.py to the top level changed its shape, and tests/test_raw_load.py imported it"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: no toca la app ni los datos",
+        "None: it touches neither the app nor the data"
+      ],
+      "correctiva": [
+        "fake_downloader vuelve a entregar la descarga, ahora con functools.partial",
+        "fake_downloader hands over the download again, now with functools.partial"
+      ],
+      "estacion": 8,
+      "caso_real": "D-546",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-07",
+          "ocurrencia": [
+            "Tres pruebas de tests/test_raw_load.py fallaron en la suite completa con TypeError.",
+            "Three tests of tests/test_raw_load.py failed in the full suite with TypeError."
+          ],
+          "diagnostico": [
+            "fake_downloader pasó de entregar una descarga a ser la descarga, y esa prueba la usaba como antes.",
+            "fake_downloader went from handing over a download to being the download, and that test used it as before."
+          ],
+          "solucion": [
+            "fake_downloader vuelve a entregar la descarga, con functools.partial; las dos pruebas quedan como estaban.",
+            "fake_downloader hands over the download again, with functools.partial; both tests stay as they were."
+          ],
+          "comentario": [
+            "Antes de cambiar la forma de una función de prueba, buscar quién la importa.",
+            "Before changing the shape of a test function, look for who imports it."
+          ],
+          "estacion": 8,
+          "estado": "resuelta",
+          "referencia": "D-546"
+        }
+      ]
     }
   ]
 }

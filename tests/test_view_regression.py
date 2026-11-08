@@ -8,24 +8,21 @@ page and fail if the SVG of its builder is not there.
 import sys
 from pathlib import Path
 
-# region Variables
-PROJECT_DIR = Path(__file__).resolve().parent.parent
-# endregion
-# region The views that work must stay on their page
-sys.path.insert(0, str(PROJECT_DIR))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import dashboard  # noqa: E402
 from tests.test_dashboard import draw_page, needs_database  # noqa: E402
 
+# region Constants
 # aria-label of the SVG that each builder returns.
 STAR_LABEL = 'aria-label="Modelo estrella de datos.duckdb"'
 ER_LABEL = 'aria-label="Modelo entidad-relación de datos.duckdb"'
 JOURNEY_LABEL = 'aria-label="Recorrido de los datos de ODEPA al panel"'
-
-
 # A diagram inside one of these is hidden behind a click: that is how D-226 lost it.
 HIDING_CONTAINERS = {"popover", "expander", "dialog"}
+# endregion
 
 
+# region The views that work must stay on their page
 def read_markdown(app):
     return " ".join(block.value for block in app.markdown)
 

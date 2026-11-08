@@ -369,6 +369,29 @@ STATIONS: list[dict[str, Any]] = [
         ),
     },
 ]
+# D-449: the map is a flowchart of fixed shape (like D-441, it never changes its form on a small screen): three swimlanes
+# that snake left to right, right to left and left to right again, an arrow between every two stations and at each turn,
+# and each checkpoint as a diamond with its two exits: the green one goes on, the red one says where the change goes back.
+WIDTH, LANE_HEIGHT, LANE_GAP = 1305, 196, 12
+COLUMNS = (262, 490, 718, 946, 1174)
+TURN_RIGHT, TURN_LEFT = 1292, 140
+TILE = 24  # half the side of a station's tile
+GATE_EXITS = {
+    8: (("verde", "green"), ("rojo → volver a 5", "red → back to 5")),
+    12: (("sí", "yes"), ("pide forzar → parar", "asks to force → stop")),
+    14: (("verde", "green"), ("rojo → volver a 5", "red → back to 5")),
+}
+LOG_LABEL = {
+    "diagnosis": ("Diagnóstico", "Diagnosis"),
+    "solution": ("Mitigación o solución", "Mitigation or solution"),
+    "comment": ("Comentario", "Comment"),
+}
+# endregion
+
+# region Variables
+# The script is a raw string with no HTML tags in its texts (st.iframe runs it, D-173): the DOM is built with the DOM API.
+# D-449: the stations are drawn in Python as one SVG; the script only opens and walks the side panel.
+SCRIPT = static_files.read("git_workflow.js")
 # endregion
 
 
@@ -431,20 +454,6 @@ def build_data(language: str, failures: list[dict[str, Any]], author: bool) -> d
             }
         )
     return {"stations": stations, "labels": {key: pick(value, language) for key, value in LABELS.items()}}
-
-
-# D-449: the map is a flowchart of fixed shape (like D-441, it never changes its form on a small screen): three swimlanes
-# that snake left to right, right to left and left to right again, an arrow between every two stations and at each turn,
-# and each checkpoint as a diamond with its two exits: the green one goes on, the red one says where the change goes back.
-WIDTH, LANE_HEIGHT, LANE_GAP = 1305, 196, 12
-COLUMNS = (262, 490, 718, 946, 1174)
-TURN_RIGHT, TURN_LEFT = 1292, 140
-TILE = 24  # half the side of a station's tile
-GATE_EXITS = {
-    8: (("verde", "green"), ("rojo → volver a 5", "red → back to 5")),
-    12: (("sí", "yes"), ("pide forzar → parar", "asks to force → stop")),
-    14: (("verde", "green"), ("rojo → volver a 5", "red → back to 5")),
-}
 
 
 # endregion
@@ -601,11 +610,6 @@ def build_css(palette: dict[str, str]) -> str:
     )
 
 
-# The script is a raw string with no HTML tags in its texts (st.iframe runs it, D-173): the DOM is built with the DOM API.
-# D-449: the stations are drawn in Python as one SVG; the script only opens and walks the side panel.
-SCRIPT = static_files.read("git_workflow.js")
-
-
 def build_map_html(palette: dict[str, str], language: str, author: bool) -> str:
     """The whole map as one HTML document for st.iframe: texts in the reader's language, diagnoses only for the author."""
     data = build_data(language, read_failures(), author)
@@ -628,13 +632,6 @@ def build_map_html(palette: dict[str, str], language: str, author: bool) -> str:
         '<aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog" aria-labelledby="dt"></aside>'
         f'<script type="application/json" id="data">{payload}</script><script>{SCRIPT}</script></body></html>'
     )
-
-
-LOG_LABEL = {
-    "diagnosis": ("Diagnóstico", "Diagnosis"),
-    "solution": ("Mitigación o solución", "Mitigation or solution"),
-    "comment": ("Comentario", "Comment"),
-}
 
 
 # endregion

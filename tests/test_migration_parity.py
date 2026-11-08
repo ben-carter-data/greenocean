@@ -80,16 +80,17 @@ def test_dimensions_are_identical(table):
     assert old.astype(str).equals(new.astype(str))
 
 
+def canonical_rejections(rows):
+    """The rejected rows as sorted (source, reason, row) triples, with each original row written the same way."""
+    return sorted(
+        (row.source, row.reason, json.dumps(json.loads(row.original_row), sort_keys=True, ensure_ascii=False))
+        for row in rows.itertuples()
+    )
+
+
 def test_rejected_rows_are_the_same_rows_with_the_same_reason():
     old, new = read_both("SELECT source, reason, original_row FROM rejection")
-
-    def canonical(rows):
-        return sorted(
-            (row.source, row.reason, json.dumps(json.loads(row.original_row), sort_keys=True, ensure_ascii=False))
-            for row in rows.itertuples()
-        )
-
-    assert canonical(old) == canonical(new)
+    assert canonical_rejections(old) == canonical_rejections(new)
 
 
 # endregion

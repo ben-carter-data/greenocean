@@ -215,6 +215,13 @@ def test_a_family_moves_like_its_typical_product_not_like_its_extremes():
     assert typical == pytest.approx(0.0005) and len(members) == 4
 
 
+def week_prices(key, prices):
+    """One week of prices of the product `key`: one row per (region, price), each under its own product name."""
+    return pd.DataFrame(
+        [dict(key, product=f"P{index}", region=region, price=price) for index, (region, price) in enumerate(prices)]
+    )
+
+
 def test_a_region_is_painted_only_when_its_direction_beats_chance():
     assert dashboard.sign_test_p_value(285, 217) < 0.01
     assert dashboard.sign_test_p_value(107, 104) > 0.5
@@ -226,14 +233,10 @@ def test_a_region_is_painted_only_when_its_direction_beats_chance():
         normalized_unit="kilo",
         channel="Feria libre",
     )
-
-    def week(prices):
-        return pd.DataFrame(
-            [dict(key, product=f"P{index}", region=region, price=price) for index, (region, price) in enumerate(prices)]
-        )
-
-    before = week([("Maule", 100.0)] * 40 + [("Biobío", 100.0)] * 40)
-    after = week([("Maule", 110.0)] * 38 + [("Maule", 90.0)] * 2 + [("Biobío", 110.0)] * 21 + [("Biobío", 90.0)] * 19)
+    before = week_prices(key, [("Maule", 100.0)] * 40 + [("Biobío", 100.0)] * 40)
+    after = week_prices(
+        key, [("Maule", 110.0)] * 38 + [("Maule", 90.0)] * 2 + [("Biobío", 110.0)] * 21 + [("Biobío", 90.0)] * 19
+    )
     states = {row["region"]: row["state"] for row in dashboard.build_regional_movement_model(after, before)}
     assert states == {"Maule": "rise", "Biobío": "mixed"}
 

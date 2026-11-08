@@ -25,6 +25,21 @@ PERSON_DISCS = {
     "professional": ("#8ec5ff", "#2563eb"),
     "author": ("#ffcf70", "#c98500"),
 }
+# D-280: brands whose own color is black or white take the text color of the theme, as GitHub asks for its mark.
+INK_BRANDS = {"github"}
+# (file, title, theme, view). D-392: the Dashboard twice, as the Usuario and as the Profesional see it.
+MOCKUPS = [
+    ("m1-dashboard-corporativo.jpg", "M-1 · Semanal", "Corporativo", "Usuario"),
+    ("m2-resumen-vantablack.jpg", "M-2 · Semanal", "Vantablack", "Profesional"),
+    ("m3-analisis-darkgrey.jpg", "M-3 · Análisis", "Dark Grey", "Profesional"),  # D-456
+    ("m4-pipeline-bluelight.jpg", "M-4 · Pipeline y linaje", "Blue Light", "Profesional"),
+    ("m5-sql-corporativo.jpg", "M-5 · Consultas SQL", "Corporativo", "Profesional"),
+    ("m6-calidad-vantablack.jpg", "M-6 · Controles de datos", "Vantablack", "Profesional"),
+]
+# endregion
+
+# region Variables
+MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 # endregion
 
 
@@ -57,10 +72,6 @@ def _disc(name, top, bottom, glyph, body, scale=1.58):
         f'<ellipse cx="29" cy="19" rx="16" ry="8" fill="#fff" opacity=".3"/>'
         f'<g fill="{glyph}" transform="translate({offset} {offset}) scale({scale})">{body}</g></svg>'
     )
-
-
-# D-280: brands whose own color is black or white take the text color of the theme, as GitHub asks for its mark.
-INK_BRANDS = {"github"}
 
 
 def flat_logo(kind, name):
@@ -101,18 +112,6 @@ def wrap(text, width):
 
 
 # region The captures of the documents
-MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
-# (file, title, theme, view). D-392: the Dashboard twice, as the Usuario and as the Profesional see it.
-MOCKUPS = [
-    ("m1-dashboard-corporativo.jpg", "M-1 · Semanal", "Corporativo", "Usuario"),
-    ("m2-resumen-vantablack.jpg", "M-2 · Semanal", "Vantablack", "Profesional"),
-    ("m3-analisis-darkgrey.jpg", "M-3 · Análisis", "Dark Grey", "Profesional"),  # D-456
-    ("m4-pipeline-bluelight.jpg", "M-4 · Pipeline y linaje", "Blue Light", "Profesional"),
-    ("m5-sql-corporativo.jpg", "M-5 · Consultas SQL", "Corporativo", "Profesional"),
-    ("m6-calidad-vantablack.jpg", "M-6 · Controles de datos", "Vantablack", "Profesional"),
-]
-
-
 def mockup_detail(theme, view):
     """«tema Corporativo · vista Usuario», or its English: the theme keeps its name, the view takes the panel's word."""
     if i18n.is_english():
@@ -151,10 +150,14 @@ def build_mockups_html(mode):
 
 # endregion
 
+
 # region The views of each marker
-# The document views by marker, with the height of their frame in the page.
-# D-474: the context and container views are drawn by doc_figures (D-289); only the captures stay here.
-VIEWS = {
-    "mockups": (build_mockups_html, 1080),
-}
+def views():
+    """The document views by marker, with the height of their frame in the page. D-474: the context and container views
+    are drawn by doc_figures (D-289); only the captures stay here."""
+    return {
+        "mockups": (build_mockups_html, 1080),
+    }
+
+
 # endregion

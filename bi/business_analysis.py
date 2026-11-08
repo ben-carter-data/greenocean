@@ -12,6 +12,47 @@ from bi import i18n
 VIEW_MARK = re.compile(r"\[\[vista:([^\]]+)\]\]")
 # D-376: one icon per stakeholder, in the order of the PRD's table (Material Symbols).
 STAKEHOLDER_ICONS = ["family_restroom", "restaurant", "agriculture", "newspaper", "engineering"]
+# D-444: the interest map of PRD 3.4: the ring of each stakeholder, read from the PRD in the reader's language.
+INTEREST_LEVELS = {"alto": 0, "high": 0, "medio": 1, "medium": 1, "bajo": 2, "low": 2}
+INTEREST_ICONS = [
+    "restaurant",
+    "agriculture",
+    "newspaper",
+    "family_restroom",
+    "engineering",
+    "account_balance",
+    "query_stats",
+]
+# D-377: the blocks of «Análisis de negocio y sistemas», in the reading order of a case.
+BLOCKS = [
+    "El problema",
+    "Interesados",
+    "Qué escuchamos",
+    "Requisitos",
+    "Alcance",
+    "Proceso",
+    "KPIs",
+    "Decisiones de sistema",
+    "Evaluación",
+    "Del feedback al cambio",
+]
+QUALITY_PLAN = "PLAN_DE_CALIDAD.md"
+# D-377: the system decisions (BSA): a title, the parts of its line and the page that holds the rest («sqap» or «git»).
+# Each part is read from one section of the SQAP: (section, words that pick the paragraph in both languages or None for
+# the first one, «start» for the paragraph's opening, «sentence» for the sentence holding those words, «bullet» for the
+# first sentence of the section's first bullet, and a short label the page puts in front of the part, or None).
+SYSTEM_DECISIONS = [
+    (
+        "Qué medimos y qué no, y por qué",
+        (("3", None, "start", None), ("5", None, "bullet", "No medimos")),
+        "sqap",
+    ),
+    ("Umbrales aceptables", (("6", None, "start", None),), "sqap"),
+    ("Pruebas que bloquean y pruebas que informan", (("7", None, "start", None),), "sqap"),
+    ("Fuentes retrasadas", (("10", ("D-356",), "start", None),), "sqap"),
+    ("Registro de fallas con su historial", (("9", None, "start", None),), "git"),
+    ("Alertas al Autor", (("10", ("aviso urgente", "urgent alert"), "sentence", None),), "sqap"),
+]
 # endregion
 
 
@@ -63,19 +104,6 @@ def read_stakeholders(language: str | None = None) -> list[dict[str, Any]]:
     return stakeholders
 
 
-# D-444: the interest map of PRD 3.4: the ring of each stakeholder, read from the PRD in the reader's language.
-INTEREST_LEVELS = {"alto": 0, "high": 0, "medio": 1, "medium": 1, "bajo": 2, "low": 2}
-INTEREST_ICONS = [
-    "restaurant",
-    "agriculture",
-    "newspaper",
-    "family_restroom",
-    "engineering",
-    "account_balance",
-    "query_stats",
-]
-
-
 def read_interest(language: str | None = None) -> list[dict[str, Any]]:
     """PRD 3.4: each stakeholder with its ring (0 high, 1 medium, 2 low), why it sits there and the page it opens."""
     rows = read_table(read_section("PRD.md", "3.4", language))
@@ -92,38 +120,6 @@ def read_interest(language: str | None = None) -> list[dict[str, Any]]:
             }
         )
     return found
-
-
-# D-377: the blocks of «Análisis de negocio y sistemas», in the reading order of a case.
-BLOCKS = [
-    "El problema",
-    "Interesados",
-    "Qué escuchamos",
-    "Requisitos",
-    "Alcance",
-    "Proceso",
-    "KPIs",
-    "Decisiones de sistema",
-    "Evaluación",
-    "Del feedback al cambio",
-]
-QUALITY_PLAN = "PLAN_DE_CALIDAD.md"
-# D-377: the system decisions (BSA): a title, the parts of its line and the page that holds the rest («sqap» or «git»).
-# Each part is read from one section of the SQAP: (section, words that pick the paragraph in both languages or None for
-# the first one, «start» for the paragraph's opening, «sentence» for the sentence holding those words, «bullet» for the
-# first sentence of the section's first bullet, and a short label the page puts in front of the part, or None).
-SYSTEM_DECISIONS = [
-    (
-        "Qué medimos y qué no, y por qué",
-        (("3", None, "start", None), ("5", None, "bullet", "No medimos")),
-        "sqap",
-    ),
-    ("Umbrales aceptables", (("6", None, "start", None),), "sqap"),
-    ("Pruebas que bloquean y pruebas que informan", (("7", None, "start", None),), "sqap"),
-    ("Fuentes retrasadas", (("10", ("D-356",), "start", None),), "sqap"),
-    ("Registro de fallas con su historial", (("9", None, "start", None),), "git"),
-    ("Alertas al Autor", (("10", ("aviso urgente", "urgent alert"), "sentence", None),), "sqap"),
-]
 
 
 def paragraphs(text: str) -> list[str]:

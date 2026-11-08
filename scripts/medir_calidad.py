@@ -19,10 +19,6 @@ from pathlib import Path
 
 # region Constants
 CODE = ["bi", "etl", "agent"]
-LINE_LENGTH = 120
-MAX_COMPLEXITY = 10
-MAX_FUNCTION_LINES = 50
-MAX_PARAMETERS = 5
 CRITICAL_MODULES = [
     "etl/etl.py",
     "etl/bronze.py",
@@ -49,12 +45,16 @@ TYPED_MODULES = [
     "bi/served_database.py",
 ]
 NOT_VERIFIED = "no verificado"
+SECRET_NAME = re.compile(
+    r'(SECRET|TOKEN|CODE)[A-Z_]*\s*=\s*"[A-Z_]+"|secretos|st\.secrets|"Secrets"|FAKE', re.IGNORECASE
+)
 # endregion
 
 
 # region Variables
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "docs" / "calidad" / "medicion.json"
+SECRETS_BASELINE = ROOT / ".secrets.baseline"
 # endregion
 
 
@@ -230,14 +230,6 @@ def measure_audit(tools):
         "version": run([binary, "--version"])[1].strip(),
         "archivos": result,
     }
-
-
-SECRET_NAME = re.compile(
-    r'(SECRET|TOKEN|CODE)[A-Z_]*\s*=\s*"[A-Z_]+"|secretos|st\.secrets|"Secrets"|FAKE', re.IGNORECASE
-)
-
-
-SECRETS_BASELINE = ROOT / ".secrets.baseline"
 
 
 # endregion

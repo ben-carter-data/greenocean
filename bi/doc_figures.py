@@ -10,6 +10,48 @@ import html
 
 from bi import charts, doc_views, i18n, queries, static_files
 
+# region Constants
+KIND_COLORS = {"flow": "#3987e5", "order": "#c98500", "check": "#199e70", "stop": "#e5484d", "back": "#8b8fa3"}
+# Line icons on a 24-unit grid, drawn in one color with no background (the author's diagram style, D-297).
+LINE_ICONS = {
+    "shield": '<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+    "key": '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9"/><path d="m16 7 3 3"/><path d="m14 9 2 2"/>',
+    "lock": '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    "file": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+    "check": '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    "warning": '<path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17h.01"/>',
+    "calendar": '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+    "chart": '<path d="M4 20V4"/><path d="M4 20h16"/><path d="m7 15 4-5 3 3 5-7"/>',
+    "layers": '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+    "database": '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+    "mail": '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    "tool": '<path d="M14.5 6.5a4 4 0 0 0-5 5L4 17l3 3 5.5-5.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z"/>',
+    "ruler": '<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/>',
+    "printer": '<path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
+    "pulse": '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
+    "files": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>',
+    "star": '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+    "cloud": '<path d="M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A4 4 0 1 1 17 18z"/><path d="m4 4 16 16"/>',
+    "box": '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/>',
+    "eye": '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    "arrows": '<path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/>',
+    "commit": '<circle cx="12" cy="12" r="3.5"/><path d="M3 12h5.5M15.5 12H21"/>',
+    "bell": '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
+    "code": '<path d="m8 8-4 4 4 4"/><path d="m16 8 4 4-4 4"/><path d="m13.5 5-3 14"/>',
+}
+BLUE, GREEN, AMBER, VIOLET, RED, GREY = "#3987e5", "#199e70", "#c98500", "#8b5cf6", "#e5484d", "#8b8fa3"
+INDEX_THEMES = [
+    ("Fuentes e ingesta", "Sources and ingestion", GREEN),
+    ("Modelo y reglas de datos", "Data model and rules", VIOLET),
+    ("Pipeline y publicación", "Pipeline and publication", BLUE),
+    ("Controles de datos", "Data controls", GREEN),
+    ("Seguridad", "Security", RED),
+    ("Operación y observabilidad", "Operations and observability", AMBER),
+    ("Panel", "Panel", BLUE),
+    ("Documentación", "Documentation", GREY),
+]
+# endregion
+
 
 # region Pieces
 def say(spanish, english):
@@ -19,9 +61,6 @@ def say(spanish, english):
 
 def esc(value):
     return html.escape(str(value), quote=True)
-
-
-KIND_COLORS = {"flow": "#3987e5", "order": "#c98500", "check": "#199e70", "stop": "#e5484d", "back": "#8b8fa3"}
 
 
 def page(mode, body, label):
@@ -137,35 +176,6 @@ def sequence(mode, title, actors, steps, note=""):
         f'<defs>{markers}</defs>{"".join(parts)}</svg>' + (f'<p class="fig-note">{esc(note)}</p>' if note else "")
     )
     return page(mode, body, title)
-
-
-# Line icons on a 24-unit grid, drawn in one color with no background (the author's diagram style, D-297).
-LINE_ICONS = {
-    "shield": '<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
-    "key": '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9"/><path d="m16 7 3 3"/><path d="m14 9 2 2"/>',
-    "lock": '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
-    "file": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
-    "check": '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
-    "warning": '<path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17h.01"/>',
-    "calendar": '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
-    "chart": '<path d="M4 20V4"/><path d="M4 20h16"/><path d="m7 15 4-5 3 3 5-7"/>',
-    "layers": '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
-    "database": '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
-    "mail": '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
-    "tool": '<path d="M14.5 6.5a4 4 0 0 0-5 5L4 17l3 3 5.5-5.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z"/>',
-    "ruler": '<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/>',
-    "printer": '<path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
-    "pulse": '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
-    "files": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>',
-    "star": '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
-    "cloud": '<path d="M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A4 4 0 1 1 17 18z"/><path d="m4 4 16 16"/>',
-    "box": '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/>',
-    "eye": '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
-    "arrows": '<path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/>',
-    "commit": '<circle cx="12" cy="12" r="3.5"/><path d="M3 12h5.5M15.5 12H21"/>',
-    "bell": '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
-    "code": '<path d="m8 8-4 4 4 4"/><path d="m16 8 4 4-4 4"/><path d="m13.5 5-3 14"/>',
-}
 
 
 def mark(spec, x, y, size, accent):
@@ -347,11 +357,8 @@ def bars(mode, title, rows, note=""):
 # endregion
 
 
-# region C4 views and the procedure (D-297): the system context, its containers and the security procedure, drawn as
-BLUE, GREEN, AMBER, VIOLET, RED, GREY = "#3987e5", "#199e70", "#c98500", "#8b5cf6", "#e5484d", "#8b8fa3"
-
-
-# icons and right-angle arrows instead of boxes.
+# region C4 views and the procedure (D-297)
+# The system context, its containers and the security procedure, drawn as icons and right-angle arrows instead of boxes.
 def sad_context(mode):
     return graph(
         mode,
@@ -1581,18 +1588,6 @@ def manual_recovery_sequence(mode):
 
 
 # region Decision index
-INDEX_THEMES = [
-    ("Fuentes e ingesta", "Sources and ingestion", GREEN),
-    ("Modelo y reglas de datos", "Data model and rules", VIOLET),
-    ("Pipeline y publicación", "Pipeline and publication", BLUE),
-    ("Controles de datos", "Data controls", GREEN),
-    ("Seguridad", "Security", RED),
-    ("Operación y observabilidad", "Operations and observability", AMBER),
-    ("Panel", "Panel", BLUE),
-    ("Documentación", "Documentation", GREY),
-]
-
-
 def count_decisions():
     """[(theme, count)] read from the index itself, so the figure never disagrees with its tables."""
     import re
@@ -1892,11 +1887,9 @@ def glossary_figure(mode):
 # endregion
 
 
-# Marker → builder. The heights are automatic: each frame takes the height of its figure.
-
-
-# region The quality plan (D-355): the two qualities, how an indicator reads and the weekly cycle. Counts and words are
-# read from docs/calidad, never written by hand.
+# region The quality plan (D-355)
+# The two qualities, how an indicator reads and the weekly cycle. Counts and words are read from docs/calidad, never
+# written by hand.
 def quality_qualities(mode):
     from bi import quality_metrics
 
@@ -2188,35 +2181,40 @@ def closure_audience(mode):
 # endregion
 
 
-# region Constants
-FIGURES = {
-    "ciclo_semanal": weekly_cycle,  # D-377: also the «Proceso» block of «Análisis de negocio y sistemas»
-    "contexto": sad_context,
-    "contenedores": sad_containers,
-    "sop": tests_procedure,
-    "componentes_carga": sad_components_load,
-    "componentes_panel": sad_components_panel,
-    "escenarios": sad_scenarios,
-    "requisitos": prd_requirements,
-    "secuencia_carga": sad_weekly_sequence,
-    "secuencia_panel": sad_panel_sequence,
-    "mapa_adr": adr_map,
-    "tiempo_adr": adr_timeline,
-    "antes_despues": adr_before_after,
-    "secuencia_manual": tests_manual_sequence,
-    "arbol_fallas": manual_fault_tree,
-    "secuencia_recuperacion": manual_recovery_sequence,
-    "temas": index_themes,
-    "mapa_temas": index_map,
-    "adr_decisiones": index_adr,
-    "terminos_capas": glossary_layers,
-    "terminos_actores": glossary_actors,
-    "terminos_cifra": glossary_figure,
-    "calidades": quality_qualities,
-    "estados_calidad": quality_states,
-    # D-529: the closure record
-    "linea_proyecto": closure_timeline,
-    "esperado_real": closure_expectations,
-    "para_quien": closure_audience,
-}
+# region The figure of each marker
+def figures():
+    """Marker → builder of each figure of the documents (D-289). The heights are automatic: each frame takes the height
+    of its figure."""
+    return {
+        "ciclo_semanal": weekly_cycle,  # D-377: also the «Proceso» block of «Análisis de negocio y sistemas»
+        "contexto": sad_context,
+        "contenedores": sad_containers,
+        "sop": tests_procedure,
+        "componentes_carga": sad_components_load,
+        "componentes_panel": sad_components_panel,
+        "escenarios": sad_scenarios,
+        "requisitos": prd_requirements,
+        "secuencia_carga": sad_weekly_sequence,
+        "secuencia_panel": sad_panel_sequence,
+        "mapa_adr": adr_map,
+        "tiempo_adr": adr_timeline,
+        "antes_despues": adr_before_after,
+        "secuencia_manual": tests_manual_sequence,
+        "arbol_fallas": manual_fault_tree,
+        "secuencia_recuperacion": manual_recovery_sequence,
+        "temas": index_themes,
+        "mapa_temas": index_map,
+        "adr_decisiones": index_adr,
+        "terminos_capas": glossary_layers,
+        "terminos_actores": glossary_actors,
+        "terminos_cifra": glossary_figure,
+        "calidades": quality_qualities,
+        "estados_calidad": quality_states,
+        # D-529: the closure record
+        "linea_proyecto": closure_timeline,
+        "esperado_real": closure_expectations,
+        "para_quien": closure_audience,
+    }
+
+
 # endregion

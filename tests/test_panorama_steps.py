@@ -10,6 +10,11 @@ from streamlit.testing.v1 import AppTest
 
 from bi import charts, dashboard, home_mockup, queries
 
+# region Constants
+FAMILY_CLICK = "?_home_region=Todas&_home_week=2026-10-12&familia=Frutas&_home_step=family"
+# endregion
+
+
 # region Variables
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
@@ -21,7 +26,7 @@ LINK = (
 # endregion
 
 
-# region The reading order of the Dashboard
+# region The steps of the Dashboard open in order (D-352, D-372)
 def draw(profile, link=None, query=None, state=None):
     script = (
         f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\nfrom bi import dashboard\n"
@@ -109,6 +114,10 @@ def test_d372_each_step_opens_with_its_number_in_a_big_circle_and_a_readable_tex
         assert text in i18n_en.PAGES, text
 
 
+# endregion
+
+
+# region The search, the whole basket and the trends (D-352, D-450)
 def test_d450_the_search_glows_in_fluorescent_green_apart_from_the_blue_of_falls():
     for theme in charts.THEMES:
         palette = charts.get_palette(theme)
@@ -196,9 +205,10 @@ def test_d352_the_trends_are_calculated_from_the_weekly_variations_last_eight_we
     assert page(app).count('class="mock-spark') >= len(by_family)  # one little line per family, plus the basket's
 
 
-FAMILY_CLICK = "?_home_region=Todas&_home_week=2026-10-12&familia=Frutas&_home_step=family"
+# endregion
 
 
+# region One screen: unfolded steps, thin heads and hints behind an «i» (D-446, D-447, D-450, D-451, D-506)
 @needs_database
 def test_d446_the_dashboard_never_folds_its_steps_when_a_family_is_chosen():
     # D-408 folds the steps only on a channel page; the Dashboard keeps the map, the families and the table together.
@@ -279,6 +289,10 @@ def test_d506_the_basket_says_why_its_median_reads_as_it_does():
     assert home_mockup.basket_why(0.0, {'rise': 0, 'fall': 0, 'neutral': 0}) == ''
 
 
+# endregion
+
+
+# region Back to the start and the parts that rerun alone (D-531, D-532)
 @needs_database
 def test_d531_a_reload_or_a_profile_change_brings_the_dashboard_back_to_its_initial_state():
     """The address alone (a reload, a tab the browser restores) opens no step; a channel link carries the steps of the

@@ -75,9 +75,6 @@ from bi.i18n import tr
 from bi import static_files
 
 # region Constants
-CONTEXT_CHANNELS = list(charts.CONTEXT_CHANNELS)
-
-
 FAMILY_CARD_COLUMNS = 4
 
 
@@ -103,7 +100,7 @@ INFLATION_TERMS = [
 FAMILY_FOCUS_KEY = "inf_focus"
 
 
-OVERVIEW_WEEK_KEY, OVERVIEW_FAMILY_KEY = "ov_week", "ov_family"
+OVERVIEW_WEEK_KEY = "ov_week"
 
 
 BA_TAB_KEY = "ba_tab"
@@ -984,7 +981,7 @@ def show_analysis_block(block, mode):
         )
     elif block == "Proceso":
         show_analysis_lead(tr("El ciclo de cada semana: la carga, sus pruebas, la publicación y los dos informes."))
-        st.iframe(doc_diagrams.DOC_DIAGRAMS["ciclo_semanal"](mode), height="content")
+        st.iframe(doc_diagrams.builders()["ciclo_semanal"](mode), height="content")
     elif block == "KPIs":
         show_analysis_lead(
             tr(

@@ -42,7 +42,7 @@ def assert_reference_exists(reference):
 def test_every_business_question_names_a_screen_of_the_menu_and_evidence_that_exists():
     rows = read_table("Preguntas de negocio")
     assert [row[0] for row in rows] == ["P-1", "P-2", "P-3", "P-4", "P-5"]
-    examples = {title for title, *_ in sql_explorer.EXAMPLES}
+    examples = {title for title, *_ in sql_explorer.examples()}
     for identifier, question, screen, evidence in rows:
         page, _, example = screen.partition(" · ")
         assert page in menu_labels(), (identifier, page)

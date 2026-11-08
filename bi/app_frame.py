@@ -533,7 +533,7 @@ def submit_author_code():
     """D-350: the author's door opens on Enter. A right key enters as the default professional view; a wrong one says
     so in place and empties the field, with no reload of the page."""
     ok, message = control.check_control_code(
-        st.session_state.get("profile_author_code", ""), get_secret(SECRET_CONTROL_CODE), control.GATE
+        st.session_state.get("profile_author_code", ""), get_secret(SECRET_CONTROL_CODE), control.attempt_gate()
     )
     st.session_state["profile_author_code"] = ""
     if ok:

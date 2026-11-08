@@ -18,7 +18,7 @@ needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="
 
 # region Queries allowed and refused
 @needs_database
-@pytest.mark.parametrize("example", sql_explorer.EXAMPLES, ids=[e[0] for e in sql_explorer.EXAMPLES])
+@pytest.mark.parametrize("example", sql_explorer.examples(), ids=[e[0] for e in sql_explorer.examples()])
 def test_every_example_query_returns_rows(example):
     result = sql_explorer.run_user_query(example[2])
     assert len(result.rows) > 0
@@ -97,7 +97,7 @@ def test_result_is_limited_and_flagged():
 
 @needs_database
 def test_downloads_produce_files():
-    rows = sql_explorer.run_user_query(sql_explorer.EXAMPLES[0][2]).rows
+    rows = sql_explorer.run_user_query(sql_explorer.examples()[0][2]).rows
     assert sql_explorer.to_parquet_bytes(rows)[:4] == b"PAR1"
     assert sql_explorer.to_csv_bytes(rows).startswith(b"\xef\xbb\xbf")
     for _, _, sql in sql_explorer.EXPORTS[1:]:
@@ -115,9 +115,9 @@ def test_page_renders_and_runs_an_example():
     )
     app = AppTest.from_string(script, default_timeout=60).run()
     assert not app.exception
-    assert app.text_area[0].value == sql_explorer.EXAMPLES[0][2]
+    assert app.text_area[0].value == sql_explorer.examples()[0][2]
     app.button(key="sqlx_chip_2").click().run()
-    assert app.text_area[0].value == sql_explorer.EXAMPLES[2][2]
+    assert app.text_area[0].value == sql_explorer.examples()[2][2]
     app.button(key="sqlx_run").click().run()
     assert not app.exception
     assert len(app.dataframe) == 1 and len(app.dataframe[0].value) > 0
@@ -156,16 +156,16 @@ def test_d185_the_full_table_comes_first_and_the_council_picks_follow():
         "Brecha mayorista",
         "Calendario de compra",
     ]
-    rows = sql_explorer.run_user_query(sql_explorer.EXAMPLES[0][2]).rows
+    rows = sql_explorer.run_user_query(sql_explorer.examples()[0][2]).rows
     for column in ("familia", "producto", "variedad", "calidad", "canal", "region", "precio", "precio_real"):
         assert column in rows.columns
     filtered = sql_explorer.render_example(0, {"familia": "Carne bovina", "anio_filtro": 2026})
     assert "WHERE p.familia = 'Carne bovina'\n  AND year(p.semana) = 2026" in filtered
     # Every decision query ends with a reading in words, and compares real pesos where it compares time.
     for index in range(1, len(sql_explorer.TEMPLATES)):
-        sql = sql_explorer.EXAMPLES[index][2]
+        sql = sql_explorer.examples()[index][2]
         assert "lectura" in sql or "mes_mas_barato" in sql or "ahorro_pct" in sql
-    assert "factor_real" in sql_explorer.EXAMPLES[1][2] and "factor_real" in sql_explorer.EXAMPLES[5][2]
+    assert "factor_real" in sql_explorer.examples()[1][2] and "factor_real" in sql_explorer.examples()[5][2]
 
 
 @needs_database
@@ -193,11 +193,11 @@ def test_d182_the_explorer_lists_the_real_tables_and_one_opens():
     rows = sql_explorer.run_user_query("SELECT *\nFROM main.dim_region\nLIMIT 100").rows
     assert "region_id" in rows.columns and len(rows) == tables["dim_region"]
     tab = sql_explorer.build_tab_html(1)
-    assert "precio_vs_epoca.sql" in tab and "sqlx-info" in tab and sql_explorer.EXAMPLES[1][1] in tab
+    assert "precio_vs_epoca.sql" in tab and "sqlx-info" in tab and sql_explorer.examples()[1][1] in tab
 
 
 def test_d516_the_grid_takes_what_the_window_leaves_and_a_few_rows_keep_their_height():
-    long_sql, short_sql = sql_explorer.EXAMPLES[0][2], "SELECT 1"
+    long_sql, short_sql = sql_explorer.examples()[0][2], "SELECT 1"
     assert sql_explorer.results_height(100) == "stretch"
     assert sql_explorer.results_height(2) == sql_explorer.GRID_ROW * 3 + 3
     for sql in (short_sql, long_sql):
@@ -232,7 +232,7 @@ def test_d516_every_comment_of_every_query_has_its_english(monkeypatch):
         assert not re.search(r"[áéíóúñ¿¡]| (de|del|la|el|que|por|cada|en) ", " ".join(comments)), comments
         # only the comments change: without them the query is the same one
         strip = lambda sql: sql_explorer.COMMENT_PATTERN.sub("", sql)  # noqa: E731
-        assert strip(written) == strip(sql_explorer.EXAMPLES[index][2]), title
+        assert strip(written) == strip(sql_explorer.examples()[index][2]), title
     assert "since January 2022" in sql_explorer.render_example(3, {"periodo": sql_explorer.SINCE_2022})
     assert "year 2025" in sql_explorer.render_example(3, {"periodo": 2025})
 
@@ -243,14 +243,14 @@ def test_d516_the_list_of_examples_never_freezes_the_language_of_the_first_visit
         (title, question, sql_explorer.render_example(index, read=str))
         for index, (title, question, _, _) in enumerate(sql_explorer.TEMPLATES)
     ]
-    assert frozen == sql_explorer.EXAMPLES
-    assert sql_explorer.EXAMPLES[0][2].startswith("-- Tabla completa")
+    assert frozen == sql_explorer.examples()
+    assert sql_explorer.examples()[0][2].startswith("-- Tabla completa")
 
 
 @needs_database
 def test_d516_the_page_in_english_writes_comments_summary_and_messages_in_english():
     # the result in the session, as a run leaves it: AppTest cannot rerun a page with translated selectors
-    app = english_page(sqlx_result=sql_explorer.run_user_query(sql_explorer.EXAMPLES[0][2]))
+    app = english_page(sqlx_result=sql_explorer.run_user_query(sql_explorer.examples()[0][2]))
     assert app.text_area[0].value.startswith("-- Full table: one weekly price")
     written = " ".join(block.value for block in app.caption)
     assert re.search(r"[\d,]+ rows · \d+ columns · [\d,]+ ms · showing the first 5,000", written), written
@@ -261,7 +261,7 @@ def test_d516_the_page_in_english_writes_comments_summary_and_messages_in_englis
 
 @needs_database
 def test_d516_the_grid_shows_the_names_the_query_wrote_and_the_week_as_a_date():
-    app = english_page(sqlx_result=sql_explorer.run_user_query(sql_explorer.EXAMPLES[0][2]))
+    app = english_page(sqlx_result=sql_explorer.run_user_query(sql_explorer.examples()[0][2]))
     columns = list(app.dataframe[0].value.columns)
     assert columns[:3] == ["semana", "familia", "producto"], columns  # never a half-translated «week»
     assert app.text_area[0].value.count("p.semana") >= 1
@@ -295,7 +295,7 @@ def test_d516_every_text_of_the_templates_and_the_views_reads_in_english(monkeyp
 
 # region The answers of the PRD, recomputed another way (D-244)
 def example_sql(title):
-    return next(sql for name, _, sql in sql_explorer.EXAMPLES if name == title)
+    return next(sql for name, _, sql in sql_explorer.examples() if name == title)
 
 
 def literal(value):

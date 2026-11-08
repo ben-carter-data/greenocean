@@ -28,16 +28,6 @@ def weeks_of(frame: pd.DataFrame, source: str) -> list[str]:
     return sorted(frame.loc[frame["source"] == source, "week_start"].unique(), reverse=True)
 
 
-def late_week(frame: pd.DataFrame, source: str) -> str | None:
-    """The week this source has not published yet while the other has: the week after its last; None when it is not
-    behind."""
-    own = weeks_of(frame, source)
-    newest = max(frame["week_start"].unique(), default=None)
-    if not own or newest is None or own[0] >= newest:
-        return None
-    return str(date.fromisoformat(own[0]) + timedelta(days=7))
-
-
 def same_package_matches(matched: pd.DataFrame) -> pd.DataFrame:
     """D-522, RN-15: the prices of two weeks of one region, as a comparison reads them: in the same package; a price
     without a package in common is left out. A base older than the rule has no such columns: the rows stay as they are."""

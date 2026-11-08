@@ -29,6 +29,23 @@ STATE_COLORS = {
 }
 # endregion
 
+# region Variables
+CSS = static_files.fill(
+    "quality_viewer.css",
+    {
+        'var(--go-deep)': DEEP,
+        'var(--go-sky)': SKY,
+    },
+)
+SCRIPT = static_files.fill(
+    "quality_viewer.js",
+    {
+        '__GO_BEFORE__': BEFORE,
+        '__GO_SKY__': SKY,
+    },
+)
+# endregion
+
 
 # region Pieces
 def esc(value: Any) -> str:
@@ -316,19 +333,4 @@ def build_viewer_html(
     )
 
 
-CSS = static_files.fill(
-    "quality_viewer.css",
-    {
-        'var(--go-deep)': DEEP,
-        'var(--go-sky)': SKY,
-    },
-)
-
-SCRIPT = static_files.fill(
-    "quality_viewer.js",
-    {
-        '__GO_BEFORE__': BEFORE,
-        '__GO_SKY__': SKY,
-    },
-)
 # endregion

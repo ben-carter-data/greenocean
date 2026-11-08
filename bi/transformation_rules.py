@@ -112,6 +112,7 @@ TEXTS = {
 # region Variables
 ROOT = Path(__file__).resolve().parent.parent
 RULES_FILE = ROOT / "docs" / "arquitectura" / "reglas_transformacion.json"
+SCRIPT = static_files.read("transformation_rules.js")  # D-543: the code lives in bi/static/transformation_rules.js
 # endregion
 
 
@@ -251,9 +252,6 @@ def build_css(palette: dict[str, str]) -> str:
             'var(--go-on-accent)': palette['on_accent'],
         },
     )
-
-
-SCRIPT = static_files.read("transformation_rules.js")  # D-543: the code lives in bi/static/transformation_rules.js
 
 
 def build_page_html(palette: dict[str, str], language: str, author: bool) -> str:

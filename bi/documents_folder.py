@@ -38,6 +38,9 @@ FAMILY_TITLES = {
 }
 HEADER_ROW = re.compile(r"^\| ([^|]+?) \| (.+?) \|$", re.MULTILINE)
 INDEX_HEADINGS = tuple(f"## {fields['index']}" for fields in i18n.DOCUMENT_FIELDS.values())
+# The first thing a document shows, in the panel and on the first page of its PDF: the project, the kind of document,
+# its title and purpose, and its version, date, status, owner and audience, read from its header table.
+COVER_FIELDS = ("version", "date", "status", "owner")
 # endregion
 
 
@@ -218,11 +221,6 @@ def build_css(palette):
 
 
 # region Cover (D-288)
-# The first thing a document shows, in the panel and on the first page of its PDF: the project, the kind of document,
-# its title and purpose, and its version, date, status, owner and audience, read from its header table.
-COVER_FIELDS = ("version", "date", "status", "owner")
-
-
 def strip_header_table(text):
     """The document without its header table (the cover shows it); the table stays in the file for GitHub."""
     head, separator, rest = text.partition("\n## ")

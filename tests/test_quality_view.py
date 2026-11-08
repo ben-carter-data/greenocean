@@ -1,36 +1,14 @@
 """The «Controles de datos» overview draws the evidence it is given, nothing more."""
 
-import re
 from datetime import datetime
 
 from bi import quality_view
 
 # region Constants
-EVIDENCE = dict(
-    run_id=4,
-    run_started="13-10-2026 15:35",
-    run_status="LOADED",
-    run_ok=True,
-    manifest_present=True,
-    manifest_files=10,
-    files_matching=10,
-    files_total=10,
-    files_failed=0,
-    weeks=249,
-    first_week="3–9 ene 2022",
-    last_week="5–11 oct 2026",
-    build=dict(models=16, tests=31, passing=31, ok=True, built_at="19-10-2026"),
-    checks=dict(integrity_ok=True, foreign_keys=0, duplicates=0, invalid=0),
-    parity=dict(rows=811578, rejections=201, backup_rows=811578, backup_rejections=201, ok=True),
-)
 # endregion
 
 
 # region The «Controles de datos» overview draws the evidence it is given, nothing more
-def step_marks(markup):
-    return re.findall(r'class="qa-mark qa-(\w+)"', markup)
-
-
 def test_build_evidence_from_the_page_objects():
     checks = dict(
         integrity_ok=True, foreign_keys=0, duplicates=0, invalid=0, weeks=249, first="2022-01-03", last="2026-10-05"
@@ -47,10 +25,6 @@ def test_build_evidence_from_the_page_objects():
     assert evidence["run_ok"] and evidence["run_started"] == "13-10-2026 15:35"
     assert evidence["build"]["built_at"] == "19-10-2026" and evidence["parity"]["rows"] == 811578
     assert set(evidence) >= {"run_id", "run_status", "weeks", "checks"}
-
-
-def html_text(text):
-    return quality_view.html.escape(text)
 
 
 # endregion

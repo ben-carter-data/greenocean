@@ -7,9 +7,13 @@ file names, structure and identifiers. No dependency: the translations are dicti
 """
 
 import functools
+import html as _html
+import re as _re
 from pathlib import Path
 
 import streamlit as st
+
+from bi import i18n_en, weeks
 
 # region Constants
 SPANISH, ENGLISH = "es", "en"
@@ -635,6 +639,72 @@ DOCUMENT_FOLDERS = {
     "PLAN_PRUEBAS.md": "calidad",
     "MANUAL.md": "operacion",
 }
+PAGES = i18n_en.PAGES
+NUMBER = _re.compile(r"[−+-]?\d[\d.,]*\d|[−+-]?\d")
+ONLY_FIGURES = _re.compile(r"[\s$%−+\-–·/()×↑↓=~≈±]*(?:\d[\d.,\s]*[\s$%−+\-–·/()×↑↓=~≈±.:;]*)+")
+TEXT_NODE = _re.compile(r">([^<>]+)<")
+ATTRIBUTE = _re.compile(
+    r'(\b(?:title|aria-label|alt|placeholder|data-tip|data-title|data-label|data-what)=")([^"]*)(")'
+)
+# Scripts keep their code (only their whole strings are looked up); styles, code and preformatted text are left alone,
+# and a drawing's text marked translate="no": the name of a view or a column is code (D-516).
+BLOCK = _re.compile(
+    r"(<script\b[^>]*>)(.*?)(</script>)|(<style\b[^>]*>.*?</style>|<pre\b[^>]*>.*?</pre>|<code\b[^>]*>.*?</code>"
+    r'|<text translate="no"[^>]*>[^<]*</text>)',
+    _re.DOTALL | _re.IGNORECASE,
+)
+JS_STRING = _re.compile(r"""(["'])((?:(?!\1)[^\\\n]|\\.){2,}?)\1""")
+MONTHS = dict(zip(weeks.MONTHS, weeks.MONTHS_EN))
+MONTH = "(" + "|".join(MONTHS) + ")"
+FULL_MONTHS = dict(
+    zip(
+        [
+            "enero",
+            "febrero",
+            "marzo",
+            "abril",
+            "mayo",
+            "junio",
+            "julio",
+            "agosto",
+            "septiembre",
+            "octubre",
+            "noviembre",
+            "diciembre",
+        ],
+        [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ],
+    )
+)
+# What each placeholder of a template may hold: «{}» anything, «{n}» a figure, «{m}» a month and year, «{d}» a date.
+PLACEHOLDERS = {
+    "{}": r"(.+?)",
+    "{n}": r"([−+-]?\d[\d.,]*(?: ?%)?)",
+    "{m}": r"((?:" + "|".join(FULL_MONTHS) + r") \d{4})",
+    "{d}": r"(\d{1,2} (?:" + "|".join(MONTHS) + r") – \d{1,2} (?:" + "|".join(MONTHS) + r")(?: \d{4})?"
+    r"|\d{1,2}[-–]\d{1,2}(?:[-–]\d{2,4})?|\d{1,2}(?:[–-]\d{1,2})? (?:" + "|".join(MONTHS) + r")(?: \d{4})?)",
+}
+PLACEHOLDER = _re.compile(r"\{[nmd]?\}")
+MARKDOWN_PREFIX = _re.compile(r"^(\s*(?:#{1,6}\s+|[-*]\s+|>\s*|\d+\.\s+)?)(.*)$", _re.DOTALL)
+QUOTED = _re.compile(r"""(["'])((?:(?!\1).){2,}?)\1""")
+# D-516: a frame with this mark is the answer to a SQL query: its column names are what the query wrote.
+KEEP_NAMES = "keep_names"
+# endregion
+
+# region Variables
+_templates = None
 # endregion
 
 
@@ -705,29 +775,6 @@ def document_field(name, language=None):
 # draws, at the boundary with Streamlit: each text node and each visible attribute of an HTML block, each label of a
 # widget, each column of a table. A text is translated only as a whole (an exact entry, or a template whose «{}» stand
 # for numbers or data), never word by word, so an untranslated sentence stays whole instead of half translated.
-import html as _html  # noqa: E402
-import re as _re  # noqa: E402
-
-from bi import i18n_en, weeks  # noqa: E402
-
-PAGES = i18n_en.PAGES
-NUMBER = _re.compile(r"[−+-]?\d[\d.,]*\d|[−+-]?\d")
-ONLY_FIGURES = _re.compile(r"[\s$%−+\-–·/()×↑↓=~≈±]*(?:\d[\d.,\s]*[\s$%−+\-–·/()×↑↓=~≈±.:;]*)+")
-TEXT_NODE = _re.compile(r">([^<>]+)<")
-ATTRIBUTE = _re.compile(
-    r'(\b(?:title|aria-label|alt|placeholder|data-tip|data-title|data-label|data-what)=")([^"]*)(")'
-)
-# Scripts keep their code (only their whole strings are looked up); styles, code and preformatted text are left alone,
-# and a drawing's text marked translate="no": the name of a view or a column is code (D-516).
-BLOCK = _re.compile(
-    r"(<script\b[^>]*>)(.*?)(</script>)|(<style\b[^>]*>.*?</style>|<pre\b[^>]*>.*?</pre>|<code\b[^>]*>.*?</code>"
-    r'|<text translate="no"[^>]*>[^<]*</text>)',
-    _re.DOTALL | _re.IGNORECASE,
-)
-JS_STRING = _re.compile(r"""(["'])((?:(?!\1)[^\\\n]|\\.){2,}?)\1""")
-_templates = None
-
-
 def localize_number(text):
     """A Spanish figure written the English way: 1.609 → 1,609 and 0,2 → 0.2."""
     # Only a figure written the Spanish way: 1.609, 2.521.012, 0,2 or 33,7; a version like 1.5.6 stays as it is.
@@ -739,42 +786,6 @@ def localize_number(text):
 
 def localize_figures(text):
     return NUMBER.sub(lambda match: localize_number(match.group(0)), text)
-
-
-MONTHS = dict(zip(weeks.MONTHS, weeks.MONTHS_EN))
-MONTH = "(" + "|".join(MONTHS) + ")"
-FULL_MONTHS = dict(
-    zip(
-        [
-            "enero",
-            "febrero",
-            "marzo",
-            "abril",
-            "mayo",
-            "junio",
-            "julio",
-            "agosto",
-            "septiembre",
-            "octubre",
-            "noviembre",
-            "diciembre",
-        ],
-        [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ],
-    )
-)
 
 
 def localize_date(text):
@@ -803,17 +814,6 @@ def localize_date(text):
     if match := _re.fullmatch(r"(\d{2})-(\d{2})", text):
         return f"{list(MONTHS.values())[int(match[2]) - 1]} {int(match[1])}" if 1 <= int(match[2]) <= 12 else None
     return None
-
-
-# What each placeholder of a template may hold: «{}» anything, «{n}» a figure, «{m}» a month and year, «{d}» a date.
-PLACEHOLDERS = {
-    "{}": r"(.+?)",
-    "{n}": r"([−+-]?\d[\d.,]*(?: ?%)?)",
-    "{m}": r"((?:" + "|".join(FULL_MONTHS) + r") \d{4})",
-    "{d}": r"(\d{1,2} (?:" + "|".join(MONTHS) + r") – \d{1,2} (?:" + "|".join(MONTHS) + r")(?: \d{4})?"
-    r"|\d{1,2}[-–]\d{1,2}(?:[-–]\d{2,4})?|\d{1,2}(?:[–-]\d{1,2})? (?:" + "|".join(MONTHS) + r")(?: \d{4})?)",
-}
-PLACEHOLDER = _re.compile(r"\{[nmd]?\}")
 
 
 # endregion
@@ -930,9 +930,6 @@ def translate_any(value):
     return "\n".join(translate_markdown_line(line) for line in value.split("\n"))
 
 
-MARKDOWN_PREFIX = _re.compile(r"^(\s*(?:#{1,6}\s+|[-*]\s+|>\s*|\d+\.\s+)?)(.*)$", _re.DOTALL)
-
-
 def translate_markdown_line(line):
     """A Markdown line: its heading, list or quote mark kept, the rest translated whole."""
     mark, rest = MARKDOWN_PREFIX.match(line).groups()
@@ -945,9 +942,6 @@ def join_names(names):
     if len(names) < 2:
         return "".join(names)
     return ", ".join(names[:-1]) + (" and " if is_english() else " y ") + names[-1]
-
-
-QUOTED = _re.compile(r"""(["'])((?:(?!\1).){2,}?)\1""")
 
 
 # endregion
@@ -999,10 +993,6 @@ def translate_spec(spec):
         if "'" in spec or '"' in spec:  # an expression that names a series: datum.serie == 'IPC de alimentos (INE)'
             return QUOTED.sub(lambda m: f"{m[1]}{EN.get(m[2]) or PAGES.get(m[2]) or m[2]}{m[1]}", spec)
     return spec
-
-
-# D-516: a frame with this mark is the answer to a SQL query: its column names are what the query wrote.
-KEEP_NAMES = "keep_names"
 
 
 def translate_frame(frame):

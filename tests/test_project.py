@@ -1,7 +1,6 @@
 """Tests for the content of the project page (T-43): documents, SQL, files, examples."""
 
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -13,7 +12,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import project, queries  # noqa: E402
 
 # region Constants
-needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.db has not been built")
+# Units, SQL types and the date pattern read as words, not acronyms to define.
+NOT_ACRONYMS = {"MB", "GB", "AAAA", "MM", "DD", "VARCHAR", "BIGINT", "INTEGER", "DOUBLE", "BOOLEAN"}
+SPLIT_PANEL = [
+    "dashboard.py",
+    "constants.py",
+    "data_access.py",
+    "app_style.py",
+    "app_frame.py",
+    "page_weekly.py",
+    "page_analysis.py",
+    "page_engineering.py",
+    "page_quality.py",
+    "page_devops.py",
+    "page_documents.py",
+]
 # endregion
 
 
@@ -31,22 +44,6 @@ def test_project_guide_explains_every_rule_indicator_and_table():
         project.read_section(project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos")
     )
     assert set(definitions) == set(project.TABLE_NAMES)
-
-
-# endregion
-
-
-# region Files
-def list_tracked_files():
-    """Files Git keeps, including new ones not committed yet but not ignored."""
-    output = subprocess.run(
-        ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
-        cwd=project.PROJECT_DIR,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout
-    return output.splitlines()
 
 
 # endregion
@@ -111,14 +108,10 @@ def test_d054_week_prices_match_the_rows_of_that_week():
     assert project.count_week_prices("1999-01-04") == 0
 
 
-# Units, SQL types and the date pattern read as words, not acronyms to define.
-NOT_ACRONYMS = {"MB", "GB", "AAAA", "MM", "DD", "VARCHAR", "BIGINT", "INTEGER", "DOUBLE", "BOOLEAN"}
-
-
 # endregion
 
 
-# region The glossary, the READMEs and the language of the comments
+# region The glossary and the READMEs
 def test_d279_every_acronym_of_the_documents_is_in_the_glossary():
     """The terms are defined once, in docs/negocio/GLOSARIO.md, which the panel shows."""
     glossary = project.read_glossary()
@@ -160,6 +153,10 @@ def test_d338_each_readme_links_to_the_other_and_the_english_one_stays_in_englis
         assert needle in "\n".join(spanish) and needle in body, needle
 
 
+# endregion
+
+
+# region The layout and the language of the code (R-001, R-002, R-003, D-338)
 def test_d338_the_comments_of_the_code_stay_in_english():
     """Code and its comments are in English (CLAUDE.md, D-338). A comment may quote a text of the panel between « » (the
     panel is bilingual and its Spanish texts are data); anything else with a letter only Spanish uses is a comment in
@@ -180,30 +177,11 @@ def test_d338_the_comments_of_the_code_stay_in_english():
     assert offenders == [], offenders
 
 
-# endregion
-
-
-# region The layout of the code (R-001, R-002, R-003)
-SPLIT_PANEL = [
-    "dashboard.py",
-    "constants.py",
-    "data_access.py",
-    "app_style.py",
-    "app_frame.py",
-    "page_weekly.py",
-    "page_analysis.py",
-    "page_engineering.py",
-    "page_quality.py",
-    "page_devops.py",
-    "page_documents.py",
-]
-
-
 @pytest.mark.parametrize("name", SPLIT_PANEL)
 def test_d541_every_file_of_the_split_panel_keeps_the_layout_of_the_agent(name):
-    """R-001 of AKGRO.md, with agent/agent.py as the model: a docstring, the imports, then regions, each closed, the
-    constants and variables before the functions, and no function inside another (a one-line lambda Streamlit asks for
-    as an argument is not a function of the module)."""
+    """R-001 of AKGRO.md, with agent/agent.py as the model: a docstring, the imports, then regions, each closed, and the
+    constants and variables first. D-546: dashboard.py too keeps its imports above the regions, and that no function
+    sits inside another is checked for every file of the project below."""
     import ast
 
     path = Path(__file__).resolve().parent.parent / "bi" / name
@@ -215,58 +193,81 @@ def test_d541_every_file_of_the_split_panel_keeps_the_layout_of_the_agent(name):
     assert regions and len(regions) == sum(line == "# endregion" for line in lines), name
     first_region = lines.index(regions[0])
     imports = [node for node in tree.body if isinstance(node, (ast.Import, ast.ImportFrom))]
-    assert all(node.lineno <= first_region + 1 or name == "dashboard.py" for node in imports), name
+    assert all(node.lineno <= first_region + 1 for node in imports), name
     titles = [line[len("# region ") :] for line in regions]
-    for kind in ("Constants", "Variables"):
-        if kind in titles:
-            assert titles.index(kind) <= 2, (name, titles)  # right after the imports
-    nested = [
-        f"{top.name}>{node.name}"
-        for top in tree.body
-        if isinstance(top, (ast.FunctionDef, ast.AsyncFunctionDef))
-        for node in ast.walk(top)
-        if node is not top and isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-    ]
-    assert nested == [], (name, nested)
+    present = [kind for kind in ("Constants", "Variables") if kind in titles]
+    assert titles[: len(present)] == present, (name, titles)  # right after the imports, in this order
 
 
 def test_d542_every_python_file_of_the_project_has_its_regions_closed_and_not_nested():
-    """R-001 of AKGRO.md: every module of bi/, etl/, agent/, scripts/ and tests/ is laid out in regions, like agent/agent.py;
-    each region closes before the next opens. A package's __init__.py only marks the folder."""
+    """R-001 of AKGRO.md: every module of bi/, etl/, agent/, scripts/ and tests/ is laid out in regions, like
+    agent/agent.py; each region closes before the next opens. D-546: every statement of a module sits in a region (only
+    the docstring, the imports and the sys.path.insert that lets a script reach the project stay above them), no region
+    joins «Constants and variables», and no assignment of the module comes after its first function. A package's
+    __init__.py only marks the folder."""
+    import ast
+
     root = Path(__file__).resolve().parent.parent
     wrong = []
     for folder in ("bi", "etl", "agent", "scripts", "tests"):  # D-544: the tests too
-        for path in sorted((root / folder).glob("*.py")):
-            if path.name == "__init__.py":
+        for path in sorted((root / folder).rglob("*.py")):
+            if path.name == "__init__.py" or "__pycache__" in path.parts:
                 continue
-            depth, nested, opened = 0, False, 0
-            for line in path.read_text(encoding="utf-8").split("\n"):
+            name = str(path.relative_to(root))
+            source = path.read_text(encoding="utf-8")
+            depth, nested, opened, regions = 0, False, 0, []
+            for number, line in enumerate(source.split("\n"), 1):
                 if line.startswith("# region "):
                     nested |= depth > 0
                     depth += 1
-                    opened += 1
+                    opened = number
+                    if re.search(r"constants?\s*(and|&|,)\s*variables?", line, re.IGNORECASE):
+                        wrong.append(f"{name}:{number} one region for constants and variables")
                 elif line == "# endregion":
                     depth -= 1
                     nested |= depth < 0
-            if not opened or depth or nested:
-                wrong.append(f"{folder}/{path.name}")
+                    regions.append((opened, number))
+            if not regions or depth or nested:
+                wrong.append(f"{name}: a region is missing, left open or nested")
+            tree = ast.parse(source)
+            functions = [node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))]
+            first_function = min((node.decorator_list or [node])[0].lineno for node in functions) if functions else None
+            for node in tree.body:
+                start = (getattr(node, "decorator_list", None) or [node])[0].lineno
+                docstring = node is tree.body[0] and isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant)
+                bootstrap = isinstance(node, ast.Expr) and ast.unparse(node.value).startswith("sys.path.insert(")
+                if not (docstring or bootstrap or isinstance(node, (ast.Import, ast.ImportFrom))):
+                    if not any(top < start and node.end_lineno < bottom for top, bottom in regions):
+                        wrong.append(f"{name}:{start} outside a region")
+                if (
+                    first_function
+                    and start > first_function
+                    and not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+                ):
+                    wrong += [
+                        f"{name}:{item.lineno} assigned after the first function"
+                        for item in ast.walk(node)
+                        if isinstance(item, (ast.Assign, ast.AnnAssign, ast.AugAssign))
+                    ]
     assert wrong == [], wrong
 
 
 def test_d543_no_function_of_the_project_is_written_inside_another():
     """R-002 of AKGRO.md: functions are separate. What a function needs from another travels as a parameter, or with
     functools.partial where a callable is handed over; a one-line lambda Streamlit asks for is not a function of the
-    module."""
+    module. D-546: the tests too, and a method of a class as much as a function."""
     import ast
 
     root = Path(__file__).resolve().parent.parent
     nested = []
-    for folder in ("bi", "etl", "agent", "scripts"):
-        for path in sorted((root / folder).glob("*.py")):
+    for folder in ("bi", "etl", "agent", "scripts", "tests"):
+        for path in sorted((root / folder).rglob("*.py")):
+            if "__pycache__" in path.parts:
+                continue
             tree = ast.parse(path.read_text(encoding="utf-8"))
             nested += [
-                f"{folder}/{path.name}: {top.name} > {node.name}"
-                for top in tree.body
+                f"{path.relative_to(root)}: {top.name} > {node.name}"
+                for top in ast.walk(tree)
                 if isinstance(top, (ast.FunctionDef, ast.AsyncFunctionDef))
                 for node in ast.walk(top)
                 if node is not top and isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))

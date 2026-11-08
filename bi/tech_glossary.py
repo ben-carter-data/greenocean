@@ -9,7 +9,7 @@ was checked against the code (agent/, etl/, dbt/, bi/, .github/workflows/).
 from bi import i18n
 
 
-# region Glossary
+# region Constants
 TECH_GLOSSARY = {
     # Languages and libraries
     "python": {
@@ -385,10 +385,6 @@ WORD_KEYS = {
     "GitHub": "github",
     "SQL": "sql",
 }
-# endregion
-
-
-# region Text
 # D-284: the same entries in English, chosen when the reader reads in English.
 TECH_GLOSSARY_EN = {
     "python": (
@@ -662,8 +658,10 @@ TECH_GLOSSARY_EN = {
         "the monthly «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division is used; the ipc_monthly and ipc_weekly marts give the deflator of each week.",
     ),
 }
+# endregion
 
 
+# region The hover text of one technology
 def describe(key):
     """One plain-text line for an SVG <title>: what it is, its acronym, its role here (in the reader's language)."""
     if i18n.is_english() and key in TECH_GLOSSARY_EN:
@@ -674,6 +672,10 @@ def describe(key):
     return f"{name} — {entry['que_es']} Aquí: {entry['rol']}"
 
 
+# endregion
+
+
+# region The hover text of a label that names several technologies
 def describe_words(text):
     """The entries of every known technology named in a «A · B · C» label, one per line."""
     keys = []

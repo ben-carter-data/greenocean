@@ -19,6 +19,7 @@ INE_TEXT = (
     '"2024";"2";"1";"";"102,0";"0,5"\n'
     '"2024";"2";"2";"";"110,0";"1,0"\n'
 )
+RUN = (1, "2026-10-20T12:00:00", etl.STATUS_LOADED, 10, 9, 1, "")
 # endregion
 
 
@@ -115,9 +116,6 @@ def test_d323_ine_writes_its_bronze_and_main_keeps_the_previous_one_when_the_ine
 
 
 # region pipeline
-RUN = (1, "2026-10-20T12:00:00", etl.STATUS_LOADED, 10, 9, 1, "")
-
-
 def test_d323_the_run_history_comes_from_the_served_database_then_the_old_sqlite_then_nothing(tmp_path):
     served, legacy = tmp_path / "datos.duckdb", tmp_path / "datos.db"
     assert pipeline.read_run_history(served, legacy) == []

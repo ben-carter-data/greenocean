@@ -128,19 +128,21 @@ def test_d500_only_the_autor_gets_a_link_from_the_shared_builder(monkeypatch):
     assert all(file["github"].startswith(project.GITHUB_URL) for file in dashboard.read_folder_files())
 
 
+def report_viewer(state):
+    """Everything the viewer of a weekly quality report draws, with `state` in the session."""
+    script = (
+        f"import sys\nsys.path.insert(0, {str(Path(DASHBOARD_FILE).parents[1])!r})\nimport streamlit as st\n"
+        "from bi import dashboard\n"
+        + "".join(f"st.session_state[{key!r}] = {value!r}\n" for key, value in state.items())
+        + "dashboard.show_quality_report_dialog('C7')\n"
+    )
+    return everything_drawn(AppTest.from_string(script, default_timeout=60).run())
+
+
 @needs_database
 def test_d500_the_report_viewer_links_the_sqap_only_for_the_autor():
-    def viewer(state):
-        script = (
-            f"import sys\nsys.path.insert(0, {str(Path(DASHBOARD_FILE).parents[1])!r})\nimport streamlit as st\n"
-            "from bi import dashboard\n"
-            + "".join(f"st.session_state[{key!r}] = {value!r}\n" for key, value in state.items())
-            + "dashboard.show_quality_report_dialog('C7')\n"
-        )
-        return everything_drawn(AppTest.from_string(script, default_timeout=60).run())
-
-    assert "github.com" not in viewer({})
-    assert project.GITHUB_URL in viewer({dashboard.ADMIN_UNLOCKED: True})
+    assert "github.com" not in report_viewer({})
+    assert project.GITHUB_URL in report_viewer({dashboard.ADMIN_UNLOCKED: True})
 
 
 # endregion

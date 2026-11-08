@@ -11,7 +11,7 @@ from typing import Any
 import altair as alt
 import pandas as pd
 
-from bi import i18n, weeks
+from bi import i18n
 
 # region Constants
 # The four visible themes, Corporativo first: it is the default (D-071). Claro remains an
@@ -152,16 +152,6 @@ PALETTES = {
         "on_accent": "#ffffff",
     },
 }
-# Sequential ramps for a heat map, one hue, light (cheap) to dark (expensive):
-# cyan in the dark themes, the business blue in the light ones. Each validated as an
-# ordinal ramp against the card color of its theme (dataviz validator).
-HEAT_RAMPS = {
-    MODE_DARK: ["#a5f3fc", "#22d3ee", "#0891b2", "#155e75"],
-    MODE_GRAPHITE: ["#2a8199", "#36a6c2", "#5fcbe3", "#a8eef9"],
-    MODE_CORPORATE: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"],
-    MODE_BLUE_LIGHT: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"],
-    MODE_LIGHT: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"],
-}
 # Status colors (fixed in every theme), always shown with an icon and a label.
 STATUS_COLORS = {
     "good": "#22b35a",
@@ -181,16 +171,7 @@ STATUS_TEXT_ON_LIGHT = {
     "running": "#1d4ed8",
     "unknown": "#57534e",
 }
-MONTH_NAMES = weeks.MONTHS
 CHART_FONT = "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
-CHART_HEIGHT = 300
-BAR_HEIGHT = 28
-# Share of the value axis left free beyond the bars, so their labels fit.
-BAR_LABEL_ROOM = 0.18
-# Month and year: with several years loaded, a day and month alone repeat and
-# cannot be told apart.
-WEEK_AXIS_FORMAT = "%b %Y"
-MONEY_AXIS_FORMAT = ",.0f"
 # Numbers and dates of every chart as in Chile: 1.234,5 and "mar 2024".
 CHILE_LOCALE: dict[str, Any] = {
     "number": {"decimal": ",", "thousands": ".", "grouping": [3], "currency": ["$ ", ""], "minus": "-"},
@@ -245,18 +226,14 @@ ENGLISH_LOCALE = {
         "shortMonths": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
     },
 }
-
-
-def chart_locale():
-    return ENGLISH_LOCALE if i18n.is_english() else CHILE_LOCALE
-
-
-# Words removed from region names in charts, where space is short.
-REGION_PREFIXES = ["Región de ", "Región del ", "Región "]
 # endregion
 
 
 # region Formats
+def chart_locale():
+    return ENGLISH_LOCALE if i18n.is_english() else CHILE_LOCALE
+
+
 def remove_negative_zero(value, decimals):
     """A value that rounds to zero is written 0, never -0."""
     return 0.0 if round(value, decimals) == 0 else value
@@ -359,13 +336,6 @@ def draw_donut(rows, colors, mode, center=None, center_note=None, size=210):
                 )
             )
     return apply_chart_style(alt.layer(*layers).properties(height=size, width=size), mode)
-
-
-# endregion
-
-
-# region Contexto del precio (D-094)
-CONTEXT_CHANNELS = {"Feria libre": "#2563C9", "Supermercado": "#D9622B"}
 
 
 # endregion

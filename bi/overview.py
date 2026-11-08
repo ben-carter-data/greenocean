@@ -23,16 +23,80 @@ from pathlib import Path
 
 import pandas as pd
 
-from bi import alerts, charts, data_terms, home_mockup, i18n, inflation_view, static_files
+from bi import alerts, charts, data_terms, home_mockup, i18n, inflation_view
 from bi.weeks import week_range
 
 # region Constants
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
 STILL = 0.0005
-# A state that passes (every test, every indicator in its threshold): green, never the blue of a fall.
-GOOD = "#199e70"
 MARKET_WEEKS = 26
 HEAT_WEEKS = 8
+# What the dashboard answers, the KPIs that answer it and why, and the insights of the current load.
+# D-385: the code of the technical indicator (K1 to K8, «Indicadores explicados») each business KPI is, if any.
+KPI_CODES = {"Alerta de precio": "K6", "Brecha consumidor–mayorista": "K1", "Calidad de los datos": "K8"}
+KPIS = [
+    (
+        "Cambio típico",
+        "Mediana de los cambios semanales de los precios comparables: los que tienen precio en las mismas "
+        "regiones ambas semanas.",
+        "La mediana no se mueve por un precio extremo, y comparar las mismas regiones evita "
+        "confundir un cambio de cobertura con un cambio de precio.",
+    ),
+    (
+        "Subieron y bajaron",
+        "Precios comparables con un cambio de al menos +0,05 % (o −0,05 %), sobre el total de comparables.",
+        "Dice si el movimiento es general o de unos pocos productos.",
+    ),
+    (
+        "Dirección de una región",
+        "Una región sube o baja solo si sus alzas y bajas difieren más de lo que da el azar "
+        "(prueba de signo, p < 0,05).",
+        "Un 52 % contra un 48 % no es una tendencia: es una moneda al aire.",
+    ),
+    (
+        "Alerta de precio",
+        alerts.describe_rule(),  # D-385: the rule of bi/alerts.py, never written by hand
+        "Separa lo inusual y material del ruido de cada semana.",
+    ),
+    (
+        "Alza frente al IPC",
+        "Índice de la familia (enero 2022 = 100, mediana de sus series de consumidor) frente al IPC de "
+        "alimentos del INE; ± 2 puntos es «al ritmo».",
+        "Dice si una familia se encareció o se abarató en términos reales.",
+    ),
+    (
+        "Precio real",
+        "Precio de la semana × IPC del último mes publicado ÷ IPC del mes de esa semana.",
+        "Permite comparar precios de distintos años en pesos de hoy.",
+    ),
+    (
+        "Brecha consumidor–mayorista",
+        "(Precio al consumidor − precio mayorista) ÷ precio mayorista, mismo producto, región, unidad y semana.",
+        "Muestra cuánto se agrega entre el mercado mayorista y la góndola.",
+    ),
+    (
+        "Calidad de los datos",
+        "11 indicadores de calidad de los datos, medidos en cada carga, en cinco dimensiones (completitud, actualidad, "
+        "validez, unicidad y consistencia) más controles de exactitud.",
+        "Una cifra solo vale si los datos de origen están completos y son válidos.",
+    ),
+]
+POINT_ICONS = {
+    "person": "persona",
+    "mercado": "mercado",
+    "datos": "datos",
+    "Supermercado": "supermercado",
+    "Supermercado en Línea": "linea",
+    "Feria libre": "feria",
+    "Carnicería": "carniceria",
+    "Panadería": "panaderia",
+    "Mercado Minorista": "minorista",
+    "Mercado Mayorista": "mercado",
+}
+# endregion
+
+# region Variables
+POINTS_FILE = Path(__file__).with_name("assets") / "points_of_sale.json"
 # endregion
 
 
@@ -136,35 +200,6 @@ def ipc_twelve_months(rows: pd.DataFrame) -> pd.DataFrame:
 # endregion
 
 
-# region Scorecards
-def build_css(palette: dict[str, str]) -> str:
-    ink, text, muted, card, border, accent = (
-        palette["strong_text"],
-        palette["text"],
-        palette["reference"],
-        palette["card"],
-        palette["card_border"],
-        palette["accent"],
-    )
-    return static_files.style(
-        "overview.css",
-        {
-            'var(--go-card)': card,
-            'var(--go-border)': border,
-            'var(--go-muted)': muted,
-            'var(--go-ink)': ink,
-            'var(--go-rise)': palette['rise'],
-            'var(--go-fall)': palette['fall'],
-            'var(--go-text)': text,
-            'var(--go-good)': GOOD,
-            'var(--go-accent)': accent,
-        },
-    )
-
-
-# endregion
-
-
 # region Charts
 def style(chart: Any, mode: str, height: int | None = None) -> Any:
     """Width and height from the card: the charts grow with the window (D-296)."""
@@ -175,58 +210,6 @@ def style(chart: Any, mode: str, height: int | None = None) -> Any:
 
 
 # region Insights (D-302)
-# What the dashboard answers, the KPIs that answer it and why, and the insights of the current load.
-# D-385: the code of the technical indicator (K1 to K8, «Indicadores explicados») each business KPI is, if any.
-KPI_CODES = {"Alerta de precio": "K6", "Brecha consumidor–mayorista": "K1", "Calidad de los datos": "K8"}
-KPIS = [
-    (
-        "Cambio típico",
-        "Mediana de los cambios semanales de los precios comparables: los que tienen precio en las mismas "
-        "regiones ambas semanas.",
-        "La mediana no se mueve por un precio extremo, y comparar las mismas regiones evita "
-        "confundir un cambio de cobertura con un cambio de precio.",
-    ),
-    (
-        "Subieron y bajaron",
-        "Precios comparables con un cambio de al menos +0,05 % (o −0,05 %), sobre el total de comparables.",
-        "Dice si el movimiento es general o de unos pocos productos.",
-    ),
-    (
-        "Dirección de una región",
-        "Una región sube o baja solo si sus alzas y bajas difieren más de lo que da el azar "
-        "(prueba de signo, p < 0,05).",
-        "Un 52 % contra un 48 % no es una tendencia: es una moneda al aire.",
-    ),
-    (
-        "Alerta de precio",
-        alerts.describe_rule(),  # D-385: the rule of bi/alerts.py, never written by hand
-        "Separa lo inusual y material del ruido de cada semana.",
-    ),
-    (
-        "Alza frente al IPC",
-        "Índice de la familia (enero 2022 = 100, mediana de sus series de consumidor) frente al IPC de "
-        "alimentos del INE; ± 2 puntos es «al ritmo».",
-        "Dice si una familia se encareció o se abarató en términos reales.",
-    ),
-    (
-        "Precio real",
-        "Precio de la semana × IPC del último mes publicado ÷ IPC del mes de esa semana.",
-        "Permite comparar precios de distintos años en pesos de hoy.",
-    ),
-    (
-        "Brecha consumidor–mayorista",
-        "(Precio al consumidor − precio mayorista) ÷ precio mayorista, mismo producto, región, unidad y semana.",
-        "Muestra cuánto se agrega entre el mercado mayorista y la góndola.",
-    ),
-    (
-        "Calidad de los datos",
-        "11 indicadores de calidad de los datos, medidos en cada carga, en cinco dimensiones (completitud, actualidad, "
-        "validez, unicidad y consistencia) más controles de exactitud.",
-        "Una cifra solo vale si los datos de origen están completos y son válidos.",
-    ),
-]
-
-
 def signed(value: float) -> str:
     """A change in %, with the decimal mark of the language: lists of names are not translated as a whole."""
     text = f"{value:+.1f} %"
@@ -389,26 +372,9 @@ def wholesale_insights(variations: pd.DataFrame, week: Any, margins: pd.DataFram
 
 
 # region Points of sale (D-306): what exists in each region; the Insights read it
-POINTS_FILE = Path(__file__).with_name("assets") / "points_of_sale.json"
-
-
 def read_points() -> dict[str, Any]:
     """{region: {wholesale, consumer, sectors}}: what exists in each region, from ODEPA's own files (no price)."""
     return json.loads(POINTS_FILE.read_text(encoding="utf-8"))
-
-
-POINT_ICONS = {
-    "person": "persona",
-    "mercado": "mercado",
-    "datos": "datos",
-    "Supermercado": "supermercado",
-    "Supermercado en Línea": "linea",
-    "Feria libre": "feria",
-    "Carnicería": "carniceria",
-    "Panadería": "panaderia",
-    "Mercado Minorista": "minorista",
-    "Mercado Mayorista": "mercado",
-}
 
 
 @lru_cache(maxsize=None)

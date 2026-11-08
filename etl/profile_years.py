@@ -12,11 +12,9 @@ from pathlib import Path
 
 import pandas as pd
 
-# region Imports of the project
 # This file runs as a script, so the project folder is added to the import path.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from etl import etl  # noqa: E402
-# endregion
 
 # region Constants
 # The year every other year is compared with: the one the dashboard already shows.

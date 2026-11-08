@@ -1095,15 +1095,6 @@ LINK_EVIDENCE = {
     ("docs", "streamlit"): ("bi/page_documents.py", "PROJECT_DOCUMENTS = {"),
     ("ai", "docs"): ("CLAUDE.md", "docs/"),
 }
-# D-441: who owns what, as boxes behind the nodes: (owner, grid rows, grid columns, label). Solid for what the project
-# wrote, dotted for what it does not control; the people have their own box, each one with its access line.
-OWNER_BOXES = [
-    ("proyecto", "1 / 2", "2 / 6", "Proyecto · workflows"),
-    ("plataforma", "1 / 2", "6 / 10", "Plataformas externas"),
-    ("fuente", "3 / 6", "1 / 2", "Externas"),  # under the header «Fuentes»: the column is too narrow for both words
-    ("proyecto", "3 / 7", "2 / 9", "Proyecto GreenOcean"),
-    ("persona", "3 / 6", "9 / 10", "Personas"),
-]
 # The walk through a Tuesday load (D-441): (one line, the nodes it lights, the lines it moves).
 TOUR = [
     (
@@ -1215,6 +1206,64 @@ STORY_GROUPS = [
 STORY_TITLE = "La carga semanal, paso a paso"
 STORY_PARALLEL = "Desde el paso 21, Streamlit Cloud toma el commit mientras GitHub abre el informe y corre calidad.yml."
 PEOPLE_KEYS = {"visitor", "professional", "author"}
+ROWS = {"top": 1, "flow": 3, "flow2": 4, "web": 5, "watch": 6}
+# Thin line icons for the nodes that are not a brand, drawn in the accent of the theme (24-unit grid).
+LINE_ICONS = {
+    # D-441: a workflow (a job that branches into steps), a release (a tagged package) and a gate (a barrier).
+    "workflow": '<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><rect x="14.5" y="9.5" width="6" '
+    'height="5" rx="1.2"/><path d="M6 8.5v7"/><path d="M8.5 6h2.5a2.5 2.5 0 0 1 2.5 2.5V12h1"/>',
+    "tag": '<path d="M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8.5 8.5-9 9z"/><circle cx="8" cy="8" r="1.6"/>',
+    "gate": '<path d="M4 21V5"/><path d="M20 21V5"/><path d="M4 9h16"/><path d="M4 14h16"/><path d="m8 9 4 5m0-5 4 5"/>',
+    "shield": '<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+    "code": '<path d="m8 8-4 4 4 4"/><path d="m16 8 4 4-4 4"/><path d="m13.5 5-3 14"/>',
+    "chart": '<path d="M4 20V4"/><path d="M4 20h16"/><path d="m7 15 4-5 3 3 5-7"/>',
+    "parity": '<path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/>',
+    "pulse": '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
+    "files": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>',
+    "ruler": '<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/>',
+    "key": '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9"/><path d="m16 7 3 3"/><path d="m14 9 2 2"/>',
+    "spark": '<path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="m6.5 6.5 2.5 2.5M15 15l2.5 2.5M17.5 6.5 15 9M9 15l-2.5 2.5"/>',
+    "box": '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/>',
+    "cloud": '<path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 9.5 4.3 4.3 0 0 0 7 18z"/>',
+    "console": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3"/><path d="M12 15h5"/>',
+    "stop": '<circle cx="12" cy="12" r="9"/><path d="M9 9h6v6H9z"/>',
+    "play": '<circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/>',
+    "clock": '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+}
+ROW_LABELS = {5: "Navegador y operación", 6: "Lo que vigila"}
+KIND_COLORS = {"flow": "#3987e5", "order": "#c98500", "check": "#199e70", "support": "#8b8fa3", "access": "#e883a7"}
+LINE_KINDS = [
+    ("flow", "datos"),
+    ("order", "órdenes"),
+    ("check", "controles"),
+    ("support", "apoyo"),
+    ("access", "accesos"),
+]
+OWNER_STYLES = {"proyecto": "solid", "plataforma": "dashed", "fuente": "dashed", "persona": "dotted"}
+OWNER_COLORS = {"proyecto": "#56b4e0", "plataforma": "#8b96a8", "fuente": "#3fb6a8", "persona": "#e883a7"}
+# D-441: the name the map writes under a logo, when the full one would crowd the drawing. The full name stays in the
+# piece's description (aria-label), its card and the caption under the map.
+SHORT_NAMES = {
+    "agent": "Agente",
+    "release": "Release",
+    "secrets": "Secretos",
+    "stcloud": "Streamlit Cloud",
+    "devops": "DevOps",
+    "web": "HTML · CSS · JS",
+    "charts": "Altair",
+    "gates": "Puerta",
+    "parity": "Paridad",
+    "measurement": "Medición",
+    "ai": "IA",
+}
+# endregion
+
+# region Variables
+# Draws the lines once the nodes have their place, again on every resize; highlights the path of the node under the
+# cursor; a theme or a rhythm dims what is outside it. D-441: a dot travels along the lines that are moving; a click on
+# a piece opens its card, on a line what travels on it; the magnifier opens the inside of a piece; the Tuesday walk
+# lights one step at a time. No HTML and no «less than» sign in the script (st.html would drop it).
+SCRIPT = "<script>" + static_files.read("app_map.js") + "</script>"  # D-543: the script lives in bi/static/app_map.js
 # endregion
 
 
@@ -1252,43 +1301,6 @@ def evidence_label(source, target):
     """The short name of where a line happens: the file name, or the platform."""
     place, detail = LINK_EVIDENCE[(source, target)]
     return detail if place == PLATFORM else place.rsplit("/", 1)[-1]
-
-
-ROWS = {"top": 1, "flow": 3, "flow2": 4, "web": 5, "watch": 6}
-# Thin line icons for the nodes that are not a brand, drawn in the accent of the theme (24-unit grid).
-LINE_ICONS = {
-    # D-441: a workflow (a job that branches into steps), a release (a tagged package) and a gate (a barrier).
-    "workflow": '<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><rect x="14.5" y="9.5" width="6" '
-    'height="5" rx="1.2"/><path d="M6 8.5v7"/><path d="M8.5 6h2.5a2.5 2.5 0 0 1 2.5 2.5V12h1"/>',
-    "tag": '<path d="M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8.5 8.5-9 9z"/><circle cx="8" cy="8" r="1.6"/>',
-    "gate": '<path d="M4 21V5"/><path d="M20 21V5"/><path d="M4 9h16"/><path d="M4 14h16"/><path d="m8 9 4 5m0-5 4 5"/>',
-    "shield": '<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
-    "code": '<path d="m8 8-4 4 4 4"/><path d="m16 8 4 4-4 4"/><path d="m13.5 5-3 14"/>',
-    "chart": '<path d="M4 20V4"/><path d="M4 20h16"/><path d="m7 15 4-5 3 3 5-7"/>',
-    "parity": '<path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/>',
-    "pulse": '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
-    "files": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>',
-    "ruler": '<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/>',
-    "key": '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9"/><path d="m16 7 3 3"/><path d="m14 9 2 2"/>',
-    "spark": '<path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="m6.5 6.5 2.5 2.5M15 15l2.5 2.5M17.5 6.5 15 9M9 15l-2.5 2.5"/>',
-    "box": '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/>',
-    "cloud": '<path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 9.5 4.3 4.3 0 0 0 7 18z"/>',
-    "console": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3"/><path d="M12 15h5"/>',
-    "stop": '<circle cx="12" cy="12" r="9"/><path d="M9 9h6v6H9z"/>',
-    "play": '<circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/>',
-    "clock": '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-}
-ROW_LABELS = {5: "Navegador y operación", 6: "Lo que vigila"}
-KIND_COLORS = {"flow": "#3987e5", "order": "#c98500", "check": "#199e70", "support": "#8b8fa3", "access": "#e883a7"}
-LINE_KINDS = [
-    ("flow", "datos"),
-    ("order", "órdenes"),
-    ("check", "controles"),
-    ("support", "apoyo"),
-    ("access", "accesos"),
-]
-OWNER_STYLES = {"proyecto": "solid", "plataforma": "dashed", "fuente": "dashed", "persona": "dotted"}
-OWNER_COLORS = {"proyecto": "#56b4e0", "plataforma": "#8b96a8", "fuente": "#3fb6a8", "persona": "#e883a7"}
 
 
 # endregion
@@ -1408,23 +1420,6 @@ def build_tip(key):
     )
 
 
-# D-441: the name the map writes under a logo, when the full one would crowd the drawing. The full name stays in the
-# piece's description (aria-label), its card and the caption under the map.
-SHORT_NAMES = {
-    "agent": "Agente",
-    "release": "Release",
-    "secrets": "Secretos",
-    "stcloud": "Streamlit Cloud",
-    "devops": "DevOps",
-    "web": "HTML · CSS · JS",
-    "charts": "Altair",
-    "gates": "Puerta",
-    "parity": "Paridad",
-    "measurement": "Medición",
-    "ai": "IA",
-}
-
-
 def build_node(key, palette):
     """A piece of the map. D-441: a click opens its card; the piece that sets a rhythm carries that rhythm's button."""
     name, logo, _, (row, column), *_, group = NODES[key]
@@ -1439,7 +1434,7 @@ def build_node(key, palette):
     info = f'<button type="button" class="am-info" data-card="{key}" aria-label="{esc("Ver la ficha")}">i</button>'
     lupa = (
         f'<button type="button" class="am-lupa" data-inside="{key}" aria-label="{esc("Ver por dentro")}"></button>'
-        if key in detail.INSIDES or key in detail.ENGINES
+        if key in detail.insides() or key in detail.engines()
         else ""
     )
     return (
@@ -1494,7 +1489,7 @@ def build_card(key, facts, addresses):
     body = "".join(f'<div class="am-sec"><i>{esc(head)}</i>{content}</div>' for head, content in sections)
     zoom = (
         f'<button type="button" class="am-zoom" data-inside="{key}">⌕ {esc("Ver por dentro")}</button>'
-        if key in detail.INSIDES or key in detail.ENGINES
+        if key in detail.insides() or key in detail.engines()
         else ""
     )
     return (
@@ -1534,10 +1529,10 @@ def build_link_card(index, color):
 def inside_views(key, facts):
     """The views of a piece's magnifier (D-441): how the tool itself works, then what it does in GreenOcean."""
     views = []
-    if key in detail.ENGINES:
-        views.append(("engine", "Cómo funciona", detail.ENGINES[key](facts)))
-    if key in detail.INSIDES:
-        views.append(("app", "En GreenOcean", detail.INSIDES[key](facts)))
+    if key in detail.engines():
+        views.append(("engine", "Cómo funciona", detail.engines()[key](facts)))
+    if key in detail.insides():
+        views.append(("app", "En GreenOcean", detail.insides()[key](facts)))
     return views
 
 
@@ -1652,13 +1647,6 @@ def build_css(palette):
             'var(--go-card)': card,
         },
     )
-
-
-# Draws the lines once the nodes have their place, again on every resize; highlights the path of the node under the
-# cursor; a theme or a rhythm dims what is outside it. D-441: a dot travels along the lines that are moving; a click on
-# a piece opens its card, on a line what travels on it; the magnifier opens the inside of a piece; the Tuesday walk
-# lights one step at a time. No HTML and no «less than» sign in the script (st.html would drop it).
-SCRIPT = "<script>" + static_files.read("app_map.js") + "</script>"  # D-543: the script lives in bi/static/app_map.js
 
 
 def rhythm_phases():

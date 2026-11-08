@@ -12,6 +12,7 @@ from typing import Any, cast
 
 from datetime import datetime, timedelta, timezone
 
+import functools
 import hmac
 import math
 import threading
@@ -60,6 +61,13 @@ STEP_NAMES = {
     "Save the updated database": "Guardar la base actualizada",
     "Publish the weekly report": "Publicar el informe semanal",
 }
+# The control code (D-199): compared in constant time and as bytes, so any character works. D-393 (replaces the
+# accepted risk of D-249): every door of the code shares one gate kept by the server, so a reload does not reset it.
+# After 3 failures each try waits 2 s, and twice as long after each new failure, up to 15 minutes; a right key opens
+# it again.
+FREE_ATTEMPTS = 3
+FIRST_WAIT_SECONDS = 2
+MAX_WAIT_SECONDS = 15 * 60
 # endregion
 
 
@@ -333,15 +341,6 @@ def find_run_started_after(runs: list[dict[str, Any]], requested_at: datetime) -
 
 
 # region The Autor's key
-# The control code (D-199): compared in constant time and as bytes, so any character works. D-393 (replaces the
-# accepted risk of D-249): every door of the code shares one gate kept by the server, so a reload does not reset it.
-# After 3 failures each try waits 2 s, and twice as long after each new failure, up to 15 minutes; a right key opens
-# it again.
-FREE_ATTEMPTS = 3
-FIRST_WAIT_SECONDS = 2
-MAX_WAIT_SECONDS = 15 * 60
-
-
 class AttemptGate:
     """The failed tries of the control code, shared by every visit of the server process."""
 
@@ -368,7 +367,10 @@ class AttemptGate:
                 self.open_at = self.clock() + wait
 
 
-GATE = AttemptGate()
+@functools.cache
+def attempt_gate() -> AttemptGate:
+    """The one gate of the control code, shared by every visit of the server process."""
+    return AttemptGate()
 
 
 def describe_wait(seconds: int) -> str:

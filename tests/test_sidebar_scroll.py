@@ -5,20 +5,19 @@ from pathlib import Path
 
 import pytest
 
-# region Variables
-PROJECT_DIR = Path(__file__).resolve().parent.parent
-# endregion
-# region The menu does not scroll towards a void
-sys.path.insert(0, str(PROJECT_DIR))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import charts, dashboard  # noqa: E402
 
+# region Constants
 HEADER_HEIGHT = 72  # the logo's 52 px plus the 20 px of air under it, both owned by the sticky header
 FOOTER_WRAPPER = (
     '[data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"]\n'
     '        > [data-testid="stLayoutWrapper"]:has(> .st-key-sidebar_footer)'
 )
+# endregion
 
 
+# region The menu does not scroll towards a void
 def rule_of(css, selector):
     """The declarations of the first rule whose selector is exactly `selector`."""
     start = css.index(selector + " {")

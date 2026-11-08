@@ -219,7 +219,7 @@ def wrap_document(palette, body):
         '<!doctype html><html lang="es"><head><meta charset="utf-8"><base href="about:srcdoc"><meta name="viewport" '
         'content="width=device-width,initial-scale=1">'
         + build_css(palette)
-        + f'</head><body>{quality_view.DEFS}{body}</body></html>'
+        + f'</head><body>{quality_view.defs()}{body}</body></html>'
     )
 
 

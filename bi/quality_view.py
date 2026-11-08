@@ -31,6 +31,7 @@ The page is one block of HTML with its CSS scoped under .qa-page (no script), fo
 st.markdown(unsafe_allow_html=True); the hover explanations are CSS only.
 """
 
+import functools
 import math
 import sys
 from pathlib import Path
@@ -281,28 +282,31 @@ def linear(name, top, bottom, x2=0, y2=1):
     )
 
 
-DEFS = (
-    '<svg class="qa-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>'
-    + linear("blue", "#8fd0ff", "#1f6fe0")
-    + linear("blue-deep", "#3d8bf0", "#0d3b96")
-    + linear("blue-side", "#2563d6", "#0b2e7a", 1, 0)
-    + linear("green", "#6ff0a6", "#0e9f4f")
-    + linear("paper", "#ffffff", "#d3def0")
-    + linear("paper-back", "#e9f0fa", "#b4c4dc")
-    + linear("silver", "#ffffff", "#a8b4c6", 1, 0)
-    + linear("silver-top", "#ffffff", "#c9d3e1")
-    + linear("amber", "#ffe07a", "#f08c00")
-    + linear("dark", "#3a4250", "#0f141c")
-    + '<linearGradient id="qa-gloss" x1="0" y1="0" x2="0" y2="1">'
-    + stop(0, "#ffffff", 0.85)
-    + stop(1, "#ffffff", 0)
-    + '</linearGradient>'
-    + '<radialGradient id="qa-shadow" cx=".5" cy=".5" r=".5">'
-    + stop(0, "#0b1f3a", 0.32)
-    + stop(1, "#0b1f3a", 0)
-    + '</radialGradient>'
-    + '</defs></svg>'
-)
+@functools.cache
+def defs():
+    """The gradients every illustration of the quality pages shares, defined once in a hidden SVG."""
+    return (
+        '<svg class="qa-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>'
+        + linear("blue", "#8fd0ff", "#1f6fe0")
+        + linear("blue-deep", "#3d8bf0", "#0d3b96")
+        + linear("blue-side", "#2563d6", "#0b2e7a", 1, 0)
+        + linear("green", "#6ff0a6", "#0e9f4f")
+        + linear("paper", "#ffffff", "#d3def0")
+        + linear("paper-back", "#e9f0fa", "#b4c4dc")
+        + linear("silver", "#ffffff", "#a8b4c6", 1, 0)
+        + linear("silver-top", "#ffffff", "#c9d3e1")
+        + linear("amber", "#ffe07a", "#f08c00")
+        + linear("dark", "#3a4250", "#0f141c")
+        + '<linearGradient id="qa-gloss" x1="0" y1="0" x2="0" y2="1">'
+        + stop(0, "#ffffff", 0.85)
+        + stop(1, "#ffffff", 0)
+        + '</linearGradient>'
+        + '<radialGradient id="qa-shadow" cx=".5" cy=".5" r=".5">'
+        + stop(0, "#0b1f3a", 0.32)
+        + stop(1, "#0b1f3a", 0)
+        + '</radialGradient>'
+        + '</defs></svg>'
+    )
 
 
 def shadow(cx=48, cy=88, rx=30, ry=5):
@@ -507,59 +511,26 @@ def icon_warning():
     )
 
 
-ICONS = {
-    "files": icon_files,
-    "shield": icon_shield,
-    "calendar": icon_calendar,
-    "gear": icon_gear,
-    "layers": icon_layers,
-    "database": icon_database,
-    "parity": icon_parity,
-    "reconcile": icon_reconcile,
-    "calculator": icon_calculator,
-    "chart": icon_chart,
-    "warning": icon_warning,
-}
+@functools.cache
+def icons():
+    """The illustration of each control of the quality pages, by its name."""
+    return {
+        "files": icon_files,
+        "shield": icon_shield,
+        "calendar": icon_calendar,
+        "gear": icon_gear,
+        "layers": icon_layers,
+        "database": icon_database,
+        "parity": icon_parity,
+        "reconcile": icon_reconcile,
+        "calculator": icon_calculator,
+        "chart": icon_chart,
+        "warning": icon_warning,
+    }
 
 
 def build_icon_svg(name):
-    return f'<svg class="qa-icon" viewBox="0 0 96 96" aria-hidden="true" focusable="false">{ICONS[name]()}</svg>'
+    return f'<svg class="qa-icon" viewBox="0 0 96 96" aria-hidden="true" focusable="false">{icons()[name]()}</svg>'
 
 
-# endregion
-
-
-# region The story of the pipeline
-# The story (D-176): four stages of the pipeline, each with its role in data quality,
-# its main figure, its verdict and, as small illustrations, the controls it runs.
-STAGES = [
-    (
-        "files",
-        "Fuentes",
-        "Archivos identificados",
-        "Prevenir: cada archivo de ODEPA queda identificado antes de entrar. Si no se sabe qué entró, "
-        "no se puede auditar nada después.",
-    ),
-    (
-        "gear",
-        "Transformación",
-        "Reglas de calidad",
-        "Detectar y aislar: la validación rechaza la fila que no cumple una regla y la guarda con su motivo; "
-        "dbt prueba cada modelo en cada construcción.",
-    ),
-    (
-        "database",
-        "Warehouse",
-        "Consistencia de la base",
-        "Verificar: la base publicada se lee completa y se compara con el respaldo. Si una prueba falla, "
-        "la base anterior sigue publicada.",
-    ),
-    (
-        "chart",
-        "Resultados",
-        "Cálculos contrastados",
-        "Publicar con prueba: las cifras del panel se recalculan por otro camino (SQL frente a Python, "
-        "filas crudas frente a la base) antes de confiar en ellas.",
-    ),
-]
 # endregion

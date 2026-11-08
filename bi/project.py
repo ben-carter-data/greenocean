@@ -9,7 +9,6 @@ import re
 from pathlib import Path
 
 from bi import queries
-from etl import etl
 
 # region Constants
 PROJECT_DIR = Path(__file__).resolve().parent.parent
@@ -34,7 +33,6 @@ INE_IPC_SOURCE_URL = (
 # Administration (T-54): its links are shown only after the control code is typed.
 WORKFLOW_PAGE_URL = f"{GITHUB_URL}/actions/workflows/semanal.yml"
 STREAMLIT_ADMIN_URL = "https://share.streamlit.io"
-TOKEN_CREATE_URL = "https://github.com/settings/personal-access-tokens/new"
 TOKENS_URL = "https://github.com/settings/tokens"
 # Every address of the project, in one place (D-070). Each name says where the link goes
 # before leaving the panel; «page» names the page of the panel that already shows that
@@ -114,6 +112,7 @@ EXAMPLE_KEY = dict(EXAMPLE_PRODUCT, product_group="Hortalizas")
 EXAMPLE_REGION = "Región Metropolitana de Santiago"
 EXAMPLE_CHANNEL = "Feria libre"
 EXAMPLE_OTHER_CHANNEL = "Supermercado"
+GLOSSARY_FILE = DOCS_DIR / "negocio" / "GLOSARIO.md"
 # endregion
 
 
@@ -150,9 +149,6 @@ def parse_definitions(text):
 def read_guide_table(heading):
     """One table of docs/PROYECTO.md."""
     return parse_markdown_table(read_section(read_document(PROJECT_GUIDE_FILE), heading))
-
-
-GLOSSARY_FILE = DOCS_DIR / "negocio" / "GLOSARIO.md"
 
 
 def read_glossary():
@@ -242,18 +238,6 @@ def select_example_rows(rows, region=EXAMPLE_REGION, channel=EXAMPLE_CHANNEL):
         if column in rows.columns and value is not None:
             rows = rows[rows[column] == value]
     return rows
-
-
-# endregion
-
-
-# region Coverage
-def read_match_coverage(database_file=queries.DATABASE_FILE):
-    """K7 as (keys with margin, consumer keys), with the query of etl/etl.py."""
-    connection = queries.open_database(database_file)
-    coverage = etl.measure_match_coverage(connection)
-    connection.close()
-    return coverage
 
 
 # endregion

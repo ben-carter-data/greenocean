@@ -48,11 +48,11 @@ def test_ine_skips_sqlite_and_the_backup_is_only_compared():
 
 
 def test_every_line_is_straight_and_each_crossing_but_the_history_has_its_lines():
-    for key, lines in database_crossings.LINES.items():
+    for key, lines in database_crossings.build_lines().items():
         assert lines, key
         for (x1, y1), (x2, y2) in lines:
             assert x1 == x2 or y1 == y2, key
-    assert set(database_crossings.LINES) == {row[0] for row in database_crossings.CROSSINGS} - {"history"}
+    assert set(database_crossings.build_lines()) == {row[0] for row in database_crossings.CROSSINGS} - {"history"}
     markup = build()
     paths = re.findall(r'<path class="line[^"]*" d="M(\S+) (\S+) L(\S+) (\S+)"', markup)
     assert paths

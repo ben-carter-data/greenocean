@@ -8,13 +8,30 @@ import pytest
 
 from bi import app_map, app_map_detail, charts, dashboard, i18n
 
-# region Variables
-ROOT = Path(__file__).resolve().parent.parent
-FILE = re.compile(r"\b(?:bi|etl|agent|tests|dbt|docs)/[\w./*-]*\w")
+# region Constants
+PEOPLE = {"visitor", "professional", "author"}
+# The insides the author asked for: the three workflows, dbt, the publication gate, the backup and its parity, the panel,
+# the operation pages, DuckDB, GitHub and each source with its ingestion.
+INSIDES_ASKED = {
+    "semanal", "calidad", "pruebas", "dbt", "gates", "parity", "streamlit", "devops", "duckdb", "github",
+    "odepa", "odepa_consumer", "ine", "agent",
+}  # fmt: skip
+# The tools whose magnifier shows how the tool itself works.
+TOOLS = {"duckdb", "dbt", "sqlite", "parquet", "streamlit", "github", "pypi", "ci", "charts"}
+# The Tuesday in its real order: the trigger, PyPI, the download, the landing, bronze, dbt, the tests, the quality
+# report, the panel and the readers.
+WALK = ["semanal", "pypi", "agent", "sqlite", "parquet", "dbt", "ci", "calidad", "streamlit", "visitor"]
 # endregion
 
 
-# region «Mapa de la app», the whole system in one view (bi/app_map.py)
+# region Variables
+ROOT = Path(__file__).resolve().parent.parent
+FILE = re.compile(r"\b(?:bi|etl|agent|tests|dbt|docs)/[\w./*-]*\w")
+DATABASE = ROOT / "etl" / "datos.duckdb"
+# endregion
+
+
+# region «Mapa de la app» names the project as it is (D-285)
 def all_texts():
     texts = []
     for name, _, _, _, what, role, when, _, group in app_map.NODES.values():
@@ -124,15 +141,20 @@ def test_d285_the_map_sits_next_to_the_stack_and_the_menu_opens_it():
     # D-398: the header of «Stack y evidencia» carries no link to the map: tests/test_page_bar.py checks every header.
 
 
+# endregion
+
+
+# region Filters, lines and clicks (D-291, D-293)
+def lit(theme):
+    """The pieces and the links the filter of `theme` lights on the map."""
+    nodes = {key for key in app_map.NODES if theme in app_map.node_themes(key)}
+    links = {(source, target) for source, target, _, _, themes, *_ in app_map.LINKS if theme in themes}
+    return nodes, links
+
+
 def test_d291_each_filter_lights_every_actor_and_link_of_its_theme():
     """Security is not only the author: the control code goes through Streamlit and its secrets, the token reaches GitHub
     Actions, the repository holds no secret, the database is read-only and the professional's SQL has limits."""
-
-    def lit(theme):
-        nodes = {key for key in app_map.NODES if theme in app_map.node_themes(key)}
-        links = {(source, target) for source, target, _, _, themes, *_ in app_map.LINKS if theme in themes}
-        return nodes, links
-
     nodes, links = lit("seguridad")
     assert {
         "author",
@@ -210,41 +232,21 @@ def test_d285_every_click_opens_a_page_of_the_menu_and_every_theme_has_its_filte
     assert {theme for node in app_map.NODES.values() for theme in node[2]} == themes
 
 
-DATABASE = ROOT / "etl" / "datos.duckdb"
-PEOPLE = {"visitor", "professional", "author"}
-# The insides the author asked for: the three workflows, dbt, the publication gate, the backup and its parity, the panel,
-# the operation pages, DuckDB, GitHub and each source with its ingestion.
-INSIDES_ASKED = {
-    "semanal", "calidad", "pruebas", "dbt", "gates", "parity", "streamlit", "devops", "duckdb", "github",
-    "odepa", "odepa_consumer", "ine", "agent",
-}  # fmt: skip
-# The tools whose magnifier shows how the tool itself works.
-TOOLS = {"duckdb", "dbt", "sqlite", "parquet", "streamlit", "github", "pypi", "ci", "charts"}
-# The Tuesday in its real order: the trigger, PyPI, the download, the landing, bronze, dbt, the tests, the quality
-# report, the panel and the readers.
-WALK = ["semanal", "pypi", "agent", "sqlite", "parquet", "dbt", "ci", "calidad", "streamlit", "visitor"]
+# endregion
 
 
+# region Owners, cards and the inside of each piece (D-441)
 @pytest.fixture(scope="module")
 def facts():
     return app_map_detail.read_facts(DATABASE if DATABASE.exists() else None)
 
 
-def test_d441_each_piece_says_who_owns_it_and_the_boxes_hold_exactly_those_pieces():
+def test_d441_each_piece_says_who_owns_it():
     owners = {key: app_map_detail.CARDS[key][0] for key in app_map.NODES}
     assert set(app_map_detail.CARDS) == set(app_map.NODES) and set(owners.values()) <= set(app_map_detail.OWNERS)
     assert {key for key, owner in owners.items() if owner == "fuente"} == {"odepa", "odepa_consumer", "ine"}
     assert {key for key, owner in owners.items() if owner == "plataforma"} == {"github", "pypi", "stcloud"}
     assert {key for key, owner in owners.items() if owner == "persona"} == PEOPLE
-    for key, (_, _, _, (row, column), *_rest) in app_map.NODES.items():
-        boxes = [
-            owner
-            for owner, rows, columns, _ in app_map.OWNER_BOXES
-            if int(rows.split("/")[0]) <= app_map.ROWS[row] < int(rows.split("/")[1])
-            and int(columns.split("/")[0]) <= column < int(columns.split("/")[1])
-        ]
-        # A piece sits in the box of its owner; the pieces of the support row («Lo que vigila») stay outside the boxes.
-        assert boxes in ([owners[key]], []), (key, boxes)
 
 
 def test_d441_a_logo_names_one_piece_and_every_line_shows_its_direction():
@@ -329,10 +331,10 @@ def test_d441_every_card_has_its_five_parts_and_a_decision_that_exists(facts):
 
 
 def test_d441_every_piece_but_a_person_has_an_inside_and_its_lines_join_its_pieces(facts):
-    assert INSIDES_ASKED <= set(app_map_detail.INSIDES) <= set(app_map.NODES) - PEOPLE
-    for key in app_map_detail.INSIDES:
+    assert INSIDES_ASKED <= set(app_map_detail.insides()) <= set(app_map.NODES) - PEOPLE
+    for key in app_map_detail.insides():
         for state in (facts, dict(facts, database=None)):  # without the database it still draws: «no verificado aquí»
-            inside = app_map_detail.INSIDES[key](state)
+            inside = app_map_detail.insides()[key](state)
             ids = [item["id"] for _, items in inside["columns"] for item in items]
             assert ids and len(ids) == len(set(ids)), key
             assert all(a in ids and b in ids for a, b, _, _ in inside["links"]), key
@@ -342,11 +344,11 @@ def test_d441_every_piece_but_a_person_has_an_inside_and_its_lines_join_its_piec
 def test_d441_the_magnifier_of_a_tool_shows_how_the_tool_itself_works(facts):
     """A tool's magnifier opens on how the tool works (DuckDB's engine, dbt's graph…), with GreenOcean's figures, and
     keeps a second view with what it does here; its pieces form one chain, so the order reads left to right."""
-    assert set(app_map_detail.ENGINES) == TOOLS
+    assert set(app_map_detail.engines()) == TOOLS
     palette = charts.get_palette(charts.THEMES[0])
     for key in TOOLS:
         for state in (facts, dict(facts, database=None)):
-            inside = app_map_detail.ENGINES[key](state)
+            inside = app_map_detail.engines()[key](state)
             ids = [item["id"] for _, items in inside["columns"] for item in items]
             assert len(ids) == len(set(ids)) and all(a in ids and b in ids for a, b, _, _ in inside["links"]), key
             heads = [items[0]["id"] for _, items in inside["columns"]]
@@ -420,6 +422,10 @@ def test_d441_the_tuesday_walk_follows_the_real_sequence(facts):
         assert str(app_map_detail.count_kind(facts, "test")) in " ".join(text for text, _, _ in steps)
 
 
+# endregion
+
+
+# region The walk of the data and the steps beside the map (D-467, D-471, D-473)
 def test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description_opens_on_its_i():
     """D-467, D-468: at rest the map tells the weekly load in the order semanal.yml really runs, one line at a time, each
     line blinking on its turn with what it does under the map (no moving dot); the description of a piece opens with a

@@ -33,7 +33,7 @@ from bi import charts, i18n, queries, static_files
 from bi.i18n import tr
 
 
-# region Variables
+# region Constants
 ROW_LIMIT = 5000
 TIMEOUT_SECONDS = 10
 MEMORY_LIMIT = "1GB"
@@ -365,13 +365,6 @@ SCRIPT_NAMES = {
     "Brecha mayorista": "brecha_mayorista.sql",
     "Calendario de compra": "calendario_compra.sql",
 }
-
-
-def sql_text(value):
-    """A SQL string literal; the values come from our own lists, quoted anyway."""
-    return "'" + str(value).replace("'", "''") + "'"
-
-
 ALL_VALUES = "Todas"
 SINCE_2022 = "Desde 2022"
 PARAMETER_DEFAULTS = {
@@ -390,6 +383,98 @@ FILTER_COLUMNS = {
     "region": "p.region",
     "anio_filtro": "year(p.semana)",
 }
+# A run of whole comment lines reads as one text; a comment after code, as another.
+COMMENT_PATTERN = re.compile(r"(?:^--[^\n]*(?:\n|$))+|--[^\n]*", re.MULTILINE)
+# Gold tables offered as CSV in «Llevar los datos a otra herramienta».
+EXPORTS = [
+    (
+        "precios_52_semanas.csv",
+        f"Precios de las últimas {EXPORT_WEEKS} semanas",
+        f"SELECT * FROM precios WHERE semana > (SELECT max(semana) FROM precios) "
+        f"- INTERVAL {EXPORT_WEEKS * 7} DAY ORDER BY semana, familia, producto, region, canal",
+    ),
+    ("productos.csv", "Catálogo de productos", "SELECT * FROM productos ORDER BY ALL"),
+    ("regiones.csv", "Regiones", "SELECT region FROM dim_region ORDER BY region"),
+    (
+        "canales.csv",
+        "Canales",
+        "SELECT channel AS canal, CASE source WHEN 'wholesale' THEN 'mayorista' ELSE 'consumidor' END "
+        "AS fuente FROM dim_channel ORDER BY fuente, canal",
+    ),
+    ("semanas.csv", "Calendario de semanas", "SELECT * FROM semanas ORDER BY semana"),
+    ("ipc_semanal.csv", "IPC de alimentos por semana", "SELECT * FROM ipc_semanal ORDER BY semana"),
+]
+# The messages for the reader, whole, so that the English layer finds them (D-443).
+ONLY_READING = (
+    "Solo se permiten consultas de lectura: SELECT o WITH (también DESCRIBE, SHOW y "
+    "SUMMARIZE). INSERT, UPDATE, DELETE, DROP, CREATE, ATTACH, COPY, PRAGMA, SET y "
+    "otras instrucciones no se ejecutan."
+)
+ONLY_THIS_DATABASE = (
+    "Las consultas trabajan solo sobre las tablas de esta base: leer "
+    "archivos o direcciones web (read_csv, read_parquet, http…) está "
+    "desactivado."
+)
+TOO_LONG = "La consulta superó el límite de {} segundos y se detuvo. Prueba filtrando por semana, producto o región."
+DATABASE_LABEL = "datos.duckdb"
+# Words the editor paints: keywords first, then the usual functions. Identifiers
+# (columns, views) keep the ink color, as in SQL Server Management Studio.
+KEYWORDS = (
+    "SELECT FROM WHERE AND OR NOT IN IS NULL AS ON JOIN LEFT RIGHT INNER FULL OUTER CROSS "
+    "GROUP BY ORDER HAVING LIMIT OFFSET WITH UNION ALL DISTINCT CASE WHEN THEN ELSE END "
+    "BETWEEN LIKE ILIKE SIMILAR EXISTS OVER PARTITION ROWS RANGE PRECEDING FOLLOWING UNBOUNDED "
+    "CURRENT ROW ASC DESC NULLS FIRST LAST FILTER INTERVAL DAY DAYS WEEK MONTH YEAR DATE "
+    "TIMESTAMP INTEGER BIGINT DOUBLE DECIMAL VARCHAR BOOLEAN TRUE FALSE DESCRIBE SHOW SUMMARIZE "
+    "USING QUALIFY WINDOW CAST TRY_CAST EXCLUDE PIVOT UNPIVOT SAMPLE VALUES LATERAL ANY SOME "
+    "EXCEPT INTERSECT RECURSIVE TABLES COLUMNS"
+)
+FUNCTIONS = (
+    "COUNT SUM AVG MIN MAX MEDIAN MODE ROUND FLOOR CEIL CEILING ABS COALESCE NULLIF IFNULL IF "
+    "LAG LEAD ROW_NUMBER RANK DENSE_RANK NTILE ANY_VALUE ARG_MAX ARG_MIN LIST STRING_AGG "
+    "ARRAY_AGG DATE_TRUNC DATE_PART DATEDIFF DATE_DIFF DATEADD EXTRACT STRFTIME STRPTIME LOWER "
+    "UPPER TRIM LENGTH SUBSTRING SUBSTR CONCAT REPLACE REGEXP_MATCHES REGEXP_REPLACE QUANTILE "
+    "QUANTILE_CONT STDDEV STDDEV_SAMP VARIANCE GENERATE_SERIES UNNEST GREATEST LEAST TYPEOF "
+    "EPOCH YEAR MONTH DAY WEEK TO_DAYS NOW TODAY CURRENT_DATE MAKE_DATE LAST_DAY"
+)
+DESCRIPTION = (
+    "SQL de solo lectura sobre la capa gold del data warehouse, con vistas de "
+    "columnas legibles; nada de identificadores internos."
+)
+PARAMETER_KEYS = {
+    "periodo": "sqlx_param_periodo",
+    "familia": "sqlx_param_familia",
+    "producto_filtro": "sqlx_param_producto_filtro",
+    "canal_filtro": "sqlx_param_canal_filtro",
+    "region": "sqlx_param_region",
+    "anio_filtro": "sqlx_param_anio_filtro",
+}
+PARAMETER_LABELS = {
+    "periodo": "Período",
+    "familia": "Familia",
+    "producto_filtro": "Producto",
+    "canal_filtro": "Canal",
+    "region": "Región",
+    "anio_filtro": "Año",
+}
+# D-516: the grid takes all the height the window leaves under the editor, so the rows read without scrolling more
+# than needed; below the floor the page scrolls instead. A few rows keep their own height: an empty grid says nothing.
+AROUND_GRID, GRID_FLOOR, GRID_ROW = 348, 190, 28
+# endregion
+
+# region Variables
+# The editor's paint layer (D-173): a transparent textarea over a <pre> that a script
+# repaints on every keystroke with the SQL colors, plus a gutter of line numbers.
+# One script per block, no HTML tags inside it and no node moves (CLAUDE.md).
+EDITOR_HTML = (
+    static_files.read("sql_editor.html").replace("__KEYWORDS__", KEYWORDS).replace("__FUNCTIONS__", FUNCTIONS)
+)  # D-543
+# endregion
+
+
+# region The examples and their parameters
+def sql_text(value):
+    """A SQL string literal; the values come from our own lists, quoted anyway."""
+    return "'" + str(value).replace("'", "''") + "'"
 
 
 def build_conditions(values, names):
@@ -411,10 +496,6 @@ def period_bounds(period, read=tr):
         return read("desde enero de 2022"), "DATE '2022-01-01'", "DATE '2099-12-31'"
     year = int(period)
     return read("año {}").format(year), f"DATE '{year}-01-01'", f"DATE '{year}-12-31'"
-
-
-# A run of whole comment lines reads as one text; a comment after code, as another.
-COMMENT_PATTERN = re.compile(r"(?:^--[^\n]*(?:\n|$))+|--[^\n]*", re.MULTILINE)
 
 
 def _translated_comment(read, match):
@@ -445,50 +526,19 @@ def render_example(index, values=None, read=tr):
     )
 
 
-# (title, question, SQL with the default parameters), as the tests and the chips read them. In the text they are written
-# in: this list is built once for every visit, so the page asks render_example for the language of each.
-EXAMPLES = [
-    (title, question, render_example(index, read=str)) for index, (title, question, _, _) in enumerate(TEMPLATES)
-]
+@functools.cache
+def examples():
+    """(title, question, SQL with the default parameters), as the tests and the chips read them. In the text they are
+    written in: the list is built once for every visit, so the page asks render_example for the language of each."""
+    return [
+        (title, question, render_example(index, read=str)) for index, (title, question, _, _) in enumerate(TEMPLATES)
+    ]
 
 
-# Gold tables offered as CSV in «Llevar los datos a otra herramienta».
-EXPORTS = [
-    (
-        "precios_52_semanas.csv",
-        f"Precios de las últimas {EXPORT_WEEKS} semanas",
-        f"SELECT * FROM precios WHERE semana > (SELECT max(semana) FROM precios) "
-        f"- INTERVAL {EXPORT_WEEKS * 7} DAY ORDER BY semana, familia, producto, region, canal",
-    ),
-    ("productos.csv", "Catálogo de productos", "SELECT * FROM productos ORDER BY ALL"),
-    ("regiones.csv", "Regiones", "SELECT region FROM dim_region ORDER BY region"),
-    (
-        "canales.csv",
-        "Canales",
-        "SELECT channel AS canal, CASE source WHEN 'wholesale' THEN 'mayorista' ELSE 'consumidor' END "
-        "AS fuente FROM dim_channel ORDER BY fuente, canal",
-    ),
-    ("semanas.csv", "Calendario de semanas", "SELECT * FROM semanas ORDER BY semana"),
-    ("ipc_semanal.csv", "IPC de alimentos por semana", "SELECT * FROM ipc_semanal ORDER BY semana"),
-]
 # endregion
 
 
 # region Validation
-# The messages for the reader, whole, so that the English layer finds them (D-443).
-ONLY_READING = (
-    "Solo se permiten consultas de lectura: SELECT o WITH (también DESCRIBE, SHOW y "
-    "SUMMARIZE). INSERT, UPDATE, DELETE, DROP, CREATE, ATTACH, COPY, PRAGMA, SET y "
-    "otras instrucciones no se ejecutan."
-)
-ONLY_THIS_DATABASE = (
-    "Las consultas trabajan solo sobre las tablas de esta base: leer "
-    "archivos o direcciones web (read_csv, read_parquet, http…) está "
-    "desactivado."
-)
-TOO_LONG = "La consulta superó el límite de {} segundos y se detuvo. Prueba filtrando por semana, producto o región."
-
-
 class QueryRejected(ValueError):
     """A query that the explorer does not run; the message is for the visitor."""
 
@@ -658,34 +708,6 @@ def export_csv(sql, database_file=queries.DATABASE_FILE):
 
 
 # region Page
-DATABASE_LABEL = "datos.duckdb"
-# Words the editor paints: keywords first, then the usual functions. Identifiers
-# (columns, views) keep the ink color, as in SQL Server Management Studio.
-KEYWORDS = (
-    "SELECT FROM WHERE AND OR NOT IN IS NULL AS ON JOIN LEFT RIGHT INNER FULL OUTER CROSS "
-    "GROUP BY ORDER HAVING LIMIT OFFSET WITH UNION ALL DISTINCT CASE WHEN THEN ELSE END "
-    "BETWEEN LIKE ILIKE SIMILAR EXISTS OVER PARTITION ROWS RANGE PRECEDING FOLLOWING UNBOUNDED "
-    "CURRENT ROW ASC DESC NULLS FIRST LAST FILTER INTERVAL DAY DAYS WEEK MONTH YEAR DATE "
-    "TIMESTAMP INTEGER BIGINT DOUBLE DECIMAL VARCHAR BOOLEAN TRUE FALSE DESCRIBE SHOW SUMMARIZE "
-    "USING QUALIFY WINDOW CAST TRY_CAST EXCLUDE PIVOT UNPIVOT SAMPLE VALUES LATERAL ANY SOME "
-    "EXCEPT INTERSECT RECURSIVE TABLES COLUMNS"
-)
-FUNCTIONS = (
-    "COUNT SUM AVG MIN MAX MEDIAN MODE ROUND FLOOR CEIL CEILING ABS COALESCE NULLIF IFNULL IF "
-    "LAG LEAD ROW_NUMBER RANK DENSE_RANK NTILE ANY_VALUE ARG_MAX ARG_MIN LIST STRING_AGG "
-    "ARRAY_AGG DATE_TRUNC DATE_PART DATEDIFF DATE_DIFF DATEADD EXTRACT STRFTIME STRPTIME LOWER "
-    "UPPER TRIM LENGTH SUBSTRING SUBSTR CONCAT REPLACE REGEXP_MATCHES REGEXP_REPLACE QUANTILE "
-    "QUANTILE_CONT STDDEV STDDEV_SAMP VARIANCE GENERATE_SERIES UNNEST GREATEST LEAST TYPEOF "
-    "EPOCH YEAR MONTH DAY WEEK TO_DAYS NOW TODAY CURRENT_DATE MAKE_DATE LAST_DAY"
-)
-# The editor's paint layer (D-173): a transparent textarea over a <pre> that a script
-# repaints on every keystroke with the SQL colors, plus a gutter of line numbers.
-# One script per block, no HTML tags inside it and no node moves (CLAUDE.md).
-EDITOR_HTML = (
-    static_files.read("sql_editor.html").replace("__KEYWORDS__", KEYWORDS).replace("__FUNCTIONS__", FUNCTIONS)
-)  # D-543
-
-
 def build_css(palette):
     """The studio: one raised panel with a toolbar, the object explorer, the editor
     and the results, all lit from above (D-173)."""
@@ -780,12 +802,6 @@ def build_css(palette):
     )
 
 
-DESCRIPTION = (
-    "SQL de solo lectura sobre la capa gold del data warehouse, con vistas de "
-    "columnas legibles; nada de identificadores internos."
-)
-
-
 def build_limits_html():
     """D-514: the studio's two limits, in small letters beside «Ejecutar»; the engine and «solo lectura» are already in
     the connection pill. Each text whole, so the English layer finds it."""
@@ -840,7 +856,7 @@ def build_tab_html(example):
             + tr("consulta.sql")
             + "</span></div>"
         )
-    title, question, _ = EXAMPLES[example]
+    title, question, _ = examples()[example]
     script = tr(SCRIPT_NAMES.get(title, "consulta.sql"))
     return (
         f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>{html.escape(script)}</span>'
@@ -951,24 +967,6 @@ def load_catalog():
     database_file = str(queries.DATABASE_FILE)
     modified = os.path.getmtime(database_file) if os.path.exists(database_file) else 0
     return st.cache_data(ttl=600, show_spinner=False)(_read_catalog)(database_file, modified)
-
-
-PARAMETER_KEYS = {
-    "periodo": "sqlx_param_periodo",
-    "familia": "sqlx_param_familia",
-    "producto_filtro": "sqlx_param_producto_filtro",
-    "canal_filtro": "sqlx_param_canal_filtro",
-    "region": "sqlx_param_region",
-    "anio_filtro": "sqlx_param_anio_filtro",
-}
-PARAMETER_LABELS = {
-    "periodo": "Período",
-    "familia": "Familia",
-    "producto_filtro": "Producto",
-    "canal_filtro": "Canal",
-    "region": "Región",
-    "anio_filtro": "Año",
-}
 
 
 def parameter_values():
@@ -1131,11 +1129,6 @@ def execute_editor(st, sql):
         st.session_state["sqlx_result"] = str(error)
     except duckdb.Error as error:
         st.session_state["sqlx_result"] = tr("DuckDB devolvió un error: {}").format(error)
-
-
-# D-516: the grid takes all the height the window leaves under the editor, so the rows read without scrolling more
-# than needed; below the floor the page scrolls instead. A few rows keep their own height: an empty grid says nothing.
-AROUND_GRID, GRID_FLOOR, GRID_ROW = 348, 190, 28
 
 
 def results_height(row_count):
@@ -1306,7 +1299,7 @@ def show_sql_explorer_page(mode, header=None):
                     'Consultas</span>',
                     unsafe_allow_html=True,
                 )
-                for index, (title, question, _) in enumerate(EXAMPLES):
+                for index, (title, question, _) in enumerate(examples()):
                     st.button(title, key=f"sqlx_chip_{index}", help=question, on_click=choose_example, args=(index,))
         with st.container(key="sqlx_body"):
             side, main = st.columns([1, 3.5], gap="small")

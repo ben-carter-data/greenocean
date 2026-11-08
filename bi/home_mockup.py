@@ -17,9 +17,6 @@ from bi import data_terms, i18n, static_files
 # region Constants
 PACKAGE_SEPARATOR = ' · '  # as dbt/models/intermediate/int_prices__same_package.sql joins them
 
-RED = '#e62035'
-BLUE = '#0783ff'
-AMBER = '#af6700'
 
 FAMILY_ART_FILES = {
     'Hortalizas': 'hortalizas.webp',
@@ -30,6 +27,62 @@ FAMILY_ART_FILES = {
     'Lácteos - Huevos - Margarinas': 'lacteos-huevos-margarinas.webp',
     'Carne de Cerdo - Ave - Cordero': 'cerdo-ave-cordero.webp',
     'Cerdo, ave y cordero': 'cerdo-ave-cordero.webp',
+}
+ORDERS = ('Mayores cambios', 'Subidas', 'Bajadas', 'Inusuales')
+# The overview of the Dashboard (D-092): a real-proportion map of Chile whose regions
+# each lead to their own row, the movement by family and the products of one family.
+REGION_SHORT_NAMES = {
+    'Región de Arica y Parinacota': 'Arica y Parinacota',
+    'Región de Tarapacá': 'Tarapacá',
+    'Región de Antofagasta': 'Antofagasta',
+    'Región de Atacama': 'Atacama',
+    'Región de Coquimbo': 'Coquimbo',
+    'Región de Valparaíso': 'Valparaíso',
+    'Región Metropolitana de Santiago': 'Metropolitana',
+    "Región del Libertador Bernardo O'Higgins": "O'Higgins",
+    'Región del Maule': 'Maule',
+    'Región de Ñuble': 'Ñuble',
+    'Región del Biobío': 'Biobío',
+    'Región de La Araucanía': 'La Araucanía',
+    'Región de Los Ríos': 'Los Ríos',
+    'Región de Los Lagos': 'Los Lagos',
+    'Región de Aysén del Gral.Ibañez del Campo': 'Aysén',
+    'Región de Magallanes y Antártica Chilena': 'Magallanes',
+}
+ALL_FAMILIES = 'Todas'  # D-450: the whole basket, chosen like a family (the dashboard's ALL_VALUES)
+FAMILY_SHORT_NAMES = {
+    ALL_FAMILIES: 'Toda la canasta',
+    'Carne de Cerdo - Ave - Cordero': 'Cerdo · Ave · Cordero',
+    'Lácteos - Huevos - Margarinas': 'Lácteos y huevos',
+}  # D-301: 33 of its 34 products are dairy or eggs
+# Map drawing, in SVG units: the country on the left, one row per region on the right.
+MAP_VIEW = (318, 620)
+MAP_BOX = (6, 8, 612)  # left edge, top and bottom of the country
+LIST_LEFT, LIST_RIGHT = 142, 314
+STATE_WORDS = {
+    'rise': 'subieron',
+    'fall': 'bajaron',
+    'neutral': 'quedaron sin cambio',
+    'mixed': 'no tienen una dirección clara (subidas y bajadas parejas)',
+    'missing': 'no tienen comparación',
+}
+STATE_SYMBOLS = {'rise': '↑', 'fall': '↓', 'neutral': '=', 'mixed': '=', 'missing': ''}
+STEP_TEXTS = {
+    1: 'Elige una región',
+    2: 'Elige un canal',  # D-494: optional; without one, every channel
+    3: 'Elige una familia',
+    4: 'Productos',  # D-492: the reader knows the products are there to be looked at
+}
+LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una región', 4: 'Elige primero una familia'}
+SEARCH_DARK, SEARCH_LIGHT = '#39ff14', '#00a83a'  # D-450: fluorescent green
+QUESTION = '¿Qué familias de alimentos subieron y bajaron?'
+ALERT_LEVEL_CLASSES = {
+    'Alza extrema': 'rise-3',
+    'Alza muy fuerte': 'rise-2',
+    'Alza fuerte': 'rise-1',
+    'Baja extrema': 'drop-3',
+    'Baja muy fuerte': 'drop-2',
+    'Baja fuerte': 'drop-1',
 }
 # endregion
 
@@ -132,9 +185,6 @@ def previous_price(row):
     return None
 
 
-ORDERS = ('Mayores cambios', 'Subidas', 'Bajadas', 'Inusuales')
-
-
 def same_package_pair(current, previous, changes, keys):
     """D-522, RN-15: the regional prices of a week and of the week before, as a comparison must read them: only the
     packages sold in both. A price whose package changed loses the row of the week before, so it is left out of the
@@ -222,10 +272,6 @@ def row_key(row):
     return tuple(
         row.get(field) for field in ('product_group', 'product', 'variety', 'quality', 'normalized_unit', 'channel')
     )
-
-
-def family_anchor(group):
-    return 'familia-' + base64.urlsafe_b64encode(group.encode('utf-8')).decode('ascii').rstrip('=')
 
 
 def table(rows, focus_link, data_link, selected=None, scope='Promedio nacional', order='Mayores cambios', count=8):
@@ -332,46 +378,6 @@ def _ring_centroid(ring):
     return longitude_sum / (3 * area_twice), latitude_sum / (3 * area_twice)
 
 
-# The overview of the Dashboard (D-092): a real-proportion map of Chile whose regions
-# each lead to their own row, the movement by family and the products of one family.
-REGION_SHORT_NAMES = {
-    'Región de Arica y Parinacota': 'Arica y Parinacota',
-    'Región de Tarapacá': 'Tarapacá',
-    'Región de Antofagasta': 'Antofagasta',
-    'Región de Atacama': 'Atacama',
-    'Región de Coquimbo': 'Coquimbo',
-    'Región de Valparaíso': 'Valparaíso',
-    'Región Metropolitana de Santiago': 'Metropolitana',
-    "Región del Libertador Bernardo O'Higgins": "O'Higgins",
-    'Región del Maule': 'Maule',
-    'Región de Ñuble': 'Ñuble',
-    'Región del Biobío': 'Biobío',
-    'Región de La Araucanía': 'La Araucanía',
-    'Región de Los Ríos': 'Los Ríos',
-    'Región de Los Lagos': 'Los Lagos',
-    'Región de Aysén del Gral.Ibañez del Campo': 'Aysén',
-    'Región de Magallanes y Antártica Chilena': 'Magallanes',
-}
-ALL_FAMILIES = 'Todas'  # D-450: the whole basket, chosen like a family (the dashboard's ALL_VALUES)
-FAMILY_SHORT_NAMES = {
-    ALL_FAMILIES: 'Toda la canasta',
-    'Carne de Cerdo - Ave - Cordero': 'Cerdo · Ave · Cordero',
-    'Lácteos - Huevos - Margarinas': 'Lácteos y huevos',
-}  # D-301: 33 of its 34 products are dairy or eggs
-# Map drawing, in SVG units: the country on the left, one row per region on the right.
-MAP_VIEW = (318, 620)
-MAP_BOX = (6, 8, 612)  # left edge, top and bottom of the country
-LIST_LEFT, LIST_RIGHT = 142, 314
-STATE_WORDS = {
-    'rise': 'subieron',
-    'fall': 'bajaron',
-    'neutral': 'quedaron sin cambio',
-    'mixed': 'no tienen una dirección clara (subidas y bajadas parejas)',
-    'missing': 'no tienen comparación',
-}
-STATE_SYMBOLS = {'rise': '↑', 'fall': '↓', 'neutral': '=', 'mixed': '=', 'missing': ''}
-
-
 def short_region(region):
     return REGION_SHORT_NAMES.get(region, str(region).replace('Región de ', '').replace('Región del ', ''))
 
@@ -447,16 +453,6 @@ def region_layout(geometry):
     for index, item in enumerate(regions):
         item['row'] = top + 6 + index * step
     return regions
-
-
-STEP_TEXTS = {
-    1: 'Elige una región',
-    2: 'Elige un canal',  # D-494: optional; without one, every channel
-    3: 'Elige una familia',
-    4: 'Productos',  # D-492: the reader knows the products are there to be looked at
-}
-LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una región', 4: 'Elige primero una familia'}
-SEARCH_DARK, SEARCH_LIGHT = '#39ff14', '#00a83a'  # D-450: fluorescent green
 
 
 # endregion
@@ -689,9 +685,6 @@ def change_state(value):
     return 'neutral' if abs(value) < 0.0005 else 'rise' if value > 0 else 'fall'
 
 
-QUESTION = '¿Qué familias de alimentos subieron y bajaron?'
-
-
 # endregion
 
 
@@ -885,15 +878,16 @@ def products_note(published, hidden=0):
     return '<p class="mock-products-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</p>'
 
 
-# D-480: what each figure of step 3 is computed from, so none is silent.
-PRODUCTS_HINT = panel_hint(
-    'Detalle de productos',
-    '<strong>¿Qué productos explican el cambio?</strong>'
-    '<span>Un precio es un producto con su variedad, calidad, canal y unidad. «Mediana»: el valor del medio de sus '
-    'cambios frente a la semana anterior. «Regiones ↑ / ↓»: en todo Chile, las regiones donde ese precio subió o bajó '
-    '0,05 % o más; las que no cambiaron no se cuentan. «Ver cálculo · n de m regiones»: m son las regiones que publica '
-    'la fuente.</span>',
-)
+def products_hint():
+    """D-480: what each figure of step 3 is computed from, so none is silent."""
+    return panel_hint(
+        'Detalle de productos',
+        '<strong>¿Qué productos explican el cambio?</strong>'
+        '<span>Un precio es un producto con su variedad, calidad, canal y unidad. «Mediana»: el valor del medio de sus '
+        'cambios frente a la semana anterior. «Regiones ↑ / ↓»: en todo Chile, las regiones donde ese precio subió o bajó '
+        '0,05 % o más; las que no cambiaron no se cuentan. «Ver cálculo · n de m regiones»: m son las regiones que publica '
+        'la fuente.</span>',
+    )
 
 
 def products_heading(family, average, scope, shown=None, total=None, note='', step=None):
@@ -912,7 +906,7 @@ def products_heading(family, average, scope, shown=None, total=None, note='', st
     )
     # D-322: one line, so the table keeps the room: the label, the family, the question (on hover), the median and the count.
     return (
-        f'<div class="mock-products-heading mock-products-slim">{step_chip(step)}{PRODUCTS_HINT}'
+        f'<div class="mock-products-heading mock-products-slim">{step_chip(step)}{products_hint()}'
         '<span class="mock-kicker">Detalle de productos</span>'
         f'<span class="mock-products-family">{esc(short_family(family))}</span>'
         f'<h2 title="¿Qué productos explican el cambio?">¿Qué productos explican el cambio?</h2>{chip}'
@@ -928,16 +922,6 @@ def alert_heading(step=None, region=None):
         f'<div class="mock-products-heading mock-products-slim">{step_chip(step)}'
         f'<span class="mock-alert-scope">{place}</span></div>'
     )
-
-
-ALERT_LEVEL_CLASSES = {
-    'Alza extrema': 'rise-3',
-    'Alza muy fuerte': 'rise-2',
-    'Alza fuerte': 'rise-1',
-    'Baja extrema': 'drop-3',
-    'Baja muy fuerte': 'drop-2',
-    'Baja fuerte': 'drop-1',
-}
 
 
 def alert_table(items, query='', level_title=''):
@@ -1134,91 +1118,6 @@ def coverage_note(model, quality_link, methodology_link, family=None):
     return (
         f'<p class="mock-coverage-note">{detail}{esc(week)}{" " if week else ""}'
         f'Precios nominales de ODEPA, redondeados; cambios calculados antes de redondear. {links}</p>'
-    )
-
-
-# endregion
-
-
-# region Family tables and panels
-def family_table_rows(rows, order):
-    """The rows eligible for one family's table under the selected ranking."""
-    if order == 'Subidas':
-        return [row for row in rows if row['variation'] >= 0.0005]
-    if order == 'Bajadas':
-        return [row for row in rows if row['variation'] <= -0.0005]
-    if order == 'Inusuales':
-        return [row for row in rows if row.get('is_alert')]
-    return list(rows)
-
-
-def family_tables(model, count, order):
-    """Collapsed family tables with genuine comparable series."""
-    groups = {}
-    for row in model['family_rows']:
-        groups.setdefault(str(row['product_group']), []).append(row)
-    ranked_groups = sorted(
-        groups, key=lambda group: (-sum(r['variation'] for r in groups[group]) / len(groups[group]), group)
-    )
-    sections = []
-    for group in ranked_groups:
-        rows = family_table_rows(groups[group], order)
-        rows = sorted(rows, key=lambda row: (-abs(row['variation']), str(row['product']), str(row['channel'])))
-        body = []
-        for row_number, row in enumerate(rows[:count], start=1):
-            change = row['variation'] * 100
-            state = 'neutral' if abs(change) < 0.05 else 'rise' if change > 0 else 'fall'
-            word = {'rise': 'Subió', 'fall': 'Bajó', 'neutral': 'Sin cambio'}[state]
-            displayed_change = '0,0 %' if state == 'neutral' else percent(change, True)
-            body.append(
-                '<tr>'
-                f'<td class="mock-row-number">{row_number}</td>'
-                f'<td><strong>{esc(row["product"])}</strong></td>'
-                f'<td>{esc(row["variety"])}</td><td>{esc(row["quality"])}</td>'
-                f'<td>$/{esc(data_terms.term(row["normalized_unit"]))}</td><td>{esc(data_terms.term(row["channel"]))}</td>'
-                f'<td>{money(previous_price(row))}</td><td>{money(row["national_price"])}</td>'
-                f'<td class="{state}"><strong>{displayed_change}</strong></td>'
-                f'<td class="{state}">{word}</td></tr>'
-            )
-        note = f'Mostrando {min(count, len(rows))} de {len(rows)} precios con datos en ambas semanas'
-        sections.append(
-            f'<details class="mock-family-detail" name="family-prices" id="{family_anchor(group)}">'
-            f'<summary><strong>{esc(group)}</strong><span>{note}</span></summary>'
-            '<div class="mock-family-table-scroll" role="region" tabindex="0"'
-            f' aria-label="Precios de {esc(group)}"><table><thead><tr>'
-            '<th scope="col" class="mock-row-number">N.º</th>'
-            '<th>Producto</th><th>Variedad o corte</th><th>Calidad</th><th>Unidad</th>'
-            f'<th>Canal</th><th>Anterior · {esc(model["previous_label"])}</th>'
-            f'<th>Actual · {esc(model["week_label"])}</th><th>Cambio</th><th>Estado</th>'
-            '</tr></thead><tbody>'
-            + (''.join(body) or '<tr><td colspan="10">No hay productos para este orden.</td></tr>')
-            + '</tbody></table></div></details>'
-        )
-    title = 'Detalle del producto' if model.get('product_filter') else 'Productos por familia'
-    return (
-        f'<section class="mock-family-tables"><h2>{title}</h2>'
-        '<p>Abre una familia para ver sus alimentos, sus precios y cuánto cambiaron.</p>'
-        + (
-            ''.join(sections)
-            or '<p class="mock-empty">No hay productos con precio en ambas semanas para estos filtros.</p>'
-        )
-        + '</section>'
-    )
-
-
-def panels(model, scope, focus_link, data_link, history_link, order, count, quality_link, methodology_link):
-    coverage = (
-        'Cada variación nacional compara las mismas regiones y el mismo envase en ambas semanas; '
-        f'en {model["coverage_changed"]} cambios se dejaron fuera las regiones con precio en una sola semana. '
-        f'{model.get("single_quote", 0)} cambios apoyados en una sola cotización van al final del orden y llevan la marca «1 cotización».'
-        if model['national']
-        else 'Comparación de la misma región, producto, variedad, calidad, unidad y canal.'
-    )
-    return (
-        family_tables(model, count, order)
-        + f'<footer class="mock-footer"><span><strong>Cobertura:</strong> {model["available"]} precios disponibles · {model["missing"]} sin comparación válida. {esc(coverage)}</span>'
-        f'<span>Fuente: ODEPA · precios nominales · valores redondeados; cambios calculados antes de redondear. '
-        f'<a href="{esc(quality_link)}" target="_self">Calidad</a> · <a href="{esc(methodology_link)}" target="_self">Metodología</a></span></footer>'
     )
 
 

@@ -11,6 +11,7 @@ The result is a standalone SVG text, shown with st.image (st.html removes SVG).
 Only steps that really exist in this project are drawn.
 """
 
+import functools
 import html
 
 from bi import brand_icons, charts, control, static_files, tech_glossary
@@ -246,6 +247,15 @@ CHIP_TOOLTIPS = {
     "st.secrets": "La app lee sus secretos sin que estén escritos en el código.",
     "HTTPS": "Conexión web cifrada entre el navegador y la app.",
 }
+# Glossary entry of the brand logo each component shows (what that logo stands for here).
+COMPONENT_LOGO_KEYS = {
+    "Job semanal.yml": "github_actions",
+    "Caché de Actions": "actions_cache",
+    "Issues": "github_issues",
+    "Repositorio": "git",
+    "Pruebas (CI)": "pytest",
+    "App Streamlit": "streamlit",
+}
 # endregion
 
 
@@ -393,21 +403,23 @@ def draw_parquet_icon(x, y, color):
     return brand_icons.logo("apacheparquet", x - 18, y - 18, color, 36)
 
 
-# Which brand slug a node's own tile icon already shows, so a stack badge never
-# repeats the same logo right under it (D-103).
-ICON_LOGO_SLUG = {
-    draw_python_icon: "python",
-    draw_streamlit_icon: "streamlit",
-    draw_github_icon: "github",
-    draw_duckdb_icon: "duckdb",
-    draw_dbt_icon: "dbt",
-    draw_parquet_icon: "apacheparquet",
-}
+@functools.cache
+def icon_logo_slug():
+    """Which brand slug a node's own tile icon already shows, so a stack badge never repeats the same logo right under
+    it (D-103)."""
+    return {
+        draw_python_icon: "python",
+        draw_streamlit_icon: "streamlit",
+        draw_github_icon: "github",
+        draw_duckdb_icon: "duckdb",
+        draw_dbt_icon: "dbt",
+        draw_parquet_icon: "apacheparquet",
+    }
 
 
 def draw_tile_icon(draw_icon, x, y, color):
     """A tile icon; a brand logo also explains its technology on hover."""
-    slug = ICON_LOGO_SLUG.get(draw_icon)
+    slug = icon_logo_slug().get(draw_icon)
     icon = draw_icon(x, y, color)
     return add_tech_tooltip(icon, tech_glossary.LOGO_KEYS[slug]) if slug else icon
 
@@ -521,7 +533,7 @@ def visible_stack(title, draw_icon):
     stack = PIPELINE_STACK.get(title)
     if not stack:
         return None
-    icon_logo = ICON_LOGO_SLUG.get(draw_icon)
+    icon_logo = icon_logo_slug().get(draw_icon)
     # Only drop a pill that has a real logo matching the tile's own icon; a text
     # pill (no logo of its own) is never "the same" as an icon with no logo.
     return [tech_id for tech_id in stack if not (TECH[tech_id]["logo"] and TECH[tech_id]["logo"] == icon_logo)]
@@ -1395,21 +1407,6 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
             "</svg>",
         ]
     )
-
-
-# endregion
-
-
-# region The logo of each component
-# Glossary entry of the brand logo each component shows (what that logo stands for here).
-COMPONENT_LOGO_KEYS = {
-    "Job semanal.yml": "github_actions",
-    "Caché de Actions": "actions_cache",
-    "Issues": "github_issues",
-    "Repositorio": "git",
-    "Pruebas (CI)": "pytest",
-    "App Streamlit": "streamlit",
-}
 
 
 # endregion

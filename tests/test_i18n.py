@@ -22,21 +22,21 @@ ENGLISH_FIELDS = (
     "Audience",
     "Related documents",
 )
+# Forms that do not belong in a professional document, in English.
+FORBIDDEN = [r"\bprompt\b", r"\bClaude\b", r"\bTODO\b", r"lorem", r"\bnote:", r"\byou\b", r"\byour\b", r"\brobot\b"]
 # endregion
 
 
 # region Variables
 ROOT = Path(__file__).resolve().parent.parent
 BI_DIR = ROOT / "bi"
-DOCS_DIR = ROOT / "docs"
-EN_DIR = DOCS_DIR / "en"
 DASHBOARD_FILE = str(BI_DIR / "dashboard.py")
 TR_CALL = re.compile(r"""\btr\(\s*(?:f?"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')\s*\)""")
 IDENTIFIER = re.compile(r"\b(?:RF|RNF|P|ADR|S|D|RN|K)-\d+\b|\bT\d\b")
 # endregion
 
 
-# region Spanish and English for the whole panel and its documents
+# region Every text and every document has its English (D-283)
 def read(path):
     return path.read_text(encoding="utf-8")
 
@@ -106,10 +106,6 @@ def test_d283_each_english_document_has_its_header_contents_glossary_and_history
     assert last == (version, date)
     spanish = documents_folder.describe(read(i18n.document_path(filename, "es")))
     assert (version, date) == (spanish["version"], documents_folder.sortable(spanish["date"]))
-
-
-# Forms that do not belong in a professional document, in English.
-FORBIDDEN = [r"\bprompt\b", r"\bClaude\b", r"\bTODO\b", r"lorem", r"\bnote:", r"\byou\b", r"\byour\b", r"\brobot\b"]
 
 
 @pytest.mark.parametrize("filename", FOLDER_FILES)
@@ -194,6 +190,10 @@ def test_d283_a_document_and_the_folder_open_in_english(page):
         assert ">Project documents</a>" in markup
 
 
+# endregion
+
+
+# region Translation at render time (D-284, D-294)
 # D-284: the pages translate what they draw, at the boundary with Streamlit.
 def english(monkeypatch):
     monkeypatch.setattr(i18n, "is_english", lambda: True)
@@ -301,6 +301,10 @@ def test_d294_a_chart_keeps_its_series_when_streamlit_carries_the_data_as_arrow(
     assert rows["serie"][1] == "Frutas" and rows["value"] == [1.0, 2.0]
 
 
+# endregion
+
+
+# region The English glossary and the texts a script writes (D-283, D-443)
 def test_d283_the_english_glossary_names_only_english_pages_and_tabs():
     menu = {
         i18n.EN[dashboard.SIDEBAR_LABELS.get(view, view)] for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]

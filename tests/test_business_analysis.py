@@ -10,7 +10,6 @@ from bi import business_analysis as ba
 from bi import charts, dashboard, doc_figures, i18n, overview, queries
 
 # region Variables
-ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(Path(dashboard.__file__))
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
 # endregion
@@ -79,8 +78,8 @@ def test_d377_each_system_decision_is_one_line_of_the_sqap_with_a_page():
 
 
 def test_d377_the_weekly_cycle_figure_names_the_five_stages():
-    assert "ciclo_semanal" in doc_figures.FIGURES
-    svg = doc_figures.FIGURES["ciclo_semanal"](charts.THEMES[0])
+    assert "ciclo_semanal" in doc_figures.figures()
+    svg = doc_figures.figures()["ciclo_semanal"](charts.THEMES[0])
     for word in ("Carga", "Pruebas", "Publicación", "Informe semanal", "Informe de calidad", "la semana siguiente"):
         assert word in svg, word
 

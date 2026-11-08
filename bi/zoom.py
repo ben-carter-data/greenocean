@@ -16,6 +16,21 @@ ZOOM_STEP = 1.5
 MAXIMUM_ZOOM = 6
 # endregion
 
+# region Variables
+ZOOM_SCRIPT = (  # D-543: the script lives in bi/static/zoom.js; its two numbers come from here
+    "<script>"
+    + static_files.read("zoom.js")
+    .replace("__ZOOM_STEP__", str(ZOOM_STEP))
+    .replace("__MAXIMUM_ZOOM__", str(MAXIMUM_ZOOM))
+    + "</script>"
+)
+# Every piece of a diagram that carries an SVG <title> explains itself in a card that
+# opens at once on hover and stays open on a click or a tap; a second click, Escape or
+# a click elsewhere closes it. The native browser tooltip came late, only on hover and
+# never on a phone. The <title> text moves to data-tip, so both never show together.
+TIP_SCRIPT = static_files.script("diagram_tips.js")
+# endregion
+
 
 # region Zoom and pan inside a diagram frame, on phones and computers
 def build_zoom_frame_html(inner_html, css_class="", style=""):
@@ -40,18 +55,4 @@ def build_zoom_css(palette):
     )
 
 
-ZOOM_SCRIPT = (  # D-543: the script lives in bi/static/zoom.js; its two numbers come from here
-    "<script>"
-    + static_files.read("zoom.js")
-    .replace("__ZOOM_STEP__", str(ZOOM_STEP))
-    .replace("__MAXIMUM_ZOOM__", str(MAXIMUM_ZOOM))
-    + "</script>"
-)
-
-
-# Every piece of a diagram that carries an SVG <title> explains itself in a card that
-# opens at once on hover and stays open on a click or a tap; a second click, Escape or
-# a click elsewhere closes it. The native browser tooltip came late, only on hover and
-# never on a phone. The <title> text moves to data-tip, so both never show together.
-TIP_SCRIPT = static_files.script("diagram_tips.js")
 # endregion

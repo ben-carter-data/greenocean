@@ -313,7 +313,7 @@ def build_deployment_html(palette, states, figures, live=True):
     return (
         '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         + build_css(palette)
-        + f'</head><body>{quality_view.DEFS}<svg class="dep" viewBox="0 0 {WIDTH} {HEIGHT}" '
+        + f'</head><body>{quality_view.defs()}<svg class="dep" viewBox="0 0 {WIDTH} {HEIGHT}" '
         f'preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de despliegue">{head}{"".join(drawn)}'
         f'{paths}{chips}{legend}{"".join(tips)}</svg></body></html>'
     )

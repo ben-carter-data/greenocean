@@ -42,16 +42,6 @@ CHANNEL_CONTENTS = {
     "Carnicería": ("carnes", "meat"),
     "Panadería": ("pan", "bread"),
 }
-# endregion
-
-
-# region The words the data brings, in the reader's language
-def channel_content(channel):
-    """D-494: what a channel holds, in the reader's language, or None when it sells several families."""
-    content = CHANNEL_CONTENTS.get(channel)
-    return None if content is None else content[1] if i18n.is_english() else content[0]
-
-
 UNITS = {"kilo": "kilo", "litro": "liter", "unidad": "unit"}
 QUALITIES = {
     "1a (cosecha lavada)": "1st (washed, harvest)",
@@ -106,6 +96,14 @@ QUALITIES = {
 }
 TERMS = {**FAMILIES, **CHANNELS, **UNITS, **QUALITIES}
 SIZE = re.compile(r"^Calibre (\d+)$")  # «Calibre 120» and its siblings: the size class, by number
+# endregion
+
+
+# region The words the data brings, in the reader's language
+def channel_content(channel):
+    """D-494: what a channel holds, in the reader's language, or None when it sells several families."""
+    content = CHANNEL_CONTENTS.get(channel)
+    return None if content is None else content[1] if i18n.is_english() else content[0]
 
 
 def english(value):

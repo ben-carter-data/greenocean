@@ -10,15 +10,11 @@ import re
 import sys
 from pathlib import Path
 
-# region Variables
-ROOT = Path(__file__).resolve().parent.parent
-# endregion
-# region What a page still shows in Spanish when the reader chose English
-sys.path.insert(0, str(ROOT))
+from streamlit.testing.v1 import AppTest
 
-from streamlit.testing.v1 import AppTest  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
+# region Constants
 SPANISH_MARKS = re.compile(
     r"[áéíóúñ¿¡]|\b(?:de|la|las|los|del|que|para|con|una|por|cada|sin|más|semana|semanas|precio|"
     r"precios|carga|cargas|datos|fila|filas|pruebas|prueba|qué|cómo|dónde|cuándo|según|"
@@ -35,8 +31,6 @@ CODE = re.compile(r"<(script|style|pre|code)\b[^>]*>.*?</\1>", re.DOTALL | re.IG
 NOTEBOOK_OUTPUT = re.compile(r'<div class="nb-output">.*?</div><!--/nb-output-->', re.DOTALL)
 # The official name of a region, as the map of Chile writes it: «Región de Los Ríos».
 OFFICIAL_REGION = re.compile(r"^Región (?:de |del )?[^\n·]+$", re.MULTILINE)
-
-
 # Proper names drawn by the map of Chile and two-letter codes that are not Spanish words.
 PROPER_NAMES = {
     "Español",  # the language switch names each language in itself
@@ -59,8 +53,16 @@ PROPER_NAMES = {
     "ES",
     "EN",
 }
+# endregion
 
 
+# region Variables
+ROOT = Path(__file__).resolve().parent.parent
+DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
+# endregion
+
+
+# region What a page still shows in Spanish when the reader chose English
 def read_data_values():
     """ODEPA's own names (products, varieties, families, regions, channels): data, never translated."""
     import duckdb
@@ -251,9 +253,9 @@ def screens():
 
 
 # region Run
-if __name__ == "__main__":
+def main(chosen):
+    """Print what each screen still shows in Spanish, or only the screens of the pages in `chosen`."""
     values = read_data_values()
-    chosen = sys.argv[1:]
     for view, state in screens():
         if chosen and view not in chosen:
             continue
@@ -261,4 +263,8 @@ if __name__ == "__main__":
         print(f"\n## {view}{' · ' + str(state) if state else ''}: {len(left)}")
         for text in left:
             print(f"  {text!r}")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
 # endregion

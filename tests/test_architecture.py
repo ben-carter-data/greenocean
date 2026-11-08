@@ -22,7 +22,7 @@ STATE_NAMES = ["sources", "download", "etl", "tests", "report", "workflow", "loa
 # endregion
 
 
-# region Tests for the live data journey diagram
+# region The live data journey: layers, steps and the stack of each stage
 def make_states(state):
     return {name: state for name in STATE_NAMES}
 
@@ -168,6 +168,10 @@ def test_d103_pills_render_as_local_logos_or_styled_text_never_a_broken_image():
     assert ">pyarrow<" in vertical and ">requests<" in vertical
 
 
+# endregion
+
+
+# region Real states, figures and the moving dots
 def test_figures_from_the_data_appear_under_their_steps():
     svg = architecture.build_journey_svg(make_states(control.RUN_OK), FIGURES, charts.MODE_LIGHT)
     for figure in FIGURES.values():
@@ -252,6 +256,10 @@ def test_vertical_journey_moves_its_dots_only_while_a_run_is_in_progress():
     assert "animateMotion" in architecture.build_vertical_journey_svg(running_states, FIGURES, charts.MODE_LIGHT)
 
 
+# endregion
+
+
+# region Hover texts, the illustrated flow and the English of the layers
 def test_every_piece_of_every_diagram_explains_itself_on_hover():
     """Each card, band item and link label carries a <title>: the browser shows it on
     hover. Acronyms are spelled out where they appear."""

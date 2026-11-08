@@ -42,6 +42,15 @@ ROWS = [
         "_single_quote": True,
     },
 ]
+WINDOW_SCRIPT = (
+    "import streamlit as st\n"
+    "from bi import dashboard\n"
+    "st.session_state['dialog_products_search'] = 'lechuga'\n"
+    "week = dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]\n"
+    f"rows = {ROWS!r}\n"
+    "model = {'week_label': '26 oct – 1 nov', 'previous_label': '19–25 oct'}\n"
+    "dashboard.draw_products_window('Frutas', 0.005, 'todo Chile', rows, week, model, None, None, '', '3 nov · 16:19')\n"
+)
 # endregion
 
 
@@ -234,17 +243,6 @@ def test_d525_the_panel_and_the_window_download_the_alerts_when_one_is_chosen(mo
     assert {"dialog_download_xlsx", "dialog_download_csv"} <= keys  # the window offers it with an alert too
     assert counted(app) == [sharp, sharp]
     assert ("Alertas", "Solo alzas fuertes") in seen[-1]
-
-
-WINDOW_SCRIPT = (
-    "import streamlit as st\n"
-    "from bi import dashboard\n"
-    "st.session_state['dialog_products_search'] = 'lechuga'\n"
-    "week = dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]\n"
-    f"rows = {ROWS!r}\n"
-    "model = {'week_label': '26 oct – 1 nov', 'previous_label': '19–25 oct'}\n"
-    "dashboard.draw_products_window('Frutas', 0.005, 'todo Chile', rows, week, model, None, None, '', '3 nov · 16:19')\n"
-)
 
 
 @needs_database

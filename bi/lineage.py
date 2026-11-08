@@ -137,6 +137,38 @@ ACCEPTED_VALUES_RULES = {
     "reason": "RN-11",
     "real_factor": "D-155",
 }
+GENERIC_TEST_PREFIXES = ("not_null_", "unique_", "relationships_", "accepted_values_")
+TOOLTIPS_SERVING = architecture.TOOLTIPS["datos.duckdb"]
+TILE_KEYS = {"bronze": "bronze", "staging": "dbt", "intermediate": "dbt", "marts": "marts", "serving": "gold"}
+TILE_COLORS = {
+    "bronze": LAYER_COLORS["bronze"],
+    "dbt": LAYER_COLORS["staging"],
+    "marts": LAYER_COLORS["marts"],
+    "gold": LAYER_COLORS["serving"],
+}
+# The violet and pink tiles shine less than the journey's flat tiles would: 18 % less
+# saturation and 10 % less light, and an 18 % softer glow on dark themes.
+TONED = ("dbt", "marts")
+TONE_SATURATION = 0.82
+TONE_LIGHTNESS = 0.9
+GLOW = {"opacity": 0.55, "blur": 9}
+TONED_GLOW = {"opacity": 0.45, "blur": 8}
+# Links stay quiet until a selection lights its own path.
+EDGE_WIDTH = 1.3
+EDGE_OPACITY = {"dark": 0.5, "light": 0.58}
+LIT_WIDTH = 2.4
+# endregion
+
+# region Variables
+# Hovering a model lights only its upstream and downstream paths (models and links) and
+# dims the rest; a click pins that selection, a click on empty space or Escape clears it.
+# One script for the whole page, listening on document, so diagrams Streamlit draws
+# later work too. It builds no markup: it only toggles classes (st.html drops a script
+# whose strings look like tags). bi/zoom.py TIP_SCRIPT may answer the same click with
+# the node's card; both are meant to.
+LINEAGE_SCRIPT = (
+    "<script>" + static_files.read("lineage.js") + "</script>"
+)  # D-543: the script lives in bi/static/lineage.js
 # endregion
 
 
@@ -166,9 +198,6 @@ def rule_of_test(test):
     if any(model.endswith((".ipc_monthly", ".ipc_weekly")) for model in test["depends_on"]):
         return "D-155"
     return "Modelo estrella"
-
-
-GENERIC_TEST_PREFIXES = ("not_null_", "unique_", "relationships_", "accepted_values_")
 
 
 def owner_of_test(test, models):
@@ -455,27 +484,6 @@ def node_tooltip(node, kind, total, passing, reads):
     return "\n".join(line for line in lines if line)
 
 
-TOOLTIPS_SERVING = architecture.TOOLTIPS["datos.duckdb"]
-TILE_KEYS = {"bronze": "bronze", "staging": "dbt", "intermediate": "dbt", "marts": "marts", "serving": "gold"}
-TILE_COLORS = {
-    "bronze": LAYER_COLORS["bronze"],
-    "dbt": LAYER_COLORS["staging"],
-    "marts": LAYER_COLORS["marts"],
-    "gold": LAYER_COLORS["serving"],
-}
-# The violet and pink tiles shine less than the journey's flat tiles would: 18 % less
-# saturation and 10 % less light, and an 18 % softer glow on dark themes.
-TONED = ("dbt", "marts")
-TONE_SATURATION = 0.82
-TONE_LIGHTNESS = 0.9
-GLOW = {"opacity": 0.55, "blur": 9}
-TONED_GLOW = {"opacity": 0.45, "blur": 8}
-# Links stay quiet until a selection lights its own path.
-EDGE_WIDTH = 1.3
-EDGE_OPACITY = {"dark": 0.5, "light": 0.58}
-LIT_WIDTH = 2.4
-
-
 def is_dark(palette):
     return palette.get("base") == charts.BASE_DARK
 
@@ -760,7 +768,7 @@ def build_lineage_node(x, y, node, layer, kind, total, passing, reads, up, down,
     else:
         draw_icon = NODE_ICONS.get(node["name"], LAYER_ICONS[layer])
         icon = architecture.draw_tile_icon(draw_icon, x, y, "#ffffff")
-        scale = 0.84 if draw_icon in architecture.ICON_LOGO_SLUG else 0.8
+        scale = 0.84 if draw_icon in architecture.icon_logo_slug() else 0.8
         tile = (
             draw_tile(x, y, TILE_KEYS[layer], suffix, palette)
             + f'<g transform="translate({x} {y}) scale({scale}) translate({-x} {-y})" '
@@ -1081,13 +1089,4 @@ def build_lineage_svg(nodes, results, mode):
     return "".join(parts)
 
 
-# Hovering a model lights only its upstream and downstream paths (models and links) and
-# dims the rest; a click pins that selection, a click on empty space or Escape clears it.
-# One script for the whole page, listening on document, so diagrams Streamlit draws
-# later work too. It builds no markup: it only toggles classes (st.html drops a script
-# whose strings look like tags). bi/zoom.py TIP_SCRIPT may answer the same click with
-# the node's card; both are meant to.
-LINEAGE_SCRIPT = (
-    "<script>" + static_files.read("lineage.js") + "</script>"
-)  # D-543: the script lives in bi/static/lineage.js
 # endregion

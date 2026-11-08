@@ -35,6 +35,10 @@ MARKDOWN_LINK = re.compile(r"^\[([^\]]+)\]\(([^)]+)\)$")
 VIEW_LINK = re.compile(r"^\[\[vista:([^\]]+)\]\]$")
 CODE = re.compile(r"`([^`]+)`")
 INLINE_LINK = re.compile(r"\[([^\]]+)\]\([^)]+\)")
+TOKEN_LABELS = {
+    "GITHUB_TOKEN": ("token de lanzamiento", "launch token"),
+    "GITHUB_READ_TOKEN": ("token de solo lectura", "read-only token"),
+}
 # endregion
 
 
@@ -46,12 +50,6 @@ def t(spanish: str, english: str) -> str:
 def day_text(moment: date | datetime) -> str:
     """A date as each language writes it in the documents: 17-01-2027 or 2027-01-17."""
     return f"{moment:%Y-%m-%d}" if i18n.is_english() else f"{moment:%d-%m-%Y}"
-
-
-TOKEN_LABELS = {
-    "GITHUB_TOKEN": ("token de lanzamiento", "launch token"),
-    "GITHUB_READ_TOKEN": ("token de solo lectura", "read-only token"),
-}
 
 
 def token_label(name: str) -> str:
@@ -67,8 +65,6 @@ def card(key: str, icon: str, label: str, state: str, value: str, detail: str = 
 
 
 # region The six states
-
-
 def token_card(
     key: str, label: str, present: bool, expiration: datetime | None, error: str | None, now: datetime
 ) -> dict[str, str]:
@@ -204,8 +200,6 @@ def build_token_alerts_html(alerts: list[dict[str, Any]]) -> str:
 
 
 # region The runbook: cases, links and maintenance
-
-
 def read_link(cell: str) -> dict[str, str] | None:
     """A cell of the runbook as a link: a page of the panel ([[vista:…]]), an address, or nothing («—»)."""
     cell = cell.strip()
@@ -327,8 +321,6 @@ def maintenance(
 
 
 # region HTML
-
-
 def esc(value: Any) -> str:
     return html.escape(str(value))
 

@@ -10,6 +10,7 @@ its live check; hovering it says how the crossing happens, what travels, what bo
 The stores are drawn with the same cylinders, folders and marks as «Dónde viven los datos», which shows
 where each one lives; this view shows how their tables meet."""
 
+import functools
 import html
 
 from bi import charts, database_map, queries, static_files, storage_map
@@ -135,6 +136,58 @@ STATUS_WORDS = {
     "info": "Dato",
 }
 STATUS_COLORS = {"ok": "#22b35a", "fail": "#d03b3b", "warn": "#d97706", "pending": "#d97706", "info": "#8a94a6"}
+WIDTH, HEIGHT = 1000, 630
+SMALL = storage_map.SMALL
+# Columns of the tables: A is the IPC chain, B the consumer prices, C the wholesale prices.
+COLUMNS = {"a": (190, 350), "b": (416, 576), "c": (592, 752)}
+LAYER_X = (20, 764)
+BACKUP_X = (804, 988)
+CHIP_HEIGHT = 32
+# The layers, from the sources down to the served database: (key, name, file, mark, top, height).
+LAYERS = [
+    ("raw", "raw.db", "SQLite", ("db", "sqlite"), 90, 64),
+    ("bronze", "Bronce", "Parquet", ("files", "apacheparquet"), 190, 64),
+    ("work", "Base de trabajo", "dbt + DuckDB", ("db", "duckdb"), 290, 112),
+    ("served", "datos.duckdb", "la Base DuckDB", ("db", "duckdb"), 438, 144),
+]
+SOURCE_Y = 14
+# Table chips: (layer key, row, column or span, name). The row is the chip's top, from the layer's top.
+CHIPS = [
+    ("raw", 16, "b", "raw_consumer"),
+    ("raw", 16, "c", "raw_wholesale"),
+    ("bronze", 16, "a", "ine_ipc"),
+    ("bronze", 16, "b", "odepa_consumer"),
+    ("bronze", 16, "c", "odepa_wholesale"),
+    ("work", 16, "a", "stg_ine__ipc_monthly"),
+    ("work", 16, "b", "stg_odepa__consumer"),
+    ("work", 16, "c", "stg_odepa__wholesale"),
+    ("work", 64, "a", "ipc_weekly"),
+    ("work", 64, "bc", "weekly_price"),
+    ("served", 16, "a", "ipc_weekly"),
+    ("served", 16, "bc", "weekly_price"),
+    ("served", 62, "a", "etl_run"),
+    ("served", 62, "b", "rejection"),
+]
+SOURCES = [
+    ("a", "source", "ine", "INE · IPC"),
+    ("b", "source", "odepa", "ODEPA consumidor"),
+    ("c", "source", "odepa", "ODEPA mayorista"),
+]
+OTHER_TABLES = [
+    "+ dim_date, dim_product, dim_region, dim_channel",
+    "+ ine_ipc_source, ipc_monthly, dbt_node, dbt_result",
+]
+BACKUP_CHIPS = ["etl_run", "rejection", "dim_channel", "dim_region", "dim_product", "dim_date"]
+# What each crossing is called on its line, and where its number sits (on the first line).
+LABELS = {
+    "odepa_raw": "descarga",
+    "ine_bronze": "directo, sin SQLite",
+    "raw_bronze": "fuente y año",
+    "bronze_work": "dbt lee",
+    "work_served": "publica",
+    "raw_backup": "ETL",
+    "served_backup": "paridad",
+}
 # endregion
 
 
@@ -183,15 +236,6 @@ def read_checks(database_file=queries.DATABASE_FILE, backup_file=None):
     return checks
 
 
-WIDTH, HEIGHT = 1000, 630
-SMALL = storage_map.SMALL
-# Columns of the tables: A is the IPC chain, B the consumer prices, C the wholesale prices.
-COLUMNS = {"a": (190, 350), "b": (416, 576), "c": (592, 752)}
-LAYER_X = (20, 764)
-BACKUP_X = (804, 988)
-CHIP_HEIGHT = 32
-
-
 # endregion
 
 
@@ -199,43 +243,6 @@ CHIP_HEIGHT = 32
 def center(column):
     left, right = COLUMNS[column]
     return (left + right) // 2
-
-
-# The layers, from the sources down to the served database: (key, name, file, mark, top, height).
-LAYERS = [
-    ("raw", "raw.db", "SQLite", ("db", "sqlite"), 90, 64),
-    ("bronze", "Bronce", "Parquet", ("files", "apacheparquet"), 190, 64),
-    ("work", "Base de trabajo", "dbt + DuckDB", ("db", "duckdb"), 290, 112),
-    ("served", "datos.duckdb", "la Base DuckDB", ("db", "duckdb"), 438, 144),
-]
-SOURCE_Y = 14
-# Table chips: (layer key, row, column or span, name). The row is the chip's top, from the layer's top.
-CHIPS = [
-    ("raw", 16, "b", "raw_consumer"),
-    ("raw", 16, "c", "raw_wholesale"),
-    ("bronze", 16, "a", "ine_ipc"),
-    ("bronze", 16, "b", "odepa_consumer"),
-    ("bronze", 16, "c", "odepa_wholesale"),
-    ("work", 16, "a", "stg_ine__ipc_monthly"),
-    ("work", 16, "b", "stg_odepa__consumer"),
-    ("work", 16, "c", "stg_odepa__wholesale"),
-    ("work", 64, "a", "ipc_weekly"),
-    ("work", 64, "bc", "weekly_price"),
-    ("served", 16, "a", "ipc_weekly"),
-    ("served", 16, "bc", "weekly_price"),
-    ("served", 62, "a", "etl_run"),
-    ("served", 62, "b", "rejection"),
-]
-SOURCES = [
-    ("a", "source", "ine", "INE · IPC"),
-    ("b", "source", "odepa", "ODEPA consumidor"),
-    ("c", "source", "odepa", "ODEPA mayorista"),
-]
-OTHER_TABLES = [
-    "+ dim_date, dim_product, dim_region, dim_channel",
-    "+ ine_ipc_source, ipc_monthly, dbt_node, dbt_result",
-]
-BACKUP_CHIPS = ["etl_run", "rejection", "dim_channel", "dim_region", "dim_product", "dim_date"]
 
 
 def layer_top(key):
@@ -250,6 +257,7 @@ def chip_box(layer, row, column):
 
 # The crossings on the drawing: (crossing key, [(from, to)] lines, number badge place, label, label place, dashed).
 # A line is ((x1, y1), (x2, y2)), straight and either horizontal or vertical. Built from the chips below.
+@functools.cache
 def build_lines():
     src_bottom = SOURCE_Y + 36
     lines = {}
@@ -274,18 +282,9 @@ def build_lines():
     return lines
 
 
-LINES = build_lines()
-# What each crossing is called on its line, and where its number sits (on the first line).
-LABELS = {
-    "odepa_raw": "descarga",
-    "ine_bronze": "directo, sin SQLite",
-    "raw_bronze": "fuente y año",
-    "bronze_work": "dbt lee",
-    "work_served": "publica",
-    "raw_backup": "ETL",
-    "served_backup": "paridad",
-}
-JOIN_Y = {"work": layer_top("work") + 64 + CHIP_HEIGHT // 2, "served": layer_top("served") + 16 + CHIP_HEIGHT // 2}
+def join_y():
+    """The height of the join of the two data sets (week_start) in the work database and in the served one."""
+    return {"work": layer_top("work") + 64 + CHIP_HEIGHT // 2, "served": layer_top("served") + 16 + CHIP_HEIGHT // 2}
 
 
 # endregion
@@ -430,7 +429,7 @@ def build_crossings_html(palette, checks):
         f'<text class="chip-text" x="{(BACKUP_X[0] + BACKUP_X[1]) / 2}" y="{wy + 20.5}">weekly_price</text>'
     )
     # The join of the two data sets, inside the work database and again in the served one.
-    for layer, y in JOIN_Y.items():
+    for layer, y in join_y().items():
         gap_left, gap_right = COLUMNS["a"][1], COLUMNS["b"][0]
         parts.append(
             build_line((gap_left + 2, y), (gap_right - 2, y), None, join=True, both=True)
@@ -457,11 +456,11 @@ def build_crossings_html(palette, checks):
             status, text = checks.get(row[10], ("pending", "sin medir"))
         else:
             status, text = checks.get(row[10], ("pending", "sin medir"))
-            first = LINES[key][0]
+            first = build_lines()[key][0]
             (x1, y1), (x2, y2) = first
             x, y = (x1, (y1 + y2) / 2) if x1 == x2 else ((x1 + x2) / 2, y1)
             both = key == "served_backup"
-            for index, (start, end) in enumerate(LINES[key]):
+            for index, (start, end) in enumerate(build_lines()[key]):
                 label = LABELS[key] if index == 0 else None
                 side = "right" if start[0] == end[0] else "above"
                 if key in ("raw_backup", "served_backup"):

@@ -9,12 +9,10 @@ The report is written in Spanish; code and comments are in English.
 import sys
 from pathlib import Path
 
-# region Imports of the project
 # This file runs as a script, so the project folder is added to the import path.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import alerts, queries, unit_review, weeks  # noqa: E402
 from etl import etl  # noqa: E402
-# endregion
 
 # region Constants
 MAXIMUM_ALERTS_IN_REPORT = 20

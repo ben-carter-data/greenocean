@@ -14,6 +14,23 @@ from pathlib import Path
 
 import duckdb
 
+# region Constants
+SAME_PACKAGE_TABLE = "weekly_same_package"
+SAME_PACKAGE_BEFORE_THE_RULE = """(
+    SELECT now.week_start, now.product_id, now.region_id, now.channel_id, now.normalized_unit,
+           now.price AS price_now, before.price AS price_before,
+           now.observation_count AS quotes_now, before.observation_count AS quotes_before,
+           CAST(NULL AS VARCHAR) AS packages
+    FROM weekly_price AS now
+    JOIN weekly_price AS before
+      ON before.product_id = now.product_id AND before.channel_id = now.channel_id
+     AND before.normalized_unit = now.normalized_unit AND before.region_id = now.region_id
+     AND before.week_start = strftime(CAST(now.week_start AS DATE) - 7, '%Y-%m-%d')
+    WHERE now.flag IS NULL AND before.flag IS NULL
+)"""
+# endregion
+
+
 # region Variables
 BASE_DIR = Path(__file__).resolve().parent
 # The data warehouse the panel reads: DuckDB, built by dbt (D-154). The engine is
@@ -28,21 +45,6 @@ KEY_COLUMNS = ["product_group", "product", "variety", "quality", "normalized_uni
 
 
 # region Data access
-SAME_PACKAGE_TABLE = "weekly_same_package"
-SAME_PACKAGE_BEFORE_THE_RULE = """(
-    SELECT now.week_start, now.product_id, now.region_id, now.channel_id, now.normalized_unit,
-           now.price AS price_now, before.price AS price_before,
-           now.observation_count AS quotes_now, before.observation_count AS quotes_before,
-           CAST(NULL AS VARCHAR) AS packages
-    FROM weekly_price AS now
-    JOIN weekly_price AS before
-      ON before.product_id = now.product_id AND before.channel_id = now.channel_id
-     AND before.normalized_unit = now.normalized_unit AND before.region_id = now.region_id
-     AND before.week_start = strftime(CAST(now.week_start AS DATE) - 7, '%Y-%m-%d')
-    WHERE now.flag IS NULL AND before.flag IS NULL
-)"""
-
-
 def load_queries(queries_file: Path = QUERIES_FILE) -> dict[str, str]:
     """Read queries.sql and return a dictionary {query name: SQL text}."""
     text = queries_file.read_text(encoding="utf-8")

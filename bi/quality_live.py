@@ -69,6 +69,67 @@ TESTS_SQL = """SELECT r.status, count(*) FROM dbt_node AS n JOIN dbt_result AS r
 WHERE n.resource_type = 'test' GROUP BY ALL"""
 
 
+# The three gates of D-245 and the dimensions each watches: (gate, question it answers, dimensions). Accuracy has no
+# indicator of its own: its controls run in pytest on the new base, before it is published, so it is watched at the third.
+GATE_VIEW = [
+    ("Puerta 1 · el archivo", "¿Llegó completo y al día?", ["completitud", "actualidad"]),
+    ("Puerta 2 · cada fila", "¿Cada fila es válida?", ["validez"]),
+    (
+        "Puerta 3 · la base",
+        "¿La base es coherente y pasó sus pruebas?",
+        ["consistencia", "unicidad", "pruebas", "exactitud"],
+    ),
+]
+# The three gates: (title, what is stopped, what happens to the data, where, evidence).
+GATES = [
+    (
+        "Puerta 1 · el archivo",
+        "Un CSV vacío o con columnas distintas no se guarda; un archivo con muchas menos filas que el anterior o una semana "
+        "faltante detiene la carga.",
+        "No entra nada de ese archivo y la base publicada no cambia.",
+        "agent/agent.py y etl/etl.py",
+        "tests/test_agent.py, tests/test_etl_run.py",
+    ),
+    (
+        "Puerta 2 · cada fila",
+        "Un precio no positivo o con formato inválido se rechaza; una unidad no convertible o un precio atípico se marca.",
+        "La fila rechazada queda en la tabla rejection con su motivo; el precio marcado queda en la base, fuera de los "
+        "indicadores.",
+        "modelos intermedios de dbt (int_prices__validated, int_prices__outlier_flagged)",
+        "pruebas de dbt",
+    ),
+    (
+        "Puerta 3 · la base",
+        "Si falla una prueba de dbt, si la carga lee menos del 90 % de la anterior o si pytest falla sobre la base nueva "
+        "(incluida la paridad con SQLite), la base no se publica.",
+        "La base publicada sigue igual: el workflow se detiene antes de publicarla, GitHub Actions lo marca en rojo y avisa "
+        "al autor por correo (D-269).",
+        "etl/pipeline.py y .github/workflows/semanal.yml",
+        "tests/test_pipeline_gate.py",
+    ),
+]
+SOURCES = {"wholesale": "mayorista", "consumer": "consumidor"}
+# The six dimensions of data quality around healthy data: (key, name, icon, side). Five are measured by the indicators (the dbt
+# tests count with consistency); accuracy is measured by the audit controls of the «Resultados» step, which check the
+# figures against the source.
+HUB = [
+    ("exactitud", "Exactitud", "calculator", "left"),
+    ("validez", "Validez", "shield", "left"),
+    ("unicidad", "Unicidad", "database", "left"),
+    ("actualidad", "Actualidad", "gear", "right"),
+    ("completitud", "Completitud", "calendar", "right"),
+    ("consistencia", "Consistencia", "parity", "right"),
+]
+HUB_DIMENSIONS = {"consistencia": ["consistencia", "pruebas"]}
+HUB_QUESTIONS = dict(
+    QUESTIONS,
+    exactitud="¿Las cifras coinciden con la fuente?",
+    consistencia="¿Los datos concuerdan entre sí y pasaron sus pruebas?",
+)
+RESULTS_STEP = "Resultados"
+# What each gate box asks, short, so the diagram fits one screen; its pop-up and its hover ask the whole question.
+GATE_BOX_QUESTIONS = ["¿Completo y al día?", "¿Cada fila es válida?", "¿Coherente y probada?"]
+NUMBER_WORDS = {1: "un", 2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis", 7: "siete"}
 # endregion
 
 
@@ -324,66 +385,6 @@ def build_verdict(indicators):
 
 
 # region Markup
-# The three gates of D-245 and the dimensions each watches: (gate, question it answers, dimensions). Accuracy has no
-# indicator of its own: its controls run in pytest on the new base, before it is published, so it is watched at the third.
-GATE_VIEW = [
-    ("Puerta 1 · el archivo", "¿Llegó completo y al día?", ["completitud", "actualidad"]),
-    ("Puerta 2 · cada fila", "¿Cada fila es válida?", ["validez"]),
-    (
-        "Puerta 3 · la base",
-        "¿La base es coherente y pasó sus pruebas?",
-        ["consistencia", "unicidad", "pruebas", "exactitud"],
-    ),
-]
-# The three gates: (title, what is stopped, what happens to the data, where, evidence).
-GATES = [
-    (
-        "Puerta 1 · el archivo",
-        "Un CSV vacío o con columnas distintas no se guarda; un archivo con muchas menos filas que el anterior o una semana "
-        "faltante detiene la carga.",
-        "No entra nada de ese archivo y la base publicada no cambia.",
-        "agent/agent.py y etl/etl.py",
-        "tests/test_agent.py, tests/test_etl_run.py",
-    ),
-    (
-        "Puerta 2 · cada fila",
-        "Un precio no positivo o con formato inválido se rechaza; una unidad no convertible o un precio atípico se marca.",
-        "La fila rechazada queda en la tabla rejection con su motivo; el precio marcado queda en la base, fuera de los "
-        "indicadores.",
-        "modelos intermedios de dbt (int_prices__validated, int_prices__outlier_flagged)",
-        "pruebas de dbt",
-    ),
-    (
-        "Puerta 3 · la base",
-        "Si falla una prueba de dbt, si la carga lee menos del 90 % de la anterior o si pytest falla sobre la base nueva "
-        "(incluida la paridad con SQLite), la base no se publica.",
-        "La base publicada sigue igual: el workflow se detiene antes de publicarla, GitHub Actions lo marca en rojo y avisa "
-        "al autor por correo (D-269).",
-        "etl/pipeline.py y .github/workflows/semanal.yml",
-        "tests/test_pipeline_gate.py",
-    ),
-]
-SOURCES = {"wholesale": "mayorista", "consumer": "consumidor"}
-# The six dimensions of data quality around healthy data: (key, name, icon, side). Five are measured by the indicators (the dbt
-# tests count with consistency); accuracy is measured by the audit controls of the «Resultados» step, which check the
-# figures against the source.
-HUB = [
-    ("exactitud", "Exactitud", "calculator", "left"),
-    ("validez", "Validez", "shield", "left"),
-    ("unicidad", "Unicidad", "database", "left"),
-    ("actualidad", "Actualidad", "gear", "right"),
-    ("completitud", "Completitud", "calendar", "right"),
-    ("consistencia", "Consistencia", "parity", "right"),
-]
-HUB_DIMENSIONS = {"consistencia": ["consistencia", "pruebas"]}
-HUB_QUESTIONS = dict(
-    QUESTIONS,
-    exactitud="¿Las cifras coinciden con la fuente?",
-    consistencia="¿Los datos concuerdan entre sí y pasaron sus pruebas?",
-)
-RESULTS_STEP = "Resultados"
-
-
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
     ink, text, muted, card, border, accent = (
@@ -426,7 +427,7 @@ def wrap_document(palette, body):
         '<!doctype html><html lang="es"><head><meta charset="utf-8"><base href="about:srcdoc"><meta name="viewport" content="width=device-width,initial-scale=1">'
         + build_css(palette)
         + '</head><body>'
-        + quality_view.DEFS
+        + quality_view.defs()
         + f'<div class="qp">{body}</div></body></html>'
     )
 
@@ -461,11 +462,6 @@ def gate_measure(index, indicators):
     return dimension_status(
         [row[4] for row in rows]
     ) if rows else "info", f"{sum(row[4] == 'ok' for row in judged)} de {len(judged)} bien"
-
-
-# What each gate box asks, short, so the diagram fits one screen; its pop-up and its hover ask the whole question.
-GATE_BOX_QUESTIONS = ["¿Completo y al día?", "¿Cada fila es válida?", "¿Coherente y probada?"]
-NUMBER_WORDS = {1: "un", 2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis", 7: "siete"}
 
 
 def gate_dimensions(index):

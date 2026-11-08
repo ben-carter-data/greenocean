@@ -10,6 +10,26 @@ from bi import dashboard, home_mockup, page_weekly, queries
 
 # region Constants
 ROOT = Path(__file__).resolve().parents[1]
+ZAPALLO = {
+    'product': 'Zapallo',
+    'variety': 'Camote',
+    'quality': '1a nueva(o)',
+    'normalized_unit': 'kilo',
+    'channel': 'Mayorista',
+    'product_group': 'Hortalizas',
+    'national_price': 1812.07,  # the week's national price, 7 regions
+    '_previous_price': 1199.36,  # the week before, 8 regions: Arica, the cheapest, was still priced
+    '_same_before': 1247.07,
+    '_same_now': 1812.07,
+    '_same_regions': 2,  # the fixture keeps two of the seven regions, enough to read the calculation
+    'variation': 1812.07 / 1247.07 - 1,
+    '_coverage_changed': True,
+    '_regions': (2, 0, [('Biobío', 66.7), ('Coquimbo', 28.1)]),
+    '_calc': {
+        'used': [('Biobío', 1200.0, 2000.0), ('Coquimbo', 1336.03, 1711.22)],
+        'out': [('Arica y Parinacota', 'now'), ('Los Lagos', 'both')],
+    },
+}
 # endregion
 
 
@@ -97,16 +117,18 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
     assert 'Ningún producto empieza por «zz» en estas alertas.' in home_mockup.alert_table([], 'zz')
 
 
+def kept_variations(rows, direction):
+    """The changes the filter of products keeps for `direction`."""
+    return [row['variation'] for row in dashboard.keep_direction(rows, direction)]
+
+
 def test_d497_the_filter_keeps_one_direction_with_the_sharp_ones_and_says_when_nothing_moved():
     assert dashboard.PRODUCT_DIRECTIONS == ('Todo', 'Subidas', 'Bajadas')
     rows = [{'variation': value} for value in (0.50, 0.02, 0.0004, 0.0, -0.0004, -0.02, -0.50)]
-
-    def kept(direction):
-        return [row['variation'] for row in dashboard.keep_direction(rows, direction)]
-
-    assert kept('Todo') == [row['variation'] for row in rows]
-    assert kept('Subidas') == [0.50, 0.02]  # the sharp rise is included; what rounds to 0.0 % is neither
-    assert kept('Bajadas') == [-0.02, -0.50]
+    assert kept_variations(rows, 'Todo') == [row['variation'] for row in rows]
+    # the sharp rise is included; what rounds to 0.0 % is neither
+    assert kept_variations(rows, 'Subidas') == [0.50, 0.02]
+    assert kept_variations(rows, 'Bajadas') == [-0.02, -0.50]
     note = dashboard.NOTHING_MOVED['Subidas']
     assert note in home_mockup.products_table([], 'a', 'b', 'kiw', empty_note=note)
     assert 'Ningún producto empieza por «kiw»' in home_mockup.products_table([], 'a', 'b', 'kiw')
@@ -330,11 +352,13 @@ def _inside(x, y, path):
     return inside
 
 
-def _cross(a, b, c, d):
-    def side(p, q, r):
-        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+def _side(p, q, r):
+    """On which side of the line p→q the point r lies: the sign of their cross product."""
+    return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
 
-    return side(a, b, c) * side(a, b, d) < 0 and side(c, d, a) * side(c, d, b) < 0
+
+def _cross(a, b, c, d):
+    return _side(a, b, c) * _side(a, b, d) < 0 and _side(c, d, a) * _side(c, d, b) < 0
 
 
 def test_d092_each_line_starts_inside_its_region_and_no_two_lines_cross():
@@ -481,28 +505,6 @@ def test_d304_the_regions_column_says_which_regions_on_hover():
 
 
 # region The products table explains itself (D-327)
-ZAPALLO = {
-    'product': 'Zapallo',
-    'variety': 'Camote',
-    'quality': '1a nueva(o)',
-    'normalized_unit': 'kilo',
-    'channel': 'Mayorista',
-    'product_group': 'Hortalizas',
-    'national_price': 1812.07,  # the week's national price, 7 regions
-    '_previous_price': 1199.36,  # the week before, 8 regions: Arica, the cheapest, was still priced
-    '_same_before': 1247.07,
-    '_same_now': 1812.07,
-    '_same_regions': 2,  # the fixture keeps two of the seven regions, enough to read the calculation
-    'variation': 1812.07 / 1247.07 - 1,
-    '_coverage_changed': True,
-    '_regions': (2, 0, [('Biobío', 66.7), ('Coquimbo', 28.1)]),
-    '_calc': {
-        'used': [('Biobío', 1200.0, 2000.0), ('Coquimbo', 1336.03, 1711.22)],
-        'out': [('Arica y Parinacota', 'now'), ('Los Lagos', 'both')],
-    },
-}
-
-
 def test_d327_the_row_shows_the_prices_of_the_regions_it_compares_and_opens_its_calculation():
     page = home_mockup.products_table([dict(ZAPALLO)], '12–18 oct', '5–11 oct', published=9)
     # The two prices and the change rest on the same regions, so dividing them gives the change shown.

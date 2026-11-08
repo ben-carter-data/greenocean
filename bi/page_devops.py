@@ -98,6 +98,17 @@ RELOADED_NOTICE = "panel_reloaded"
 
 
 RUNS_VIEW_KEY = "runs_view"
+RUNS_VIEWS = dict(
+    zip(
+        RUNS_TABS,
+        (
+            lambda mode: show_devops_tab(mode),
+            lambda mode: show_runs_tab(mode),
+            lambda mode: show_cicd_tab(mode),
+            lambda mode: show_monitoring_tab(mode),
+        ),
+    )
+)
 # endregion
 
 
@@ -508,19 +519,6 @@ def show_runs_tab(mode):
         if live
         else None,
     )()
-
-
-RUNS_VIEWS = dict(
-    zip(
-        RUNS_TABS,
-        (
-            lambda mode: show_devops_tab(mode),
-            lambda mode: show_runs_tab(mode),
-            lambda mode: show_cicd_tab(mode),
-            lambda mode: show_monitoring_tab(mode),
-        ),
-    )
-)
 
 
 def show_runs_page(mode):
