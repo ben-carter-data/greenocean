@@ -9,15 +9,19 @@ from bi import alerts, dashboard, i18n, overview, project
 def test_d385_the_alert_rule_is_written_once_from_the_constants_of_the_code():
     rule = alerts.describe_rule()
     for value in (
-        f"± {alerts.ALERT_DEVIATIONS} desviaciones",
+        f"más de {alerts.ALERT_DEVIATIONS} veces lo que suele variar (desviación estándar)",
         f"{alerts.ALERT_WINDOW_WEEKS} semanas previas",
-        f"{round(alerts.ALERT_MINIMUM_CHANGE * 100)} %",
-        f"{alerts.QUOTE_WORDS[alerts.ALERT_MINIMUM_QUOTES]} cotizaciones",
+        f"al menos {round(alerts.ALERT_MINIMUM_CHANGE * 100)} %",
+        f"{alerts.QUOTE_WORDS[alerts.ALERT_MINIMUM_QUOTES]} precios informados (cotizaciones)",
     ):
         assert value in rule, value
     assert dict((name, how) for name, how, _ in overview.KPIS)["Alerta de precio"] == rule
-    # The documents and the two working sources say the same, with the same numbers.
-    words = rule.removeprefix("Un cambio fuera del ").rstrip(".")
+    # The documents and the two working sources write it as a formula (D-553), with the same numbers.
+    words = (
+        f"promedio ± {alerts.ALERT_DEVIATIONS} desviaciones de sus {alerts.ALERT_WINDOW_WEEKS} semanas previas, de al "
+        f"menos {round(alerts.ALERT_MINIMUM_CHANGE * 100)} % y con {alerts.QUOTE_WORDS[alerts.ALERT_MINIMUM_QUOTES]} "
+        "cotizaciones en cada semana"
+    )
     prd = i18n.document_path("PRD.md", "es").read_text(encoding="utf-8")
     assert words in next(line for line in prd.splitlines() if line.startswith("| RF-05 |"))
     guide = {row["KPI"]: row for row in project.read_guide_table("KPI")}

@@ -22,12 +22,22 @@ QUOTE_WORDS = {2: "dos", 3: "tres"}
 
 
 # region The rule in words
+def describe_distance() -> str:
+    """How far an unusual change goes from the usual one, in plain words (D-482): one wording for the rule and the chips."""
+    return (
+        f"ese cambio se alejó del cambio promedio de sus {ALERT_WINDOW_WEEKS} semanas previas más de {ALERT_DEVIATIONS} "
+        "veces lo que suele variar (desviación estándar)"
+    )
+
+
 def describe_rule() -> str:
-    """K6 in words, from the constants above: the one definition the panel and the documents repeat (D-385)."""
+    """K6 in plain words, from the constants above: the one definition the panel repeats (D-385). D-553: anyone reads
+    it, with the technical term in brackets; the documents write it as a formula, with the same numbers."""
     quotes = QUOTE_WORDS.get(ALERT_MINIMUM_QUOTES, str(ALERT_MINIMUM_QUOTES))
     return (
-        f"Un cambio fuera del promedio ± {ALERT_DEVIATIONS} desviaciones de sus {ALERT_WINDOW_WEEKS} semanas previas, "
-        f"de al menos {round(ALERT_MINIMUM_CHANGE * 100)} % y con {quotes} cotizaciones en cada semana."
+        f"El precio subió o bajó al menos {round(ALERT_MINIMUM_CHANGE * 100)} % frente a la semana anterior, y "
+        f"{describe_distance()}. Además, en cada una de las dos semanas hay al menos {quotes} precios informados "
+        "(cotizaciones)."
     )
 
 
@@ -46,10 +56,8 @@ def describe_kind(rise: bool, professional: bool, regional: bool = False) -> str
         )
     # D-482: the distance is from the usual change, not from zero, as the formula of the Profesional says
     return (
-        f"El precio {'subió' if rise else 'bajó'} al menos {change} % frente a la semana anterior, y ese cambio se "
-        f"alejó del cambio promedio de sus {ALERT_WINDOW_WEEKS} semanas previas más de {ALERT_DEVIATIONS} veces lo "
-        f"que suele variar (desviación estándar). "
-        f"{'Conviene comparar antes de comprar.' if rise else 'Una oportunidad de compra.'}"
+        f"El precio {'subió' if rise else 'bajó'} al menos {change} % frente a la semana anterior, y "
+        f"{describe_distance()}. {'Conviene comparar antes de comprar.' if rise else 'Una oportunidad de compra.'}"
     )
 
 

@@ -41,55 +41,67 @@ KPI_QUESTIONS = {
     "Dirección de una región": "¿Los precios de una región suben o bajan de verdad, o es azar?",
     "Alerta de precio": "¿Qué precio se movió fuera de lo normal?",
     "Alza frente al IPC": "¿Qué familias subieron más que la inflación?",
-    "Precio real": "¿Un precio es caro o barato, descontada la inflación?",
+    "Precio real": "¿Un precio es caro o barato, si se quita el efecto de la inflación?",
     "Brecha consumidor–mayorista": "¿Cuánto más paga el consumidor que el mayorista?",
     "Calidad de los datos": "¿Se puede confiar en los datos de esta semana?",
 }
+# D-553: each KPI in words anyone reads, with the technical term in brackets the first time it appears.
 KPIS = [
     (
         "Cambio típico",
-        "Mediana de los cambios semanales de los precios comparables: los que tienen precio en las mismas "
-        "regiones ambas semanas.",
-        "La mediana no se mueve por un precio extremo, y comparar las mismas regiones evita "
-        "confundir un cambio de cobertura con un cambio de precio.",
+        "Se mira cuánto cambió cada precio frente a la semana anterior y se toma el del medio (la mediana). Cada "
+        "precio se compara solo en las regiones que tienen dato las dos semanas (precio comparable).",
+        "Así, un producto que se disparó no exagera el resultado, y una región que dejó de informar no se confunde "
+        "con un cambio de precio.",
     ),
     (
         "Subieron y bajaron",
-        "Precios comparables con un cambio de al menos +0,05 % (o −0,05 %), sobre el total de comparables.",
-        "Dice si el movimiento es general o de unos pocos productos.",
+        "De los precios que se pueden comparar con la semana anterior, se cuenta qué parte subió y qué parte bajó "
+        "(porcentaje del total). Un cambio menor que 0,05 % cuenta como «sin cambio».",
+        "Muestra si se movieron casi todos los precios o solo unos pocos.",
     ),
     (
         "Dirección de una región",
-        "Una región sube o baja solo si sus alzas y bajas difieren más de lo que da el azar "
-        "(prueba de signo, p < 0,05).",
-        "Un 52 % contra un 48 % no es una tendencia: es una moneda al aire.",
+        "Se cuentan los precios de la región que subieron y los que bajaron. La región «sube» o «baja» solo si la "
+        "diferencia es tan grande que por casualidad saldría menos de 5 veces en 100 (prueba de signo, p < 0,05); "
+        "si no, se marca «=».",
+        "Si 52 precios suben y 48 bajan, no es una tendencia: es lo que pasa al lanzar una moneda 100 veces.",
     ),
     (
         "Alerta de precio",
         alerts.describe_rule(),  # D-385: the rule of bi/alerts.py, never written by hand
-        "Separa lo inusual y material del ruido de cada semana.",
+        "Muestra solo los cambios raros y grandes, y deja fuera los vaivenes normales de cada semana.",
     ),
     (
         "Alza frente al IPC",
-        "Índice de la familia (enero 2022 = 100, mediana de sus series de consumidor) frente al IPC de "
-        "alimentos del INE; ± 2 puntos es «al ritmo».",
-        "Dice si una familia se encareció o se abarató en términos reales.",
+        "Cada precio al consumidor de la familia se mide contra el de enero de 2022, que vale 100 (un índice), y la "
+        "familia toma el valor del medio (la mediana). Su cambio se compara con el de los precios de los alimentos en "
+        "los mismos meses (IPC de alimentos del INE): si la diferencia no pasa de "
+        f"{inflation_view.SAME_PACE_POINTS:g} puntos, va «al ritmo de la inflación».",
+        "Muestra si una familia se volvió más cara o más barata de verdad, después de quitar la subida general de "
+        "los precios (en términos reales).",
     ),
     (
         "Precio real",
-        "Precio de la semana × IPC del último mes publicado ÷ IPC del mes de esa semana.",
-        "Permite comparar precios de distintos años en pesos de hoy.",
+        "El precio de esa semana se pasa a pesos de hoy: se multiplica por cuánto subieron los alimentos desde ese "
+        "mes hasta el último publicado (precio × IPC del último mes ÷ IPC del mes de esa semana).",
+        "Así un precio de 2022 se puede comparar con uno de hoy, los dos en pesos de hoy.",
     ),
     (
         "Brecha consumidor–mayorista",
-        "(Precio al consumidor − precio mayorista) ÷ precio mayorista, mismo producto, región, unidad y semana.",
-        "Muestra cuánto se agrega entre el mercado mayorista y la góndola.",
+        "Se calcula cuánto más cuesta un producto en la venta al público (precio al consumidor) que en el mercado "
+        "mayorista, en porcentaje del precio mayorista. Se compara el mismo producto, en la misma región, unidad y "
+        "semana.",
+        "Muestra cuánto sube el precio entre el mercado mayorista y la venta al público. No es la ganancia del "
+        "vendedor: no descuenta costos.",
     ),
     (
         "Calidad de los datos",
-        "11 indicadores de calidad de los datos, medidos en cada carga, en cinco dimensiones (completitud, actualidad, "
-        "validez, unicidad y consistencia) más controles de exactitud.",
-        "Una cifra solo vale si los datos de origen están completos y son válidos.",
+        "Cada vez que se cargan los datos, 11 indicadores revisan que estén todos (completitud), que sean los "
+        "últimos disponibles (actualidad), que cada valor tenga un formato y un rango permitidos (validez), que "
+        "ningún precio aparezca dos veces (unicidad) y que los datos concuerden entre sí (consistencia). También se "
+        "revisa que las cifras coincidan con la fuente (exactitud).",
+        "Una cifra solo sirve si los datos de donde sale están completos y son correctos.",
     ),
 ]
 POINT_ICONS = {
