@@ -12,9 +12,8 @@ import pandas as pd
 import streamlit as st
 
 from bi import (
+    app_bpmn,
     app_diagrams,
-    app_map,
-    app_map_detail,
     architecture,
     charts,
     control,
@@ -58,7 +57,6 @@ from bi.constants import (
     KPI_PARAMETER,
     KPI_PRESENTATION,
     LINEAGE_HINT,
-    MENU_BLOCKS,
     PAGE_APP_MAP,
     PAGE_ARCHITECTURE,
     PAGE_DIAGRAMS,
@@ -68,12 +66,9 @@ from bi.constants import (
     PIPELINE_LINEAGE,
     PIPELINE_VIEW_KEY,
     QUERIES_PATH,
-    RUNS_TABS,
     SECRET_GITHUB_TOKEN,
     SECRET_READ_TOKEN,
     SECTION_KPI,
-    SIDEBAR_LABELS,
-    SOURCE_LINKS,
     STEPS_PROVED_BY_A_SAVED_LOAD,
 )
 from bi.data_access import (
@@ -1162,29 +1157,15 @@ def show_rules_page(mode):
 
 
 # region «Mapa de la app»
-@st.cache_data(show_spinner=False)
-def read_app_map_facts(database_version):
-    """D-441: what the map reads from the system, once per database: the dbt models and tests, the loads, the served
-    tables, the manifest, the workflows, the requirements and the goals; and from the panel itself, its menu and the tabs
-    of the Operations center, so the map never repeats them by hand."""
-    menu = [
-        (title, [SIDEBAR_LABELS.get(page, page) for page in pages])
-        for _, title, pages in MENU_BLOCKS
-        if pages is not SOURCE_LINKS
-    ]
-    return app_map_detail.read_facts(queries.DATABASE_FILE, menu=menu, runs_tabs=list(RUNS_TABS))
-
-
 def show_app_map_page(mode):
-    """«Mapa de la app» (D-285): the whole system in one view; the stack is its summary."""
+    """«Mapa de la app» (D-285, D-562): the whole system as one BPMN sheet, in one view; the stack is its summary."""
     show_page_bar(
         PAGE_APP_MAP,
         PAGE_APP_MAP,
         "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y con qué se conecta.",
     )
-    addresses = {node[7]: build_page_address(node[7]) for node in app_map.NODES.values()}
-    facts = read_app_map_facts(get_database_version())
-    st.html(app_map.build_map_html(charts.get_palette(mode), addresses, facts), unsafe_allow_javascript=True)
+    st.markdown(app_bpmn.FIT, unsafe_allow_html=True)
+    st.iframe(app_bpmn.build_view(), height=600)
 
 
 # endregion
