@@ -6,7 +6,7 @@ GreenOcean follows food prices in Chile every week with official data: the whole
 
 Every Tuesday a pipeline downloads the sources, puts them in a single unit and a single week, checks their quality with 31 data tests and publishes the database only if everything passes. The dashboard lets you follow every figure back to its source file.
 
-[**Open the public dashboard**](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/?lang=en)
+[**Open the public dashboard**](https://greenocean.streamlit.app/?lang=en)
 
 [![tests](https://github.com/ben-carter-data/greenocean/actions/workflows/pruebas.yml/badge.svg)](https://github.com/ben-carter-data/greenocean/actions/workflows/pruebas.yml)
 [![weekly load](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml/badge.svg)](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml)

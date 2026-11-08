@@ -4447,3 +4447,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** corregir lo que un reclutador vería como contradicción antes de publicar.
 - **Decisión:** el Acta de cierre, en español y en inglés, decía en sus puntos menos fuertes que el panel vive en un solo archivo de casi 10.000 líneas, y en «Qué queda» que falta dividirlo; desde D-541 está dividido por responsabilidad. Ahora dice que lo estuvo, que se dividió después del cierre y que sigue siendo grande, con funciones largas, y lo que queda es acortar esas funciones. Pasa a la versión 1.2, con su fila en el historial. Las demás cifras del Acta son las del día del cierre y se quedan como estaban.
 - **Pruebas:** las de documentos e idiomas.
+
+## D-549 · El panel arranca en Streamlit Cloud: ningún import del proyecto antes de agregar su carpeta a la ruta
+- **Pedido del autor:** el panel público mostraba `ModuleNotFoundError` en `bi/dashboard.py` tras el push de D-544 a D-548.
+- **Decisión:** `from bi import static_files`, que D-544 dejó antes de `sys.path.insert`, pasa a la lista de imports del proyecto que viene después. Streamlit Cloud pone en la ruta de Python solo la carpeta `bi/`; en local y en el CI la carpeta del proyecto ya estaba en la ruta, por eso las pruebas pasaban con el panel roto (F-45 en `docs/calidad/plan_mitigacion.json`). `test_d549_the_panel_starts_as_streamlit_cloud_starts_it` arranca el panel en un proceso aparte, solo con `bi/` en la ruta: falla con el código anterior y pasa con la corrección.
+- **Nueva dirección:** el autor cambió el subdominio del panel en Streamlit Community Cloud a `greenocean.streamlit.app`; los dos README y el MANUAL, en los dos idiomas (versión 3.19), la usan. Las decisiones y el archivo histórico guardan la anterior, porque cuentan el pasado.
+- **Pruebas:** las de `tests/test_dashboard.py`, las de estructura de `tests/test_project.py` y las de recarga del panel.

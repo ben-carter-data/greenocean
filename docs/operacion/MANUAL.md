@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.18 |
-| Fecha | 03-11-2026 |
+| Versión | 3.19 |
+| Fecha | 08-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Indicar qué ocurre de forma automática, qué se revisa y cuándo, y qué hacer ante cada falla. |
@@ -137,7 +137,7 @@ Los enlaces que se usan para operar el proyecto, agrupados por tarea.
 | Configuración | [Actions · General](https://github.com/ben-carter-data/greenocean/settings/actions) | Permisos del workflow para escribir y abrir pull requests | Si una publicación o un pull request son rechazados | «Workflow permissions» → «Read and write» y «Allow GitHub Actions to create and approve pull requests» |
 | Configuración | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) | La Base DuckDB que lee el panel | Si el panel no encuentra su base | Revisar que el archivo `datos.duckdb` esté en «Assets» |
 | Configuración | [Issues](https://github.com/ben-carter-data/greenocean/issues) | El informe semanal de cada carga publicada | Cada martes | «Informe semanal AAAA-MM-DD» |
-| La app | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | La app que ven el Usuario, el Profesional y el Autor | Después de cada push, para confirmar el cambio | Elegir la vista; como Autor, escribir la clave y Enter |
+| La app | [Panel publicado](https://greenocean.streamlit.app) | La app que ven el Usuario, el Profesional y el Autor | Después de cada push, para confirmar el cambio | Elegir la vista; como Autor, escribir la clave y Enter |
 | La app | [Streamlit Community Cloud](https://share.streamlit.io) | Los secretos del panel y su reinicio | Al renovar un token o si el panel muestra un error de módulo | La app → ⋮ → «Settings» → «Secrets», o «Reboot» |
 | Tokens | [Tokens de GitHub](https://github.com/settings/personal-access-tokens) | El vencimiento y los permisos de cada token | Cuando «Configuración» marca un token en ámbar o rojo | El token → «Regenerate token»; el valor nuevo se muestra una sola vez |
 | Tokens | [Crear un token](https://github.com/settings/personal-access-tokens/new) | Un token nuevo, solo para este repositorio | Si un token falta | «Repository access» → este repositorio; «Permissions» → «Actions» |
@@ -170,7 +170,7 @@ Cinco casos, cada uno con sus pasos en orden. Un paso automático lo hace el sis
 | Una fuente se atrasó | 3 | Manual | Revisar en ODEPA si la semana ya está publicada | [Datos abiertos de ODEPA](https://datos.odepa.gob.cl) |
 | Una fuente se atrasó | 4 | Manual | No rellenar nada: la carga vuelve sola cuando la fuente publica | — |
 | La app no se actualiza | 1 | Automático | Después de cada push a main, Streamlit Community Cloud vuelve a desplegar la app | — |
-| La app no se actualiza | 2 | Manual | Abrir el panel publicado y confirmar que el cambio llegó | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) |
+| La app no se actualiza | 2 | Manual | Abrir el panel publicado y confirmar que el cambio llegó | [Panel publicado](https://greenocean.streamlit.app) |
 | La app no se actualiza | 3 | Manual | Si una página muestra `AttributeError` o no cambia: la app → ⋮ → «Reboot», y esperar uno o dos minutos | [Streamlit Community Cloud](https://share.streamlit.io) |
 | La app no se actualiza | 4 | Manual | Si el panel dice que no tiene la Base DuckDB, revisar que `datos.duckdb` esté en el release | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) |
 
@@ -223,3 +223,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.16 | 03-11-2026 | El informe semanal de calidad mide 5 indicadores de datos: se suman regiones o canales ausentes y precios atípicos de la semana (2, D-475) |
 | 3.17 | 03-11-2026 | La carga se programa a las 12:17 UTC con dos intentos más, 14:17 y 16:17, y nunca corren dos a la vez (D-485) |
 | 3.18 | 03-11-2026 | La carga intenta cada 15 minutos hasta mediodía y cada hora hasta la noche del martes; si no partió, el Autor la lanza a mano (D-487) |
+| 3.19 | 08-11-2026 | El panel publicado tiene su nueva dirección, greenocean.streamlit.app (D-549) |

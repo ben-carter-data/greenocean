@@ -3,6 +3,7 @@
 import html
 import re
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -41,6 +42,20 @@ needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="
 
 
 # region Drawing the pages
+def test_d549_the_panel_starts_as_streamlit_cloud_starts_it():
+    """Streamlit Cloud puts only bi/ on Python's path: every project import must come after the line that adds the
+    project folder, or the public panel stops with ModuleNotFoundError while the local runs pass (F-45)."""
+    script = (
+        "import importlib.util, sys\n"
+        f"sys.path = [p for p in sys.path if p not in ('', '.', {str(PROJECT_DIR)!r})]\n"
+        f"sys.path.insert(0, {str(PROJECT_DIR / 'bi')!r})\n"
+        f"spec = importlib.util.spec_from_file_location('started', {DASHBOARD_FILE!r})\n"
+        "spec.loader.exec_module(importlib.util.module_from_spec(spec))\n"
+    )
+    done = subprocess.run([sys.executable, "-I", "-c", script], cwd="/", capture_output=True, text=True, timeout=120)
+    assert done.returncode == 0, done.stderr[-2000:]
+
+
 @pytest.fixture(autouse=True)
 def fixed_github_answers(monkeypatch):
     monkeypatch.setattr(control, "list_workflow_runs", lambda *args, **kwargs: [])

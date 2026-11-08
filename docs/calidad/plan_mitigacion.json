@@ -2504,6 +2504,58 @@
           "referencia": "D-546"
         }
       ]
+    },
+    {
+      "id": "F-45",
+      "categoria": "código",
+      "falla": [
+        "El panel público no arrancaba: Python no encontraba el paquete bi",
+        "The public panel did not start: Python could not find the bi package"
+      ],
+      "deteccion": [
+        "El autor abrió el panel público después del push",
+        "The author opened the public panel after the push"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Un import del proyecto quedó antes de la línea que agrega su carpeta a la ruta de Python; en local la carpeta ya estaba en la ruta",
+        "A project import sat before the line that adds the project folder to Python's path; locally the folder was already on it"
+      ],
+      "severidad": "alta",
+      "contencion": [
+        "El panel quedó caído hasta publicar la corrección",
+        "The panel stayed down until the fix was published"
+      ],
+      "correctiva": [
+        "El import pasa después de esa línea, y una prueba arranca el panel como Streamlit Cloud",
+        "The import moves after that line, and a test starts the panel as Streamlit Cloud does"
+      ],
+      "estacion": 15,
+      "caso_real": "D-549",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-08",
+          "ocurrencia": [
+            "El panel público mostró ModuleNotFoundError en bi/dashboard.py, línea 29, tras el push.",
+            "The public panel showed ModuleNotFoundError in bi/dashboard.py, line 29, after the push."
+          ],
+          "diagnostico": [
+            "from bi import static_files estaba antes de sys.path.insert; el CI no lo vio porque la carpeta ya estaba en su ruta.",
+            "from bi import static_files came before sys.path.insert; the CI missed it because the folder was already on its path."
+          ],
+          "solucion": [
+            "El import va con los demás del proyecto, y una prueba arranca el panel solo con bi/ en la ruta.",
+            "The import joins the other project imports, and a test starts the panel with only bi/ on the path."
+          ],
+          "comentario": [
+            "Probar el arranque como lo hace el servidor, no solo como lo hacen las pruebas.",
+            "Test the start as the server does it, not only as the tests do."
+          ],
+          "estacion": 15,
+          "estado": "resuelta",
+          "referencia": "D-549"
+        }
+      ]
     }
   ]
 }

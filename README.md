@@ -6,7 +6,7 @@ GreenOcean sigue cada semana los precios de los alimentos en Chile con datos ofi
 
 Cada martes un pipeline descarga las fuentes, las deja en una misma unidad y una misma semana, revisa su calidad con 31 pruebas de datos y publica la base solo si todo pasa. El panel permite seguir cada cifra hasta el archivo de origen.
 
-[**Abrir el panel público**](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/)
+[**Abrir el panel público**](https://greenocean.streamlit.app/)
 
 [![pruebas](https://github.com/ben-carter-data/greenocean/actions/workflows/pruebas.yml/badge.svg)](https://github.com/ben-carter-data/greenocean/actions/workflows/pruebas.yml)
 [![semanal](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml/badge.svg)](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml)

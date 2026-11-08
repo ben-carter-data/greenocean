@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.18 |
-| Date | 2026-11-03 |
+| Version | 3.19 |
+| Date | 2026-11-08 |
 | Status | Current |
 | Owner | The author |
 | Purpose | State what happens automatically, what is checked and when, and what to do about each failure. |
@@ -137,7 +137,7 @@ The links used to run the project, grouped by task.
 | Settings | [Actions · General](https://github.com/ben-carter-data/greenocean/settings/actions) | Workflow permissions to write and open pull requests | If a publication or a pull request is rejected | «Workflow permissions» → «Read and write» and «Allow GitHub Actions to create and approve pull requests» |
 | Settings | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) | The DuckDB database the panel reads | If the panel cannot find its database | Check that the file `datos.duckdb` is in «Assets» |
 | Settings | [Issues](https://github.com/ben-carter-data/greenocean/issues) | The weekly report of every published load | Every Tuesday | «Informe semanal» with its date |
-| The app | [Published panel](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | The app the User, the Professional and the Author see | After every push, to confirm the change | Choose the view; as Author, type the key and Enter |
+| The app | [Published panel](https://greenocean.streamlit.app) | The app the User, the Professional and the Author see | After every push, to confirm the change | Choose the view; as Author, type the key and Enter |
 | The app | [Streamlit Community Cloud](https://share.streamlit.io) | The panel's secrets and its restart | When renewing a token or if the panel shows a module error | The app → ⋮ → «Settings» → «Secrets», or «Reboot» |
 | Tokens | [GitHub tokens](https://github.com/settings/personal-access-tokens) | The expiry and the permissions of each token | When «Settings» marks a token amber or red | The token → «Regenerate token»; the new value is shown only once |
 | Tokens | [Create a token](https://github.com/settings/personal-access-tokens/new) | A new token, only for this repository | If a token is missing | «Repository access» → this repository; «Permissions» → «Actions» |
@@ -170,7 +170,7 @@ Five cases, each with its steps in order. An automatic step is done by the syste
 | A source is late | 3 | Manual | Check on ODEPA whether the week is already published | [ODEPA open data](https://datos.odepa.gob.cl) |
 | A source is late | 4 | Manual | Fill in nothing: the load resumes by itself when the source publishes | — |
 | The app does not update | 1 | Automatic | After every push to main, Streamlit Community Cloud deploys the app again | — |
-| The app does not update | 2 | Manual | Open the published panel and confirm the change arrived | [Published panel](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) |
+| The app does not update | 2 | Manual | Open the published panel and confirm the change arrived | [Published panel](https://greenocean.streamlit.app) |
 | The app does not update | 3 | Manual | If a page shows `AttributeError` or does not change: the app → ⋮ → «Reboot», and wait one or two minutes | [Streamlit Community Cloud](https://share.streamlit.io) |
 | The app does not update | 4 | Manual | If the panel says it has no DuckDB database, check that `datos.duckdb` is in the release | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) |
 
@@ -223,3 +223,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.16 | 2026-11-03 | The weekly quality report measures 5 data indicators: missing regions or channels and atypical prices of the week are added (2, D-475) |
 | 3.17 | 2026-11-03 | The load is scheduled at 12:17 UTC with two more attempts, 14:17 and 16:17, and two never run at once (D-485) |
 | 3.18 | 2026-11-03 | The load tries every 15 minutes until noon and every hour until Tuesday night; if it has not started, the Author launches it by hand (D-487) |
+| 3.19 | 2026-11-08 | The published panel has its new address, greenocean.streamlit.app (D-549) |

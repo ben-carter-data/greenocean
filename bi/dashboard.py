@@ -26,7 +26,6 @@ import sys
 from pathlib import Path
 
 import streamlit as st
-from bi import static_files
 
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
@@ -42,6 +41,7 @@ from bi import (
     doc_diagrams,  # noqa: F401  read by the tests through this module
     lineage,
     sql_explorer,
+    static_files,
     project,  # noqa: F401  read by the tests through this module
     queries,
 )
