@@ -2,9 +2,9 @@ English version: README.en.md
 
 # GreenOcean · Monitor de precios de alimentos en Chile
 
-Pipeline semanal y panel de BI sobre los precios mayoristas y al consumidor de ODEPA, con precios reales calculados con el IPC de alimentos del INE.
+GreenOcean sigue cada semana los precios de los alimentos en Chile con datos oficiales: los precios mayoristas y al consumidor de ODEPA y el IPC de alimentos del INE, que permite verlos en pesos reales.
 
-Cada martes el pipeline descarga las fuentes oficiales, las deja en una misma unidad y una misma semana, valida su calidad con 31 pruebas de datos y publica la base solo si todo pasa. El panel permite seguir cada cifra hasta el archivo de origen.
+Cada martes un pipeline descarga las fuentes, las deja en una misma unidad y una misma semana, revisa su calidad con 31 pruebas de datos y publica la base solo si todo pasa. El panel permite seguir cada cifra hasta el archivo de origen.
 
 [**Abrir el panel público**](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/)
 
@@ -13,16 +13,45 @@ Cada martes el pipeline descarga las fuentes oficiales, las deja en una misma un
 [![calidad](https://github.com/ben-carter-data/greenocean/actions/workflows/calidad.yml/badge.svg)](https://github.com/ben-carter-data/greenocean/actions/workflows/calidad.yml)
 [![cobertura](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fben-carter-data%2Fgreenocean%2Fmain%2Fdocs%2Fcalidad%2Fmedicion.json&query=%24.cobertura.total&suffix=%25&label=cobertura&color=brightgreen)](docs/calidad/INFORME.md)
 
+## Por qué lo hice
+
+Quería construir un pipeline de datos de punta a punta sobre una fuente pública chilena y mostrar cómo trabajo, no solo qué herramientas conozco. Elegí los precios de alimentos porque parecían simples: archivos CSV públicos con columnas claras. No lo eran, y ese trabajo escondido es justamente lo que el proyecto deja a la vista.
+
+Lo construí con un asistente de inteligencia artificial que trabajó bajo reglas escritas en el repositorio. Yo definí el problema, los criterios de aceptación, qué bloquea una publicación y cada decisión importante; todas quedaron registradas.
+
+## Por dónde empezar
+
+**Si eres de ingeniería de datos**, el corazón del proyecto es pequeño:
+1. [`agent/agent.py`](agent/agent.py): descarga y valida los archivos de ODEPA.
+2. [`etl/`](etl/): el aterrizaje en SQLite, la capa bronce en Parquet y [`pipeline.py`](etl/pipeline.py), que corre dbt y publica la base solo si las pruebas pasan.
+3. [`dbt/models/`](dbt/models/): las transformaciones en staging, intermedio y marts, con sus pruebas.
+4. [`.github/workflows/semanal.yml`](.github/workflows/semanal.yml): la carga automática de cada martes.
+
+**Si eres de análisis de sistemas de negocio (BSA)**:
+1. El [PRD](docs/negocio/PRD.md): el problema, los interesados y los requisitos numerados, cada uno con la prueba que lo verifica.
+2. El [Acta de cierre](docs/negocio/ACTA_DE_CIERRE.md): cómo empezó, qué se esperaba y qué se encontró en los datos.
+3. El [plan de calidad](docs/calidad/PLAN_DE_CALIDAD.md) y el [registro de fallas](docs/calidad/plan_mitigacion.json): cómo se mide la calidad y qué se hizo cada vez que algo falló.
+4. El [índice de decisiones](docs/arquitectura/INDICE_DECISIONES.md): las decisiones principales, por tema.
+
+**Si quieres ver el resultado**, abre el panel en las páginas «Semanal» y «Análisis».
+
 ## El panel
 
 | | |
 |---|---|
 | ![Semanal](docs/img/readme/panorama.png) | ![Insights](docs/img/readme/insights.png) |
-| **Semanal**, el primero de los tres dashboards: qué subió y qué bajó esta semana, por región y por familia | **Insights**, una pestaña de «Análisis»: las preguntas de quien compra, de quien vende por mayor y de quien diseña los datos |
+| **Semanal**: qué subió y qué bajó esta semana, por región y por familia | **Insights**, una pestaña de «Análisis»: las preguntas de quien compra, de quien vende por mayor y de quien diseña los datos |
 | ![Pipeline y linaje](docs/img/readme/pipeline.png) | ![Controles de datos](docs/img/readme/calidad.png) |
-| **Pipeline y linaje**: el recorrido de los datos y el estado de sus pruebas | **Controles de datos**: las tres puertas de calidad de cada carga, con las filas que pasan y las que se rechazan |
+| **Pipeline y linaje**: el recorrido de los datos y el estado de sus pruebas | **Controles de datos**: las puertas de calidad de cada carga, con las filas que pasan y las que se rechazan |
 
-Páginas del panel, en el orden del menú: los dos dashboards, Semanal y Análisis (con las pestañas Mensual, Histórico, Precios e inflación, Insights, Interesados y Método); Pipeline y linaje, Reglas de transformación, Modelo de datos y Consultas SQL; Centro de operación, GitHub Actions y Configuración (solo el Autor); Stack y evidencia, Mapa de la app y Arquitectura de seguridad; Plan de calidad, Controles de datos y Cambios e incidentes; y, al pie del menú, dos carpetas: Documentos del proyecto y Análisis de la fuente de datos (los dos cuadernos de Jupyter que estudian el archivo mayorista de ODEPA, en `notebooks/`). La vista Usuario muestra la primera sección; la Profesional, todas menos «DevOps y seguridad», que es solo del Autor. Está en español y en inglés.
+El panel está en español y en inglés, y tiene tres vistas: Usuario (los dashboards), Profesional (todo lo técnico) y Autor (la operación).
+
+<details>
+<summary>Todas las páginas del panel</summary>
+
+Páginas del panel, en el orden del menú: Semanal y Análisis, con sus pestañas Mensual, Histórico, Precios e inflación, Insights, Interesados y Método; Pipeline y linaje, Reglas de transformación, Modelo de datos y Consultas SQL; Centro de operación, GitHub Actions y Configuración, solo para el Autor; Stack y evidencia, Mapa de la app y Arquitectura de seguridad; Plan de calidad, Controles de datos y Cambios e incidentes; y, al pie del menú, las carpetas Documentos del proyecto y Análisis de la fuente de datos.
+
+</details>
 
 ## Qué responde
 
@@ -30,15 +59,15 @@ Páginas del panel, en el orden del menú: los dos dashboards, Semanal y Anális
 - ¿El precio de hoy es normal para la temporada, en pesos nominales o reales?
 - ¿Cuánto paga el consumidor sobre el precio mayorista, por canal?
 
-Además muestra la calidad de cada carga (filas leídas, cargadas y rechazadas con su motivo) y permite auditar cualquier precio paso a paso.
+Además muestra la calidad de cada carga, con las filas leídas, cargadas y rechazadas y su motivo, y permite auditar cualquier precio paso a paso.
 
 ## Cómo funciona
 
 1. **Ingesta** en Python: descarga los CSV de ODEPA y el IPC del INE.
 2. **Aterrizaje** en SQLite (`etl/raw.db`): las filas de ODEPA tal como llegan.
-3. **Bronce** en Parquet: copia literal de cada fuente, por año; el IPC llega aquí directo.
+3. **Bronce** en Parquet: una copia literal de cada fuente, por año.
 4. **Transformación** con dbt Core sobre DuckDB: staging, intermedio y marts, con 31 pruebas.
-5. **Publicación** de `etl/datos.duckdb` en el release «base-actual» de GitHub, que cada carga reemplaza; el panel de Streamlit la descarga y la lee en solo lectura.
+5. **Publicación** de la base `etl/datos.duckdb` en el release «base-actual» de GitHub. El panel de Streamlit la descarga y la lee sin poder modificarla.
 
 ```mermaid
 flowchart LR
@@ -54,49 +83,47 @@ flowchart LR
     W[GitHub Actions<br/>cada martes] -.orquesta.-> A
 ```
 
-GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los diagramas completos (pipeline y linaje, modelo estrella, despliegue, CI/CD, monitoreo y arquitectura de seguridad) están en el panel; el [SAD](docs/arquitectura/SAD.md) describe la arquitectura por vistas y enlaza a ellos.
+GitHub Actions corre la carga cada martes y las pruebas en cada cambio. Si una prueba falla, no se publica nada y el panel sigue mostrando la última carga válida. El [SAD](docs/arquitectura/SAD.md) describe la arquitectura completa.
+
+## Lo que encontré en los datos
+
+- **Las unidades se escriben a mano.** ODEPA usa unas 200 formas distintas, como «$/bandeja 18 kilos» o «$/kilo (en caja de 17 kilos)». Las revisé una por una; las que no se pueden leer quedan sin precio por kilo, nunca con uno adivinado.
+- **Un cambio de envase parece un cambio de precio.** Una alerta marcaba que el kiwi del Maule subió 25,6 % en una semana. En realidad había pasado de bandeja de 18 kilos a bandeja de 10: comparando el mismo envase, subió 8,8 %. Desde entonces, cada variación compara solo el mismo envase.
+- **Las fuentes no siempre llegan a tiempo.** Cuando una se atrasa, el panel publica hasta la última semana completa en ambas, sin rellenar nada.
 
 ## Estructura
 
 ```
 ├── agent/
 │   ├── agent.py         descarga y validación de los archivos de ODEPA
-│   └── input.csv        recursos a descargar
+│   ├── input.csv        recursos a descargar
+│   ├── certs/           certificado raíz que necesita la conexión con ODEPA
+│   └── downloads/       los CSV descargados (no se suben) y manifest.json, el registro de cada descarga
 ├── etl/
 │   ├── etl.py           aterrizaje en SQLite y respaldo datos.db
-│   ├── raw.db           aterrizaje de ODEPA (no se sube; lo genera la ingesta)
 │   ├── bronze.py        capa bronce en Parquet
 │   ├── ine.py           IPC de alimentos del INE
 │   ├── pipeline.py      dbt build y publicación de la base
-│   ├── datos.version    puntero de la base servida (la base vive en el release «base-actual»)
-│   ├── datos.duckdb     base servida (no se sube; python bi/served_database.py la descarga)
-│   └── datos.db         respaldo en SQLite (no se sube; lo rehace cada carga)
+│   ├── datos.version    puntero de la base publicada en el release «base-actual»
+│   └── raw.db, datos.duckdb, datos.db   bases locales (no se suben)
 ├── dbt/                 proyecto dbt: staging, intermedio, marts y pruebas
 ├── bi/                  panel Streamlit, un archivo por responsabilidad
-│   ├── dashboard.py     arranque, navegación, menú y barra de íconos
-│   ├── constants.py     nombres fijos: páginas, menú y temas
-│   ├── data_access.py   lecturas de la Base DuckDB y de GitHub
-│   ├── app_frame.py     tema, perfil, acceso del Autor y encabezado
-│   ├── app_style.py     hojas de estilo globales
+│   ├── dashboard.py     arranque, navegación y menú
 │   ├── page_*.py        las páginas: Semanal, Análisis, ingeniería, calidad, DevOps y documentos
 │   ├── queries.sql      consultas del panel
-│   └── static/          JavaScript y HTML de las vistas
-│   (y el resto del panel: diagramas, textos en español e inglés)
-├── docs/                los documentos, en cuatro carpetas (negocio, arquitectura, calidad y operación), y las decisiones
-│   ├── en/              los mismos documentos y carpetas, en inglés
-│   ├── img/             capturas del panel
-│   ├── calidad/         aceptables y metas, informes numerados, plan de mitigación y política
-│   └── archivo/         historia del proyecto (hitos y backlog); no es lectura
-├── scripts/             medición e informe de calidad, y la descarga con doble clic en macOS
-├── tests/               pruebas automáticas (pytest) y sus datos en fixtures/
+│   └── static/          CSS, JavaScript y HTML de las vistas
+├── docs/                documentos en español (negocio, arquitectura, calidad y operación) y en inglés (en/)
+├── notebooks/           el estudio del archivo mayorista de ODEPA, en dos cuadernos de Jupyter
+├── scripts/             medición e informe de calidad
+├── tests/               pruebas automáticas (pytest)
 └── .github/workflows/   semanal.yml, pruebas.yml y calidad.yml
 ```
 
 ## Calidad
 
-La calidad se gestiona en dos partes: la de **los datos que publicamos** (pruebas de dbt, precios con comparación válida, filas rechazadas, vigencia) y la del **código que los trata** (pruebas y cobertura, Ruff, mypy, hallazgos altos de Bandit, vulnerabilidades de pip-audit, posibles secretos). Cada indicador se lee como su falla frente a un aceptable fijado por el autor.
+Mido la calidad en dos partes: la de los datos que publico (pruebas de dbt, comparaciones válidas, filas rechazadas y vigencia) y la del código que los trata (pruebas y cobertura, Ruff, mypy, Bandit, pip-audit y búsqueda de secretos). Cada indicador tiene un límite aceptable que yo fijé.
 
-La página «Plan de calidad» tiene dos pestañas: *Resumen*, con cómo vamos, y *Informes*, la lista de los [informes de calidad](docs/calidad/README.md) numerados, que no se editan y se abren como diapositivas, con comparación entre informes y descarga en PDF. La línea bajo el logo del panel lleva al último. Es una autoevaluación automática, revisada por el autor, no una auditoría externa. El workflow «calidad» mide en cada push y propone el informe en un pull request; el panel lo muestra solo cuando el autor lo fusiona. Las insignias de arriba son las de ese workflow y la cobertura de la última medición aprobada. Los commits siguen Conventional Commits ([CONTRIBUTING](CONTRIBUTING.md)).
+Un workflow mide los indicadores en cada cambio y, después de cada carga en verde, propone un informe. El panel lo muestra en la página «Plan de calidad» solo cuando lo apruebo. Es una autoevaluación automática, no una auditoría externa. Los commits siguen Conventional Commits ([CONTRIBUTING](CONTRIBUTING.md)).
 
 ## Stack
 
