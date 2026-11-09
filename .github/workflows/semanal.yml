@@ -71,8 +71,10 @@ jobs:
           python-version: "3.11"
           cache: pip  # D-567: the packages come from the Actions cache when they can
           cache-dependency-path: requirements*.txt
-      # D-568: an install that fails whole is tried twice more
-      - run: for attempt in 1 2 3; do pip install -r requirements-pipeline.txt && exit 0; sleep $((attempt * 30)); done; exit 1
+      # D-568: an install that fails whole is tried twice more; the step keeps the name GitHub gave it, which the
+      # «Flujo del sistema en vivo» reads (bi/live_flow.py)
+      - name: Run pip install -r requirements-pipeline.txt
+        run: for attempt in 1 2 3; do pip install -r requirements-pipeline.txt && exit 0; sleep $((attempt * 30)); done; exit 1
         if: steps.guard.outputs.run == 'true'
 
       # D-047: the files of closed years do not change, so they are kept in the

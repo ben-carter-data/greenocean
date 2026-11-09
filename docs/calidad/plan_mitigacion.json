@@ -2707,7 +2707,7 @@
     },
     {
       "id": "F-48",
-      "categoria": "CI",
+      "categoria": "operación",
       "falla": [
         "Una caída de GitHub dejó en rojo pruebas.yml en dos subidas seguidas",
         "A GitHub outage turned pruebas.yml red on two pushes in a row"
@@ -2754,6 +2754,28 @@
           "estacion": 14,
           "estado": "resuelta",
           "referencia": "D-567"
+        },
+        {
+          "fecha": "2026-11-09",
+          "ocurrencia": [
+            "Con el arreglo, el grupo 2 siguió en rojo en las dos versiones, sin decir en qué prueba.",
+            "With the fix, group 2 stayed red on both versions, without saying in which test."
+          ],
+          "diagnostico": [
+            "Este mismo registro usaba la categoría «CI», que no existe, y el arreglo cambió el nombre del paso que lee el flujo en vivo.",
+            "This very record used the category «CI», which does not exist, and the fix changed the name of the step the live flow reads."
+          ],
+          "solucion": [
+            "La categoría pasa a «operación», el paso conserva su nombre y el CI escribe cada prueba que falla en sus notas.",
+            "The category becomes «operación», the step keeps its name and the CI writes each failed test in its notes."
+          ],
+          "comentario": [
+            "Antes de subir, correr todas las pruebas del grupo que toca el cambio, también las del registro.",
+            "Before pushing, run every test of the group the change touches, the register's too."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-568"
         }
       ]
     }
