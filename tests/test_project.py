@@ -80,8 +80,10 @@ def test_t54_every_public_link_answers(link):
         response = requests.get(
             link["url"], timeout=20, allow_redirects=True, headers={"User-Agent": "monitor-precios-tests"}
         )
-    except requests.ConnectionError:
+    except (requests.ConnectionError, requests.Timeout):
         pytest.skip("no network")
+    if response.status_code >= 500:  # D-567: GitHub is down, not the link: an outage never turns a push red
+        pytest.skip(f"{link['name']}: the site answers {response.status_code}")
     assert response.status_code < 400, f"{link['name']}: {response.status_code}"
 
 

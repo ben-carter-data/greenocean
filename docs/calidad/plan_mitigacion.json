@@ -2704,6 +2704,58 @@
           "referencia": "D-558"
         }
       ]
+    },
+    {
+      "id": "F-48",
+      "categoria": "CI",
+      "falla": [
+        "Una caída de GitHub dejó en rojo pruebas.yml en dos subidas seguidas",
+        "A GitHub outage turned pruebas.yml red on two pushes in a row"
+      ],
+      "deteccion": [
+        "El autor envió las capturas de GitHub Actions; la página de estado de GitHub informaba la caída",
+        "The author sent the GitHub Actions screenshots; GitHub's status page reported the outage"
+      ],
+      "causa": "externa",
+      "causa_raiz": [
+        "El CI descargaba la base sin sesión y sin reintentos, pip no reintentaba y una prueba tomaba un 504 de GitHub como enlace roto",
+        "CI downloaded the database anonymously and without retries, pip did not retry and a test read a GitHub 504 as a broken link"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "El código y los datos publicados no cambiaron; solo el CI quedó en rojo",
+        "The published code and data did not change; only the CI stayed red"
+      ],
+      "correctiva": [
+        "La descarga usa el token del workflow y reintenta, pip reintenta con caché, y la prueba de enlaces salta un error del sitio",
+        "The download uses the workflow token and retries, pip retries with a cache, and the link test skips a site error"
+      ],
+      "estacion": 14,
+      "caso_real": "D-567",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-09",
+          "ocurrencia": [
+            "pruebas.yml en rojo en fb7c2cb y en c2eca2e: cinco grupos no instalaron o no descargaron la base, y uno falló en la prueba de enlaces.",
+            "pruebas.yml red at fb7c2cb and c2eca2e: five groups did not install or download the database, and one failed on the link test."
+          ],
+          "diagnostico": [
+            "GitHub respondía 504 al tráfico sin sesión, incluidas las descargas de releases.",
+            "GitHub answered 504 to traffic without a session, release downloads included."
+          ],
+          "solucion": [
+            "La base se pide con el token del CI y se reintenta cinco veces; pip reintenta y usa caché; un 5xx salta la prueba de enlaces.",
+            "The database is asked with the CI token and tried five times; pip retries and uses a cache; a 5xx skips the link test."
+          ],
+          "comentario": [
+            "Una caída de un servicio externo no debe ponerse en rojo por sí sola: se espera y se reintenta.",
+            "An outage of an external service must not turn red on its own: it is waited out and tried again."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-567"
+        }
+      ]
     }
   ]
 }

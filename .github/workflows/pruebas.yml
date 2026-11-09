@@ -2,6 +2,12 @@ name: pruebas
 on:
   push:
   pull_request:
+permissions:
+  contents: read  # D-567: the token reads the release «base-actual», nothing more
+# D-567: an outage of PyPI or GitHub is waited out, not turned into a red push: pip tries each download again.
+env:
+  PIP_RETRIES: "10"
+  PIP_TIMEOUT: "60"
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -11,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip  # D-567: the packages come from the Actions cache when they can
+          cache-dependency-path: requirements*.txt
       - run: pip install ruff==0.17.2 mypy==2.4.0 -r requirements.txt
       # D-323: 0 findings, everything formatted and the main modules typed.
       - run: ruff check .
@@ -31,12 +39,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip  # D-567: the packages come from the Actions cache when they can
+          cache-dependency-path: requirements*.txt
       - run: pip install -r requirements-pipeline.txt pytest-cov
       # The dbt project must compile on every change (models, tests, sources): once per version.
       - if: matrix.group == 1
         run: dbt parse --project-dir dbt --profiles-dir dbt
       # The served database is not in git (D-270): the tests read the one the last load published.
+      # D-567: with the workflow's token, so a GitHub outage that limits anonymous downloads does not stop the tests.
       - run: python bi/served_database.py
+        env:
+          GH_TOKEN: ${{ github.token }}
       # D-555: on 3.12 each group keeps its coverage and its counts; calidad.yml combines them and checks the 90 %.
       # D-557: 3.12 measures with sys.monitoring (COVERAGE_CORE=sysmon): the old tracer of 3.11 took one group from
       # 5 to 29 minutes. Every group leaves its slowest tests as notices, readable without opening the log.

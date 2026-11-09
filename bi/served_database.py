@@ -6,6 +6,8 @@ by about 1 GB a year with old copies nobody reads. The weekly job now uploads th
 the size and the time of the file it published. The panel, the tests in CI and a fresh clone compare their
 local file with the pointer and download the file of the release when it is missing or older, checking its
 SHA-256 before using it. A local build newer than the pointer (python etl/pipeline.py --local) is kept.
+D-567: a GitHub outage limits anonymous traffic first, so in CI the file comes through the API with the workflow's
+token (GH_TOKEN), and every download is tried again on a timeout or a server error before it fails.
 
     python bi/served_database.py              download the published file when needed
     python bi/served_database.py --pointer    write the pointer of the local file (the weekly job, after it)
@@ -20,6 +22,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -33,7 +36,12 @@ RELEASE_TAG = "base-actual"
 DATABASE_FILE = queries.DATABASE_FILE
 POINTER_FILE = DATABASE_FILE.with_name("datos.version")
 DOWNLOAD_URL = f"{project.GITHUB_URL}/releases/download/{RELEASE_TAG}/{DATABASE_FILE.name}"
+RELEASE_API_URL = (
+    f"https://api.github.com/repos/{project.GITHUB_URL.removeprefix('https://github.com/')}/releases/tags/{RELEASE_TAG}"
+)
 TIMEOUT_SECONDS = 60
+# D-567: five tries, 5 s apart and then twice as long each time (75 s in all): enough for a short outage of GitHub.
+ATTEMPTS, FIRST_PAUSE_SECONDS = 5, 5
 
 # How the local file compares with the published one, and what ensure_database did.
 MISSING, PRESENT, LOCAL_BUILD, OLDER = "missing", "present", "local build", "older"
@@ -77,16 +85,39 @@ def compare(pointer: dict[str, Any], database_file: Path = DATABASE_FILE) -> str
     return LOCAL_BUILD if database_file.stat().st_mtime > published else OLDER
 
 
-def download(
-    pointer: dict[str, Any],
-    database_file: Path = DATABASE_FILE,
-    url: str = DOWNLOAD_URL,
-    get: Callable[..., Any] = requests.get,
-) -> None:
-    """Download the published file next to its place and swap it in only if its SHA-256 is the pointer's."""
+def source(get: Callable[..., Any] = requests.get) -> tuple[str, dict[str, str]]:
+    """D-567: where to read the published file. With the workflow's token (GH_TOKEN, only in CI), through the API, as
+    an authenticated request; without it, or if the token cannot read the release, at its public address."""
+    token = os.environ.get("GH_TOKEN", "")
+    if not token:
+        return DOWNLOAD_URL, {}
+    asked = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+    with get(RELEASE_API_URL, headers=asked, timeout=TIMEOUT_SECONDS) as answer:
+        if 400 <= answer.status_code < 500:
+            return DOWNLOAD_URL, {}
+        answer.raise_for_status()
+        assets = answer.json()["assets"]
+    asset = next(item for item in assets if item["name"] == DATABASE_FILE.name)
+    return asset["url"], {"Authorization": f"Bearer {token}", "Accept": "application/octet-stream"}
+
+
+def passing(error: Exception) -> bool:
+    """D-567: a failure worth trying again: no answer in time, no connection, or an error on GitHub's side."""
+    if isinstance(error, requests.HTTPError):
+        status = error.response.status_code if error.response is not None else 0
+        return status >= 500 or status == 429
+    return isinstance(error, (requests.ConnectionError, requests.Timeout))
+
+
+def fetch(pointer: dict[str, Any], database_file: Path, get: Callable[..., Any]) -> None:
+    """One try: download the published file next to its place and swap it in only if its SHA-256 is the pointer's."""
+    url, headers = source(get)
     handle, temporary = tempfile.mkstemp(dir=database_file.parent, suffix=".duckdb.tmp")
     try:
-        with os.fdopen(handle, "wb") as target, get(url, stream=True, timeout=TIMEOUT_SECONDS) as answer:
+        with (
+            os.fdopen(handle, "wb") as target,
+            get(url, headers=headers, stream=True, timeout=TIMEOUT_SECONDS) as answer,
+        ):
             answer.raise_for_status()
             for block in answer.iter_content(1 << 20):
                 target.write(block)
@@ -99,8 +130,28 @@ def download(
             os.remove(temporary)
 
 
+def download(
+    pointer: dict[str, Any],
+    database_file: Path = DATABASE_FILE,
+    get: Callable[..., Any] = requests.get,
+    pause: Callable[[float], Any] = time.sleep,
+) -> None:
+    """The published file, tried again on a passing failure (D-567); a file that does not match is never retried."""
+    for attempt in range(ATTEMPTS):
+        try:
+            fetch(pointer, database_file, get)
+            return
+        except (requests.RequestException, OSError) as error:
+            if attempt == ATTEMPTS - 1 or not passing(error):
+                raise
+            pause(FIRST_PAUSE_SECONDS * 2**attempt)
+
+
 def ensure_database(
-    database_file: Path = DATABASE_FILE, pointer_file: Path = POINTER_FILE, get: Callable[..., Any] = requests.get
+    database_file: Path = DATABASE_FILE,
+    pointer_file: Path = POINTER_FILE,
+    get: Callable[..., Any] = requests.get,
+    pause: Callable[[float], Any] = time.sleep,
 ) -> str:
     """Make the local served file the published one when needed; returns what it did."""
     pointer = read_pointer(pointer_file)
@@ -109,7 +160,7 @@ def ensure_database(
     state = compare(pointer, database_file)
     if state in (PRESENT, LOCAL_BUILD):
         return state
-    download(pointer, database_file, get=get)
+    download(pointer, database_file, get=get, pause=pause)
     return DOWNLOADED
 
 

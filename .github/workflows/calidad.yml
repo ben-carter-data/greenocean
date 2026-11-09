@@ -20,6 +20,10 @@ permissions:
   contents: write
   pull-requests: write
   actions: read
+# D-567: an outage of PyPI or GitHub is waited out, not turned into a red push: pip tries each download again.
+env:
+  PIP_RETRIES: "10"
+  PIP_TIMEOUT: "60"
 jobs:
   medir:
     runs-on: ubuntu-latest
@@ -31,7 +35,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip  # D-567: the packages come from the Actions cache when they can
+          cache-dependency-path: requirements*.txt
       - name: Entorno del proyecto
+        env:
+          GH_TOKEN: ${{ github.token }}  # D-567: the release is read as the workflow, not anonymously
         run: |
           python -m venv .venv
           .venv/bin/pip install -r requirements.txt pytest-cov

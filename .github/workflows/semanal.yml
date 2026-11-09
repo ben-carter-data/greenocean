@@ -32,6 +32,10 @@ concurrency:
   group: semanal
   cancel-in-progress: false
 
+# D-567: an outage of PyPI or GitHub is waited out, not turned into a red push: pip tries each download again.
+env:
+  PIP_RETRIES: "10"
+  PIP_TIMEOUT: "60"
 jobs:
   weekly-load:
     runs-on: ubuntu-latest
@@ -65,6 +69,8 @@ jobs:
         if: steps.guard.outputs.run == 'true'
         with:
           python-version: "3.11"
+          cache: pip  # D-567: the packages come from the Actions cache when they can
+          cache-dependency-path: requirements*.txt
       - run: pip install -r requirements-pipeline.txt
         if: steps.guard.outputs.run == 'true'
 
@@ -88,6 +94,8 @@ jobs:
       # The load history (etl_run) and the 90 % check read the database published last week.
       - name: Get the published database
         if: steps.guard.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}  # D-567: read as the workflow, not anonymously
         run: python bi/served_database.py
 
       - name: Download the ODEPA files

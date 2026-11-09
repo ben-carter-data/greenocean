@@ -43,7 +43,8 @@ def published(tmp_path, body=b"base de la semana", when=None):
     return pointer, (lambda url, **_: Answer(body))
 
 
-def test_a_missing_database_is_downloaded_and_checked(tmp_path):
+def test_a_missing_database_is_downloaded_and_checked(tmp_path, monkeypatch):
+    monkeypatch.delenv("GH_TOKEN", raising=False)
     pointer, get = published(tmp_path)
     local = tmp_path / "datos.duckdb"
     assert served_database.ensure_database(local, pointer, get=get) == served_database.DOWNLOADED
@@ -107,6 +108,79 @@ def test_git_keeps_the_pointer_and_neither_database():
     tracked = subprocess.run(["git", "ls-files", "etl"], cwd=ROOT, capture_output=True, text=True).stdout.split()
     assert "etl/datos.version" in tracked
     assert "etl/datos.duckdb" not in tracked and "etl/datos.db" not in tracked
+
+
+class Reply(Answer):
+    """An answer with a status: a server error raises the HTTPError requests raises."""
+
+    def __init__(self, body=b"", status=200, data=None):
+        super().__init__(body)
+        self.status_code, self.data = status, data
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            failure = served_database.requests.Response()
+            failure.status_code = self.status_code
+            raise served_database.requests.HTTPError(response=failure)
+
+    def json(self):
+        return self.data
+
+
+def test_d567_an_outage_is_waited_out_and_a_missing_file_is_not(tmp_path, monkeypatch):
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    pointer, _ = published(tmp_path)
+    answers = iter([Reply(status=504), Reply(status=502), Reply(b"base de la semana")])
+    pauses = []
+    local = tmp_path / "datos.duckdb"
+    served = served_database.ensure_database(local, pointer, get=lambda url, **_: next(answers), pause=pauses.append)
+    assert served == served_database.DOWNLOADED and local.read_bytes() == b"base de la semana"
+    assert pauses == [5, 10]  # twice as long each time
+    pauses.clear()
+    with pytest.raises(served_database.requests.HTTPError):  # a 404 is not an outage: no second try
+        served_database.ensure_database(
+            tmp_path / "otra.duckdb", pointer, get=lambda url, **_: Reply(status=404), pause=pauses.append
+        )
+    assert pauses == []
+    always = [Reply(status=504)] * served_database.ATTEMPTS
+    with pytest.raises(served_database.requests.HTTPError):  # a long outage still fails, after its tries
+        served_database.ensure_database(
+            tmp_path / "tercera.duckdb", pointer, get=lambda url, **_: always.pop(), pause=pauses.append
+        )
+    assert len(pauses) == served_database.ATTEMPTS - 1
+
+
+class Release:
+    """GitHub as the download sees it: the release's API names its file, and each address answers the week's base."""
+
+    def __init__(self):
+        self.asked = []
+
+    def __call__(self, url, headers=None, **_):
+        self.asked.append((url, dict(headers or {})))
+        if url == served_database.RELEASE_API_URL:
+            return Reply(data={"assets": [{"name": "datos.duckdb", "url": "https://api.github.com/asset/1"}]})
+        return Reply(b"base de la semana")
+
+
+def test_d567_in_ci_the_release_is_read_with_the_workflow_token(tmp_path, monkeypatch):
+    pointer, _ = published(tmp_path)
+    get = Release()
+    asked = get.asked
+    monkeypatch.setenv("GH_TOKEN", "token-de-prueba")
+    served_database.ensure_database(tmp_path / "datos.duckdb", pointer, get=get)
+    assert [url for url, _ in asked] == [served_database.RELEASE_API_URL, "https://api.github.com/asset/1"]
+    assert all(headers["Authorization"] == "Bearer token-de-prueba" for _, headers in asked)
+    assert asked[1][1]["Accept"] == "application/octet-stream"
+    monkeypatch.delenv("GH_TOKEN")  # without it (the panel, a clone), the public address, anonymously
+    asked.clear()
+    served_database.ensure_database(tmp_path / "otra.duckdb", pointer, get=get)
+    assert asked == [(served_database.DOWNLOAD_URL, {})]
+    for name in ("pruebas", "calidad", "semanal"):  # every workflow passes its token to the download
+        workflow = (ROOT / ".github" / "workflows" / f"{name}.yml").read_text(encoding="utf-8")
+        start = workflow.index("served_database.py") - 600
+        assert "GH_TOKEN: ${{ github.token }}" in workflow[start : workflow.index("served_database.py") + 200], name
+        assert 'PIP_RETRIES: "10"' in workflow and "cache: pip" in workflow, name
 
 
 def test_the_pointer_names_the_release_file_the_panel_downloads():
