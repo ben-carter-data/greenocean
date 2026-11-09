@@ -540,7 +540,7 @@ def test_d335_only_the_author_session_can_be_alerted_and_the_visit_never_breaks(
 # endregion
 
 
-# region The line «Cómo leerlo» under the summary (D-337)
+# region The line «Cómo leerlo» of the summary (D-337, D-566)
 def bar_and_tick(row_html):
     """(bar width %, tick position %) of an indicator row, as drawn."""
     width = re.search(r'<i style="width:([\d.]+)%', row_html)
@@ -556,11 +556,16 @@ def test_d337_the_how_to_read_line_sits_under_the_summary_sentence_in_both_langu
     for language, text in ((False, spanish), (True, english)):
         monkeypatch.setattr(i18n, "is_english", lambda language=language: language)
         overview = quality_method.build_overview(reports[-1], goals, policy)
-        assert f'<p class="qm-help">{html.escape(text)}</p>' in overview
-        assert (
-            overview.index('class="qm-lead"') < overview.index('class="qm-help"') < overview.index('class="qm-groups"')
+        # D-566: the line is read on hover of the «i» of each group, under the names of the columns; never in sight
+        # in its hover and its accessible name
+        assert overview.count(html.escape(text, quote=True)) == 2 * overview.count('class="qm-info"') >= 2
+        assert "qm-help" not in overview and overview.index('class="qm-lead"') < overview.index('class="qm-groups')
+        heads = (
+            ("Indicator", "Failure", "Acceptable", "State")
+            if language
+            else ("Indicador", "Falla", "Aceptable", "Estado")
         )
-        assert overview.count("qm-help") == 1  # one line, no more
+        assert all(f"<span>{head}</span>" in overview for head in heads)
 
 
 def test_d337_what_the_line_says_is_what_the_bars_and_ticks_show(monkeypatch):

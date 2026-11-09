@@ -79,6 +79,7 @@ QUALITY_PICK_KEY = "qa_pick"
 
 
 QUALITY_OPEN_KEY = "qa_open"
+FILTER_FROM = 10  # D-566: «Informes» shows its filters only above this many reports, about one screen of rows
 # endregion
 
 
@@ -547,6 +548,29 @@ def filter_reports(reports, year, month, week, query):
     return kept
 
 
+def show_report_filters(reports):
+    """The year, month, data week and search of «Informes» (D-333), on one row."""
+    years = [ALL_VALUES] + sorted({str(item["fecha"])[:4] for item in reports}, reverse=True)
+    months = [ALL_VALUES] + sorted({str(item["fecha"])[5:7] for item in reports}, reverse=True)
+    data_weeks = [ALL_VALUES] + sorted({str(item["semana"]) for item in reports if item["semana"]}, reverse=True)
+    with st.container(horizontal=True, vertical_alignment="bottom", key="quality_filters"):
+        year = st.selectbox(tr("Año"), years, key="quality_year", format_func=lambda value: tr(value))
+        month = st.selectbox(tr("Mes"), months, key="quality_month", format_func=lambda value: tr(value))
+        week = st.selectbox(
+            tr("Semana de datos"),
+            data_weeks,
+            key="quality_week",
+            format_func=lambda value: tr(value) if value == ALL_VALUES else i18n.tr_week(value, year=True),
+        )
+        query = st.text_input(
+            tr("Buscar"),
+            key="quality_search",
+            placeholder=tr("N°, fecha o código"),
+            icon=":material/search:",
+        )
+    return year, month, week, query
+
+
 @st.dialog("Informe de calidad", width="large")
 def show_quality_report_dialog(ref):
     """One numbered report as slides (D-333): its own document, so the keyboard, full screen and the PDF work. D-431:
@@ -613,17 +637,18 @@ def show_method_page(mode):
             quality_method.build_overview(latest, goals, policy, git_workflow.read_failures()), unsafe_allow_html=True
         )
         git_page = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_GIT])  # absent when a test draws this page alone
-        if git_page:
-            st.page_link(
-                git_page,
-                label=tr("Ver registro completo"),
-                icon=":material/arrow_forward:",
-                query_params=keep_context() | {VIEW_PARAMETER: PAGE_GIT, GIT_TAB_PARAMETER: GIT_TAB_LOG},
-            )
-        if latest and st.button(
-            tr("Abrir el último informe"), icon=":material/description:", key="quality_latest_report"
-        ):
-            show_quality_report_dialog(quality_metrics.report_ref(latest))
+        with st.container(horizontal=True, vertical_alignment="center", key="quality_actions"):  # D-566: one row
+            if git_page:
+                st.page_link(
+                    git_page,
+                    label=tr("Ver registro completo"),
+                    icon=":material/arrow_forward:",
+                    query_params=keep_context() | {VIEW_PARAMETER: PAGE_GIT, GIT_TAB_PARAMETER: GIT_TAB_LOG},
+                )
+            if latest and st.button(
+                tr("Abrir el último informe"), icon=":material/description:", key="quality_latest_report"
+            ):
+                show_quality_report_dialog(quality_metrics.report_ref(latest))
     with history:
         # D-431: one series at a time, the weekly first; the construction series (C-1 to C-7) stays readable
         series = [
@@ -642,24 +667,10 @@ def show_method_page(mode):
                 ),
             )
             reports = quality_metrics.read_series(chosen or series[0])
-        years = [ALL_VALUES] + sorted({str(item["fecha"])[:4] for item in reports}, reverse=True)
-        months = [ALL_VALUES] + sorted({str(item["fecha"])[5:7] for item in reports}, reverse=True)
-        data_weeks = [ALL_VALUES] + sorted({str(item["semana"]) for item in reports if item["semana"]}, reverse=True)
-        with st.container(horizontal=True, vertical_alignment="bottom", key="quality_filters"):
-            year = st.selectbox(tr("Año"), years, key="quality_year", format_func=lambda value: tr(value))
-            month = st.selectbox(tr("Mes"), months, key="quality_month", format_func=lambda value: tr(value))
-            week = st.selectbox(
-                tr("Semana de datos"),
-                data_weeks,
-                key="quality_week",
-                format_func=lambda value: tr(value) if value == ALL_VALUES else i18n.tr_week(value, year=True),
-            )
-            query = st.text_input(
-                tr("Buscar"),
-                key="quality_search",
-                placeholder=tr("N°, fecha o código"),
-                icon=":material/search:",
-            )
+        year = month = week = ALL_VALUES
+        query = ""
+        if len(reports) > FILTER_FROM:  # D-566: the filters only once the list is longer than one screen
+            year, month, week, query = show_report_filters(reports)
         shown = filter_reports(reports, year, month, week, query)
         st.markdown(compact_table.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
         if not shown:

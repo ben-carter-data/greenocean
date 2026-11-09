@@ -75,12 +75,14 @@ def build_header(report: dict[str, Any] | None) -> str:
     if not report:
         return f'<div class="qm-head">{html.escape(t("Todavía no hay informes.", "There are no reports yet."))}</div>'
     line = t(
-        f"Autoevaluación automática, revisada y aprobada por el autor · {report_title(report)} · {report['fecha']} · "
-        f"código {report['codigo_evaluado']}",
-        f"Automatic self-assessment, reviewed and approved by the author · {report_title(report)} · {report['fecha']} · "
-        f"code {report['codigo_evaluado']}",
+        f"{report_title(report)} · {report['fecha']} · código {report['codigo_evaluado']}",
+        f"{report_title(report)} · {report['fecha']} · code {report['codigo_evaluado']}",
     )
-    return f'<div class="qm-head">{html.escape(line)}</div>'
+    process = t(  # D-566: how the report is made, on hover
+        "Autoevaluación automática, revisada y aprobada por el autor.",
+        "Automatic self-assessment, reviewed and approved by the author.",
+    )
+    return f'<div class="qm-head" title="{html.escape(process)}">{html.escape(line)}</div>'
 
 
 def indicator_row(row: dict[str, Any], goals: dict[str, Any], policy: dict[str, Any]) -> str:
@@ -96,7 +98,7 @@ def indicator_row(row: dict[str, Any], goals: dict[str, Any], policy: dict[str, 
             f'<span class="qm-bar"><i style="width:{min(100, failure / span * 100):.1f}%"></i>'
             f'<b style="left:{min(100, (acceptable or 0) / span * 100):.1f}%"></b></span>'
         )
-    acceptable_text = t("aceptable", "acceptable") + " " + failure_text(row, "falla_aceptable")
+    acceptable_text = failure_text(row, "falla_aceptable")  # D-566: under the column «Aceptable»
     return (
         f'<div class="qm-row" title="{html.escape(hint.strip())}">'
         f'<span class="qm-name">{html.escape(t(*row["nombre"]))}</span>'
@@ -119,21 +121,23 @@ def counts_row(rows: list[dict[str, Any]], policy: dict[str, Any]) -> str:
     return (
         f'<div class="qm-row" title="{html.escape(hint)}"><span class="qm-name">{html.escape(names)}</span>'
         f'<span class="qm-bar"><b style="left:0%"></b></span><span class="qm-value">{html.escape(figures)}</span>'
-        f'<span class="qm-limit">{html.escape(t("aceptable 0", "acceptable 0"))}</span>'
+        f'<span class="qm-limit">0</span>'
         f'<span class="qm-state qm-cumple">{html.escape(state_word("cumple", policy))}</span></div>'
     )
 
 
 def build_latest_failures(failures: list[dict[str, Any]], count: int = 3) -> str:
-    """D-346: the latest failures of the register (newest first), compact: date, what happened and its solution. The
-    diagnosis is the author's and stays in the Incident log."""
+    """D-346: the latest failures of the register (newest first), compact: date, what happened and its solution, each
+    on one line, whole on hover (D-566). The diagnosis is the author's and stays in the Incident log."""
     if not failures:
         return ""
     items = "".join(
-        f'<li><b>{html.escape(row["fecha"])} · {html.escape(row["id"])}</b>'
+        f'<li><span class="qm-failure" title="{html.escape(whole, quote=True)}">'
+        f'<b>{html.escape(row["fecha"])} · {html.escape(row["id"])}</b>'
         f'<span>{html.escape(t(*row["ocurrencia"]))}</span>'
-        f'<small>{html.escape(t("Solución", "Solution"))}: {html.escape(t(*row["solucion"]))}</small></li>'
+        f'<small>{html.escape(t("Solución", "Solution"))}: {html.escape(t(*row["solucion"]))}</small></span></li>'
         for row in failures[:count]
+        for whole in [f"{t(*row['ocurrencia'])} {t('Solución', 'Solution')}: {t(*row['solucion'])}"]
     )
     return (
         f'<div class="qm-failures"><h4>{html.escape(t("Últimas fallas", "Latest failures"))}</h4><ul>{items}</ul></div>'
@@ -146,7 +150,8 @@ def build_overview(
     policy: dict[str, Any],
     failures: list[dict[str, Any]] | None = None,
 ) -> str:
-    """«Resumen»: two sentences, the data and the code side by side, and the insights that need attention."""
+    """«Resumen»: the answer in one line, the data and the code side by side (the data alone when the report has no
+    code, D-566), the insights that need attention and the latest failures."""
     if not report:
         return ""
     rows = report["indicadores"]
@@ -157,7 +162,7 @@ def build_overview(
     # D-475: the report says how many of the plan's indicators it measures; a closed report keeps the ones of its time.
     name, total = quality_metrics.report_code(report, i18n.is_english()), len(quality_metrics.INDICATORS)
     day = str(report["fecha"])[:10]
-    lead = [
+    measures = (  # D-566: what the report measures, on hover of the «i» of each group; the answer stays in sight
         t(
             f"El informe {name} mide {len(rows)} de los {total} indicadores del plan de calidad: {len(data)} de los datos "
             f"que publicamos y {len(code)} del código que los trata, cada uno contra un aceptable fijado por el autor.",
@@ -170,7 +175,9 @@ def build_overview(
             "aceptable fijado por el autor; el código se verifica en el CI de cada push.",
             f"Report {name} measures the {len(rows)} data indicators of the quality plan, each against an acceptable "
             "set by the author; the code is checked by the CI of every push.",
-        ),
+        )
+    )
+    lead = [
         # D-483: the report's own date, never «Hoy»: a closed report is read beside today's «Controles de datos»
         t(
             f"El {day}: {within} de {measured} medidos dentro de lo aceptable · {nonconforming} {plural[0]}.",
@@ -199,19 +206,40 @@ def build_overview(
         f'{html.escape(state_word(row["estado"], policy))}</b><span>{html.escape(t(*row["insight"]))}</span></li>'
         for row in attention
     )
+    how = measures + " " + t(*policy.get("resumen", {}).get("como_leerlo", ["", ""]))
+    groups = group_html(
+        t("Datos que publicamos", "Data we publish"), "".join(indicator_row(row, goals, policy) for row in data), how
+    )
+    if code_rows:  # D-566: a weekly report measures only the data; an empty box is never drawn
+        groups += group_html(t("Código que los trata", "Code that treats them"), code_rows, how)
     return (
         '<div class="qm-overview"><p class="qm-lead">'
         + " ".join(f"<span>{html.escape(text)}</span>" for text in lead)
-        + f'</p><p class="qm-help">{html.escape(t(*policy.get("resumen", {}).get("como_leerlo", ["", ""])))}</p>'
-        + '<div class="qm-groups">'
-        + f'<section class="qm-group"><h4>{html.escape(t("Datos que publicamos", "Data we publish"))}</h4>'
-        + "".join(indicator_row(row, goals, policy) for row in data)
-        + f'</section><section class="qm-group"><h4>{html.escape(t("Código que los trata", "Code that treats them"))}</h4>'
-        + code_rows
-        + "</section></div>"
+        + f'</p><div class="qm-groups{"" if code_rows else " qm-one"}">'
+        + groups
+        + "</div>"
         + (f'<ul class="qm-insights">{insights}</ul>' if insights else "")
         + build_latest_failures(failures or [])
         + "</div>"
+    )
+
+
+def group_html(title: str, rows: str, how: str) -> str:
+    """D-566: a group of indicators under the names of its columns, as the report viewer names them; what the report
+    measures and how to read the bars, on hover of the «i» of its title."""
+    heads = (
+        t("Indicador", "Indicator"),
+        "",
+        t("Falla", "Failure"),
+        t("Aceptable", "Acceptable"),
+        t("Estado", "State"),
+    )
+    columns = "".join(f"<span>{html.escape(head)}</span>" for head in heads)
+    return (
+        f'<section class="qm-group"><h4>{html.escape(title)}'
+        f'<span class="qm-info" title="{html.escape(how, quote=True)}" aria-label="{html.escape(how, quote=True)}">'
+        "info</span></h4>"
+        f'<div class="qm-row qm-columns">{columns}</div>{rows}</section>'
     )
 
 
