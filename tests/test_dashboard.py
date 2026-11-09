@@ -695,7 +695,7 @@ def test_d057_quality_tab_explains_what_was_left_out_and_shows_it():
     cards = " ".join(block.value for block in app.markdown if 'class="info-grid"' in block.value)
     for label in ["RN-11 · no se cargan", "RN-12 · fuera de los indicadores", "RN-05 · sin precio comparable"]:
         assert label in cards
-    assert "0,008 %" in cards
+    assert "0,01 %" in cards and "0,008 %" not in cards  # D-572: two decimals under 1 %, as the rest of the app
     assert not [
         column
         for frame in app.dataframe

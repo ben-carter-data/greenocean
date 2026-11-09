@@ -149,7 +149,8 @@ def describe_reasons(rejections):
 def build_excluded_cards(latest_run, rejections, flag_totals):
     """What was left out of the indicators, and why: rejected, outliers, no unit."""
     rejected = int(rejections["rejected_rows"].sum()) if not rejections.empty else 0
-    share = charts.format_percent(rejected / latest_run["rows_read"] * 100, decimals=3)
+    rate = rejected / latest_run["rows_read"] * 100
+    share = charts.format_percent(rate, decimals=quality_metrics.percent_decimals(rate))  # D-572: the app's rule
     rejected_text = (
         f"{charts.format_thousands(rejected)} de "
         f"{charts.format_thousands(latest_run['rows_read'])} filas leídas ({share}). "

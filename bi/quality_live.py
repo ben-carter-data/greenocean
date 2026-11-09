@@ -16,7 +16,7 @@ rows leave at the second, and every gate flows into the verdict. All are pure en
 import html
 from datetime import date, datetime, timezone
 
-from bi import charts, live_mark, quality, quality_view, queries, static_files, weeks
+from bi import charts, live_mark, quality, quality_metrics, quality_view, queries, static_files, weeks
 
 # region Constants
 # The project's thresholds, shown next to each figure so a verdict can be disputed.
@@ -241,7 +241,7 @@ def build_indicators(measures, now=None):
             "validez",
             "Filas rechazadas",
             thousands(rejected),
-            f"{percent(share(rejected, read), 3)} de {thousands(read)} leídas; máximo {percent(REJECTED_MAX_SHARE, 0)}",
+            f"{percent(share(rejected, read), quality_metrics.percent_decimals(share(rejected, read) * 100))} de {thousands(read)} leídas; máximo {percent(REJECTED_MAX_SHARE, 0)}",
             "ok" if share(rejected, read) <= REJECTED_MAX_SHARE else "warn",
             "Filas de origen que la validación apartó, cada una con su motivo, en la tabla rejection.",
         )
