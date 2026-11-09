@@ -17,7 +17,7 @@ from typing import Any
 from bi import charts, i18n, quality_metrics, static_files
 
 # region Constants
-STATE_COLORS = {"cumple": "#199e70", "aviso": "#b8860b", "urgente": "#e07b22", "critico": None, "sin_medicion": None}
+STATE_COLORS = {"urgente": "#e07b22", "critico": None}  # the states an alert draws (D-571)
 STALE_DAYS = 8
 # endregion
 
@@ -232,7 +232,6 @@ def build_css(palette: dict[str, str]) -> str:
     """The stylesheet of the page and of the alerts, with the colours of the theme; each state legible on a card."""
     card = palette["card"]
     colors = {state: charts.legible(color or palette["rise"], card) for state, color in STATE_COLORS.items()}
-    colors["sin_medicion"] = charts.legible(palette["reference"], card)
     return static_files.style(
         "quality_method.css",
         {

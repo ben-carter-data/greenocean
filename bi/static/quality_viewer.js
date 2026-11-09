@@ -16,7 +16,8 @@ const full=document.getElementById('full');
 if(!document.fullscreenEnabled){full.style.display='none';}
 full.onclick=()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();};
 document.getElementById('print').onclick=()=>window.print();
-const fmt=v=>v.toLocaleString(DATA.lang,{maximumFractionDigits:2});
+const places=v=>{const r=Math.round(v*1e6)/1e6;return Number.isInteger(r)?0:Math.abs(r)<1?2:1;};
+const fmt=v=>v.toLocaleString(DATA.lang,{minimumFractionDigits:places(v),maximumFractionDigits:places(v)});
 const unit=u=>u?' '+(DATA.units[u]||u):'';
 const a=document.getElementById('cmp-a'),b=document.getElementById('cmp-b'),out=document.getElementById('cmp');
 a.value=DATA.a;b.value=DATA.b;

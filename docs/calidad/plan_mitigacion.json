@@ -1486,6 +1486,28 @@
           "estacion": 9,
           "estado": "resuelta",
           "referencia": "D-483"
+        },
+        {
+          "fecha": "2026-11-09",
+          "ocurrencia": [
+            "El visor de informes escribía 0,0 % para las filas rechazadas y 0,2 % para el aceptable de 0,25 %.",
+            "The report viewer wrote 0.0 % for the rejected rows and 0.2 % for the 0.25 % acceptable."
+          ],
+          "diagnostico": [
+            "El visor redondeaba cada fracción a un decimal con su propia regla.",
+            "The viewer rounded every fraction to one decimal with a rule of its own."
+          ],
+          "solucion": [
+            "Escribe cada cifra con la regla de la app: dos decimales bajo 1 %.",
+            "It writes each figure with the app's rule: two decimals under 1 %."
+          ],
+          "comentario": [
+            "Una cifra se escribe con una sola regla en toda la app.",
+            "A figure is written with one rule across the app."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-571"
         }
       ]
     },

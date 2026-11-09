@@ -610,14 +610,14 @@ def show_open_report_button(report):
 
 def show_method_page(mode):
     """«Plan de calidad» (D-320, D-331, D-333, D-431, D-571): the archive of the numbered quality reports. One line names
-    the latest; under it, the series and its reports, newest first, each opening as a document with its PDF. Today's
+    the latest; under it, the series and its reports, newest first, each opening as a presentation with its PDF. Today's
     state of the data lives in «Controles de datos» and the failures in «Cambios e incidentes»."""
     reports = quality_metrics.read_reports()
     show_page_bar(
         PAGE_METHOD,
         PAGE_METHOD,
-        "Los informes semanales de calidad: cada uno mide los datos de una carga contra lo aceptable y se abre como "
-        "documento, con su PDF.",
+        "Los informes de calidad numerados: cada uno mide una carga contra lo aceptable y se abre como "
+        "presentación, con su PDF.",
     )
     st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
     st.markdown(quality_method.build_header(reports[-1] if reports else None), unsafe_allow_html=True)

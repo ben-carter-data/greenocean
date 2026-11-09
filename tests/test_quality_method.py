@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from bi import i18n, quality_method, quality_metrics
+from bi import compact_table, i18n, quality_method, quality_metrics
 
 # region Constants
 # D-475: indicators added after the construction series closed (C-1 to C-7 keep their twelve).
@@ -259,7 +259,8 @@ def test_d571_the_page_is_the_archive_of_the_reports_and_the_quality_section_hol
     assert f"{quality_metrics.report_name(reports[-1], english)} · {str(reports[-1]['fecha'])[:10]} · {counts}" in head
     rows = [str(button.label) for button in app.button if str(button.key).startswith("cr_reports_toggle_")]
     newest = [f"{quality_metrics.report_code(report, english)} · {report['fecha']} · " for report in reports[::-1]]
-    assert len(rows) == len(reports) and all(row.startswith(start) for row, start in zip(rows, newest)), rows
+    newest = newest[: compact_table.PAGE_SIZE]  # the list shows one page of rows at a time
+    assert len(rows) == len(newest) and all(row.startswith(start) for row, start in zip(rows, newest)), rows
     content = " ".join(block.value for block in app.markdown if "qm-" in block.value)
     assert 'class="qm-group' not in content and "qm-row" not in content and "qm-overview" not in content
     markup = " ".join(block.value for block in app.markdown)
