@@ -2800,6 +2800,58 @@
           "referencia": "D-568"
         }
       ]
+    },
+    {
+      "id": "F-49",
+      "categoria": "operación",
+      "falla": [
+        "pytest se cayó entero en el grupo 2 del CI, en las dos versiones de Python",
+        "pytest crashed whole in CI group 2, on both Python versions"
+      ],
+      "deteccion": [
+        "Actions: pruebas.yml en rojo con código 139 y sin notas de qué prueba corría",
+        "Actions: pruebas.yml red with exit code 139 and no notes of which test was running"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Una biblioteca nativa terminó el proceso en los servidores Linux de GitHub; en local la misma combinación pasa",
+        "A native library ended the process on GitHub's Linux servers; locally the same combination passes"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "El código y los datos publicados no cambiaron; solo el CI quedó en rojo",
+        "The published code and data did not change; only the CI stayed red"
+      ],
+      "correctiva": [
+        "Si pytest se cae, las notas nombran dónde murió y el grupo corre una vez más",
+        "If pytest crashes, the notes name where it died and the group runs once more"
+      ],
+      "estacion": 14,
+      "caso_real": "D-569",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-09",
+          "ocurrencia": [
+            "pruebas.yml en rojo en 1e14e3e: el grupo 2 terminó con código 139 tras unos 3 minutos y medio.",
+            "pruebas.yml red at 1e14e3e: group 2 ended with exit code 139 after about three and a half minutes."
+          ],
+          "diagnostico": [
+            "El reparto por tamaño movió siete archivos al grupo 2 y algo nativo se cayó en Linux; sin registro legible no se supo en qué prueba.",
+            "The split by size moved seven files into group 2 and something native crashed on Linux; with no readable log the test was unknown."
+          ],
+          "solucion": [
+            "El paso anota la prueba y la línea donde se cayó y corre el grupo otra vez.",
+            "The step writes the test and line where it crashed and runs the group again."
+          ],
+          "comentario": [
+            "Una caída del proceso no deja informe: hay que guardar su salida para leerla.",
+            "A crashed process leaves no report: its output must be kept to read it."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-569"
+        }
+      ]
     }
   ]
 }

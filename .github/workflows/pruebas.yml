@@ -54,14 +54,28 @@ jobs:
       # D-555: on 3.12 each group keeps its coverage and its counts; calidad.yml combines them and checks the 90 %.
       # D-557: 3.12 measures with sys.monitoring (COVERAGE_CORE=sysmon): the old tracer of 3.11 took one group from
       # 5 to 29 minutes. Every group leaves its slowest tests as notices, readable without opening the log.
+      # D-569: if the process itself crashes (a native library, exit code 128 or more), the notes name where it died
+      # and the group runs once more; a second crash fails, already named.
       - run: |
           files=$(python scripts/grupo_pruebas.py ${{ matrix.group }} 3)
-          if [ "${{ matrix.python-version }}" = "3.12" ]; then
-            COVERAGE_CORE=sysmon COVERAGE_FILE=.coverage.${{ matrix.group }} pytest -q -m "not rendimiento" \
-              -o faulthandler_timeout=90 --cov --cov-report= --cov-fail-under=0 --junitxml=junit-${{ matrix.group }}.xml $files
-          else
-            pytest -q -m "not rendimiento" -o faulthandler_timeout=90 --junitxml=junit-${{ matrix.group }}.xml $files
+          run_group() {
+            if [ "${{ matrix.python-version }}" = "3.12" ]; then
+              COVERAGE_CORE=sysmon COVERAGE_FILE=.coverage.${{ matrix.group }} pytest -q -m "not rendimiento" \
+                -o faulthandler_timeout=90 --cov --cov-report= --cov-fail-under=0 --junitxml=junit-${{ matrix.group }}.xml $files
+            else
+              pytest -q -m "not rendimiento" -o faulthandler_timeout=90 --junitxml=junit-${{ matrix.group }}.xml $files
+            fi
+          }
+          set +e
+          run_group 2>&1 | tee pytest.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ge 128 ]; then
+            python scripts/pruebas_lentas.py --caida pytest.log "${{ matrix.python-version }} · grupo ${{ matrix.group }}"
+            run_group 2>&1 | tee pytest.log
+            code=${PIPESTATUS[0]}
+            [ "$code" -ge 128 ] && python scripts/pruebas_lentas.py --caida pytest.log "${{ matrix.python-version }} · grupo ${{ matrix.group }}"
           fi
+          exit $code
       - if: always()
         # D-568: the slowest tests and, in red, every failed one with its error, readable without opening the log
         run: python scripts/pruebas_lentas.py junit-${{ matrix.group }}.xml "${{ matrix.python-version }} · grupo ${{ matrix.group }}"
