@@ -31,8 +31,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The supported versions (docs/operacion/MANUAL.md): dbt Core runs on 3.11 and 3.12.
-        python-version: ["3.11", "3.12"]
+        # D-570: on every push only 3.12, half the machines; 3.11 runs every Tuesday, in the weekly load.
+        python-version: ["3.12"]
         # D-555: the suite in three groups that run at the same time (scripts/grupo_pruebas.py), about a third each.
         group: [1, 2, 3]
     steps:
@@ -59,12 +59,8 @@ jobs:
       - run: |
           files=$(python scripts/grupo_pruebas.py ${{ matrix.group }} 3)
           run_group() {
-            if [ "${{ matrix.python-version }}" = "3.12" ]; then
-              COVERAGE_CORE=sysmon COVERAGE_FILE=.coverage.${{ matrix.group }} pytest -q -m "not rendimiento" \
-                -o faulthandler_timeout=90 --cov --cov-report= --cov-fail-under=0 --junitxml=junit-${{ matrix.group }}.xml $files
-            else
-              pytest -q -m "not rendimiento" -o faulthandler_timeout=90 --junitxml=junit-${{ matrix.group }}.xml $files
-            fi
+            COVERAGE_CORE=sysmon COVERAGE_FILE=.coverage.${{ matrix.group }} pytest -q -m "not rendimiento" \
+              -o faulthandler_timeout=90 --cov --cov-report= --cov-fail-under=0 --junitxml=junit-${{ matrix.group }}.xml $files
           }
           set +e
           run_group 2>&1 | tee pytest.log

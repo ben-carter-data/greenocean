@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.22 |
-| Date | 2026-11-04 |
+| Version | 3.23 |
+| Date | 2026-11-09 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain how GreenOcean is built, how it runs each week, where its data lives and why it has that shape. |
@@ -401,7 +401,7 @@ The sale units the last load saw (D-524). The pipeline writes it in Python, so t
 | Piece | Where it runs | Detail |
 |---|---|---|
 | Weekly load and its quality report | GitHub Actions machines (Ubuntu, Python 3.11): `semanal.yml` and, when it ends, `calidad.yml` | Created and discarded on each run; the CSV files of closed years stay in the Actions cache |
-| Tests of each push | Another GitHub Actions machine, apart from the load: `pruebas.yml` (lint and pytest on Python 3.11 and 3.12) and `calidad.yml`, which only measures | They never touch the published database |
+| Tests of each push | Another GitHub Actions machine, apart from the load: `pruebas.yml` (lint and pytest on Python 3.12; 3.11, in the weekly load) and `calidad.yml`, which only measures | They never touch the published database |
 | Code and database pointer | GitHub repository, `main` branch | |
 | DuckDB database | «base-actual» release of the repository | A single copy, replaced by each load; the panel downloads it from there |
 | Panel | Streamlit Community Cloud, from `main` | Keeps the secrets: the GitHub tokens and the Author's key |
@@ -560,3 +560,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.20 | 2026-11-03 | The load starts at 12:07 UTC, with an attempt every 15 minutes until 14:52 and every hour until 02:07 (D-487) |
 | 3.21 | 2026-11-03 | The channel is step 2 of Weekly; latest_by_source feeds it (D-494) |
 | 3.22 | 2026-11-04 | The wholesale price weights the volume (D-521); weekly_same_package and the same-package rule (D-522); source_unit and the reviewed units (D-524); the load log and the logical key of weekly_price in the model (D-526) |
+| 3.23 | 2026-11-09 | The tests of each push run on Python 3.12; 3.11 is tested in the weekly load (D-570) |

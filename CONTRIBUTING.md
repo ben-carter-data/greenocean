@@ -30,8 +30,12 @@ Los commits anteriores a D-323 usan el formato «D-nnn: …» y no se reescriben
 
 | Uso | Versiones |
 |---|---|
-| Pipeline con dbt (`requirements-pipeline.txt`) | 3.11 y 3.12, probadas en el CI |
-| Panel y pruebas (`requirements.txt`) | 3.11 y 3.12 en el CI; también se usa en 3.14 en local |
+| Pipeline con dbt (`requirements-pipeline.txt`) | 3.12 en el CI de cada push; 3.11 en la carga semanal |
+| Panel y pruebas (`requirements.txt`) | 3.12 en el CI; también se usa en 3.14 en local |
+
+## Antes de subir
+
+`python scripts/antes_de_subir.py` revisa sobre el commit que se va a subir lo mismo que el CI, en tres o cuatro minutos: Ruff, mypy, el escáner de secretos y Bandit (en las versiones de `calidad.yml`) y todas las pruebas en una copia aparte, con la base publicada y la hora UTC (D-570). `python scripts/antes_de_subir.py --instalar` lo deja como hook `pre-push` de git: cada `git push` lo corre y no sube si algo está en rojo. `git push --no-verify` lo salta, cuando el autor lo decide.
 
 ## Calidad
 

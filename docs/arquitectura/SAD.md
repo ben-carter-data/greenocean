@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.22 |
-| Fecha | 04-11-2026 |
+| Versión | 3.23 |
+| Fecha | 09-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo está construido GreenOcean, cómo corre cada semana, dónde viven sus datos y por qué tiene esa forma. |
@@ -401,7 +401,7 @@ Las unidades de venta que vio la última carga (D-524). La escribe el pipeline e
 | Pieza | Dónde corre | Detalle |
 |---|---|---|
 | Carga semanal y su informe de calidad | Máquinas de GitHub Actions (Ubuntu, Python 3.11): `semanal.yml` y, al terminar, `calidad.yml` | Se crean y se descartan en cada ejecución; los CSV de años cerrados quedan en la caché de Actions |
-| Pruebas de cada push | Otra máquina de GitHub Actions, aparte de la carga: `pruebas.yml` (lint y pytest en Python 3.11 y 3.12) y `calidad.yml`, que solo mide | No tocan la base publicada |
+| Pruebas de cada push | Otra máquina de GitHub Actions, aparte de la carga: `pruebas.yml` (lint y pytest en Python 3.12; 3.11, en la carga semanal) y `calidad.yml`, que solo mide | No tocan la base publicada |
 | Código y puntero de la base | Repositorio de GitHub, rama `main` | |
 | Base DuckDB | Release «base-actual» del repositorio | Una sola copia, reemplazada por cada carga; el panel la descarga de ahí |
 | Panel | Streamlit Community Cloud, desde `main` | Guarda los secretos: los tokens de GitHub y la clave del Autor |
@@ -560,3 +560,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.20 | 03-11-2026 | La carga parte a las 12:07 UTC, con un intento cada 15 minutos hasta las 14:52 y cada hora hasta las 02:07 (D-487) |
 | 3.21 | 03-11-2026 | El canal es el paso 2 de Semanal; latest_by_source lo alimenta (D-494) |
 | 3.22 | 04-11-2026 | El precio mayorista pesa el volumen (D-521); weekly_same_package y la regla del mismo envase (D-522); source_unit y las unidades revisadas (D-524); el registro de cargas y la clave lógica de weekly_price en el modelo (D-526) |
+| 3.23 | 09-11-2026 | Las pruebas de cada push corren en Python 3.12; 3.11 se prueba en la carga semanal (D-570) |

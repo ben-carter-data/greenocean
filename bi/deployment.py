@@ -75,7 +75,7 @@ TIPS = {
     "runner": "Una máquina Ubuntu de GitHub Actions que nace y se borra en cada ejecución: la carga de cada martes "
     "(semanal.yml) y, al terminar, la medición de calidad que propone el informe (calidad.yml).",
     "tests": "Otra máquina Ubuntu, aparte de la carga: en cada push corre las pruebas (pruebas.yml: lint, mypy y pytest en "
-    "Python 3.11 y 3.12) y mide la calidad sin proponer informe (calidad.yml). No toca la base publicada.",
+    "Python 3.12) y mide la calidad sin proponer informe (calidad.yml). No toca la base publicada.",
     "release": "Guarda la Base DuckDB, datos.duckdb, fuera de git. Solo si pasan todas las pruebas, la carga la reemplaza "
     "(D-270); el panel la descarga de aquí.",
     "python": "El entorno Python 3.11 del runner: descarga, aterrizaje en SQLite, bronce en Parquet y dbt build sobre DuckDB.",
@@ -237,7 +237,7 @@ def build_contents(states, figures, live=True):
             heading(602, 412, "entorno de ejecución", "Runner ubuntu-latest")
             + '<text class="note" x="602" y="446">aparte, en cada push</text>'
             + artifact(602, 466, "pruebas.yml")
-            + '<text class="note" x="620" y="481">lint · pytest 3.11 y 3.12</text>'
+            + '<text class="note" x="620" y="481">lint · pytest 3.12</text>'
             + artifact(602, 500, "calidad.yml · solo mide")
         ),
         "cache": heading(602, 100, "entorno de ejecución", "Caché de Actions")
