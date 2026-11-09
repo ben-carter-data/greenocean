@@ -32,19 +32,14 @@ ALL_PRODUCTS = "Todos los productos"
 ZOOM_HEIGHT = 300  # the enlarged chart, in the window its green magnifier opens (D-460)
 # D-458: a tile takes the window's height less what is above and below it (the header, the green panel, the tabs, the
 # cards and the table), never less than the floor.
-TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 603, 230, 210
-# D-560: the floor of the charts of «Histórico» on a window of 760 px or lower, so the page ends inside it.
-LOW_FLOOR = 160
+TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 585, 230, 210  # D-565: the green panel is one line, 18 px less
 # D-461: on a low window the charts keep their floor and the table scrolls inside its own box, under the charts.
-TABLE_RESERVED, TABLE_FLOOR = 588, 140
+TABLE_RESERVED, TABLE_FLOOR = 570, 140
 # D-556: two typical sizes of change read as «parecido» when the larger is at most this many times the smaller, measured
 # as a ratio of prices (a −16,7 % drop is undone by a +20 % rise).
 SIMILAR_SIZE = 1.25
 # D-556: the share of the chart's height left past the longest bar on each side, for its count.
 LABEL_ROOM = 0.18
-INSIGHT_ROOM = 43  # D-518: the height of the green box of «Histórico», taken from the table so the page still fits
-# D-560: what the green box takes from the charts too: its 36 px, the gap under it and a margin of 8 px at the foot.
-INSIGHT_TILE_ROOM = 52
 
 # One chart of a tab: its title, the months it shows, what it measures, what follows from it, how to draw it at a
 # width and a height, and what each colour and line of it means (D-554).
@@ -295,7 +290,6 @@ def typical_size(alert_rows: pd.DataFrame, rise: bool) -> float | None:
 
 def summarize(
     rows: pd.DataFrame,
-    margins: pd.DataFrame,
     alerts_found: pd.DataFrame,
     family: str,
     start: tuple[int, int],
@@ -305,7 +299,6 @@ def summarize(
     change = inflation_view.change(rows, family, start, end)
     ipc = inflation_view.change(rows, IPC, start, end)
     gap = None if change is None or ipc is None else change - ipc
-    margin_rows = within(margins, start, end, family)
     alert_rows = within(alerts_found, start, end, family)
     return {
         "family": family,
@@ -313,8 +306,6 @@ def summarize(
         "ipc": ipc,
         "gap": gap,
         "verdict": verdict(gap),
-        "margin": None if margin_rows.empty else float(margin_rows["margin"].median() * 100),
-        "pairs": len(margin_rows),
         "alerts": len(alert_rows),
         "rises": int((alert_rows["variation"] > 0).sum()) if not alert_rows.empty else 0,
         "falls": int((alert_rows["variation"] < 0).sum()) if not alert_rows.empty else 0,
@@ -324,23 +315,17 @@ def summarize(
     }
 
 
-def monthly(rows, margins, alerts_found, family, start, end) -> dict[str, Any]:
-    """«Mensual»: the figures of the period, the change of each of its months and their highest and lowest."""
-    figures = summarize(rows, margins, alerts_found, family, start, end)
+def monthly(rows, alerts_found, family, start, end) -> dict[str, Any]:
+    """«Mensual»: the figures of the period and the change of each of its months."""
+    figures = summarize(rows, alerts_found, family, start, end)
     months = monthly_changes(rows, family, start, end).dropna(subset=["change"])
     figures["months"] = months
-    figures["top"] = figures["low"] = None
-    figures["rising"] = int((months["change"] > 0).sum())
-    if not months.empty:
-        top, low = months.loc[months["change"].idxmax()], months.loc[months["change"].idxmin()]
-        figures["top"] = (int(top["year"]), int(top["month"]), float(top["change"]))
-        figures["low"] = (int(low["year"]), int(low["month"]), float(low["change"]))
     return figures
 
 
-def history(rows, margins, alerts_found, family, last) -> dict[str, Any]:
+def history(rows, alerts_found, family, last) -> dict[str, Any]:
     """«Histórico»: the figures from January 2022 to the last month, and the change of each year."""
-    figures = summarize(rows, margins, alerts_found, family, BASE, last)
+    figures = summarize(rows, alerts_found, family, BASE, last)
     years = yearly_changes(rows, family, last).dropna(subset=["change"])
     figures["years"] = years
     figures["best"] = None
@@ -360,22 +345,21 @@ def _product_frames_down(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def product_frames(
-    series: pd.DataFrame, ipc: pd.DataFrame, margins: pd.DataFrame, alerts_found: pd.DataFrame
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, str]]:
+    series: pd.DataFrame, ipc: pd.DataFrame, alerts_found: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, str]]:
     """D-478: the frames of «Mensual» and «Histórico» one level down. Each product is keyed PRODUCT + its name, its
-    index is the median of its own consumer series against January 2022 (the family's rule), and K1 and K6 keep their
-    rows under the product. The last item says the family of every product found in any of them, so a family's
-    alerts and K1 pairs are exactly the sum of its products' (a product without an index shows «—», never a guess)."""
+    index is the median of its own consumer series against January 2022 (the family's rule), and K6 keeps its rows
+    under the product. The last item says the family of every product found in either, so a family's alerts are
+    exactly the sum of its products' (a product without an index shows «—», never a guess)."""
     rows, _ = inflation_view.build_family_index(series.assign(product_group=PRODUCT + series["product"]), ipc)
 
     family_of = {
         PRODUCT + product: family
-        for frame in (series, margins, alerts_found)
+        for frame in (series, alerts_found)
         for product, family in zip(frame["product"], frame["product_group"])
     }
     return (
         rows,
-        _product_frames_down(margins),
         _product_frames_down(alerts_found),
         family_of,
     )
@@ -384,11 +368,6 @@ def product_frames(
 def products_of(family_of: dict[str, str], family: str) -> list[str]:
     """The products of a family (every product for the whole basket), by name."""
     return sorted((key for key, group in family_of.items() if family == BASKET or group == family), key=product_name)
-
-
-def wholesale_families(margins: pd.DataFrame) -> list[str]:
-    """The families with a wholesale price, the only ones with a consumer–wholesale gap (K1)."""
-    return sorted(set(margins["product_group"]))
 
 
 # endregion
@@ -623,10 +602,17 @@ def tone(value: float | None) -> str:
 
 
 def change_card(label: str, figures: dict[str, Any], start, end) -> str:
+    """D-565: how much the prices changed and, under it, how far from the food CPI: the two figures read together."""
+    gap = figures["gap"]
+    note = (
+        say("sin IPC que comparar", "no CPI to compare")
+        if gap is None or pd.isna(gap)
+        else say(f"{points(gap)}: {verdict(gap)}", f"{points(gap)}: {verdict(gap)}")
+    )
     return card(
         label,
         percent(figures["change"]),
-        compared(start, end),
+        note,
         say(
             f"Cambio del índice de {month_label(start)} a {month_label(end)}; el índice usa solo las series con "
             "precio en enero 2022 y en el último mes.",
@@ -634,103 +620,143 @@ def change_card(label: str, figures: dict[str, Any], start, end) -> str:
             "priced in January 2022 and in the last month.",
         )
         + " "
+        + against_ipc(figures)
+        + ". "
         + definition("Alza frente al IPC"),
         tone(figures["change"]),
     )
 
 
-def ipc_card(figures: dict[str, Any]) -> str:
-    return card(
-        say("Frente al IPC", "Against the CPI"),
-        points(figures["gap"]),
-        figures["verdict"] or "—",
-        say(
-            "Puntos entre el cambio de precios y el del IPC de alimentos del INE en los mismos meses.",
-            "Points between the price change and that of the INE food CPI in the same months.",
-        )
+def lineup(summaries: list[dict[str, Any]], chosen: str) -> list[dict[str, Any]]:
+    """What lies under the choice: the families of the basket, or the products of a family (D-478)."""
+    items = [item for item in summaries if item["family"] not in (chosen, BASKET)]
+    if any(is_product(item["family"]) for item in items):
+        items = [item for item in items if is_product(item["family"])]
+    return items
+
+
+def dearest_card(summaries: list[dict[str, Any]], chosen: str) -> str:
+    """D-565: of what lies under the choice, what rose most against the food CPI: what got dearer for real."""
+    label = say("Se encareció más", "Rose the most")
+    hint = say(
+        "De lo que hay bajo la selección (las familias de la canasta o los productos de una familia), lo que más "
+        "subió frente al IPC de alimentos en los mismos meses. La tabla los ordena así, de mayor a menor.",
+        "Of what lies under the choice (the families of the basket or the products of a family), what rose most "
+        "against the food CPI in the same months. The table sorts them this way, highest first.",
+    )
+    items = [item for item in lineup(summaries, chosen) if item["gap"] is not None and not pd.isna(item["gap"])]
+    if not items:
+        return card(label, "—", say("nada que comparar", "nothing to compare"), hint)
+    top = max(items, key=lambda item: item["gap"])
+    note = say(
+        f"{points(top['gap'])} frente al IPC · {percent(top['change'])}",
+        f"{points(top['gap'])} against the CPI · {percent(top['change'])}",
+    )
+    return card(label, family_label(top["family"]), note, hint, gap_tone(top["gap"]))
+
+
+def risk_card(summaries: list[dict[str, Any]], chosen: str, figures: dict[str, Any]) -> str:
+    """D-565: where the sharp rises of the choice gather: the two families (or products) with most of them and their
+    share of the total."""
+    total, falls = figures["rises"], figures["falls"]
+    label = say("Dónde está el riesgo", "Where the risk is")
+    hint = (
+        "K6: "
+        + definition("Alerta de precio")
         + " "
-        + definition("Alza frente al IPC"),
-        gap_tone(figures["gap"]),
+        + say(
+            f"{charts.format_thousands(total)} alzas fuertes y {charts.format_thousands(falls)} bajas fuertes en el "
+            "período. Se cuentan sin ponderar: lo que tiene más productos suma más.",
+            f"{charts.format_thousands(total)} sharp rises and {charts.format_thousands(falls)} sharp drops in the "
+            "period. They are counted unweighted: what has more products adds more.",
+        )
     )
-
-
-def alert_card(figures: dict[str, Any]) -> str:
-    return card(
-        say("Alzas y bajas fuertes", "Sharp rises and drops"),
-        charts.format_thousands(figures["alerts"]),
-        say(
-            f"{charts.format_thousands(figures['rises'])} alzas fuertes · "
-            f"{charts.format_thousands(figures['falls'])} bajas fuertes",
-            f"{charts.format_thousands(figures['rises'])} sharp rises · {charts.format_thousands(figures['falls'])} sharp drops",
-        ),
-        "K6: " + definition("Alerta de precio"),
+    if not total:
+        return card(label, "0", say("sin alzas fuertes en el período", "no sharp rises in the period"), hint)
+    items = sorted((item for item in lineup(summaries, chosen) if item["rises"] > 0), key=lambda item: -item["rises"])
+    if not items:
+        note = say(
+            f"alzas fuertes · {charts.format_thousands(falls)} bajas",
+            f"sharp rises · {charts.format_thousands(falls)} drops",
+        )
+        return card(label, charts.format_thousands(total), note, hint)
+    top = items[:2]
+    share = 100 * sum(item["rises"] for item in top) / total
+    names = list_words([family_label(item["family"]) for item in top])
+    note = say(
+        f"de {charts.format_thousands(total)} alzas fuertes: {names}",
+        f"of {charts.format_thousands(total)} sharp rises: {names}",
     )
+    return card(label, charts.format_percent(share, 0), note, hint)
 
 
-def monthly_cards(figures: dict[str, Any], start, end, wholesale: list[str]) -> str:
-    """The five KPI cards of «Mensual»."""
-    top = figures["top"]
-    wholesale_names = list_words([home_mockup.short_family(name) for name in wholesale])
-    if top is None or top[2] <= 0:
-        rise_value, rise_note = "—", say("ningún mes subió", "no month rose")
+def months_card(figures: dict[str, Any]) -> str:
+    """D-565: the two months in which the index rose most against the month before: they explain most of the period."""
+    label = say("Meses que más subieron", "Months that rose most")
+    hint = say(
+        "Los dos meses en que más subió el índice frente al mes anterior, dentro del período; «Precio mes a mes» los "
+        "muestra.",
+        "The two months in which the index rose most against the month before, within the period; «Monthly price» "
+        "shows them.",
+    )
+    months = figures["months"]
+    rising = months[months["change"] > 0].nlargest(2, "change").sort_values(["year", "month"])
+    if rising.empty:
+        return card(label, "—", say("ningún mes subió", "no month rose"), hint)
+    value = " · ".join(month_name(int(month)) for month in rising["month"])
+    years = "–".join(str(year) for year in sorted(set(rising["year"].astype(int))))
+    changes = list_words([percent(change) for change in rising["change"]])
+    return card(label, value, say(f"{years}: {changes} en el mes", f"{years}: {changes} in the month"), hint, "rise")
+
+
+def food_cpi_card(ipc: pd.DataFrame) -> str:
+    """D-565: the largest yearly jump of the INE food CPI (D-518) as the last card of «Histórico»: the figure, what came
+    after it, and the whole sentence on hover."""
+    facts = food_cpi_facts(ipc)
+    if facts is None:
+        return ""
+    lead, detail, hover = food_cpi_insight(ipc)
+    after = facts["after"]
+    if after.empty:
+        note = say("IPC de alimentos del INE", "INE food CPI")
     else:
-        rise_value = month_label(top[:2])
-        before = month_label((top[0], top[1] - 1) if top[1] > 1 else (top[0] - 1, 12))
-        rise_note = say(f"{percent(top[2])} sobre {before}", f"{percent(top[2])} over {before}")
+        spread = (
+            charts.format_percent(after.min())
+            if len(after) == 1
+            else (f"{charts.format_percent(after.min())}–{charts.format_percent(after.max())}")
+        )
+        note = say(f"desde {facts['peak'] + 1}: {spread} al año", f"since {facts['peak'] + 1}: {spread} a year")
+    return card(
+        say(f"El salto de {facts['peak']}", f"The jump of {facts['peak']}"),
+        percent(facts["changes"][facts["peak"]]),
+        note,
+        f"{lead} {detail} {hover}".strip(),
+        "rise",
+    )
+
+
+def monthly_cards(figures: dict[str, Any], summaries: list[dict[str, Any]], chosen: str, start, end) -> str:
+    """The four cards of «Mensual» (D-565): each says a finding, its figure under it and how it is computed on hover."""
     cards = [
         change_card(say("Cambio de precios", "Price change"), figures, start, end),
-        ipc_card(figures),
-        card(
-            say("Brecha consumidor–mayorista", "Consumer–wholesale gap"),
-            "—" if figures["margin"] is None else charts.format_percent(figures["margin"]),
-            say("sin precio mayorista que comparar", "no wholesale price to compare")
-            if figures["margin"] is None
-            else say(
-                f"mediana de {charts.format_thousands(figures['pairs'])} pares",
-                f"median of {charts.format_thousands(figures['pairs'])} pairs",
-            ),
-            "K1: "
-            + definition("Brecha consumidor–mayorista")
-            + " "
-            + say(
-                f"Solo {wholesale_names} tienen precio mayorista. No es ganancia: no descuenta costos.",
-                f"Only {wholesale_names} have a wholesale price. It is not profit: it does not deduct costs.",
-            ),
-        ),
-        alert_card(figures),
-        card(
-            say("Mayor alza mensual", "Biggest monthly rise"),
-            rise_value,
-            rise_note,
-            say(
-                "El mes en que más subió el índice frente al mes anterior, dentro del período.",
-                "The month in which the index rose most against the month before, within the period.",
-            ),
-        ),
+        dearest_card(summaries, chosen),
+        risk_card(summaries, chosen, figures),
+        months_card(figures),
     ]
     return cards_row(cards)
 
 
-def history_cards(figures: dict[str, Any], last: tuple[int, int]) -> str:
-    """The KPI cards of «Histórico»."""
-    best = figures["best"]
+def history_cards(
+    figures: dict[str, Any], summaries: list[dict[str, Any]], chosen: str, last: tuple[int, int], ipc: pd.DataFrame
+) -> str:
+    """The cards of «Histórico» (D-565): the same findings over the whole history, and the jump of the food CPI."""
     cards = [
         change_card(say("Cambio desde ene 2022", "Change since Jan 2022"), figures, BASE, last),
-        ipc_card(figures),
-        card(
-            say("Año de mayor alza", "Year of the biggest rise"),
-            "—" if best is None else best[0],
-            "—" if best is None else say(*[percent(best[1]) + (f" · {best[2]}" if best[2] else "")] * 2),
-            say(
-                "El año en que más subió el índice, de diciembre a diciembre; 2022 desde enero y el año en curso hasta "
-                "el último mes publicado.",
-                "The year in which the index rose most, December to December; 2022 from January and the current year "
-                "up to the last month published.",
-            ),
-        ),
-        alert_card(figures),
+        dearest_card(summaries, chosen),
+        risk_card(summaries, chosen, figures),
+        food_cpi_card(ipc),
     ]
-    return cards_row(cards)
+    return cards_row([item for item in cards if item])
 
 
 # endregion
@@ -967,9 +993,27 @@ def ipc_column() -> tuple[str, str, Any]:
     )
 
 
+def ranked(summaries: list[dict[str, Any]], chosen: str) -> list[dict[str, Any]]:
+    """D-565: the rows up to the choice stay where they are (the basket, or a family over its chosen product); the rest
+    go from what rose most against the food CPI to what rose least, the rows without a CPI last."""
+    names = [item["family"] for item in summaries]
+    keep = names.index(chosen) + 1 if chosen in names else 1
+    rest = sorted(summaries[keep:], key=lambda item: (item["gap"] is None or pd.isna(item["gap"]), -(item["gap"] or 0)))
+    return summaries[:keep] + rest
+
+
+def alerts_column(since: str) -> tuple[str, str, Any]:
+    return (
+        say("Alzas y bajas fuertes", "Sharp rises and drops"),
+        say(f"Alzas y bajas fuertes (K6) {since}.", f"Sharp rises and drops (K6) {since}."),
+        lambda item: (charts.format_thousands(item["alerts"]), "", True),
+    )
+
+
 def monthly_table(summaries: list[dict[str, Any]], chosen: str) -> str:
+    """D-565: three columns, the rows sorted by «Frente al IPC»: what rose most for real comes first."""
     return build_table(
-        summaries,
+        ranked(summaries, chosen),
         chosen,
         [
             (
@@ -978,34 +1022,15 @@ def monthly_table(summaries: list[dict[str, Any]], chosen: str) -> str:
                 lambda item: (percent(item["change"]), "", True),
             ),
             ipc_column(),
-            (
-                say("Brecha", "Gap"),
-                say("Mediana de K1: consumidor sobre mayorista.", "Median of K1: consumer over wholesale."),
-                lambda item: ("—" if item["margin"] is None else charts.format_percent(item["margin"]), "", True),
-            ),
-            (
-                say("Alzas y bajas fuertes", "Sharp rises and drops"),
-                say("Alzas y bajas fuertes (K6) del período.", "Sharp rises and drops (K6) of the period."),
-                lambda item: (charts.format_thousands(item["alerts"]), "", True),
-            ),
-            (
-                say("Mayor alza mensual", "Biggest monthly rise"),
-                say("El mes que más subió frente al anterior.", "The month that rose most against the one before."),
-                lambda item: (
-                    "—"
-                    if item["top"] is None or item["top"][2] <= 0
-                    else say(*[f"{month_label(item['top'][:2])} · {percent(item['top'][2])}"] * 2),
-                    "",
-                    False,
-                ),
-            ),
+            alerts_column(say("del período", "of the period")),
         ],
     )
 
 
 def history_table(summaries: list[dict[str, Any]], chosen: str) -> str:
+    """D-565: the same three columns over the whole history."""
     return build_table(
-        summaries,
+        ranked(summaries, chosen),
         chosen,
         [
             (
@@ -1014,22 +1039,7 @@ def history_table(summaries: list[dict[str, Any]], chosen: str) -> str:
                 lambda item: (percent(item["change"]), "", True),
             ),
             ipc_column(),
-            (
-                say("Año de mayor alza", "Year of the biggest rise"),
-                say(
-                    "El año que más subió, de diciembre a diciembre.", "The year that rose most, December to December."
-                ),
-                lambda item: (
-                    "—" if item["best"] is None else say(*[f"{item['best'][0]} · {percent(item['best'][1])}"] * 2),
-                    "",
-                    False,
-                ),
-            ),
-            (
-                say("Alzas y bajas fuertes", "Sharp rises and drops"),
-                say("Alzas y bajas fuertes (K6) desde enero 2022.", "Sharp rises and drops (K6) since January 2022."),
-                lambda item: (charts.format_thousands(item["alerts"]), "", True),
-            ),
+            alerts_column(say("desde enero 2022", "since January 2022")),
         ],
     )
 
@@ -1039,10 +1049,12 @@ def history_table(summaries: list[dict[str, Any]], chosen: str) -> str:
 
 # region Context
 def context_html(lead: str, detail: str) -> str:
-    """D-458: the green panel above the tabs: what the reader is looking at, from which month to which, and why."""
+    """D-458: the green panel above the tabs: what the reader is looking at. D-565: one line; from which month to which
+    and why, on hover of its «i» (and of the whole panel)."""
     return (
-        '<div class="ba-context"><span class="ba-context-icon" aria-hidden="true">info</span>'
-        f"<p><b>{html.escape(lead)}</b> {html.escape(detail)}</p></div>"
+        f'<div class="ba-context" title="{html.escape(detail, quote=True)}">'
+        '<span class="ba-context-icon" aria-hidden="true">info</span>'
+        f"<p><b>{html.escape(lead)}</b></p></div>"
     )
 
 
@@ -1120,11 +1132,9 @@ def history_context(last: tuple[int, int]) -> tuple[str, str]:
     )
 
 
-def food_cpi_insight(ipc: pd.DataFrame) -> tuple[str, str, str] | None:
-    """D-518: the largest yearly jump of the INE food CPI and what came after it. Every figure is recomputed from
-    ipc_monthly, December to December over whole years, so the sentence follows the data: it says the prices did not go
-    back only while that holds. The third text, on hover, says why the line of the base year reads lower in «Cambio de
-    cada año», which starts that year in January."""
+def food_cpi_facts(ipc: pd.DataFrame) -> dict[str, Any] | None:
+    """D-518: the yearly changes of the INE food CPI, December to December over whole years, its largest jump and the
+    years after it; None with too little history."""
     december = ipc[ipc["month"] == 12].set_index("year")["food_index"].sort_index()
     if december.empty:
         return None
@@ -1132,12 +1142,24 @@ def food_cpi_insight(ipc: pd.DataFrame) -> tuple[str, str, str] | None:
     changes = december.pct_change(fill_method=None).dropna().mul(100)
     if changes.empty:
         return None
-    first, peak = int(changes.index[0]), int(changes.idxmax())
+    peak = int(changes.idxmax())
+    return {"december": december, "changes": changes, "first": int(changes.index[0]), "peak": peak,
+            "after": changes[changes.index > peak]}  # fmt: skip
+
+
+def food_cpi_insight(ipc: pd.DataFrame) -> tuple[str, str, str] | None:
+    """D-518: the largest yearly jump of the INE food CPI and what came after it, in words. Every figure is recomputed
+    from ipc_monthly, so the sentence follows the data: it says the prices did not go back only while that holds. The
+    third text says why the line of the base year reads lower in «Cambio de cada año», which starts that year in
+    January. D-565: it is said on hover of the last card of «Histórico»."""
+    facts = food_cpi_facts(ipc)
+    if facts is None:
+        return None
+    december, changes, first, peak, after = (facts[key] for key in ("december", "changes", "first", "peak", "after"))
     lead = say(
         f"Los alimentos subieron {percent(changes[peak])} en {peak} según el IPC del INE, el mayor salto desde {first}.",
         f"Food prices rose {percent(changes[peak])} in {peak} according to the INE CPI, the largest jump since {first}.",
     )
-    after = changes[changes.index > peak]
     detail = ""
     if not after.empty:
         low, high = charts.format_percent(after.min()), charts.format_percent(after.max())
@@ -1164,15 +1186,6 @@ def food_cpi_insight(ipc: pd.DataFrame) -> tuple[str, str, str] | None:
             f"{shorter}.",
         )
     return lead, detail, hover
-
-
-def insight_html(lead: str, detail: str, hover: str) -> str:
-    """D-518: a fact of the history in a green box, in the style of the panel above the tabs."""
-    return (
-        f'<div class="ba-context ba-insight" title="{html.escape(hover, quote=True)}">'
-        '<span class="ba-context-icon" aria-hidden="true">lightbulb</span>'
-        f"<p><b>{html.escape(lead)}</b> {html.escape(detail)}</p></div>"
-    )
 
 
 def inflation_context(last: tuple[int, int]) -> tuple[str, str]:
@@ -1226,20 +1239,14 @@ def method_context() -> tuple[str, str]:
 
 def build_context_css(palette: dict[str, str], green: str) -> str:
     """The panel in the fluorescent green of GreenOcean (D-450): a green edge and a light green ground, the text in the
-    ink of the theme so it reads on every theme. It keeps the height of two lines on every tab, so the tabs below it
-    never jump. It ends in a div, so its bottom margin makes up for the -1rem of the block (D-173)."""
+    ink of the theme so it reads on every theme. One line on every tab (D-565), so the tabs below it never jump. It ends
+    in a div, so its bottom margin makes up for the -1rem of the block (D-173)."""
     return static_files.style(
         "ba_context.css",
         {
             'var(--go-green)': green,
             'var(--go-text)': palette["text"],
             'var(--go-strong_text)': palette["strong_text"],
-            'var(--go-tiles-reserved-insight)': TILES_RESERVED + INSIGHT_TILE_ROOM,
-            'var(--go-tiles-floor)': TILES_FLOOR,
-            'var(--go-narrow-floor)': NARROW_FLOOR,
-            'var(--go-low-floor)': LOW_FLOOR,
-            'var(--go-table-reserved-insight-room)': TABLE_RESERVED + INSIGHT_ROOM,
-            'var(--go-table-floor)': TABLE_FLOOR,
         },
     )
 

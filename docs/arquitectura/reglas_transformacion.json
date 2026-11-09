@@ -1871,8 +1871,8 @@
    "n": 67,
    "capa": "panel",
    "titulo": [
-    "Escribe el cuadro verde del IPC",
-    "Writes the green CPI box"
+    "Escribe la tarjeta del salto del IPC",
+    "Writes the card of the CPI jump"
    ],
    "problema": [
     "Una frase escrita a mano queda vieja con el próximo dato.",
@@ -1888,12 +1888,17 @@
    ],
    "usa_mismo_envase": false,
    "respaldo": [
-    "D-518"
+    "D-518",
+    "D-565"
    ],
    "codigo": [
     {
      "archivo": "bi/ba_trends.py",
      "ancla": "def food_cpi_insight"
+    },
+    {
+     "archivo": "bi/ba_trends.py",
+     "ancla": "def food_cpi_card"
     }
    ]
   },

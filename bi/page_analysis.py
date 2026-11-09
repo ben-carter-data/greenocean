@@ -195,35 +195,31 @@ def show_ba_page(mode):
 @st.cache_data(show_spinner=False)
 def read_ba_history(database_version):
     """The history behind «Mensual» and «Histórico» (D-456, D-457), read once per database: the monthly index of the
-    families and of the whole basket against the IPC (D-163), K1 and the K6 alerts, each with the month of its week."""
+    families and of the whole basket against the IPC (D-163) and the K6 alerts, each with the month of its week."""
     rows, last = inflation_view.build_family_index(
         queries.run_sql(inflation_view.SERIES_SQL),
         queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"),
         basket=True,
     )
-    margins = ba_trends.add_month_key(
-        queries.run_query("k1_margin")[["week_start", "product_group", "product", "margin"]]
-    )
     found = read_cached_price_alerts_all(database_version)
     alerts_found = ba_trends.add_month_key(found[["week_start", "product_group", "product", "variation"]])
-    return rows, last, margins, alerts_found
+    return rows, last, alerts_found
 
 
 @st.cache_data(show_spinner=False)
 def read_ba_products(database_version):
     """D-478: the same history one level down, each product of the consumer series as a family is computed."""
-    _, _, margins, alerts_found = read_ba_history(database_version)
+    _, _, alerts_found = read_ba_history(database_version)
     return ba_trends.product_frames(
         queries.run_sql(inflation_view.SERIES_SQL),
         queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"),
-        margins,
         alerts_found,
     )
 
 
 @st.cache_data(show_spinner=False)
 def read_ba_food_cpi(database_version):
-    """D-518: the INE food CPI of every month published, for the insight of «Histórico»."""
+    """D-518: the INE food CPI of every month published, for the last card of «Histórico» (D-565)."""
     return queries.run_sql("SELECT year, month, food_index FROM ipc_monthly")
 
 
@@ -318,15 +314,15 @@ def chosen_ba_family(rows):
     return choices, st.session_state.get("ba_family") if st.session_state.get("ba_family") in choices else choices[0]
 
 
-def chosen_ba_level(rows, margins, found):
+def chosen_ba_level(rows, found):
     """D-478: what «Mensual» and «Histórico» show: the frames and name of the subject (the basket, a family or a
     product) and the table's rows, one level under the family (the families under the basket, a family's products
     under it, with the family first), each as (frames, name)."""
     choices, family = chosen_ba_family(rows)
-    family_frames = (rows, margins, found)
+    family_frames = (rows, found)
     product = st.session_state.get("ba_product")
-    product_rows, product_margins, product_found, family_of = read_ba_products(get_database_version())
-    product_frames = (product_rows, product_margins, product_found)
+    product_rows, product_found, family_of = read_ba_products(get_database_version())
+    product_frames = (product_rows, product_found)
     if product not in family_of:
         product = None
     if product:
@@ -341,45 +337,41 @@ def chosen_ba_level(rows, margins, found):
 
 
 def show_ba_monthly(mode):
-    """«Mensual» (D-457): one period, the last 12 months or one year, month by month: five KPI cards, three charts and
-    the table by family. Every card and column says on hover how it is computed; every chart, which months it shows."""
+    """«Mensual» (D-457, D-565): one period, the last 12 months or one year, month by month: four cards that each say a
+    finding, two charts and the table by family, sorted by «Frente al IPC». Every card and column says on hover how it is computed; every chart, which months it shows."""
     palette = charts.get_palette(mode)
-    rows, last, margins, found = read_ba_history(get_database_version())
+    rows, last, found = read_ba_history(get_database_version())
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
     st.markdown(ba_trends.build_css(palette, ba_green(mode)), unsafe_allow_html=True)
-    (frames, subject), table = chosen_ba_level(rows, margins, found)
+    (frames, subject), table = chosen_ba_level(rows, found)
     period = st.session_state.get("ba_period")
     if period not in ba_trends.periods(last):
         period = ba_trends.periods(last)[0]
     start, end = ba_trends.bounds(period, last)
     figures = ba_trends.monthly(*frames, subject, start, end)
-    st.markdown(
-        ba_trends.monthly_cards(figures, start, end, ba_trends.wholesale_families(margins)), unsafe_allow_html=True
-    )
-    show_ba_tiles(ba_trends.monthly_tiles(frames[0], figures, start, end, mode))
     summaries = [ba_trends.monthly(*item_frames, name, start, end) for item_frames, name in table]
+    st.markdown(ba_trends.monthly_cards(figures, summaries, subject, start, end), unsafe_allow_html=True)
+    show_ba_tiles(ba_trends.monthly_tiles(frames[0], figures, start, end, mode))
     st.markdown(ba_trends.monthly_table(summaries, subject), unsafe_allow_html=True)
 
 
 def show_ba_history(mode):
-    """«Histórico» (D-457): the whole history, from January 2022 to the last month, year by year: its KPI cards, its
-    charts and the table by family."""
+    """«Histórico» (D-457, D-565): the whole history, from January 2022 to the last month, year by year: its four cards
+    of findings, its charts and the table by family."""
     palette = charts.get_palette(mode)
-    rows, last, margins, found = read_ba_history(get_database_version())
+    rows, last, found = read_ba_history(get_database_version())
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
     st.markdown(ba_trends.build_css(palette, ba_green(mode)), unsafe_allow_html=True)
-    (frames, subject), table = chosen_ba_level(rows, margins, found)
+    (frames, subject), table = chosen_ba_level(rows, found)
     figures = ba_trends.history(*frames, subject, last)
-    st.markdown(ba_trends.history_cards(figures, last), unsafe_allow_html=True)
-    show_ba_tiles(ba_trends.history_tiles(frames[0], figures, last, mode))
-    insight = ba_trends.food_cpi_insight(read_ba_food_cpi(get_database_version()))
-    if insight:  # D-518
-        st.markdown(ba_trends.insight_html(*insight), unsafe_allow_html=True)
     summaries = [ba_trends.history(*item_frames, name, last) for item_frames, name in table]
+    ipc = read_ba_food_cpi(get_database_version())  # D-518, D-565: the jump of the food CPI is its last card
+    st.markdown(ba_trends.history_cards(figures, summaries, subject, last, ipc), unsafe_allow_html=True)
+    show_ba_tiles(ba_trends.history_tiles(frames[0], figures, last, mode))
     st.markdown(ba_trends.history_table(summaries, subject), unsafe_allow_html=True)
 
 
