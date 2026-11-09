@@ -2450,6 +2450,28 @@
           "estacion": 8,
           "estado": "resuelta",
           "referencia": "D-540"
+        },
+        {
+          "fecha": "2026-11-08",
+          "ocurrencia": [
+            "pruebas.yml y calidad.yml en rojo en el commit fefd644, por test_d419 del aviso de calidad.",
+            "pruebas.yml and calidad.yml red at commit fefd644, because of test_d419 of the quality alert."
+          ],
+          "diagnostico": [
+            "Otra prueba del mismo aviso usaba la fecha de hoy, y desde el 9 de noviembre (UTC) el informe C-7 cuenta como antiguo.",
+            "Another test of the same alert used the current date, and since 9 November (UTC) report C-7 counts as old."
+          ],
+          "solucion": [
+            "La prueba fija el día del informe; las demás llamadas al aviso no dependen del día.",
+            "The test fixes the day of the report; the other calls to the alert do not depend on the day."
+          ],
+          "comentario": [
+            "La primera vez se arregló una sola prueba: al corregir una falla, buscar todas las que la repiten.",
+            "The first time only one test was fixed: when fixing a failure, look for every test that repeats it."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-564"
         }
       ]
     },

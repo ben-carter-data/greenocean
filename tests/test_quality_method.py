@@ -735,9 +735,11 @@ def test_d419_the_alert_hides_what_is_resolved_reads_the_external_incident_and_w
     incidents = quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json")["registros"]
     latest = reports[-1]
     # D-431: the construction series ended with its open non-conformities closed, so its alert is empty; the rules are
-    # checked on the register as it was before that closing
+    # checked on the register as it was before that closing. F-43: read on the day of its report, so the notice of an
+    # old measurement (D-361) does not depend on the day the test runs (D-564)
+    measured = date.fromisoformat(str(latest["fecha"])[:10])
     assert (
-        quality_method.build_alert(reports, goals, policy, register, incidents=incidents) == ""
+        quality_method.build_alert(reports, goals, policy, register, today=measured, incidents=incidents) == ""
         or reports[-1].get("serie") == quality_metrics.SERIES_WEEKLY
     )
     nonconformities = [
