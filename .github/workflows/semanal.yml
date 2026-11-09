@@ -95,8 +95,9 @@ jobs:
       # The load history (etl_run) and the 90 % check read the database published last week.
       - name: Get the published database
         if: steps.guard.outputs.run == 'true'
+        # D-567: read as the workflow, not anonymously
         env:
-          GH_TOKEN: ${{ github.token }}  # D-567: read as the workflow, not anonymously
+          GH_TOKEN: ${{ github.token }}
         run: python bi/served_database.py
 
       - name: Download the ODEPA files

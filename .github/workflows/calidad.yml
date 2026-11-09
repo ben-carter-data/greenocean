@@ -38,8 +38,9 @@ jobs:
           cache: pip  # D-567: the packages come from the Actions cache when they can
           cache-dependency-path: requirements*.txt
       - name: Entorno del proyecto
+        # D-567: the release is read as the workflow, not anonymously
         env:
-          GH_TOKEN: ${{ github.token }}  # D-567: the release is read as the workflow, not anonymously
+          GH_TOKEN: ${{ github.token }}
         run: |
           python -m venv .venv
           for attempt in 1 2 3; do .venv/bin/pip install -r requirements.txt pytest-cov && break; [ "$attempt" = 3 ] && exit 1; sleep $((attempt * 30)); done  # D-568

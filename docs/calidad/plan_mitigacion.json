@@ -2628,6 +2628,28 @@
           "estacion": 14,
           "estado": "resuelta",
           "referencia": "D-555"
+        },
+        {
+          "fecha": "2026-11-09",
+          "ocurrencia": [
+            "calidad.yml en rojo en 8f8dd1f: un candidato a secreto sin clasificar.",
+            "calidad.yml red at 8f8dd1f: one unclassified secret candidate."
+          ],
+          "diagnostico": [
+            "detect-secrets leyó la nueva línea GH_TOKEN de calidad.yml como un valor nuevo; es la referencia al token del workflow, no un secreto.",
+            "detect-secrets read the new GH_TOKEN line of calidad.yml as a new value; it is the reference to the workflow token, not a secret."
+          ],
+          "solucion": [
+            "El falso positivo entra a la lista revisada y el comentario sale de la línea del token.",
+            "The false positive joins the reviewed list and the comment leaves the token line."
+          ],
+          "comentario": [
+            "Un cambio en un workflow pasa por el escáner de secretos antes de subir.",
+            "A change in a workflow goes through the secret scanner before pushing."
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-568"
         }
       ]
     },
