@@ -91,9 +91,12 @@ def test_d323_the_verifier_fails_naming_the_indicator_below_its_goal(tmp_path):
 def test_d332_the_header_names_the_latest_report():
     reports, _, _ = quality_method.read_page()
     latest = reports[-1]
+    within, nonconforming, measured = quality_metrics.report_counts(latest)
     header = quality_method.build_header(latest)
-    assert quality_metrics.report_name(latest) in header and latest["codigo_evaluado"] in header
-    assert "revisada y aprobada por el autor" in header and "ISO" not in header
+    # D-571: one line with the report, its date and its counts; how the report is made, on hover
+    line = f"{quality_metrics.report_name(latest)} · {str(latest['fecha'])[:10]} · {within} de {measured}"
+    assert f">{line} dentro de lo aceptable · {nonconforming} no conformidad" in header
+    assert 'title="Autoevaluación automática, revisada y aprobada por el autor."' in header and "ISO" not in header
     assert "Todavía no hay informes" in quality_method.build_header(None)
 
 
@@ -221,60 +224,46 @@ def test_d331_a_report_is_never_rewritten_and_the_pull_request_compares_with_the
             pass
 
 
-def test_d332_the_summary_reads_the_latest_report_and_never_claims_an_external_attestation(
-    construction_series, monkeypatch
-):
-    reports, goals, policy = quality_method.read_page()
-    latest = reports[-1]
-    for english in (False, True):
-        monkeypatch.setattr(i18n, "is_english", lambda english=english: english)
-        overview = quality_method.build_overview(latest, goals, policy)
-        text = " ".join(
-            [quality_method.build_header(latest), overview, quality_method.build_report_detail(reports[-1], reports)]
-        )
-        assert not any(word in text.lower() for word in FORBIDDEN), english
-    monkeypatch.setattr(i18n, "is_english", lambda: False)
-    overview = quality_method.build_overview(latest, goals, policy)
-    within, nonconforming, measured = quality_metrics.report_counts(latest)
-    # D-483: the report's own date, and a closed report says it is not today's state
-    assert f"El {str(latest['fecha'])[:10]}: {within} de {measured} medidos dentro de lo aceptable" in overview
-    assert "Hoy:" not in overview and "registro cerrado" in overview
-    # D-475: C-7 measured 12 of today's 14; a weekly report measures only the data ones
-    assert (
-        "El informe C-7 mide 12 de los 14 indicadores del plan de calidad: 4 de los datos que publicamos y 8"
-        in overview
-    )
-    weekly = dict(latest, serie=quality_metrics.SERIES_WEEKLY, numero=1)
-    weekly["indicadores"] = [row for row in latest["indicadores"] if row["tipo"] == "datos"]
-    assert "El informe N° 1 mide los 4 indicadores de datos del plan de calidad" in quality_method.build_overview(
-        weekly, goals, policy
-    )
-    # Only the indicators out of their acceptable carry their insight in sight; the rest on hover.
-    attention = [row for row in latest["indicadores"] if row["estado"] in ("urgente", "critico")]
-    assert overview.count("<li class=") == len(attention)
-    # The five counts share one line when all of them meet their acceptable.
-    counts = [row for row in latest["indicadores"] if row["clave"] in quality_method.COUNTS]
-    if all(row["estado"] == "cumple" for row in counts):
-        assert "Ruff · mypy · Bandit · pip-audit · secretos" in overview
+def test_d332_the_header_and_the_report_detail_never_claim_an_external_attestation(monkeypatch):
+    for series in (quality_metrics.SERIES_WEEKLY, quality_metrics.SERIES_BUILD):
+        reports = quality_metrics.read_series(series)
+        for english in (False, True):
+            monkeypatch.setattr(i18n, "is_english", lambda english=english: english)
+            for report in reports:
+                text = quality_method.build_header(report) + quality_method.build_report_detail(report, reports)
+                assert not any(word in text.lower() for word in FORBIDDEN), (series, english, report["numero"])
 
 
 @pytest.mark.parametrize("language", ["es", "en"])
-def test_d332_the_page_has_two_tabs_and_the_quality_section_holds_it_in_both_languages(language):
+def test_d571_the_page_is_the_archive_of_the_reports_and_the_quality_section_holds_it_in_both_languages(language):
+    """No tabs: one line with the latest report and its counts, then the reports, newest first. The indicators of
+    today live in «Controles de datos» and the failures in «Cambios e incidentes», never here."""
+    english = language == "en"
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    app.query_params.update({"perfil": "profesional", "lang": language})
+    app.query_params.update({"perfil": "profesional", "lang": language, "vista": "Método y calidad"})
     app.run()
-    assert not app.exception
-    markup = " ".join(block.value for block in app.sidebar.markdown)
-    assert "Quality self-assessment" not in markup and "Autoevaluación de calidad ·" not in markup  # D-343: gone
+    assert not app.exception and len(app.tabs) == 0
+    menu = " ".join(block.value for block in app.sidebar.markdown)
+    assert "Quality self-assessment" not in menu and "Autoevaluación de calidad ·" not in menu  # D-343: gone
     labels = [link.proto.label for link in app.sidebar.get("page_link")]
-    audit, method = ("Data controls", "Quality plan") if language == "en" else ("Controles de datos", "Plan de calidad")
+    audit, method = ("Data controls", "Quality plan") if english else ("Controles de datos", "Plan de calidad")
     assert labels.index(audit) == labels.index(method) + 1  # D-343, D-507: the two sit together in «Calidad»
-    page = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    page.query_params.update({"perfil": "profesional", "lang": language, "vista": "Método y calidad"})
-    page.run()
-    assert not page.exception and len(page.tabs) == 2
-    content = " ".join(block.value for block in page.markdown if "qm-" in block.value)
-    assert "qm-overview" in content and "qm-reports" in content
+    reports = quality_metrics.read_reports()
+    within, nonconforming, measured = quality_metrics.report_counts(reports[-1])
+    counts = (
+        f"{within} of {measured} within the acceptable · {nonconforming} non-conformit"
+        if english
+        else f"{within} de {measured} dentro de lo aceptable · {nonconforming} no conformidad"
+    )
+    head = next(block.value for block in app.markdown if 'class="qm-head"' in block.value)
+    assert f"{quality_metrics.report_name(reports[-1], english)} · {str(reports[-1]['fecha'])[:10]} · {counts}" in head
+    rows = [str(button.label) for button in app.button if str(button.key).startswith("cr_reports_toggle_")]
+    newest = [f"{quality_metrics.report_code(report, english)} · {report['fecha']} · " for report in reports[::-1]]
+    assert len(rows) == len(reports) and all(row.startswith(start) for row, start in zip(rows, newest)), rows
+    content = " ".join(block.value for block in app.markdown if "qm-" in block.value)
+    assert 'class="qm-group' not in content and "qm-row" not in content and "qm-overview" not in content
+    markup = " ".join(block.value for block in app.markdown)
+    assert "Últimas fallas" not in markup and "Latest failures" not in markup
     assert not re.search(r"month_start|>None<|\bnan\b", content)
 
 
@@ -539,98 +528,6 @@ def test_d335_only_the_author_session_can_be_alerted_and_the_visit_never_breaks(
     assert ("quality_alert_seen" in app.session_state and app.session_state["quality_alert_seen"]) == (
         unlocked and pending
     )
-
-
-# endregion
-
-
-# region The line «Cómo leerlo» of the summary (D-337, D-566)
-def bar_and_tick(row_html):
-    """(bar width %, tick position %) of an indicator row, as drawn."""
-    width = re.search(r'<i style="width:([\d.]+)%', row_html)
-    tick = re.search(r'<b style="left:([\d.]+)%', row_html)
-    return (float(width.group(1)), float(tick.group(1))) if width and tick else None
-
-
-def test_d337_the_how_to_read_line_sits_under_the_summary_sentence_in_both_languages(monkeypatch):
-    reports, goals, policy = quality_method.read_page()
-    spanish, english = policy["resumen"]["como_leerlo"]
-    assert spanish.startswith("Cómo leerlo:") and "«Aceptable 0» significa cero tolerancia." in spanish
-    assert english.startswith("How to read this:") and "“Acceptable 0” means zero tolerance." in english
-    for language, text in ((False, spanish), (True, english)):
-        monkeypatch.setattr(i18n, "is_english", lambda language=language: language)
-        overview = quality_method.build_overview(reports[-1], goals, policy)
-        # D-566: the line is read on hover of the «i» of each group, under the names of the columns; never in sight
-        # in its hover and its accessible name
-        assert overview.count(html.escape(text, quote=True)) == 2 * overview.count('class="qm-info"') >= 2
-        assert "qm-help" not in overview and overview.index('class="qm-lead"') < overview.index('class="qm-groups')
-        heads = (
-            ("Indicator", "Failure", "Acceptable", "State")
-            if language
-            else ("Indicador", "Falla", "Aceptable", "Estado")
-        )
-        assert all(f"<span>{head}</span>" in overview for head in heads)
-
-
-def test_d337_what_the_line_says_is_what_the_bars_and_ticks_show(monkeypatch):
-    """«Cada barra es la falla actual (en %, en casos o en días), la raya marca el máximo aceptable y mientras la barra no
-    pase la raya, cumple»: checked against the drawing, state by state."""
-    monkeypatch.setattr(i18n, "is_english", lambda: False)
-    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
-    policy = quality_metrics.read(quality_metrics.POLICY_FILE)
-    # The line says «cumple» for a bar short of the tick: that holds while the goal equals the acceptable.
-    assert all(goal["meta"] == goal.get("max", goal.get("min")) for key, goal in goals.items() if key != "nota")
-    seen = set()
-    for coverage, ruff, comparables, days in [(96, 0, 95, 3), (90, 0, 90, 8), (89, 1, 89, 9), (60, 7, 40, 30)]:
-        report = {
-            **REPORT,
-            "cobertura": {**REPORT["cobertura"], "total": coverage},
-            "ruff": {"errores": ruff},
-            "datos": {"pct_comparacion": comparables, "dias_desde_ultima_carga": days},
-        }
-        for row in quality_metrics.evaluate(report, goals, policy):
-            drawn = bar_and_tick(quality_method.indicator_row(row, goals, policy))
-            if row["falla"] is None:
-                assert drawn is None  # not measured: no bar, no tick
-                continue
-            width, tick = drawn
-            assert (row["estado"] == "cumple") == (width <= tick), (row["clave"], width, tick, row["estado"])
-            # The tick is the acceptable, on the scale of its own bar: zero tolerance puts it at the left edge.
-            if row["falla_aceptable"] == 0:
-                assert tick == 0.0
-            seen.add(row["estado"])
-        # The failure is in %, in cases or in days, as the line says; nothing else.
-        assert {row["unidad_falla"] for row in quality_metrics.evaluate(report, goals, policy)} <= {"%", "", "días"}
-    assert {"cumple", "urgente", "critico"} <= seen
-
-
-# endregion
-
-
-# region The latest failures in the summary (D-346)
-def test_d346_the_summary_shows_the_three_latest_failures_without_the_diagnosis_and_no_tab_is_added():
-    from bi import git_workflow
-
-    failures = git_workflow.read_failures()
-    reports, goals, policy = quality_method.read_page()
-    for language in ("es", "en"):
-        app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-        app.query_params.update({"lang": language, "vista": "Método y calidad"})
-        app.session_state["visitor_profile"] = "profesional"
-        app.run()
-        assert not app.exception and len(app.tabs) == 2  # still «Resumen» and «Informes»
-        block = next(item.value for item in app.markdown if 'class="qm-failures"' in item.value)
-        assert block.count("<li>") == 3
-        shown = [row for row in failures[:3]]
-        assert [block.index(row["fecha"] + " · " + row["id"]) for row in shown] == sorted(
-            block.index(row["fecha"] + " · " + row["id"]) for row in shown
-        )  # newest first
-        for row in failures[:3]:
-            assert row["solucion"][language == "en"].replace("&", "&amp;")[:20] in block
-        assert not any(row["diagnostico"][language == "en"][:25] in block for row in failures)
-        labels = [link.proto.label for link in app.main.get("page_link")]
-        assert ("View full log" if language == "en" else "Ver registro completo") in labels
-    assert quality_method.build_latest_failures([]) == ""
 
 
 # endregion

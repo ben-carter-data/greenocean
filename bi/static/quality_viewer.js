@@ -16,7 +16,7 @@ const full=document.getElementById('full');
 if(!document.fullscreenEnabled){full.style.display='none';}
 full.onclick=()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();};
 document.getElementById('print').onclick=()=>window.print();
-const fmt=v=>v===null||v===undefined?'—':Number(v).toLocaleString(DATA.lang,{maximumFractionDigits:2});
+const fmt=v=>v.toLocaleString(DATA.lang,{maximumFractionDigits:2});
 const unit=u=>u?' '+(DATA.units[u]||u):'';
 const a=document.getElementById('cmp-a'),b=document.getElementById('cmp-b'),out=document.getElementById('cmp');
 a.value=DATA.a;b.value=DATA.b;
@@ -27,13 +27,13 @@ const t=document.createElement('table');const head=document.createElement('tr');
 const thead=document.createElement('thead');thead.appendChild(head);t.appendChild(thead);const body=document.createElement('tbody');
 const keys=r=>r.rows.filter(x=>x[1]!==null).map(x=>x[3]).sort().join();const warn=document.getElementById('cmp-warn');
 warn.hidden=keys(ra)===keys(rb);warn.textContent=DATA.warn;
-rb.rows.filter(row=>ra.rows.some(x=>x[3]===row[3])).forEach(row=>{const before=(ra.rows.find(x=>x[3]===row[3])||[])[1];const tr=document.createElement('tr');
+rb.rows.filter(row=>ra.rows.some(x=>x[3]===row[3])).forEach(row=>{const old=ra.rows.find(x=>x[3]===row[3]);const before=old[1];const tr=document.createElement('tr');
 const name=document.createElement('td');const strong=document.createElement('b');strong.textContent=row[0];name.appendChild(strong);
 const bars=document.createElement('div');bars.className='pair';
 [[before,'__GO_BEFORE__'],[row[1],'__GO_SKY__']].forEach(([v,c])=>{const i=document.createElement('i');i.style.background=c;
 i.style.width=(v===null||v===undefined?0:Math.max(2,v/top*100))+'%';bars.appendChild(i);});name.appendChild(bars);
-const ca=document.createElement('td');ca.className='num';ca.textContent=fmt(before)+unit(row[2]);
-const cb=document.createElement('td');cb.className='num';cb.textContent=fmt(row[1])+unit(row[2]);
+const ca=document.createElement('td');ca.className='num';ca.textContent=old[4];
+const cb=document.createElement('td');cb.className='num';cb.textContent=row[4];
 const d=document.createElement('td');d.className='num';
 if(before===null||before===undefined||row[1]===null){d.textContent='—';}else{const diff=row[1]-before;
 d.textContent=(diff>0?'+':'')+fmt(diff)+unit(row[2]);d.className='num '+(diff>0?'up':diff<0?'down':'');}

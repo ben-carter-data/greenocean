@@ -32,7 +32,6 @@ from bi.app_frame import (
     build_info_card_html,
     get_profile,
     is_author,
-    keep_context,
     open_card,
     show_chart,
     show_info_cards,
@@ -56,9 +55,6 @@ from bi.constants import (
     REJECTED_ROW_LABELS,
     REPORT_PARAMETER,
     SOURCE_NAMES,
-    VIEW_PARAMETER,
-    WINDOW_OF_VIEW,
-    WINDOW_PAGES,
 )
 from bi.data_access import (
     format_chile_time,
@@ -79,7 +75,7 @@ QUALITY_PICK_KEY = "qa_pick"
 
 
 QUALITY_OPEN_KEY = "qa_open"
-FILTER_FROM = 10  # D-566: «Informes» shows its filters only above this many reports, about one screen of rows
+FILTER_FROM = 10  # D-566: the list of reports shows its filters only above this many, about one screen of rows
 # endregion
 
 
@@ -522,7 +518,7 @@ def show_operations_page(mode):
 
 # region «Plan de calidad»
 def filter_reports(reports, year, month, week, query):
-    """The reports the filters of «Informes» leave (D-333): by year, month and data week, and a search over the number,
+    """The reports the filters of the list leave (D-333): by year, month and data week, and a search over the number,
     the date and the evaluated code."""
     query = query.strip().lower()
     number = None
@@ -549,7 +545,7 @@ def filter_reports(reports, year, month, week, query):
 
 
 def show_report_filters(reports):
-    """The year, month, data week and search of «Informes» (D-333), on one row."""
+    """The year, month, data week and search of the list of reports (D-333), on one row."""
     years = [ALL_VALUES] + sorted({str(item["fecha"])[:4] for item in reports}, reverse=True)
     months = [ALL_VALUES] + sorted({str(item["fecha"])[5:7] for item in reports}, reverse=True)
     data_weeks = [ALL_VALUES] + sorted({str(item["semana"]) for item in reports if item["semana"]}, reverse=True)
@@ -603,7 +599,7 @@ def show_quality_report_dialog(ref):
 
 
 def show_open_report_button(report):
-    """The button under a report's detail in «Informes»: it opens the report as slides, with its PDF."""
+    """The button under a report's detail in the list: it opens the report as slides, with its PDF."""
     if st.button(
         tr("Abrir el informe o su PDF"),
         key=f"cr_reports_open_{quality_metrics.report_ref(report)}",
@@ -613,77 +609,59 @@ def show_open_report_button(report):
 
 
 def show_method_page(mode):
-    """«Plan de calidad» (D-320, D-323, D-330, D-332, D-333): how the quality of the published data and of the code is
-    managed. Two tabs: «Resumen» (each indicator against its acceptable) and «Informes» (the numbered reports)."""
-    reports, goals, policy = quality_method.read_page()
-    latest = reports[-1] if reports else None
+    """«Plan de calidad» (D-320, D-331, D-333, D-431, D-571): the archive of the numbered quality reports. One line names
+    the latest; under it, the series and its reports, newest first, each opening as a document with its PDF. Today's
+    state of the data lives in «Controles de datos» and the failures in «Cambios e incidentes»."""
+    reports = quality_metrics.read_reports()
     show_page_bar(
         PAGE_METHOD,
         PAGE_METHOD,
-        "Qué medimos de los datos que publicamos y del código que los trata, contra qué aceptable, y cómo vamos.",
+        "Los informes semanales de calidad: cada uno mide los datos de una carga contra lo aceptable y se abre como "
+        "documento, con su PDF.",
     )
     st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    st.markdown(quality_method.build_header(latest), unsafe_allow_html=True)
+    st.markdown(quality_method.build_header(reports[-1] if reports else None), unsafe_allow_html=True)
     asked = st.query_params.get(REPORT_PARAMETER)
     # D-432: only once the view is back (D-430): the first run of a reload has none yet, and its rerun would close it.
     if asked and get_profile():
-        # A report named in the address (its number or its PDF icon in «Informes») opens once.
+        # A report named in the address (the link of «Acción requerida») opens once.
         del st.query_params[REPORT_PARAMETER]
         if quality_metrics.find_report(asked):
             show_quality_report_dialog(asked)
-    summary, history = st.tabs([tr("Resumen"), tr("Informes")])
-    with summary:
-        st.markdown(
-            quality_method.build_overview(latest, goals, policy, git_workflow.read_failures()), unsafe_allow_html=True
+    # D-431: one series at a time, the weekly first; the construction series (C-1 to C-7) stays readable
+    series = [
+        name
+        for name in (quality_metrics.SERIES_WEEKLY, quality_metrics.SERIES_BUILD)
+        if quality_metrics.read_series(name)
+    ]
+    if len(series) > 1:
+        chosen = st.segmented_control(
+            tr("Serie"),
+            series,
+            default=series[0],
+            key="quality_series",
+            format_func=lambda name: (
+                tr("Semanal") if name == quality_metrics.SERIES_WEEKLY else tr("Construcción (C-1 a C-7)")
+            ),
         )
-        git_page = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_GIT])  # absent when a test draws this page alone
-        with st.container(horizontal=True, vertical_alignment="center", key="quality_actions"):  # D-566: one row
-            if git_page:
-                st.page_link(
-                    git_page,
-                    label=tr("Ver registro completo"),
-                    icon=":material/arrow_forward:",
-                    query_params=keep_context() | {VIEW_PARAMETER: PAGE_GIT, GIT_TAB_PARAMETER: GIT_TAB_LOG},
-                )
-            if latest and st.button(
-                tr("Abrir el último informe"), icon=":material/description:", key="quality_latest_report"
-            ):
-                show_quality_report_dialog(quality_metrics.report_ref(latest))
-    with history:
-        # D-431: one series at a time, the weekly first; the construction series (C-1 to C-7) stays readable
-        series = [
-            name
-            for name in (quality_metrics.SERIES_WEEKLY, quality_metrics.SERIES_BUILD)
-            if quality_metrics.read_series(name)
-        ]
-        if len(series) > 1:
-            chosen = st.segmented_control(
-                tr("Serie"),
-                series,
-                default=series[0],
-                key="quality_series",
-                format_func=lambda name: (
-                    tr("Semanal") if name == quality_metrics.SERIES_WEEKLY else tr("Construcción (C-1 a C-7)")
-                ),
-            )
-            reports = quality_metrics.read_series(chosen or series[0])
-        year = month = week = ALL_VALUES
-        query = ""
-        if len(reports) > FILTER_FROM:  # D-566: the filters only once the list is longer than one screen
-            year, month, week, query = show_report_filters(reports)
-        shown = filter_reports(reports, year, month, week, query)
-        st.markdown(compact_table.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
-        if not shown:
-            st.caption(tr("Ningún informe coincide."))
-        else:
-            compact_table.show_compact_rows(
-                "cr_reports",
-                sorted(shown, key=lambda item: -item["numero"]),
-                quality_method.report_summary,
-                lambda report: quality_method.build_report_detail(report, reports),
-                signature=f"{reports[0].get('serie') if reports else ''}|{year}|{month}|{week}|{query}",
-                after_detail=show_open_report_button,
-            )
+        reports = quality_metrics.read_series(chosen or series[0])
+    year = month = week = ALL_VALUES
+    query = ""
+    if len(reports) > FILTER_FROM:  # D-566: the filters only once the list is longer than one screen
+        year, month, week, query = show_report_filters(reports)
+    shown = filter_reports(reports, year, month, week, query)
+    st.markdown(compact_table.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+    if not shown:
+        st.caption(tr("Ningún informe coincide."))
+    else:
+        compact_table.show_compact_rows(
+            "cr_reports",
+            sorted(shown, key=lambda item: -item["numero"]),
+            quality_method.report_summary,
+            lambda report: quality_method.build_report_detail(report, reports),
+            signature=f"{reports[0].get('serie') if reports else ''}|{year}|{month}|{week}|{query}",
+            after_detail=show_open_report_button,
+        )
 
 
 # endregion

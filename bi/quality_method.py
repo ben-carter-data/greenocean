@@ -1,10 +1,12 @@
-"""«Plan de calidad» (D-320, D-323, D-330, D-332): how the quality of the published data and of the code is managed.
+"""«Plan de calidad» (D-320, D-323, D-331, D-333, D-571): the archive of the numbered quality reports.
 
-Two tabs. «Resumen» says in two sentences what is measured and how it is going, and shows each indicator's failure
-against its acceptable, data and code apart, with the insight of those out of their acceptable. «Informes» lists the
-numbered reports (docs/calidad/informes, D-331), newest first. Every figure comes from a report; every text of an
-indicator from docs/calidad/metas.json and docs/calidad/politica.json. A self-assessment, reviewed by the author.
-Pure functions: no Streamlit; bi/dashboard.py draws the HTML. Texts come in both languages.
+One line names the latest report: its date, how many of its indicators are within the acceptable and its
+non-conformities. Under it, the reports of a series (docs/calidad/informes, D-331), newest first, each opening as a
+document with its PDF. Today's state of the data lives in «Controles de datos» and the failures in «Cambios e
+incidentes». The module also writes «Acción requerida», the author's alert from the latest report (D-335). Every figure
+comes from a report; every text of an indicator from docs/calidad/metas.json and docs/calidad/politica.json. A
+self-assessment, reviewed by the author. Pure functions: no Streamlit; bi/page_quality.py draws the page and
+bi/app_frame.py the alert. Texts come in both languages.
 """
 
 from __future__ import annotations
@@ -15,17 +17,7 @@ from typing import Any
 from bi import charts, i18n, quality_metrics, static_files
 
 # region Constants
-# The five counts that are almost always zero share one line when they all meet their acceptable (D-332).
-COUNTS = {
-    "ruff_avisos": ("Ruff", "Ruff"),
-    "mypy_errores": ("mypy", "mypy"),
-    "bandit_altos": ("Bandit", "Bandit"),
-    "pip_audit_vulnerabilidades": ("pip-audit", "pip-audit"),
-    "secretos_sin_clasificar": ("secretos", "secrets"),
-}
 STATE_COLORS = {"cumple": "#199e70", "aviso": "#b8860b", "urgente": "#e07b22", "critico": None, "sin_medicion": None}
-SKY = "#38bdf8"  # the sky-blue accent of the reports, on deep black (D-332)
-DEEP = "#05070b"
 STALE_DAYS = 8
 # endregion
 
@@ -69,178 +61,26 @@ def state_word(state: str, policy: dict[str, Any]) -> str:
 # endregion
 
 
-# region The overview
+# region The latest report
 def build_header(report: dict[str, Any] | None) -> str:
-    """Where the figures come from: the latest report, its date and the code it evaluated."""
+    """D-571: the page's first line names the latest report, its date, how many of its indicators are within the
+    acceptable and its non-conformities; how the report is made, on hover (D-566)."""
     if not report:
         return f'<div class="qm-head">{html.escape(t("Todavía no hay informes.", "There are no reports yet."))}</div>'
-    line = t(
-        f"{report_title(report)} · {report['fecha']} · código {report['codigo_evaluado']}",
-        f"{report_title(report)} · {report['fecha']} · code {report['codigo_evaluado']}",
+    within, nonconforming, measured = quality_metrics.report_counts(report)
+    day = str(report["fecha"])[:10]
+    findings = (
+        t("no conformidad", "non-conformity") if nonconforming == 1 else t("no conformidades", "non-conformities")
     )
-    process = t(  # D-566: how the report is made, on hover
+    line = t(
+        f"{report_title(report)} · {day} · {within} de {measured} dentro de lo aceptable · {nonconforming} {findings}",
+        f"{report_title(report)} · {day} · {within} of {measured} within the acceptable · {nonconforming} {findings}",
+    )
+    process = t(
         "Autoevaluación automática, revisada y aprobada por el autor.",
         "Automatic self-assessment, reviewed and approved by the author.",
     )
     return f'<div class="qm-head" title="{html.escape(process)}">{html.escape(line)}</div>'
-
-
-def indicator_row(row: dict[str, Any], goals: dict[str, Any], policy: dict[str, Any]) -> str:
-    """One indicator: its failure as a bar, the mark of its acceptable, the figure and the state; the rest on hover."""
-    goal = goals.get(row["clave"], {})
-    hint = " ".join(t(*goal[field]) for field in ("que_mide", "por_que") if field in goal) + " " + t(*row["insight"])
-    failure, acceptable = row["falla"], row["falla_aceptable"]
-    if failure is None:
-        bar = f'<span class="qm-bar qm-empty">{html.escape(t("sin medición", "not measured"))}</span>'
-    else:
-        span = max(failure, acceptable or 0) * 1.3 or 1
-        bar = (
-            f'<span class="qm-bar"><i style="width:{min(100, failure / span * 100):.1f}%"></i>'
-            f'<b style="left:{min(100, (acceptable or 0) / span * 100):.1f}%"></b></span>'
-        )
-    acceptable_text = failure_text(row, "falla_aceptable")  # D-566: under the column «Aceptable»
-    return (
-        f'<div class="qm-row" title="{html.escape(hint.strip())}">'
-        f'<span class="qm-name">{html.escape(t(*row["nombre"]))}</span>'
-        f'{bar}<span class="qm-value">{html.escape(failure_text(row))}</span>'
-        f'<span class="qm-limit">{html.escape(acceptable_text)}</span>'
-        f'<span class="qm-state qm-{row["estado"]}">{html.escape(state_word(row["estado"], policy))}</span></div>'
-    )
-
-
-def counts_row(rows: list[dict[str, Any]], policy: dict[str, Any]) -> str:
-    """The five counts in one line, when all of them meet their acceptable."""
-    names = " · ".join(t(*COUNTS[row["clave"]]) for row in rows)
-    figures = " · ".join(failure_text(row) for row in rows)
-    hint = t(
-        "Hallazgos de Ruff, errores de mypy, hallazgos altos de Bandit, vulnerabilidades y posibles secretos: "
-        "todos en su aceptable.",
-        "Ruff findings, mypy errors, high Bandit findings, vulnerabilities and possible secrets: "
-        "all within their acceptable.",
-    )
-    return (
-        f'<div class="qm-row" title="{html.escape(hint)}"><span class="qm-name">{html.escape(names)}</span>'
-        f'<span class="qm-bar"><b style="left:0%"></b></span><span class="qm-value">{html.escape(figures)}</span>'
-        f'<span class="qm-limit">0</span>'
-        f'<span class="qm-state qm-cumple">{html.escape(state_word("cumple", policy))}</span></div>'
-    )
-
-
-def build_latest_failures(failures: list[dict[str, Any]], count: int = 3) -> str:
-    """D-346: the latest failures of the register (newest first), compact: date, what happened and its solution, each
-    on one line, whole on hover (D-566). The diagnosis is the author's and stays in the Incident log."""
-    if not failures:
-        return ""
-    items = "".join(
-        f'<li><span class="qm-failure" title="{html.escape(whole, quote=True)}">'
-        f'<b>{html.escape(row["fecha"])} · {html.escape(row["id"])}</b>'
-        f'<span>{html.escape(t(*row["ocurrencia"]))}</span>'
-        f'<small>{html.escape(t("Solución", "Solution"))}: {html.escape(t(*row["solucion"]))}</small></span></li>'
-        for row in failures[:count]
-        for whole in [f"{t(*row['ocurrencia'])} {t('Solución', 'Solution')}: {t(*row['solucion'])}"]
-    )
-    return (
-        f'<div class="qm-failures"><h4>{html.escape(t("Últimas fallas", "Latest failures"))}</h4><ul>{items}</ul></div>'
-    )
-
-
-def build_overview(
-    report: dict[str, Any] | None,
-    goals: dict[str, Any],
-    policy: dict[str, Any],
-    failures: list[dict[str, Any]] | None = None,
-) -> str:
-    """«Resumen»: the answer in one line, the data and the code side by side (the data alone when the report has no
-    code, D-566), the insights that need attention and the latest failures."""
-    if not report:
-        return ""
-    rows = report["indicadores"]
-    data = [row for row in rows if row["tipo"] == "datos"]
-    code = [row for row in rows if row["tipo"] == "codigo"]
-    within, nonconforming, measured = quality_metrics.report_counts(report)
-    plural = ("no conformidad", "non-conformity") if nonconforming == 1 else ("no conformidades", "non-conformities")
-    # D-475: the report says how many of the plan's indicators it measures; a closed report keeps the ones of its time.
-    name, total = quality_metrics.report_code(report, i18n.is_english()), len(quality_metrics.INDICATORS)
-    day = str(report["fecha"])[:10]
-    measures = (  # D-566: what the report measures, on hover of the «i» of each group; the answer stays in sight
-        t(
-            f"El informe {name} mide {len(rows)} de los {total} indicadores del plan de calidad: {len(data)} de los datos "
-            f"que publicamos y {len(code)} del código que los trata, cada uno contra un aceptable fijado por el autor.",
-            f"Report {name} measures {len(rows)} of the {total} indicators of the quality plan: {len(data)} of the data "
-            f"we publish and {len(code)} of the code that treats it, each against an acceptable set by the author.",
-        )
-        if code
-        else t(
-            f"El informe {name} mide los {len(rows)} indicadores de datos del plan de calidad, cada uno contra un "
-            "aceptable fijado por el autor; el código se verifica en el CI de cada push.",
-            f"Report {name} measures the {len(rows)} data indicators of the quality plan, each against an acceptable "
-            "set by the author; the code is checked by the CI of every push.",
-        )
-    )
-    lead = [
-        # D-483: the report's own date, never «Hoy»: a closed report is read beside today's «Controles de datos»
-        t(
-            f"El {day}: {within} de {measured} medidos dentro de lo aceptable · {nonconforming} {plural[0]}.",
-            f"On {day}: {within} of {measured} measured within the acceptable · {nonconforming} {plural[1]}.",
-        ),
-    ]
-    if report.get("serie") != quality_metrics.SERIES_WEEKLY:
-        lead.append(
-            t(
-                f"{name} es un registro cerrado de la serie de construcción, medido con las reglas de entonces, y no se "
-                "reevalúa; el estado de los datos de hoy está en «Controles de datos».",
-                f"{name} is a closed record of the construction series, measured with the rules of its time, and is not "
-                "re-evaluated; today's state of the data is in «Data controls».",
-            )
-        )
-    counted = [row for row in code if row["clave"] in COUNTS]
-    grouped = len(counted) == len(COUNTS) and all(row["estado"] == "cumple" for row in counted)
-    code_rows = "".join(
-        indicator_row(row, goals, policy) for row in code if not (grouped and row["clave"] in COUNTS)
-    ) + (counts_row(counted, policy) if grouped else "")
-    attention = sorted(
-        (row for row in rows if row["estado"] in ("urgente", "critico")), key=lambda row: row["estado"] != "critico"
-    )
-    insights = "".join(
-        f'<li class="qm-{row["estado"]}"><b>{html.escape(t(*row["nombre"]))} · '
-        f'{html.escape(state_word(row["estado"], policy))}</b><span>{html.escape(t(*row["insight"]))}</span></li>'
-        for row in attention
-    )
-    how = measures + " " + t(*policy.get("resumen", {}).get("como_leerlo", ["", ""]))
-    groups = group_html(
-        t("Datos que publicamos", "Data we publish"), "".join(indicator_row(row, goals, policy) for row in data), how
-    )
-    if code_rows:  # D-566: a weekly report measures only the data; an empty box is never drawn
-        groups += group_html(t("Código que los trata", "Code that treats them"), code_rows, how)
-    return (
-        '<div class="qm-overview"><p class="qm-lead">'
-        + " ".join(f"<span>{html.escape(text)}</span>" for text in lead)
-        + f'</p><div class="qm-groups{"" if code_rows else " qm-one"}">'
-        + groups
-        + "</div>"
-        + (f'<ul class="qm-insights">{insights}</ul>' if insights else "")
-        + build_latest_failures(failures or [])
-        + "</div>"
-    )
-
-
-def group_html(title: str, rows: str, how: str) -> str:
-    """D-566: a group of indicators under the names of its columns, as the report viewer names them; what the report
-    measures and how to read the bars, on hover of the «i» of its title."""
-    heads = (
-        t("Indicador", "Indicator"),
-        "",
-        t("Falla", "Failure"),
-        t("Aceptable", "Acceptable"),
-        t("Estado", "State"),
-    )
-    columns = "".join(f"<span>{html.escape(head)}</span>" for head in heads)
-    return (
-        f'<section class="qm-group"><h4>{html.escape(title)}'
-        f'<span class="qm-info" title="{html.escape(how, quote=True)}" aria-label="{html.escape(how, quote=True)}">'
-        "info</span></h4>"
-        f'<div class="qm-row qm-columns">{columns}</div>{rows}</section>'
-    )
 
 
 # endregion
@@ -248,7 +88,7 @@ def group_html(title: str, rows: str, how: str) -> str:
 
 # region The weekly reports
 def report_summary(report: dict[str, Any]) -> str:
-    """The one line of a report in «Informes»: its number, date and how many indicators are within the acceptable."""
+    """The one line of a report in the list: its number, date and how many indicators are within the acceptable."""
     within, _, measured = quality_metrics.report_counts(report)
     code = quality_metrics.report_code(report, i18n.is_english())
     return t(
@@ -389,32 +229,18 @@ def is_stale(report: dict[str, Any], today: Any = None) -> bool:
 
 # region Style
 def build_css(palette: dict[str, str]) -> str:
-    ink, text, muted, border, card = (
-        palette["strong_text"],
-        palette["text"],
-        palette["reference"],
-        palette["card_border"],
-        palette["card"],
-    )
-    soft = charts.legible(muted, palette["background"])
+    """The stylesheet of the page and of the alerts, with the colours of the theme; each state legible on a card."""
+    card = palette["card"]
     colors = {state: charts.legible(color or palette["rise"], card) for state, color in STATE_COLORS.items()}
-    colors["sin_medicion"] = charts.legible(muted, card)
-    on_deep = {state: charts.legible(color or "#ef4444", DEEP) for state, color in STATE_COLORS.items()}
-    on_deep["sin_medicion"] = charts.legible("#9aa4b2", DEEP)
-    states = "".join(f".qm-{state} {{ color:{color}; }}\n" for state, color in colors.items())
-    deep_states = "".join(f".qm-reports .qm-{state} {{ color:{color}; }}\n" for state, color in on_deep.items())
+    colors["sin_medicion"] = charts.legible(palette["reference"], card)
     return static_files.style(
         "quality_method.css",
         {
-            'var(--go-soft)': soft,
-            'var(--go-ink)': ink,
-            'var(--go-border)': border,
-            'var(--go-card)': card,
-            'var(--go-text)': text,
-            'var(--go-sky)': SKY,
-            'var(--go-states)': states,
-            'var(--go-deep)': DEEP,
-            'var(--go-deep-states)': deep_states,
+            "var(--go-soft)": charts.legible(palette["reference"], palette["background"]),
+            "var(--go-ink)": palette["strong_text"],
+            "var(--go-border)": palette["card_border"],
+            "var(--go-text)": palette["text"],
+            "var(--go-states)": "".join(f".qm-{state} {{ color:{color}; }}\n" for state, color in colors.items()),
         },
     )
 

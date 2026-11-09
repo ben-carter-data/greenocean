@@ -81,7 +81,7 @@ PAGE_SOURCE_STUDY = "Análisis de la fuente de datos"  # D-533: the two notebook
 PAGE_APP_MAP = "Mapa de la app"
 # D-320: how the project was assessed against software and data quality standards.
 PAGE_METHOD = "Plan de calidad"
-GIT_TAB_PARAMETER, GIT_TAB_LOG = "pestana", "registro"  # D-346: «Ver registro completo» opens the Incident log
+GIT_TAB_PARAMETER, GIT_TAB_LOG = "pestana", "registro"  # D-346: opens the Incident log
 BA_TAB_PARAMETER = GIT_TAB_PARAMETER  # D-456: the tab of «Análisis» an address opens
 PAGE_GIT = "Cambios e incidentes"  # D-344: how a change travels from an idea to a live deployment
 PAGE_DECISION_INDEX = "Índice de decisiones"

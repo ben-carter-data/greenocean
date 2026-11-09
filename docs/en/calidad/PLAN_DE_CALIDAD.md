@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.13 |
-| Date | 2026-11-03 |
+| Version | 1.14 |
+| Date | 2026-11-09 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Say which quality GreenOcean looks after, how it measures it, who decides and what happens when something fails. |
@@ -44,7 +44,7 @@ We measure two qualities. The first is that of the data we publish, following th
 
 [[diagrama:calidades]]
 
-They are the 14 indicators of the quality plan: 8 of the code and 6 of the data. Each one has written down what it measures, why it matters, how it is measured and what to do if it fails. All of that lives in `docs/calidad/metas.json`, and the page «Quality plan» shows it.
+They are the 14 indicators of the quality plan: 8 of the code and 6 of the data. Each one has written down what it measures, why it matters, how it is measured and what to do if it fails. All of that lives in `docs/calidad/metas.json`; each report shows the indicators it measured against their acceptable (section 8).
 
 They are not the 11 data quality indicators, which are measured on every load on the published database and shown in «Data controls». Those protect each publication; the plan's indicators measure the project week by week.
 
@@ -84,7 +84,7 @@ The example is F-10 of the failure register. A speed test, which was informative
 
 There is only one numbered report: the weekly quality report, one per data week (D-431). The quality workflow makes it only when the weekly load ended in green, with its tests passed and the database published, and proposes it as a pull request (D-363). It measures the 5 data indicators of each load: dbt data tests passed, prices with a valid comparison, rejected rows, missing regions or channels and atypical prices of the week (D-475). The 8 code indicators are checked by the CI of every push: they pass or fail in GitHub Actions, with no report. The days since the last load are shown in the dashboard, not in the report.
 
-The report has four pages: the cover, with the version of this plan it was measured by; the results; the comparison with another report, which warns when the two do not measure the same indicators; and one table of non-conformities and incidents, with the open ones and the ones of that week. The method lives only in this plan. A report is never edited afterwards: if something changes, the next report comes out. If the code indicators are within their acceptable, the pull request is merged by itself and the dashboard shows the report; otherwise it stays open and the author reviews it; if it is still open the week after, the new report replaces it with the same number (D-436). In the dashboard, each report opens as a presentation and downloads as a PDF (D-333, D-347).
+The report has four pages: the cover, with the version of this plan it was measured by; the results; the comparison with another report, which warns when the two do not measure the same indicators; and one table of non-conformities and incidents, with the open ones and the ones of that week. The method lives only in this plan. A report is never edited afterwards: if something changes, the next report comes out. If the code indicators are within their acceptable, the pull request is merged by itself and the dashboard shows the report; otherwise it stays open and the author reviews it; if it is still open the week after, the new report replaces it with the same number (D-436). In the dashboard, the page «Quality plan» is the archive of the reports: each one opens as a document, with its PDF (D-333, D-347, D-571).
 
 A non-conformity of the weekly series closes by itself when a later report brings its indicator back within the acceptable, with the state «resolved automatically, report No. x»; the cause and the action the author wrote stay (D-437).
 
@@ -136,3 +136,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.11 | 2026-11-02 | The week's dashboard is called «Weekly» (10, D-459) |
 | 1.12 | 2026-11-03 | The comparable prices are measured over those that had a price the week before, with a 97 % acceptable; two new data indicators: missing regions or channels and atypical prices of the week (3, 6, 8, ADR-36, D-475) |
 | 1.13 | 2026-11-03 | Each source's latest week is seen by choosing its channel in Weekly (D-494) |
+| 1.14 | 2026-11-09 | The page «Quality plan» is only the archive of the reports; the description of each indicator lives in `docs/calidad/metas.json` (3, 8, D-571) |

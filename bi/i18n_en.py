@@ -2646,5 +2646,7 @@ PAGES = {
     "¿Un precio es caro o barato, si se quita el efecto de la inflación?": "Is a price expensive or cheap once the effect of inflation is removed?",
     "¿Cuánto más paga el consumidor que el mayorista?": "How much more does the consumer pay than the wholesaler?",
     "¿Se puede confiar en los datos de esta semana?": "Can this week's data be trusted?",
+    # D-571: «Plan de calidad» is the archive of the quality reports
+    "Los informes semanales de calidad: cada uno mide los datos de una carga contra lo aceptable y se abre como documento, con su PDF.": "The weekly quality reports: each one measures the data of a load against the acceptable and opens as a document, with its PDF.",
 }
 # endregion

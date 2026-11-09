@@ -57,7 +57,6 @@ DOCUMENT_FIELDS = {
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
     "Navegadores": "Browsers",
-    "Resumen": "Summary",
     "Ampliar": "Enlarge",
     # D-325: the page is gone, but the stored measurement of docs/calidad still lists it until the next measurement.
     "Dónde comprar": "Where to buy",
@@ -66,7 +65,6 @@ EN = {
     "Acción requerida": "Action required",
     "GitHub Actions": "GitHub Actions",
     "Cambios e incidentes": "Changes and incidents",
-    "Ver registro completo": "View full log",
     "Clave incorrecta.": "Incorrect key.",
     "ODEPA aún no publica la semana {} ({})": "ODEPA has not published the week of {} yet ({})",
     "mayorista": "wholesale",
@@ -206,9 +204,7 @@ EN = {
     "Buscar": "Search",
     "N°, fecha o código": "No., date or code",
     "Ese informe no existe.": "That report does not exist.",
-    "Abrir el último informe": "Open the latest report",
     "Informe de calidad": "Quality report",
-    "Qué medimos de los datos que publicamos y del código que los trata, contra qué aceptable, y cómo vamos.": "What we measure of the data we publish and of the code that treats it, against which acceptable, and how it is going.",
     "Cómo se evaluó el proyecto: normas usadas como método, mediciones reales y lo que falta. Una autoevaluación, no una certificación.": "How the project was assessed: standards used as a method, real measurements and what is missing. A self-assessment, not a certification.",
     "Introducción": "Introduction",
     "Estándares": "Standards",

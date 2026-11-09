@@ -1,61 +1,13 @@
-
-.qm-head { margin:0 0 10px; font-size:12.5px; color:var(--go-soft); }
-.qm-lead { margin:0 0 10px !important; font-size:15px !important; line-height:1.5 !important; color:var(--go-ink); max-width:920px; }
-.qm-groups { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; }
-.qm-groups.qm-one { grid-template-columns:minmax(0, 1fr); }
-.qm-group { border:1px solid var(--go-border); border-radius:14px; background:var(--go-card); padding:10px 16px 8px; min-width:0; }
-.qm-group h4 { display:flex; align-items:center; gap:6px; margin:0 0 4px !important; padding:0 !important; font-size:11px !important;
-  letter-spacing:.08em; text-transform:uppercase; color:var(--go-soft); }
-.qm-info { font-family:"Material Symbols Rounded"; font-feature-settings:"liga"; font-size:15px; letter-spacing:0;
-  text-transform:none; line-height:1; cursor:help; color:var(--go-soft); }
-.qm-columns { padding:2px 0 4px; font-size:10.5px; letter-spacing:.04em; color:var(--go-soft); cursor:default; }
-.qm-columns span:nth-child(3) { text-align:right; }
-.qm-row { display:grid; grid-template-columns:minmax(0, 1.5fr) minmax(60px, 1fr) auto auto auto; gap:10px; align-items:center;
-  padding:5px 0; border-top:1px solid color-mix(in srgb, var(--go-border) 60%, transparent); font-size:13px; color:var(--go-text); cursor:help; }
-.qm-group h4 + .qm-row, .qm-columns + .qm-row { border-top:0; }
-.qm-one .qm-row { grid-template-columns:minmax(220px, 1.2fr) minmax(120px, 2fr) 80px 80px 80px; }
-.qm-name { color:var(--go-ink); font-weight:600; min-width:0; }
-.qm-bar { position:relative; height:6px; border-radius:3px; background:color-mix(in srgb, var(--go-border) 70%, transparent); }
-.qm-bar i { position:absolute; left:0; top:0; bottom:0; border-radius:3px; background:var(--go-sky); }
-.qm-bar b { position:absolute; top:-4px; width:2px; height:14px; background:var(--go-ink); border-radius:1px; }
-.qm-bar.qm-empty { height:auto; background:none; font-size:11.5px; color:var(--go-soft); }
-.qm-value { font-variant-numeric:tabular-nums; color:var(--go-ink); text-align:right; white-space:nowrap; }
-.qm-limit { font-size:11.5px; color:var(--go-soft); white-space:nowrap; }
-.qm-state { font-size:11.5px; font-weight:700; white-space:nowrap; }
-.qm-failures { margin-top:10px; }
-.qm-failures h4 { margin:0 0 2px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--go-soft); }
-.qm-failures ul { list-style:none; margin:0; padding:0; }
-/* D-566: one line per failure, whole on hover; on a low window only the latest two, or the latest one */
-.qm-failures li { padding:4px 0; border-bottom:1px solid var(--go-border); font-size:12.5px; color:var(--go-text);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.qm-failures li b { color:var(--go-ink); margin-right:8px; }
-.qm-failures li small { color:var(--go-soft); font-size:11.5px; margin-left:8px; }
-@media (max-height:760px) { .qm-failures li:nth-child(n+3) { display:none; } }
-@media (max-height:720px) { .qm-failures li:nth-child(n+2) { display:none; } }
-var(--go-states).qm-insights { list-style:none; margin:14px 0 0; padding:0; }
-.qm-insights li { display:flex; flex-wrap:wrap; gap:4px 10px; padding:9px 12px; margin-bottom:6px; border-radius:10px;
-  border:1px solid currentColor; background:color-mix(in srgb, currentColor 7%, transparent); font-size:13px; }
-.qm-insights li span { color:var(--go-text); }
-.qm-note { font-size:13px; color:var(--go-text); }
+/* D-571: the page's first line, the latest report and its counts; how the report is made, on hover. Its block ends
+   in a div, so the container drops the negative margin meant for a last paragraph and the series switch never rides
+   over the line (D-173). */
+.qm-head { margin:0; font-size:13px; font-weight:500; line-height:1.4; letter-spacing:-.005em; color:var(--go-ink);
+  cursor:help; }
+[data-testid="stElementContainer"]:has(.qm-head) [data-testid="stMarkdownContainer"] { margin-bottom:0 !important; }
+/* The colour of each state, for the alerts */
+var(--go-states)
 .st-key-quality_filters { gap:10px !important; flex-wrap:wrap !important; margin-bottom:8px; }
-.st-key-quality_actions { gap:12px !important; margin-top:2px; }
-.st-key-quality_actions > div { flex:0 0 auto !important; width:auto !important; }
 .st-key-quality_filters > div { flex:0 1 180px !important; min-width:130px; }
-.qm-reports { overflow:auto; max-height:calc(100vh - 300px); border-radius:14px; background:var(--go-deep);
-  border:1px solid color-mix(in srgb, var(--go-sky) 35%, #1b2433); box-shadow:0 0 28px -14px var(--go-sky); }
-.qm-reports table { width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:13px; }
-.qm-reports thead th { position:sticky; top:0; z-index:1; background:var(--go-deep) !important; color:var(--go-sky) !important; font-size:11px;
-  font-weight:700; text-transform:uppercase; letter-spacing:.07em; text-align:left; padding:10px 14px !important; border:0 !important;
-  border-bottom:1px solid color-mix(in srgb, var(--go-sky) 40%, transparent) !important; }
-.qm-reports td { padding:9px 14px !important; color:#d7dee9; border:0 !important; vertical-align:top;
-  border-bottom:1px solid #141b27 !important; background:transparent !important; }
-.qm-reports td b { color:#f3f7fc; } .qm-reports code { color:var(--go-sky); background:transparent; }
-.qm-reports a.qm-open { text-decoration:none !important; } .qm-reports a.qm-open b { color:var(--go-sky); text-decoration:underline; }
-.qm-reports a.qm-pdf { color:var(--go-sky) !important; text-decoration:none !important; border:1px solid color-mix(in srgb, var(--go-sky) 50%, transparent);
-  border-radius:6px; padding:1px 8px; font-size:11.5px; white-space:nowrap; }
-.qm-reports tbody tr:hover td { background:color-mix(in srgb, var(--go-sky) 7%, transparent) !important; }
-var(--go-deep-states).qm-report h3 { margin:0 0 4px !important; font-size:20px !important; }
-.qm-report p { margin:0 0 12px !important; font-size:12.5px; color:var(--go-soft); }
 /* D-336: the × of the report and alert dialogs sits in the top right corner with a face of its own, readable over the
    viewer's black and over any theme; it used to float at the top center and stick out of its card. */
 div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] { position:absolute !important; right:14px; top:14px;
@@ -71,4 +23,3 @@ div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] svg, div[
 .qm-alert p.qm-alert-figure { font-variant-numeric:tabular-nums; color:var(--go-ink); }
 .qm-alert-load { font-size:13px; color:var(--go-text); } .qm-alert-stale { font-size:13px; font-weight:600; color:var(--go-ink); padding:8px 12px; border-radius:8px; border:1px dashed var(--go-border); }
 .qm-alert.qm-antigua { border-left-color:var(--go-border) !important; opacity:.85; } .qm-alert.qm-antigua h4 { color:var(--go-soft) !important; } .qm-alert-foot { font-size:12px; color:var(--go-soft); }
-@media (max-width:1100px) { .qm-groups { grid-template-columns:minmax(0, 1fr); } }

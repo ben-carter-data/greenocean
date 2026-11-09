@@ -772,7 +772,6 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         dashboard.PAGE_OPERATIONS,
         dashboard.PAGE_RUNS,
         dashboard.PAGE_SQL,
-        dashboard.PAGE_METHOD,
         dashboard.PAGE_GIT,
     }  # D-296: the dashboard's three tabs, one screen each
     for page in dashboard.PAGES:

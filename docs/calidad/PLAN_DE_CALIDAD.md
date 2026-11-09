@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.13 |
-| Fecha | 03-11-2026 |
+| Versión | 1.14 |
+| Fecha | 09-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Decir qué calidad cuida GreenOcean, cómo la mide, quién decide y qué pasa cuando algo falla. |
@@ -44,7 +44,7 @@ Medimos dos calidades. La primera es la de los datos que publicamos, según la n
 
 [[diagrama:calidades]]
 
-Son los 14 indicadores del plan de calidad: 8 del código y 6 de los datos. Cada uno tiene escrito qué mide, por qué importa, cómo se mide y qué hacer si falla. Todo eso vive en `docs/calidad/metas.json`, y la página «Plan de calidad» lo muestra.
+Son los 14 indicadores del plan de calidad: 8 del código y 6 de los datos. Cada uno tiene escrito qué mide, por qué importa, cómo se mide y qué hacer si falla. Todo eso vive en `docs/calidad/metas.json`; cada informe muestra los indicadores que midió contra su aceptable (sección 8).
 
 No hay que confundirlos con los 11 indicadores de calidad de los datos, que se miden en cada carga sobre la base publicada y se ven en «Controles de datos». Esos protegen cada publicación; los del plan miden el proyecto semana a semana.
 
@@ -84,7 +84,7 @@ El ejemplo es F-10 del registro de fallas. Una prueba de velocidad, que era info
 
 Hay un solo informe numerado: el informe semanal de calidad, uno por semana de datos (D-431). El workflow de calidad lo genera solo cuando la carga semanal terminó en verde, con sus pruebas pasadas y la base publicada, y lo propone como pull request (D-363). Mide los 5 indicadores de datos de cada carga: pruebas de datos dbt superadas, precios con comparación válida, filas rechazadas, regiones o canales ausentes y precios atípicos de la semana (D-475). Los 8 indicadores de código se verifican en el CI de cada push: pasan o fallan en GitHub Actions, sin informe. Los días desde la última carga se ven en el panel, no en el informe.
 
-El informe tiene cuatro páginas: la portada, con la versión de este plan con que se midió; los resultados; la comparación con otro informe, que avisa si los dos no miden los mismos indicadores; y una sola tabla de no conformidades e incidencias, con las abiertas y las de esa semana. La metodología vive solo en este plan. Un informe no se edita después: si algo cambia, sale el informe siguiente. Si los indicadores de código están en su aceptable, el pull request se fusiona solo y el panel muestra el informe; si no, queda abierto y lo revisa el autor; si sigue abierto a la semana siguiente, el informe nuevo lo reemplaza con el mismo número (D-436). En el panel, cada informe se abre como presentación y se descarga en PDF (D-333, D-347).
+El informe tiene cuatro páginas: la portada, con la versión de este plan con que se midió; los resultados; la comparación con otro informe, que avisa si los dos no miden los mismos indicadores; y una sola tabla de no conformidades e incidencias, con las abiertas y las de esa semana. La metodología vive solo en este plan. Un informe no se edita después: si algo cambia, sale el informe siguiente. Si los indicadores de código están en su aceptable, el pull request se fusiona solo y el panel muestra el informe; si no, queda abierto y lo revisa el autor; si sigue abierto a la semana siguiente, el informe nuevo lo reemplaza con el mismo número (D-436). En el panel, la página «Plan de calidad» es el archivo de los informes: cada uno se abre como documento, con su PDF (D-333, D-347, D-571).
 
 Una no conformidad de la serie semanal se cierra sola cuando un informe siguiente devuelve su indicador al aceptable, con el estado «resuelta automáticamente, informe N° x»; la causa y la acción que escribió el autor se conservan (D-437).
 
@@ -136,3 +136,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.11 | 02-11-2026 | El dashboard de la semana se llama «Semanal» (10, D-459) |
 | 1.12 | 03-11-2026 | Los precios comparables se miden sobre los que tenían precio la semana anterior, con aceptable 97 %; dos indicadores nuevos de datos: regiones o canales ausentes y precios atípicos de la semana (3, 6, 8, ADR-36, D-475) |
 | 1.13 | 03-11-2026 | La última semana de cada fuente se ve al elegir su canal en Semanal (D-494) |
+| 1.14 | 09-11-2026 | La página «Plan de calidad» es solo el archivo de los informes; la descripción de cada indicador vive en `docs/calidad/metas.json` (3, 8, D-571) |

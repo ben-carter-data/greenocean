@@ -5,7 +5,9 @@ document only, faithful to the screen) work without touching the dashboard's DOM
 (docs/calidad/informes); every fixed text from docs/calidad/politica.json and docs/calidad/metas.json; the causes and
 the actions from docs/calidad/no_conformidades.json and docs/calidad/incidentes_externos.json. The method is the SQAP's:
 the cover names its version. The comparison slide compares any two reports of the same series, the previous one by
-default, and warns when they do not measure the same indicators. Pure functions.
+default, and warns when they do not measure the same indicators. D-571: every figure is written as the rest of the app
+writes it, and the results say once how to read their bars, now that «Plan de calidad» is only the archive of reports.
+Pure functions.
 """
 
 from __future__ import annotations
@@ -57,9 +59,11 @@ def pick(pair: Any, english: bool) -> str:
 
 
 def figure(value: Any, unit: str, english: bool) -> str:
+    """D-571: a figure as the rest of the app writes it (bi/quality_method.failure_text): a fraction keeps the decimals
+    of quality_metrics.percent_decimals, so 0.008 reads «0,01 %» and 0.25 «0,25 %», never rounded to one decimal."""
     if value is None:
         return "—"
-    decimals = 1 if isinstance(value, float) and value % 1 else 0
+    decimals = quality_metrics.percent_decimals(value) if isinstance(value, float) and value % 1 else 0
     return quality_metrics.number(value, decimals, english) + (
         f" {quality_metrics.unit_text(unit, english)}" if unit else ""
     )
@@ -168,14 +172,6 @@ def texts_of(policy: dict[str, Any], key: str, english: bool) -> str:
 
 
 # region The viewer
-def _viewer_number(english, value: Any) -> str:
-    return (
-        "—"
-        if value is None
-        else quality_metrics.number(value, 1 if isinstance(value, float) and value % 1 else 0, english)
-    )
-
-
 def build_viewer_html(
     reports: list[dict[str, Any]],
     number: int,
@@ -232,22 +228,26 @@ def build_viewer_html(
         for label, value in (
             (
                 figures[0],
-                f"{_viewer_number(english, dbt.get('pruebas_ok'))} {of} {_viewer_number(english, dbt.get('pruebas_total'))}",
+                f"{figure(dbt.get('pruebas_ok'), '', english)} {of} {figure(dbt.get('pruebas_total'), '', english)}",
             ),
             (
                 figures[1],
-                f"{_viewer_number(english, data.get('filas_rechazadas'))} {of} {_viewer_number(english, data.get('filas_leidas'))}",
+                f"{figure(data.get('filas_rechazadas'), '', english)} {of} {figure(data.get('filas_leidas'), '', english)}",
             ),
             (
                 figures[2],
-                f"{_viewer_number(english, data.get('con_comparacion'))} {of} {_viewer_number(english, data.get('precios_semana'))}",
+                f"{figure(data.get('con_comparacion'), '', english)} {of} {figure(data.get('precios_semana'), '', english)}",
             ),
         )
     )
+    # D-571: how to read the bars and ticks, once, under the table: the page «Plan de calidad» no longer says it.
+    how = pick(policy.get("resumen", {}).get("como_leerlo", ""), english)
     results = slide(
         "resultados",
         word("resultados"),
-        results_rows(report, policy, english) + f'<p class="muted small">{esc(behind)}</p>',
+        results_rows(report, policy, english)
+        + (f'<p class="muted small">{esc(how)}</p>' if how else "")
+        + f'<p class="muted small">{esc(behind)}</p>',
     )
     # The comparison: any two reports of the same series, the previous one by default.
     options = "".join(
@@ -291,8 +291,15 @@ def build_viewer_html(
         "reports": [
             {
                 "n": item["numero"],
+                # D-571: the failure's text comes written as on the results, so both slides write it the same
                 "rows": [
-                    [pick(row["nombre"], english), row["falla"], row["unidad_falla"], row["clave"]]
+                    [
+                        pick(row["nombre"], english),
+                        row["falla"],
+                        row["unidad_falla"],
+                        row["clave"],
+                        figure(row["falla"], row["unidad_falla"], english),
+                    ]
                     for row in item["indicadores"]
                 ],
             }
