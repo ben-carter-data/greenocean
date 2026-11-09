@@ -19,7 +19,8 @@ jobs:
           python-version: "3.11"
           cache: pip  # D-567: the packages come from the Actions cache when they can
           cache-dependency-path: requirements*.txt
-      - run: pip install ruff==0.17.2 mypy==2.4.0 -r requirements.txt
+      # D-568: an install that fails whole (an outage longer than pip's own retries) is tried twice more
+      - run: for attempt in 1 2 3; do pip install ruff==0.17.2 mypy==2.4.0 -r requirements.txt && exit 0; sleep $((attempt * 30)); done; exit 1
       # D-323: 0 findings, everything formatted and the main modules typed.
       - run: ruff check .
       - run: ruff format --check .
@@ -41,7 +42,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip  # D-567: the packages come from the Actions cache when they can
           cache-dependency-path: requirements*.txt
-      - run: pip install -r requirements-pipeline.txt pytest-cov
+      - run: for attempt in 1 2 3; do pip install -r requirements-pipeline.txt pytest-cov && exit 0; sleep $((attempt * 30)); done; exit 1
       # The dbt project must compile on every change (models, tests, sources): once per version.
       - if: matrix.group == 1
         run: dbt parse --project-dir dbt --profiles-dir dbt
@@ -62,7 +63,8 @@ jobs:
             pytest -q -m "not rendimiento" -o faulthandler_timeout=90 --junitxml=junit-${{ matrix.group }}.xml $files
           fi
       - if: always()
-        run: python scripts/pruebas_lentas.py junit-${{ matrix.group }}.xml "Más lentas · ${{ matrix.python-version }} · grupo ${{ matrix.group }}"
+        # D-568: the slowest tests and, in red, every failed one with its error, readable without opening the log
+        run: python scripts/pruebas_lentas.py junit-${{ matrix.group }}.xml "${{ matrix.python-version }} · grupo ${{ matrix.group }}"
       - if: matrix.python-version == '3.12'
         uses: actions/upload-artifact@v4
         with:

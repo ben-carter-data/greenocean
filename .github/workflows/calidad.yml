@@ -42,13 +42,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}  # D-567: the release is read as the workflow, not anonymously
         run: |
           python -m venv .venv
-          .venv/bin/pip install -r requirements.txt pytest-cov
+          for attempt in 1 2 3; do .venv/bin/pip install -r requirements.txt pytest-cov && break; [ "$attempt" = 3 ] && exit 1; sleep $((attempt * 30)); done  # D-568
           .venv/bin/python bi/served_database.py
       - name: Herramientas de calidad (fuera del proyecto)
         run: |
           python -m venv /tmp/tools
           # D-330: only the tools of the two qualities (data and code); no browsers.
-          /tmp/tools/bin/pip install ruff==0.17.2 mypy==2.4.0 bandit==1.9.4 pip-audit==2.10.1 detect-secrets==1.5.0
+          for attempt in 1 2 3; do /tmp/tools/bin/pip install ruff==0.17.2 mypy==2.4.0 bandit==1.9.4 pip-audit==2.10.1 detect-secrets==1.5.0 && break; [ "$attempt" = 3 ] && exit 1; sleep $((attempt * 30)); done  # D-568
       - name: Cobertura de pruebas.yml
         # D-555: on a push, the run of pruebas.yml of the same commit; after a weekly load, the last green one of main. Only
         # a run in green lends its coverage; otherwise «Medir» runs the suite itself.

@@ -82,7 +82,7 @@ def test_t54_every_public_link_answers(link):
         )
     except (requests.ConnectionError, requests.Timeout):
         pytest.skip("no network")
-    if response.status_code >= 500:  # D-567: GitHub is down, not the link: an outage never turns a push red
+    if response.status_code >= 500 or response.status_code == 429:  # D-567, D-568: GitHub is down or busy, not the link
         pytest.skip(f"{link['name']}: the site answers {response.status_code}")
     assert response.status_code < 400, f"{link['name']}: {response.status_code}"
 
