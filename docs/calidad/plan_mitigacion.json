@@ -2766,8 +2766,8 @@
             "This very record used the category «CI», which does not exist, and the fix changed the name of the step the live flow reads."
           ],
           "solucion": [
-            "La categoría pasa a «operación», el paso conserva su nombre y el CI escribe cada prueba que falla en sus notas.",
-            "The category becomes «operación», the step keeps its name and the CI writes each failed test in its notes."
+            "La categoría pasa a «operación», el paso vuelve a ser como era y el CI escribe cada prueba que falla en sus notas.",
+            "The category becomes «operación», the step is as it was and the CI writes each failed test in its notes."
           ],
           "comentario": [
             "Antes de subir, correr todas las pruebas del grupo que toca el cambio, también las del registro.",
