@@ -5,6 +5,8 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
+from bi import dashboard
+
 # region Constants
 KEY = "clave-larga"
 # endregion
@@ -69,12 +71,15 @@ def test_d353_leaving_the_author_view_closes_the_author_session_and_coming_back_
     indicator(app).click().run()
     app.button(key="profile_choose_profesional").click().run()  # out of Autor, into Professional
     assert not app.session_state.get("admin_unlocked") and indicator(app).label == "Vista: Profesional · Cambiar"
-    assert "GitHub Actions" not in [link.proto.label for link in app.sidebar.get("page_link")]
+    icons = {link.proto.label: link.proto.icon for link in app.sidebar.get("page_link")}
+    assert icons["GitHub Actions"] == dashboard.LOCKED_ICON  # D-576: the page stays in sight, locked again
     indicator(app).click().run()
     app.text_input(key="profile_author_code").set_value("equivocada").run()  # the door asks again
     assert not app.session_state.get("admin_unlocked") and [item.value for item in app.error] == ["Clave incorrecta."]
     app.text_input(key="profile_author_code").set_value(KEY).run()
     assert app.session_state["admin_unlocked"] is True and indicator(app).label == "Vista: Autor · Cambiar"
+    icons = {link.proto.label: link.proto.icon for link in app.sidebar.get("page_link")}
+    assert icons["GitHub Actions"] != dashboard.LOCKED_ICON  # open again
 
 
 def test_d373_the_view_button_sits_under_the_logo_before_the_menu_and_left_the_footer():
