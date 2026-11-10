@@ -1,19 +1,19 @@
 {
-  "generado": "2026-11-04 20:56 UTC",
-  "commit": "2352be5",
-  "python": "3.11.17",
+  "generado": "2026-11-10 15:00 UTC",
+  "commit": "0886671",
+  "python": "3.11.18",
   "ruff": {
     "orden": "/tmp/tools/bin/ruff check bi etl agent tests --select E,F,W",
     "version": "ruff 0.17.2",
-    "errores": 1940,
+    "errores": 1529,
     "por_codigo": {
-      "E501": 1940
+      "E501": 1529
     },
     "errores_sin_largo_de_linea": 0,
     "formato": {
       "orden": "ruff format --check bi etl agent tests",
       "por_reformatear": 0,
-      "ya_formateados": 173
+      "ya_formateados": 187
     }
   },
   "mypy": {
@@ -23,16 +23,16 @@
     "errores": 0,
     "errores_revisando_cuerpos_sin_tipos": 0,
     "por_modulo": {},
-    "funciones": 137,
-    "con_tipo_de_retorno": 137
+    "funciones": 141,
+    "con_tipo_de_retorno": 141
   },
   "cobertura": {
-    "orden": "pytest -q -m \"not rendimiento\" --cov=bi --cov=etl --cov=agent",
-    "pruebas_ok": 1483,
-    "pruebas_omitidas": 13,
+    "orden": "pytest -q -m \"not rendimiento\" --cov=bi --cov=etl --cov=agent (los grupos de pruebas.yml, combinados)",
+    "pruebas_ok": 1519,
+    "pruebas_omitidas": 14,
     "salida": 0,
-    "total": 95.6,
-    "logica_critica": 93.7,
+    "total": 95.9,
+    "logica_critica": 94.3,
     "modulos_criticos": {
       "etl/etl.py": 96.1,
       "etl/bronze.py": 97.1,
@@ -40,34 +40,38 @@
       "etl/pipeline.py": 91.5,
       "bi/queries.py": 100.0,
       "bi/alerts.py": 100.0,
-      "bi/overview.py": 73.9,
+      "bi/overview.py": 76.3,
       "bi/inflation_view.py": 98.6,
-      "bi/control.py": 96.9,
-      "bi/served_database.py": 95.3,
+      "bi/control.py": 99.0,
+      "bi/served_database.py": 94.7,
       "bi/quality.py": 87.2
     },
     "modulos": {
       "agent/agent.py": 87.3,
       "bi/actions_view.py": 94.1,
+      "bi/activity_bar.py": 100.0,
       "bi/alerts.py": 100.0,
+      "bi/app_bpmn.py": 100.0,
       "bi/app_diagrams.py": 96.5,
-      "bi/app_map.py": 100.0,
-      "bi/app_map_detail.py": 99.1,
+      "bi/app_frame.py": 97.1,
+      "bi/app_style.py": 100.0,
       "bi/architecture.py": 99.4,
-      "bi/ba_trends.py": 98.0,
+      "bi/ba_trends.py": 97.7,
       "bi/brand_icons.py": 100.0,
       "bi/business_analysis.py": 98.0,
       "bi/buttons.py": 100.0,
       "bi/channel_icons.py": 100.0,
-      "bi/channel_latest.py": 88.9,
-      "bi/charts.py": 94.1,
-      "bi/compact_table.py": 93.2,
+      "bi/channel_latest.py": 87.9,
+      "bi/charts.py": 93.4,
+      "bi/compact_table.py": 93.3,
       "bi/configuration.py": 98.9,
-      "bi/control.py": 96.9,
+      "bi/constants.py": 100.0,
+      "bi/control.py": 99.0,
       "bi/control_catalog.py": 98.1,
-      "bi/dashboard.py": 93.0,
+      "bi/dashboard.py": 86.4,
+      "bi/data_access.py": 93.4,
       "bi/data_terms.py": 100.0,
-      "bi/database_crossings.py": 98.6,
+      "bi/database_crossings.py": 98.7,
       "bi/database_map.py": 100.0,
       "bi/deployment.py": 100.0,
       "bi/devops.py": 98.4,
@@ -79,7 +83,7 @@
       "bi/git_workflow.py": 100.0,
       "bi/github_actions.py": 95.5,
       "bi/github_page.py": 98.5,
-      "bi/home_mockup.py": 91.7,
+      "bi/home_mockup.py": 97.9,
       "bi/i18n.py": 98.0,
       "bi/i18n_en.py": 100.0,
       "bi/inflation_view.py": 98.6,
@@ -90,30 +94,38 @@
       "bi/live_mark.py": 100.0,
       "bi/monitoring.py": 100.0,
       "bi/operation_center.py": 98.9,
-      "bi/overview.py": 73.9,
+      "bi/overview.py": 76.3,
+      "bi/page_analysis.py": 90.5,
       "bi/page_bar.py": 100.0,
+      "bi/page_devops.py": 90.7,
+      "bi/page_documents.py": 99.3,
+      "bi/page_engineering.py": 97.2,
+      "bi/page_quality.py": 88.0,
+      "bi/page_weekly.py": 92.5,
       "bi/price_export.py": 98.0,
-      "bi/project.py": 95.8,
+      "bi/project.py": 100.0,
       "bi/quality.py": 87.2,
       "bi/quality_evidence.py": 96.2,
       "bi/quality_live.py": 98.1,
-      "bi/quality_method.py": 98.6,
-      "bi/quality_metrics.py": 95.0,
-      "bi/quality_view.py": 94.0,
-      "bi/quality_viewer.py": 98.9,
+      "bi/quality_method.py": 97.7,
+      "bi/quality_metrics.py": 95.9,
+      "bi/quality_view.py": 94.2,
+      "bi/quality_viewer.py": 100.0,
       "bi/queries.py": 100.0,
       "bi/report.py": 93.1,
       "bi/run_monitor.py": 95.1,
       "bi/security_map.py": 100.0,
-      "bi/security_plan.py": 86.7,
-      "bi/served_database.py": 95.3,
+      "bi/security_plan.py": 100.0,
+      "bi/served_database.py": 94.7,
+      "bi/source_study.py": 96.3,
       "bi/sql_explorer.py": 93.6,
       "bi/sql_relations.py": 100.0,
       "bi/stack_page.py": 100.0,
       "bi/star_model.py": 100.0,
+      "bi/static_files.py": 100.0,
       "bi/storage_map.py": 98.7,
       "bi/tech_glossary.py": 100.0,
-      "bi/transformation_rules.py": 96.3,
+      "bi/transformation_rules.py": 97.8,
       "bi/unit_review.py": 100.0,
       "bi/weeks.py": 100.0,
       "bi/zoom.py": 100.0,
@@ -129,15 +141,15 @@
     "orden": "bandit -r bi etl agent",
     "version": "bandit 1.9.4",
     "alta": 0,
-    "media": 30,
-    "baja": 16,
+    "media": 29,
+    "baja": 15,
     "por_regla": {
-      "B105": 9,
-      "B608": 29,
+      "B105": 8,
+      "B608": 28,
+      "B112": 1,
       "B405": 1,
       "B314": 1,
       "B101": 3,
-      "B112": 1,
       "B404": 1,
       "B603": 1
     }
@@ -157,9 +169,12 @@
   "secretos": {
     "orden": "detect-secrets scan $(git ls-files)",
     "version": "1.5.0",
-    "archivos_revisados": 300,
-    "candidatos": 30,
+    "archivos_revisados": 409,
+    "candidatos": 32,
     "por_archivo": {
+      ".github/workflows/calidad.yml": [
+        "Secret Keyword"
+      ],
       "agent/downloads/manifest.json": [
         "Hex High Entropy String",
         "Hex High Entropy String",
@@ -172,7 +187,7 @@
         "Hex High Entropy String",
         "Hex High Entropy String"
       ],
-      "bi/app_map.py": [
+      "bi/activity_bar.py": [
         "Secret Keyword",
         "Secret Keyword"
       ],
@@ -180,9 +195,12 @@
         "Secret Keyword",
         "Secret Keyword"
       ],
-      "bi/dashboard.py": [
+      "bi/constants.py": [
         "Secret Keyword",
         "Secret Keyword",
+        "Secret Keyword"
+      ],
+      "bi/i18n.py": [
         "Secret Keyword"
       ],
       "bi/i18n_en.py": [
@@ -213,7 +231,7 @@
         "Base64 High Entropy String"
       ]
     },
-    "falsos_positivos": 30,
+    "falsos_positivos": 32,
     "sin_clasificar": 0,
     "historial_con_patrones_de_claves": 0,
     "nota": "gitleaks no está instalado en este equipo; se usó detect-secrets y una búsqueda de patrones en el historial"
@@ -232,31 +250,31 @@
     }
   },
   "pruebas": {
-    "pruebas": 1496,
-    "archivos_de_prueba": 87
+    "pruebas": 1533,
+    "archivos_de_prueba": 88
   },
   "datos": {
     "orden": "python scripts/medir_calidad.py (función measure_data)",
-    "semana": "2026-10-26",
-    "precios_semana": 869,
-    "con_semana_anterior": 738,
-    "con_comparacion": 719,
-    "pct_comparacion": 97.4,
-    "reapariciones": 131,
+    "semana": "2026-11-02",
+    "precios_semana": 886,
+    "con_semana_anterior": 801,
+    "con_comparacion": 783,
+    "pct_comparacion": 97.8,
+    "reapariciones": 85,
     "regiones_ausentes": [],
     "canales_ausentes": [],
     "regiones_canales_ausentes": 0,
-    "precios_atipicos": 1,
-    "precios_semana_base": 3297,
-    "pct_atipicos": 0.03,
-    "series_activas": 1183,
-    "series_con_dato": 869,
-    "pct_series_con_dato": 73.5,
-    "dias_desde_ultima_semana": 3,
+    "precios_atipicos": 0,
+    "precios_semana_base": 3329,
+    "pct_atipicos": 0.0,
+    "series_activas": 1204,
+    "series_con_dato": 886,
+    "pct_series_con_dato": 73.6,
+    "dias_desde_ultima_semana": 2,
     "dias_desde_ultima_carga": 0,
-    "filas_leidas": 2541374,
+    "filas_leidas": 2553724,
     "filas_rechazadas": 201,
     "pct_rechazadas": 0.008,
-    "medido": "2026-11-04"
+    "medido": "2026-11-10"
   }
 }
