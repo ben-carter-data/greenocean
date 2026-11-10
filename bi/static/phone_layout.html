@@ -16,16 +16,6 @@
   .go-rotate p {margin:0; max-width:300px; font-size:16px; line-height:1.45;}
   @keyframes go-turn {0%,18% {transform:rotate(0deg);} 45%,72% {transform:rotate(-90deg);} 100% {transform:rotate(0deg);}}
 }
-@media (orientation:landscape) and (max-height:500px) {
-  /* The computer layout drawn at 1/0.62 the width, then shrunk back to the screen. */
-  .stApp {transform:scale(.62); transform-origin:0 0; width:161.3vw !important; height:161.3vh !important;}
-  /* Streamlit sizes its scrolling area to the screen height: it must grow with the scale. */
-  [data-testid="stAppViewContainer"] > div, [data-testid="stMain"], [data-testid="stSidebar"] {height:161.3vh !important; max-height:none !important;}
-  /* D-504: the menu's column grows with its sidebar, so its footer still ends at the bottom of the screen. */
-  [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {min-height:calc(161.3vh - 72px) !important;}
-  [data-testid="stHeader"] {display:none !important;}
-  [data-testid="stMainBlockContainer"] {padding-top:.4rem !important;}
-}
 </style>
 <div class="go-rotate" role="alertdialog" aria-label="Gira tu teléfono">
   <div class="go-brand">Green<span>Ocean</span></div>

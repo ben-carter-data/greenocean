@@ -436,11 +436,14 @@ FOLD_SIDEBAR_SCRIPT = static_files.script(
 DASHBOARD_FOLD_SCRIPT = static_files.script("dashboard_fold.js")
 
 # D-166: the panel is read in landscape. A phone held upright sees one screen asking to
-# turn it (no page can rotate a phone: only the reader can); turned, the phone gets
-# the computer layout in miniature, every page whole, and no empty band on top.
-# Tablets and computers never match these queries. Plain fills only: st.html strips
-# SVG gradients.
-PHONE_LAYOUT_HTML = static_files.read("phone_layout.html")
+# turn it (no page can rotate a phone: only the reader can). Plain fills only: st.html strips
+# SVG gradients. D-573: turned, the phone lays the page out as a computer PHONE_LAYOUT_WIDTH
+# px wide, so every width rule of the panel sees the computer layout; tablets and computers
+# are never touched.
+PHONE_LAYOUT_WIDTH = 1360
+PHONE_LAYOUT_HTML = static_files.read("phone_layout.html") + static_files.script(
+    "phone_viewport.js", {"__GO_PHONE_LAYOUT_WIDTH__": PHONE_LAYOUT_WIDTH}
+)
 
 # D-233: the pages that fit the window close with one short footer instead of the two long ones.
 COMPACT_FOOTER_VIEWS = {

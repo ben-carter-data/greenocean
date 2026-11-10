@@ -61,16 +61,6 @@ def test_d504_the_header_with_the_logo_and_the_fold_button_is_stuck_to_the_top(m
     assert "padding:12px 10px 26px 16px !important" in header  # the logo and the button keep their place (D-501)
 
 
-def test_d504_the_turned_phone_grows_the_menu_column_with_its_sidebar():
-    phone = dashboard.PHONE_LAYOUT_HTML
-    landscape = phone[phone.index("@media (orientation:landscape) and (max-height:500px)") :]
-    assert '[data-testid="stSidebar"] {height:161.3vh !important;' in landscape
-    assert (
-        '[data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] '
-        f"{{min-height:calc(161.3vh - {HEADER_HEIGHT}px) !important;}}"
-    ) in landscape
-
-
 def test_d504_the_menu_never_moves_its_nodes_with_a_script():
     """Streamlit owns the DOM (CLAUDE.md): the footer and the header are placed with CSS alone."""
     from tests import code_shape

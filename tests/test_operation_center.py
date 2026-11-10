@@ -135,11 +135,17 @@ def test_d166_phones_upright_are_asked_to_turn_and_sideways_get_the_computer_lay
     markup = dashboard.PHONE_LAYOUT_HTML
     assert "@media (max-width:600px) and (orientation:portrait)" in markup
     assert "Gira tu teléfono" in markup and 'class="go-rotate"' in markup
-    assert "@media (orientation:landscape) and (max-height:500px)" in markup
-    assert "transform:scale(.62)" in markup and "161.3vw" in markup
     # st.html strips SVG gradients: the phone is drawn with plain boxes.
     assert "<svg" not in markup
-    assert 'matchMedia("(orientation: landscape) and (max-height: 500px)")' in dashboard.FOLD_SIDEBAR_SCRIPT
+    # D-573: turned, the phone lays the page out as a computer, so the width rules see the computer layout; the old
+    # shrinking of the drawn page (its width rules still saw the phone) is gone
+    assert (
+        f'const COMPUTER = "width={dashboard.PHONE_LAYOUT_WIDTH}";' in markup and dashboard.PHONE_LAYOUT_WIDTH >= 1280
+    )
+    assert "transform:scale" not in markup and "max-height:500px" not in markup
+    assert (
+        "greenoceanPhoneSideways" in dashboard.FOLD_SIDEBAR_SCRIPT and "max-height" not in dashboard.FOLD_SIDEBAR_SCRIPT
+    )
 
 
 def test_d165_the_page_draws_the_stage_beside_the_facts_and_the_manual_run():

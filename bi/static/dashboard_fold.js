@@ -2,7 +2,7 @@
 (() => {
     const view = "__VIEW__";
     const fold = "__FOLD__" === "yes";
-    const wide = window.innerWidth >= __WIDE__ && !window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches;
+    const wide = window.innerWidth >= __WIDE__ && !(window.greenoceanPhoneSideways && window.greenoceanPhoneSideways());
     // D-466: the page before in this load of the app; each load (an address typed, a reload) is an entry and opens the menu
     const last = window.__goMenuView === undefined ? null : window.__goMenuView;
     window.__goMenuView = view;

@@ -1,8 +1,8 @@
 
 (() => {
-// D-166: a phone turned sideways shows the computer layout, menu included. Streamlit
+// D-166, D-573: a phone turned sideways shows the computer layout, menu included. Streamlit
 // folded the menu when the page opened upright, so it opens again on turning.
-const phoneLandscape = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
+const phoneSideways = () => Boolean(window.greenoceanPhoneSideways && window.greenoceanPhoneSideways());
 // D-473: Streamlit marks the menu with data-collapsed; older versions, with aria-expanded.
 const isOpen = (sidebar) => sidebar.dataset.collapsed === "false" || sidebar.getAttribute("aria-expanded") === "true";
 const openMenu = () => {
@@ -17,10 +17,10 @@ const openMenu = () => {
 };
 if (!window.greenoceanPhoneTurnBound) {
     window.greenoceanPhoneTurnBound = true;
-    phoneLandscape.addEventListener("change", (event) => { if (event.matches) { openMenu(); } });
-    if (phoneLandscape.matches) { openMenu(); }
+    window.addEventListener("greenocean-phone-sideways", openMenu);
+    if (phoneSideways()) { openMenu(); }
 }
-if (phoneLandscape.matches) { return; }
+if (phoneSideways()) { return; }
 if (window.innerWidth >= __GO_NARROW_SCREEN_WIDTH__) { return; }
 try { if (sessionStorage.getItem("sidebarFolded")) { return; } } catch (error) { return; }
 let tries = 0;
