@@ -6,3 +6,8 @@
 [data-testid="stSidebarCollapseButton"] button *, [data-testid="stExpandSidebarButton"] * { color:var(--go-green) !important; }
 @media (prefers-reduced-motion:reduce) { [data-testid="stSidebarCollapseButton"] button,
   [data-testid="stExpandSidebarButton"] { animation:none; filter:drop-shadow(0 0 4px var(--go-green)); } }
+/* D-573: a turned phone shows each page whole, shrunk to about half; the unfold arrow shrinks with it and is missed, so
+   there it is drawn twice as large, and the page leaves it room. */
+.go-phone-sideways [data-testid="stExpandSidebarButton"] { transform:scale(2); transform-origin:0 0; }
+.go-phone-sideways .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMainBlockContainer"] {
+  padding-left:96px !important; }
