@@ -4598,3 +4598,8 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** el aviso que pide girar el teléfono salía solo en español con el enlace normal, y desde esa pantalla no se puede cambiar el idioma: alguien que no lee español no entiende qué hacer.
 - **Decisión:** en la versión en español, bajo el texto del aviso, una línea chica y más tenue en inglés: «Turn your phone: the panel reads in landscape.». La versión en inglés no la repite (ya está entera en inglés, D-443), así que la línea queda oculta.
 - **Pruebas:** la del diseño de teléfono comprueba la línea en español y que en inglés queda oculta; revisado en un iPhone emulado, derecho.
+
+## D-575 · El README principal pasa a inglés
+- **Pedido del autor:** va a postular también a empresas de fuera de Chile, y GitHub muestra primero `README.md`, que estaba en español.
+- **Decisión:** `README.md` es ahora la versión en inglés y `README.es.md`, la versión en español; la primera línea de cada uno enlaza al otro. El contenido no cambia. El código y sus comentarios ya estaban en inglés; los documentos de `docs/` siguen en español con su copia en `docs/en/`, y los commits y las decisiones, en español (reescribir el historial no se justifica).
+- **Pruebas:** la regla de idioma de los README (cada uno enlaza al otro y el inglés no mezcla español) y la lista de páginas del menú, que se lee del README en español.

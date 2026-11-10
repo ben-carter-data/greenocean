@@ -93,7 +93,7 @@ def test_d378_choosing_a_view_opens_the_dashboard():
 
 
 def test_d387_the_readme_lists_every_page_of_the_menu_in_the_menu_order():
-    readme = (Path(dashboard.__file__).resolve().parent.parent / "README.md").read_text(encoding="utf-8")
+    readme = (Path(dashboard.__file__).resolve().parent.parent / "README.es.md").read_text(encoding="utf-8")
     line = next(line for line in readme.splitlines() if line.startswith("Páginas del panel"))
     labels = [
         dashboard.SIDEBAR_LABELS.get(view, view)
