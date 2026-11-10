@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.20 |
+| Version | 3.21 |
 | Date | 2026-11-10 |
 | Status | Current |
 | Owner | The author |
@@ -43,7 +43,7 @@ This is how we know that something failed, as in the «Monitoring» tab of [[vis
 
 ## 2. What happens automatically
 
-The weekly job (`.github/workflows/semanal.yml`) runs every Tuesday at 12:07 UTC: 09:07 in Chilean summer time and 08:07 in winter time. If GitHub delays or skips the scheduled task, the load tries again every 15 minutes until 14:52 UTC (11:52 in Chile in summer), to have the data before noon, and then every hour until 02:07 UTC (23:07 in Chile); an attempt that finds a green load since Tuesday ends doing nothing, even if GitHub starts it late on Wednesday. If Tuesday ends without a load, the Author launches it by hand, and two loads never run at once (D-485). It downloads the sources, builds and tests the database, publishes it in the «base-actual» release and creates the weekly report. The full sequence, step by step, is in the [load sequence of the SAD](../arquitectura/SAD.md#4-the-load-of-each-week).
+The weekly job (`.github/workflows/semanal.yml`) runs every Tuesday at 12:07 UTC: 09:07 in Chilean summer time and 08:07 in winter time. If GitHub delays or skips the scheduled task, the load tries again every 15 minutes until 14:52 UTC (11:52 in Chile in summer), to have the data before noon, and then every hour until 02:07 UTC (23:07 in Chile); an attempt that finds a green load since Tuesday ends doing nothing, even if GitHub starts it late on Wednesday. If Tuesday ends without a load, the Author launches it by hand, and two loads never run at once (D-485). Since D-577, an external clock, cron-job.org, launches the load every Tuesday at 10:00 Chile time (time zone America/Santiago) through the same door as «Run workflow», with the token `greenocean-cron`, which can only start and cancel the loads of this repository: GitHub's scheduled task arrived 4 to 6 hours late every Tuesday and stays as a backup. That is why those loads show as «Manual». It downloads the sources, builds and tests the database, publishes it in the «base-actual» release and creates the weekly report. The full sequence, step by step, is in the [load sequence of the SAD](../arquitectura/SAD.md#4-the-load-of-each-week).
 
 It can also be launched by hand: from «Operations center», with the «Run pipeline now» button (it requires the control code), or from the workflow page on GitHub. The run's window shows the live flow on top, focused on the load: which piece works and which message travels at each step (D-413).
 
@@ -61,6 +61,7 @@ After every load that ends in green, the quality workflow proposes the weekly qu
 | Every January | Add to `agent/input.csv` the two lines of the new year (wholesale and consumer), with the URL ODEPA publishes on the page of each dataset | `agent/input.csv` |
 | Periodically | Copy `agent/downloads` to another disk: the CSV files are not versioned ([ADR-04 · Do not commit the raw data to the repository](../arquitectura/ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository)) and the GitHub cache is deleted if it is not used for 7 days | Another disk of the author |
 | Before it expires | Renew the panel's two GitHub tokens; «Settings» marks them amber when 15 days or fewer are left, and the alert «Action required» warns on entering as Author (section 8.1) | App secrets on Streamlit |
+| Every year, before it expires | Renew the token `greenocean-cron` of cron-job.org and paste the new value in its job: GitHub warns by email a week before, and cron-job.org warns by email if its call fails on a Tuesday (D-577) | GitHub tokens and the job on cron-job.org (section 8) |
 | After every weekly load | The pull request «Actualizar medición de calidad»: the workflow merges it by itself if the code is within its acceptable (D-436); if it stayed open, review it and merge or close it. Then run `git pull` | Pull requests of the repository (section 8) |
 | On entering as Author | The alert «Action required»: first, each token at 15 days or fewer from its expiry; then, the indicators past their acceptable. If it says «Last measurement on …», the report is more than 8 days old and is not today's state | The window the panel opens |
 
@@ -141,6 +142,7 @@ The links used to run the project, grouped by task.
 | The app | [Streamlit Community Cloud](https://share.streamlit.io) | The panel's secrets and its restart | When renewing a token or if the panel shows a module error | The app → ⋮ → «Settings» → «Secrets», or «Reboot» |
 | Tokens | [GitHub tokens](https://github.com/settings/personal-access-tokens) | The expiry and the permissions of each token | When «Settings» marks a token amber or red | The token → «Regenerate token»; the new value is shown only once |
 | Tokens | [Create a token](https://github.com/settings/personal-access-tokens/new) | A new token, only for this repository | If a token is missing | «Repository access» → this repository; «Permissions» → «Actions» |
+| Tokens | [cron-job.org](https://console.cron-job.org) | The job that launches the load every Tuesday at 10:00 and its history (D-577) | If the load did not start on a Tuesday, or when renewing the token `greenocean-cron` | The job → «History»; for the new token, «Edit» → «Advanced» → the Authorization header |
 
 **Two rules.** Do not edit files on GitHub's website: every change is made on the author's computer and sent with a push, so local and remote main do not drift apart. After merging a pull request on the website, bring the change with `git pull` before working.
 
@@ -225,3 +227,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.18 | 2026-11-03 | The load tries every 15 minutes until noon and every hour until Tuesday night; if it has not started, the Author launches it by hand (D-487) |
 | 3.19 | 2026-11-08 | The published panel has its new address, greenocean.streamlit.app (D-549) |
 | 3.20 | 2026-11-10 | The Professional view sees the section «DevOps and security» locked, without its content (D-576) |
+| 3.21 | 2026-11-10 | cron-job.org launches the load every Tuesday at 10:00 Chile time; GitHub's scheduled task stays as a backup (D-577) |

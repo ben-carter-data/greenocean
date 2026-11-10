@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.20 |
+| Versión | 3.21 |
 | Fecha | 10-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -43,7 +43,7 @@ Así se sabe que algo falló, como en la pestaña «Monitoreo» de [[vista:Centr
 
 ## 2. Qué ocurre automáticamente
 
-El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:07 UTC: las 09:07 en el horario de verano de Chile y las 08:07 en el de invierno. Si GitHub atrasa o se salta la tarea programada, la carga vuelve a intentar cada 15 minutos hasta las 14:52 UTC (11:52 en Chile en verano), para tener los datos antes de mediodía, y luego cada hora hasta las 02:07 UTC (23:07 en Chile); un intento que encuentra una carga en verde desde el martes termina sin hacer nada, aunque GitHub lo lance atrasado el miércoles. Si el martes termina sin carga, el Autor la lanza a mano, y nunca corren dos cargas a la vez (D-485). Descarga las fuentes, construye y prueba la base, la publica en el release «base-actual» y crea el informe semanal. La secuencia completa, paso a paso, está en la [secuencia de la carga del SAD](../arquitectura/SAD.md#4-la-carga-de-cada-semana).
+El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:07 UTC: las 09:07 en el horario de verano de Chile y las 08:07 en el de invierno. Si GitHub atrasa o se salta la tarea programada, la carga vuelve a intentar cada 15 minutos hasta las 14:52 UTC (11:52 en Chile en verano), para tener los datos antes de mediodía, y luego cada hora hasta las 02:07 UTC (23:07 en Chile); un intento que encuentra una carga en verde desde el martes termina sin hacer nada, aunque GitHub lo lance atrasado el miércoles. Si el martes termina sin carga, el Autor la lanza a mano, y nunca corren dos cargas a la vez (D-485). Desde D-577, un reloj externo, cron-job.org, lanza la carga cada martes a las 10:00 de Chile (zona America/Santiago) por la misma puerta que «Run workflow», con el token `greenocean-cron`, que solo puede lanzar y cancelar las cargas de este repositorio: la tarea programada de GitHub llegó de 4 a 6 horas tarde cada martes y queda de respaldo. Por eso esas cargas aparecen como «Manual». Descarga las fuentes, construye y prueba la base, la publica en el release «base-actual» y crea el informe semanal. La secuencia completa, paso a paso, está en la [secuencia de la carga del SAD](../arquitectura/SAD.md#4-la-carga-de-cada-semana).
 
 También se puede lanzar a mano: desde «Centro de operación», con el botón «Ejecutar pipeline ahora» (requiere la clave de control), o desde la página del workflow en GitHub. La ventana de la ejecución muestra arriba el flujo en vivo, enfocado en la carga: qué pieza trabaja y qué mensaje viaja en cada paso (D-413).
 
@@ -61,6 +61,7 @@ Después de cada carga que termina en verde, el workflow de calidad propone el i
 | Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos | `agent/input.csv` |
 | Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](../arquitectura/ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días | Otro disco del autor |
 | Antes de su vencimiento | Renovar los dos tokens de GitHub del panel; «Configuración» los marca en ámbar cuando faltan 15 días o menos, y la alerta «Acción requerida» lo avisa al entrar como Autor (sección 8.1) | Secretos de la app en Streamlit |
+| Cada año, antes de su vencimiento | Renovar el token `greenocean-cron` de cron-job.org y pegar el valor nuevo en su tarea: GitHub avisa por correo una semana antes, y cron-job.org avisa por correo si un martes su llamado falla (D-577) | Tokens de GitHub y la tarea en cron-job.org (sección 8) |
 | Después de cada carga semanal | El pull request «Actualizar medición de calidad»: el workflow lo fusiona solo si el código está en su aceptable (D-436); si quedó abierto, revisarlo y fusionarlo o cerrarlo. Después, hacer `git pull` | Pull requests del repositorio (sección 8) |
 | Al entrar como Autor | La alerta «Acción requerida»: primero, cada token a 15 días o menos de vencer; después, los indicadores fuera de su aceptable. Si dice «Última medición del …», el informe tiene más de 8 días y no es el estado de hoy | La ventana que abre el panel |
 
@@ -141,6 +142,7 @@ Los enlaces que se usan para operar el proyecto, agrupados por tarea.
 | La app | [Streamlit Community Cloud](https://share.streamlit.io) | Los secretos del panel y su reinicio | Al renovar un token o si el panel muestra un error de módulo | La app → ⋮ → «Settings» → «Secrets», o «Reboot» |
 | Tokens | [Tokens de GitHub](https://github.com/settings/personal-access-tokens) | El vencimiento y los permisos de cada token | Cuando «Configuración» marca un token en ámbar o rojo | El token → «Regenerate token»; el valor nuevo se muestra una sola vez |
 | Tokens | [Crear un token](https://github.com/settings/personal-access-tokens/new) | Un token nuevo, solo para este repositorio | Si un token falta | «Repository access» → este repositorio; «Permissions» → «Actions» |
+| Tokens | [cron-job.org](https://console.cron-job.org) | La tarea que lanza la carga cada martes a las 10:00 y su historial (D-577) | Si un martes la carga no partió, o al renovar el token `greenocean-cron` | La tarea → «History»; para el token nuevo, «Edit» → «Advanced» → el encabezado Authorization |
 
 **Dos reglas.** No editar archivos desde la web de GitHub: todo cambio se hace en el computador del autor y se sube con push, para que main local y remoto no se separen. Después de fusionar un pull request en la web, traer el cambio con `git pull` antes de trabajar.
 
@@ -225,3 +227,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.18 | 03-11-2026 | La carga intenta cada 15 minutos hasta mediodía y cada hora hasta la noche del martes; si no partió, el Autor la lanza a mano (D-487) |
 | 3.19 | 08-11-2026 | El panel publicado tiene su nueva dirección, greenocean.streamlit.app (D-549) |
 | 3.20 | 10-11-2026 | La vista Profesional ve la sección «DevOps y seguridad» con candado, sin su contenido (D-576) |
+| 3.21 | 10-11-2026 | cron-job.org lanza la carga cada martes a las 10:00 de Chile; la tarea programada de GitHub queda de respaldo (D-577) |
