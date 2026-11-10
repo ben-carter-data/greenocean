@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.19 |
-| Date | 2026-11-08 |
+| Version | 3.20 |
+| Date | 2026-11-10 |
 | Status | Current |
 | Owner | The author |
 | Purpose | State what happens automatically, what is checked and when, and what to do about each failure. |
@@ -110,7 +110,7 @@ To read any failure without copying by hand, the panel's page «GitHub Actions»
 
 ## 7. Author access and administration
 
-The panel has one key only: the one to enter as Author (the panel's `CONTROL_CODE` secret), in the window to choose the view (D-369, D-421). With it the section «DevOps and security» appears, which only the Author sees (D-420): in «Operations center», the «Run pipeline now» button, which starts the load at once, and the token-expiry warning; cancelling a load asks for a confirmation in the same window. The page «Settings» is in that section. That page gathers on one screen the state of the tokens, the latest load, the latest report, the tests and the sources; what to do in each case (section 8.1), and the maintenance tasks. Without the secret configured, for example in a local copy, the access stays closed.
+The panel has one key only: the one to enter as Author (the panel's `CONTROL_CODE` secret), in the window to choose the view (D-369, D-421). With it the section «DevOps and security» opens, whose content only the Author sees (D-420); the Professional view sees its three pages in the menu, locked, and opening one reads what it holds and how to enter, with nothing of the page itself (D-576): in «Operations center», the «Run pipeline now» button, which starts the load at once, and the token-expiry warning; cancelling a load asks for a confirmation in the same window. The page «Settings» is in that section. That page gathers on one screen the state of the tokens, the latest load, the latest report, the tests and the sources; what to do in each case (section 8.1), and the maintenance tasks. Without the secret configured, for example in a local copy, the access stays closed.
 
 The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. After 3 failures, each try waits 2 s, and twice as long after each new failure, up to 15 min; the right code resets it (D-393, [Test and Security Plan](../calidad/PLAN_PRUEBAS.md#11-accepted-risks-and-limits)). Each action of the Author (starting, cancelling, reloading the data) checks again on the server that the session is the Author's (D-421). If the wait jams the access, the load can be started from GitHub. The panel never shows the token or any part of it.
 
@@ -224,3 +224,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.17 | 2026-11-03 | The load is scheduled at 12:17 UTC with two more attempts, 14:17 and 16:17, and two never run at once (D-485) |
 | 3.18 | 2026-11-03 | The load tries every 15 minutes until noon and every hour until Tuesday night; if it has not started, the Author launches it by hand (D-487) |
 | 3.19 | 2026-11-08 | The published panel has its new address, greenocean.streamlit.app (D-549) |
+| 3.20 | 2026-11-10 | The Professional view sees the section «DevOps and security» locked, without its content (D-576) |

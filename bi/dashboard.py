@@ -66,6 +66,7 @@ from bi.page_documents import (  # noqa: E402
 )
 from bi.page_devops import (  # noqa: E402
     RUNS_VIEWS,  # noqa: F401  read by the tests through this module
+    show_locked_page,
     show_run_indicator,
     reopen_run_window,
     show_runs_page,
@@ -165,6 +166,8 @@ from bi.page_quality import (  # noqa: E402
 )
 from bi.app_frame import (  # noqa: E402
     CHANGE_VIEW,
+    LOCKED_ICON,  # noqa: F401  read by the tests through this module
+    menu_icon,
     OVERVIEW_CLASS_BY_VIEW,
     get_mode,
     settle_theme,
@@ -310,7 +313,7 @@ from bi.constants import (  # noqa: E402  D-541: the fixed names live in bi/cons
     ALL_VALUES,  # noqa: F401  read by the tests through this module
     PAGES,  # noqa: F401  read by the tests through this module
     HOME_PAGE,  # noqa: F401  read by the tests through this module
-    PAGE_ICONS,
+    PAGE_ICONS,  # noqa: F401  read by the tests through this module
     PAGE_PATHS,
     TAB_GAP,  # noqa: F401  read by the tests through this module
     TAB_PIPELINE,  # noqa: F401  read by the tests through this module
@@ -366,7 +369,7 @@ from bi.constants import (  # noqa: E402  D-541: the fixed names live in bi/cons
     CHANNEL_PARAMETER,  # noqa: F401  read by the tests through this module
     QUALITY_VIEW_KEY,  # noqa: F401  read by the tests through this module
     MENU_ORDER,  # noqa: F401  read by the tests through this module
-    SIDEBAR_ICONS,
+    SIDEBAR_ICONS,  # noqa: F401  read by the tests through this module
     WINDOW_PAGES,
 )
 
@@ -614,9 +617,13 @@ def build_phone_layout_html():
 
 def show_page(view, mode):
     """Draw one page; an Autor's page only for the Autor's session (D-420), checked here on the server whatever the
-    address or the menu say. Anyone else reads that there is no access."""
+    address or the menu say. Anyone else reads that there is no access; the Profesional view, also what the page holds
+    (D-576)."""
     if view in AUTHOR_ONLY_PAGES and not is_author():
-        st.info(tr(NO_ACCESS), icon=":material/lock:")
+        if is_public_profile():
+            st.info(tr(NO_ACCESS), icon=":material/lock:")
+        else:
+            show_locked_page(view)  # D-576: the Profesional view sees what the page holds, locked
         return
     view = user_view_page(view)  # D-502: the Usuario view never draws a page of another view
     SHOW_PAGE_BY_TITLE[view](mode)
@@ -722,7 +729,7 @@ def show_menu_steps(view, pages):
             st.page_link(
                 pages[WINDOW_OF_VIEW[neighbour]],
                 label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
-                icon=SIDEBAR_ICONS.get(neighbour, PAGE_ICONS.get(neighbour)),
+                icon=menu_icon(neighbour),
                 query_params=keep_context() | {VIEW_PARAMETER: neighbour},
             )
 
@@ -743,7 +750,7 @@ def show_folder_steps(view, pages):
         st.page_link(
             pages[WINDOW_OF_VIEW[neighbour]],
             label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
-            icon=SIDEBAR_ICONS.get(neighbour, PAGE_ICONS.get(neighbour)),
+            icon=menu_icon(neighbour),
             query_params=keep_context() | {VIEW_PARAMETER: neighbour},
         )
 
@@ -944,7 +951,7 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
             st.page_link(
                 windows_by_title[window],
                 label=tr(SIDEBAR_LABELS.get(view, view)),
-                icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
+                icon=menu_icon(view),
                 query_params=keep_context() | {VIEW_PARAMETER: view},
             )
 
@@ -960,7 +967,7 @@ def show_dashboard_tile(windows_by_title, current_window, current_view, view):
         st.page_link(
             windows_by_title[window],
             label=tr(SIDEBAR_LABELS.get(view, view)),
-            icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
+            icon=menu_icon(view),
             query_params=keep_context() | {VIEW_PARAMETER: view},
         )
 

@@ -120,6 +120,8 @@ from bi.constants import (
     SECRET_CONTROL_CODE,
     SECRET_GITHUB_TOKEN,
     SECRET_READ_TOKEN,
+    PAGE_ICONS,
+    SIDEBAR_ICONS,
     SIDEBAR_LABELS,
     SIDEBAR_TOP_LABELS,
     SOURCE_LINKS,
@@ -147,6 +149,7 @@ from etl import etl
 from bi import static_files
 
 # region Constants
+LOCKED_ICON = ":material/lock_person:"  # D-576: the Autor's pages, in any other session
 CHANGE_VIEW = "profile_change_open"
 
 
@@ -359,14 +362,30 @@ def is_public_profile():
 
 def hide_author_pages(blocks):
     """D-339: a page only the author sees leaves the menu of everyone else. D-420: a section left with no page leaves
-    too, so «DevOps y seguridad» does not exist for the user and the professional views."""
+    too, so «DevOps y seguridad» does not exist for the user view. D-576: the professional view keeps them, each with a
+    lock (menu_icon), so it knows they exist; they open locked (page_devops.show_locked_page)."""
     if is_author():
         return blocks
+    if not is_public_profile():  # D-576: locked, it comes last, so every role first reads what it can open
+        devops = [block for block in blocks if block[0] == "devops"]
+        others = [block for block in blocks if block[0] != "devops"]
+        footer = next(
+            (index for index, block in enumerate(others) if block[0] in ("fuentes", "documentos")), len(others)
+        )
+        return others[:footer] + devops + others[footer:]
     kept = [
         (key, title, pages if pages is SOURCE_LINKS else [view for view in pages if view not in AUTHOR_ONLY_PAGES])
         for key, title, pages in blocks
     ]
     return [block for block in kept if block[2] is SOURCE_LINKS or block[2]]
+
+
+def menu_icon(view):
+    """The icon of a page in the menu; for an Autor's page in any other session, a lock with a person (D-576): only one
+    person opens it. A plain lock is already «Arquitectura de seguridad»."""
+    if view in AUTHOR_ONLY_PAGES and not is_author():
+        return LOCKED_ICON
+    return SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view))
 
 
 def visible_menu_blocks():

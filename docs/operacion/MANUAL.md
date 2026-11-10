@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.19 |
-| Fecha | 08-11-2026 |
+| Versión | 3.20 |
+| Fecha | 10-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Indicar qué ocurre de forma automática, qué se revisa y cuándo, y qué hacer ante cada falla. |
@@ -110,7 +110,7 @@ Para leer cualquier falla sin copiar a mano, la página «GitHub Actions» del p
 
 ## 7. Acceso del autor y administración
 
-El panel tiene una sola clave: la de entrar como Autor (secreto `CONTROL_CODE` del panel), en la ventana «Elige tu vista» (D-369, D-421). Con ella aparece la sección «DevOps y seguridad», que solo ve el Autor (D-420): en «Centro de operación», el botón «Ejecutar pipeline ahora», que lanza la carga de inmediato, y el aviso del vencimiento del token; cancelar una carga pide confirmar «¿Seguro?» en la misma ventana. La página «Configuración» está en esa sección. Esa página reúne en una pantalla el estado de los tokens, la última carga, el último informe, las pruebas y las fuentes; qué hacer en cada caso (sección 8.1), y las tareas de mantenimiento. Sin el secreto configurado, por ejemplo en una copia local, el acceso queda cerrado.
+El panel tiene una sola clave: la de entrar como Autor (secreto `CONTROL_CODE` del panel), en la ventana «Elige tu vista» (D-369, D-421). Con ella se abre la sección «DevOps y seguridad», cuyo contenido solo ve el Autor (D-420); la vista Profesional ve sus tres páginas en el menú, con candado, y al abrirlas lee qué hay adentro y cómo se entra, sin nada propio de la página (D-576): en «Centro de operación», el botón «Ejecutar pipeline ahora», que lanza la carga de inmediato, y el aviso del vencimiento del token; cancelar una carga pide confirmar «¿Seguro?» en la misma ventana. La página «Configuración» está en esa sección. Esa página reúne en una pantalla el estado de los tokens, la última carga, el último informe, las pruebas y las fuentes; qué hacer en cada caso (sección 8.1), y las tareas de mantenimiento. Sin el secreto configurado, por ejemplo en una copia local, el acceso queda cerrado.
 
 La clave evita ejecuciones accidentales; no es la barrera principal. Lo que protege el proyecto es el inicio de sesión del autor en GitHub y en Streamlit (con verificación en dos pasos) y un token con los permisos mínimos. Tras 3 fallos, cada intento espera 2 s, y el doble tras cada nuevo fallo, hasta 15 min; con la clave correcta vuelve a cero (D-393, [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md#11-riesgos-aceptados-y-límites)). Cada acción del Autor (lanzar, cancelar, recargar los datos) vuelve a comprobar en el servidor que la sesión es del Autor (D-421). Si la espera traba el acceso, la carga se puede lanzar desde GitHub. El panel nunca muestra el token ni una parte de él.
 
@@ -224,3 +224,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.17 | 03-11-2026 | La carga se programa a las 12:17 UTC con dos intentos más, 14:17 y 16:17, y nunca corren dos a la vez (D-485) |
 | 3.18 | 03-11-2026 | La carga intenta cada 15 minutos hasta mediodía y cada hora hasta la noche del martes; si no partió, el Autor la lanza a mano (D-487) |
 | 3.19 | 08-11-2026 | El panel publicado tiene su nueva dirección, greenocean.streamlit.app (D-549) |
+| 3.20 | 10-11-2026 | La vista Profesional ve la sección «DevOps y seguridad» con candado, sin su contenido (D-576) |

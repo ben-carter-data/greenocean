@@ -109,6 +109,7 @@ def test_d387_the_readme_lists_every_page_of_the_menu_in_the_menu_order():
 
 @pytest.mark.parametrize("profile", ["consulta", "profesional"])
 def test_d420_no_page_of_devops_is_reached_by_the_user_or_the_professional(profile):
+    """D-576: the Profesional view sees the three pages, locked; neither view reaches what they hold."""
     assert (
         set(DEVOPS)
         == {dashboard.PAGE_RUNS, dashboard.PAGE_ACTIONS, dashboard.PAGE_CONFIG}
@@ -123,14 +124,18 @@ def test_d420_no_page_of_devops_is_reached_by_the_user_or_the_professional(profi
         markup = " ".join(block.value for block in app.main.markdown)
         if profile == "consulta":  # D-502: the Usuario view stays in «Semanal», without even naming the page
             assert [item.value for item in app.info] == [] and 'class="mock-chile-map"' in markup, view
-        else:
+        else:  # D-576: the page opens locked: its name, what it holds and how it opens; nothing of its own
             assert [item.value for item in app.info] == [dashboard.NO_ACCESS], view
-            assert 'class="page-bar-main"' not in markup and 'class="cf-card' not in markup, view  # no page of its own
+            assert 'class="cf-card' not in markup and 'class="ga-table"' not in markup, view
+            assert any("Se abre con la clave del Autor" in caption.value for caption in app.main.caption), view
         assert not {"runs_run_now", "runs_reload", "author_access_close"} & {str(b.key) for b in app.button}, view
-        labels = [link.proto.label for link in app.sidebar.get("page_link")]  # and the menu has no DevOps
-        assert not set(DEVOPS_LABELS) & set(labels) and "DevOps y seguridad" not in [
-            button.label for button in app.sidebar.button
-        ]
+        icons = {link.proto.label: link.proto.icon for link in app.sidebar.get("page_link")}
+        if profile == "consulta":  # the Usuario view's menu has no DevOps at all (D-502)
+            assert not set(DEVOPS_LABELS) & set(icons) and "DevOps y seguridad" not in [
+                button.label for button in app.sidebar.button
+            ]
+        else:  # the Profesional view's menu has the three pages, each with its lock (D-576)
+            assert all(icons.get(label) == dashboard.LOCKED_ICON for label in DEVOPS_LABELS), icons
     if profile == "profesional":  # security reads in «Stack y evidencia», with no secret value
         app = AppTest.from_file(str(DASHBOARD_FILE), default_timeout=90)
         app.session_state["visitor_profile"] = profile

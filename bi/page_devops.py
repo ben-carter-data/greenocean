@@ -97,6 +97,20 @@ RUN_FLOW_HEIGHT = 330
 RELOADED_NOTICE = "panel_reloaded"
 
 
+# D-576: what each page of the Autor holds, said to the Profesional view, which sees the page locked: it exists, is
+# protected and shows nothing of its own.
+LOCKED_PAGES = {
+    PAGE_RUNS: "Lanza la carga semanal a mano, sigue cada paso de la ejecución en vivo y muestra dónde corre cada pieza.",
+    PAGE_ACTIONS: "Las últimas ejecuciones de pruebas, carga semanal y calidad, leídas de GitHub, y qué falló en la última.",
+    PAGE_CONFIG: "La consola del autor: el estado de los tokens y de lo que mantiene la app, qué hacer en cada caso y el "
+    "mantenimiento.",
+}
+LOCKED_NOTE = (
+    "Se abre con la clave del Autor, que el servidor revisa antes de dibujar cada página y antes de cada acción. Para "
+    "entrar: «Vista: … · Cambiar» › «Acceso del autor»."
+)
+
+
 RUNS_VIEW_KEY = "runs_view"
 RUNS_VIEWS = dict(
     zip(
@@ -362,6 +376,21 @@ def show_admin_card():
 def lock_author_access():
     """«Cerrar acceso»: the Autor's session ends, as choosing another view does (D-353)."""
     leave_author()
+
+
+# endregion
+
+
+# region The pages of the Autor, locked for the Profesional view (D-576)
+def show_locked_page(view):
+    """D-576: the Profesional view sees the Autor's pages in its menu, each with a lock, so it knows they exist. Opened,
+    a page says what it holds and how it opens, and draws nothing of its own: no figure, no button, no link."""
+    name = SIDEBAR_LABELS.get(view, view)  # the name of the menu: «Centro de operación», not «Ejecuciones»
+    show_page_bar(view, name, LOCKED_PAGES[view])
+    st.info(tr(NO_ACCESS), icon=":material/lock:")
+    with st.container(border=True, key="locked_page"):
+        st.markdown(f"**{tr(name)}** · {tr(LOCKED_PAGES[view])}")
+        st.caption(tr(LOCKED_NOTE))
 
 
 # endregion

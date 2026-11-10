@@ -25,7 +25,8 @@ def draw_author(language):
 
 def test_d409_only_the_author_has_the_page_in_devops_and_security(network):  # noqa: F811
     visitor = draw(unlocked=False, view="Dashboard")
-    assert not visitor.exception and "Configuración" not in menu_labels(visitor)
+    icons = {link.proto.label: link.proto.icon for link in visitor.sidebar.get("page_link")}
+    assert not visitor.exception and icons["Configuración"] == dashboard.LOCKED_ICON  # D-576: there, locked
     author = draw(unlocked=True, view="Dashboard")
     labels = menu_labels(author)
     assert labels.index("GitHub Actions") < labels.index("Configuración") < labels.index("Arquitectura de seguridad")

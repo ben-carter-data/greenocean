@@ -56,6 +56,11 @@ DOCUMENT_FIELDS = {
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
+    # D-576: the Autor's pages, locked for the Profesional view
+    "Lanza la carga semanal a mano, sigue cada paso de la ejecución en vivo y muestra dónde corre cada pieza.": "Launches the weekly load by hand, follows each step of the run live and shows where each piece runs.",
+    "Las últimas ejecuciones de pruebas, carga semanal y calidad, leídas de GitHub, y qué falló en la última.": "The latest runs of the tests, the weekly load and quality, read from GitHub, and what failed in the last one.",
+    "La consola del autor: el estado de los tokens y de lo que mantiene la app, qué hacer en cada caso y el mantenimiento.": "The author's console: the state of the tokens and of what keeps the app running, what to do in each case and the maintenance.",
+    "Se abre con la clave del Autor, que el servidor revisa antes de dibujar cada página y antes de cada acción. Para entrar: «Vista: … · Cambiar» › «Acceso del autor».": "It opens with the Author's key, which the server checks before drawing each page and before each action. To enter: «View: … · Change» › «Author access».",
     "Navegadores": "Browsers",
     "Ampliar": "Enlarge",
     # D-325: the page is gone, but the stored measurement of docs/calidad still lists it until the next measurement.

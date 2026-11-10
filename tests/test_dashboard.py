@@ -27,9 +27,11 @@ FAKE_TOKEN = "github_pat_FAKE_SECRET_123"
 MENU_BLOCKS = {
     'Negocio · BA y BI': [],  # D-456: only its three dashboard tiles
     'Ingeniería de datos': ['Pipeline y linaje', 'Reglas de transformación', 'Modelo de datos', 'Consultas SQL'],
-    # D-420: «DevOps y seguridad» is the Autor's; security reads in «Stack y evidencia»
+    # D-420: security reads in «Stack y evidencia»
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app', 'Arquitectura de seguridad'],
     'Calidad': ['Plan de calidad', 'Controles de datos', 'Cambios e incidentes'],  # D-507
+    # D-576: the Autor's section, locked for anyone else, comes last
+    'DevOps y seguridad': ['Centro de operación', 'GitHub Actions', 'Configuración'],
 }
 # endregion
 
@@ -1190,7 +1192,6 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # the word, as a markdown link rather than a page_link (D-117).
     # Every folder starts open (D-139): the whole map of the app at a glance.
     # Step 4 of the refonte: «Ingeniería de datos», four pages; DevOps joined «Ejecuciones».
-    assert 'DevOps y seguridad' not in labels
     for child in [
         'Semanal',
         'Pipeline y linaje',
@@ -1201,7 +1202,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
         'Análisis de la fuente de datos',  # D-533
     ]:
         assert child in labels
-    assert 'Centro de operación' not in labels  # D-420: the Autor's only
+    assert 'Centro de operación' in labels  # D-576: it exists, locked; its content stays the Autor's (D-420)
     # D-282: the documents live in their folder, not in the menu.
     for document in ['Plan de pruebas y seguridad', 'PRD · Requisitos del producto', 'SAD · Arquitectura']:
         assert document not in labels
@@ -1530,7 +1531,10 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
         page for _, _, pages in dashboard.MENU_BLOCKS if pages is not dashboard.SOURCE_LINKS for page in pages
     }
     icons = [link.proto.icon for link in app.sidebar.get('page_link')[:-2]]  # the folders draw their own (D-533)
-    assert len(set(icons)) == len(icons)
+    # D-576: the Autor's three pages share the lock with a person; every other page has an icon of its own
+    assert icons.count(dashboard.LOCKED_ICON) == 3
+    others = [icon for icon in icons if icon != dashboard.LOCKED_ICON]
+    assert len(set(others)) == len(others)
 
 
 @needs_database
@@ -1728,9 +1732,10 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
     for role in dashboard.ROLES:
         state[dashboard.ROLE_STATE] = role
         blocks = [key for key, *_ in dashboard.visible_menu_blocks()]
-        expected = [key for key in dashboard.ROLE_ORDER[role] if key != "devops"]  # D-420: the Autor's section
-        # D-453: the role orders the sections; the two dashboards open «Negocio · BA y BI», wherever it falls.
-        assert blocks[:4] == expected and blocks[4:] == ["fuentes", "documentos"], role
+        expected = [key for key in dashboard.ROLE_ORDER[role] if key != "devops"]
+        # D-453: the role orders the sections; the two dashboards open «Negocio · BA y BI», wherever it falls. D-576:
+        # the Autor's section, locked, comes last, before the folders.
+        assert blocks[:4] == expected and blocks[4:] == ["devops", "fuentes", "documentos"], role
         order = dashboard.visible_menu_order()
         start = order.index(dashboard.HOME_PAGE)
         assert order[start : start + 2] == [dashboard.HOME_PAGE, dashboard.PAGE_BA]  # D-494

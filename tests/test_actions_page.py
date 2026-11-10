@@ -81,7 +81,8 @@ def menu_labels(app):
 
 def test_d339_only_the_author_has_the_page_in_the_menu_and_it_sits_in_devops_and_security(network):
     visitor = draw(unlocked=False, view="Dashboard")
-    assert not visitor.exception and "GitHub Actions" not in menu_labels(visitor)
+    icons = {link.proto.label: link.proto.icon for link in visitor.sidebar.get("page_link")}
+    assert not visitor.exception and icons["GitHub Actions"] == dashboard.LOCKED_ICON  # D-576: there, locked
     author = draw(unlocked=True, view="Dashboard")
     assert not author.exception
     labels = menu_labels(author)
@@ -226,7 +227,8 @@ def test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_t
     assert app.get("dialog")  # D-340: the entry window opens whatever the address says, on every new visit (D-430)
     assert not app.session_state["admin_unlocked"] if "admin_unlocked" in app.session_state else True
     assert "perfil" not in app.query_params and "rol" not in app.query_params  # nothing of it is kept
-    assert "GitHub Actions" not in menu_labels(app)
+    icons = {link.proto.label: link.proto.icon for link in app.sidebar.get("page_link")}
+    assert icons.get("GitHub Actions", dashboard.LOCKED_ICON) == dashboard.LOCKED_ICON  # never open (D-576: locked)
     page = everything_drawn(app)
     assert "Abrir en GitHub" not in page and 'class="ga-table"' not in page
     assert not [url for url, _ in network.calls if url.endswith(("/logs", "/annotations", "/rate_limit"))]
