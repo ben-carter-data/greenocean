@@ -137,11 +137,10 @@ def test_d166_phones_upright_are_asked_to_turn_and_sideways_get_the_computer_lay
     assert "Gira tu teléfono" in markup and 'class="go-rotate"' in markup
     # st.html strips SVG gradients: the phone is drawn with plain boxes.
     assert "<svg" not in markup
-    # D-573: turned, the phone lays the page out as a computer, so the width rules see the computer layout; the old
-    # shrinking of the drawn page (its width rules still saw the phone) is gone
-    assert (
-        f'const COMPUTER = "width={dashboard.PHONE_LAYOUT_WIDTH}";' in markup and dashboard.PHONE_LAYOUT_WIDTH >= 1280
-    )
+    # D-573: turned, the phone lays the page out as a computer, tall enough for every page to fit whole, so the width
+    # rules see the computer layout; the old shrinking of the drawn page (its width rules still saw the phone) is gone
+    assert f"Math.max({dashboard.PHONE_LAYOUT_WIDTH}, Math.ceil({dashboard.PHONE_LAYOUT_HEIGHT} / shape))" in markup
+    assert dashboard.PHONE_LAYOUT_WIDTH >= 1440 and dashboard.PHONE_LAYOUT_HEIGHT >= 700
     assert "transform:scale" not in markup and "max-height:500px" not in markup
     assert (
         "greenoceanPhoneSideways" in dashboard.FOLD_SIDEBAR_SCRIPT and "max-height" not in dashboard.FOLD_SIDEBAR_SCRIPT

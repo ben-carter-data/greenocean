@@ -2,7 +2,8 @@
 (() => {
     const view = "__VIEW__";
     const fold = "__FOLD__" === "yes";
-    const wide = window.innerWidth >= __WIDE__ && !(window.greenoceanPhoneSideways && window.greenoceanPhoneSideways());
+    // D-573: a turned phone is laid out as a computer, so its dashboards fold the menu as a computer's do
+    const wide = window.innerWidth >= __WIDE__;
     // D-466: the page before in this load of the app; each load (an address typed, a reload) is an entry and opens the menu
     const last = window.__goMenuView === undefined ? null : window.__goMenuView;
     window.__goMenuView = view;

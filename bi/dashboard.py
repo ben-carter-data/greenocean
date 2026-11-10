@@ -432,17 +432,18 @@ FOLD_SIDEBAR_SCRIPT = static_files.script(
 
 # D-462: a dashboard opens with the menu folded, so its charts get the width; the button that unfolds it beats in the
 # green of GreenOcean (D-450), so it is seen. It folds once per page opened: a menu the reader opens stays open while
-# the reader works on that page. A phone turned sideways keeps its menu open (D-166).
+# the reader works on that page. A turned phone, laid out as a computer, does the same (D-573).
 DASHBOARD_FOLD_SCRIPT = static_files.script("dashboard_fold.js")
 
 # D-166: the panel is read in landscape. A phone held upright sees one screen asking to
 # turn it (no page can rotate a phone: only the reader can). Plain fills only: st.html strips
-# SVG gradients. D-573: turned, the phone lays the page out as a computer PHONE_LAYOUT_WIDTH
-# px wide, so every width rule of the panel sees the computer layout; tablets and computers
-# are never touched.
-PHONE_LAYOUT_WIDTH = 1360
+# SVG gradients. D-573: turned, the phone lays the page out as a computer, at least PHONE_LAYOUT_WIDTH
+# px wide and PHONE_LAYOUT_HEIGHT px tall, so every page fits whole and every width rule sees the computer
+# layout; tablets and computers are never touched.
+PHONE_LAYOUT_WIDTH, PHONE_LAYOUT_HEIGHT = 1440, 768  # the narrowest layout, and the height every page fits whole
 PHONE_LAYOUT_HTML = static_files.read("phone_layout.html") + static_files.script(
-    "phone_viewport.js", {"__GO_PHONE_LAYOUT_WIDTH__": PHONE_LAYOUT_WIDTH}
+    "phone_viewport.js",
+    {"__GO_PHONE_LAYOUT_WIDTH__": PHONE_LAYOUT_WIDTH, "__GO_PHONE_LAYOUT_HEIGHT__": PHONE_LAYOUT_HEIGHT},
 )
 
 # D-233: the pages that fit the window close with one short footer instead of the two long ones.
