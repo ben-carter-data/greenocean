@@ -1,4 +1,5 @@
 .st-key-card_pipeline_main {position:relative;} .st-key-card_pipeline_main .st-key-pipeline_view {position:absolute; top:18px; right:24px; z-index:3; width:auto !important;} .journey-legend {margin:0 !important; line-height:1.9;} .journey-legend span {margin-left:6px;}
 /* D-573: on a turned phone the page is wide and short, and the journey grows with the width; there it never grows
-   taller than the screen leaves, keeping its shape, so the page fits whole. A computer keeps the approved size. */
-.go-phone-sideways .st-key-card_pipeline_main .zoom-frame.diagram-wide svg {max-height:calc(100vh - 360px); width:auto; max-width:100%; display:block; margin:0 auto;}
+   taller than the screen leaves, keeping its shape, so the page fits whole; zoomed in (its own zoom), it grows
+   freely, or it would sit shrunk and off to one side. A computer keeps the approved size. */
+.go-phone-sideways .st-key-card_pipeline_main .zoom-frame.diagram-wide:not(.zoomed) svg {max-height:calc(100vh - 360px); width:auto; max-width:100%; display:block; margin:0 auto;}
