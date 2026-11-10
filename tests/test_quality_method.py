@@ -777,8 +777,9 @@ def test_d434_the_cause_of_the_incident_is_the_measured_one():
 
     found = semanas_sin_precio.count_gaps(queries.run_query("k6_national_weekly_price"), "2026-10-26")
     # D-520: the unit rule adds a price to that week and shortens one gap: the first figures hold until the next load
-    # publishes it, the second ones after it. D-521 and D-522 are in the second ones too.
-    assert (found["prices"], found["without"]) in ((868, 145), (869, 150))
+    # publishes it, the second ones after it. D-521 and D-522 are in the second ones too. D-578: ODEPA added six late
+    # prices to that week, all with a comparison, in the load of 10 November; the gaps did not change.
+    assert (found["prices"], found["without"]) in ((868, 145), (869, 150), (875, 150))
     gaps = (found["one_week"], found["two_to_twelve"], found["over_twelve"], found["never"])
     assert gaps in ((14, 58, 73, 0), (19, 59, 72, 0))  # D-522: five prices that only changed package join the first
     fruit_and_vegetables = found["groups"].get("Frutas", 0) + found["groups"].get("Hortalizas", 0)

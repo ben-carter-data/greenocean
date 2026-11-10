@@ -199,7 +199,8 @@ def test_d452_a_channel_behaves_exactly_like_the_dashboard_and_never_folds():
     app.run()
     assert not app.exception
     page = " ".join(block.value for block in app.markdown)
-    assert 'class="mock-chile-map"' in page and "mock-movement-row rise selected" in page  # the map and the families
+    # the map and the families; D-578: the chosen family is marked whether its prices rose or fell this week
+    assert 'class="mock-chile-map"' in page and re.search(r"mock-movement-row \w+ selected", page)
     assert 'class="mock-chosen"' not in page and 'class="mock-products-table"' in page
     assert not {"home_change_region", "home_change_family"} & {str(button.key) for button in app.button}
 

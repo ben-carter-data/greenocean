@@ -1952,6 +1952,28 @@
           "estacion": 8,
           "estado": "resuelta",
           "referencia": "D-431"
+        },
+        {
+          "fecha": "2026-11-10",
+          "ocurrencia": [
+            "Tras la carga del 10 de noviembre, la revisión antes del push falló en 2 pruebas.",
+            "After the load of 10 November, the check before the push failed in 2 tests."
+          ],
+          "diagnostico": [
+            "Las pruebas esperaban las cifras de la semana anterior: ODEPA agregó 6 precios atrasados y las frutas de Feria libre pasaron de subir a bajar.",
+            "The tests expected the figures of the week before: ODEPA added 6 late prices and the fruit of Feria libre went from rising to falling."
+          ],
+          "solucion": [
+            "Una prueba acepta las cifras nuevas y la otra marca la familia elegida suba o baje.",
+            "One test accepts the new figures and the other marks the chosen family whether it rises or falls."
+          ],
+          "comentario": [
+            "La app y la carga siguieron bien; solo fallaban las pruebas.",
+            "The app and the load kept working; only the tests failed."
+          ],
+          "estacion": 8,
+          "estado": "resuelta",
+          "referencia": "D-578"
         }
       ]
     },

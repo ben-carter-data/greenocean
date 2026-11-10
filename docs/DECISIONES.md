@@ -4616,3 +4616,8 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Mantenimiento:** el token vence cada año. GitHub avisa por correo una semana antes, y cron-job.org avisa por correo si un martes su llamado falla. El MANUAL lo dice en sus dos idiomas (versión 3.21).
 - **Descartado:** que la app lance la carga cuando alguien la visita (depende de las visitas, y Streamlit apaga la app sin ellas), una tarea programada en el computador del autor (depende de que esté encendido), Cloudflare Workers (exige escribir y mantener un script) y los relojes de Google Cloud y AWS (piden tarjeta de crédito).
 - **Pruebas:** no cambia código. La prueba es la ejecución de prueba de cron-job.org, que debe responder 204 y dejar una carga en verde en Actions.
+
+## D-578 · Dos pruebas aceptan las cifras de la carga del 10 de noviembre
+- **Qué pasó:** la carga del 10 de noviembre publicó los datos nuevos, y la revisión antes del push falló en dos pruebas que esperaban las cifras de la semana anterior.
+- **Causa:** ODEPA agregó seis precios atrasados a la semana del 26 de octubre (de 869 a 875, todos con su comparación, así que las semanas sin precio siguen en 150), y las frutas de Feria libre pasaron de subir a bajar. El código y las cifras de la app estaban bien.
+- **Decisión:** la prueba de la causa del incidente de D-418 acepta también 875 precios, sin cambiar los huecos que mide; la de un canal en «Semanal» comprueba que la familia elegida quede marcada, suba o baje, en vez de exigir que suba. Las dos siguen pasando con la base reconstruida en local. Se anota en el registro de fallas (F-33).
