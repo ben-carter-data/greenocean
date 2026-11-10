@@ -4593,3 +4593,8 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **La flecha del menú:** en el teléfono girado, la página se achica a la mitad para caber entera, y la flecha verde que abre el menú plegado quedaba tan chica que no se notaba. Ahí se dibuja al doble de su tamaño y la página le deja sitio; en el computador no cambia.
 - **El zoom del pipeline:** el tope de alto del diagrama le impedía crecer cuando el lector lo ampliaba con su propio zoom: el recuadro crecía y el dibujo quedaba chico, corrido a un lado y cortado (lo vio el autor en su teléfono). El tope se aplica ahora solo sin ampliar.
 - **Pruebas:** en un iPhone emulado en Chrome, abierto girado, abierto derecho y girado después de abrirlo: girado, la página mide 1.360 px, «Semanal» muestra sus tres pasos lado a lado y el menú queda abierto; derecho, aparece «Gira tu teléfono». La prueba del diseño de teléfono revisa el script y que el achicado ya no está.
+
+## D-574 · «Gira tu teléfono» lo dice también en inglés, chico
+- **Pedido del autor:** el aviso que pide girar el teléfono salía solo en español con el enlace normal, y desde esa pantalla no se puede cambiar el idioma: alguien que no lee español no entiende qué hacer.
+- **Decisión:** en la versión en español, bajo el texto del aviso, una línea chica y más tenue en inglés: «Turn your phone: the panel reads in landscape.». La versión en inglés no la repite (ya está entera en inglés, D-443), así que la línea queda oculta.
+- **Pruebas:** la del diseño de teléfono comprueba la línea en español y que en inglés queda oculta; revisado en un iPhone emulado, derecho.

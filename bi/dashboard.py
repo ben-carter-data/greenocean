@@ -597,13 +597,19 @@ def render_window(window, pages=None):
         show_attribution()
     show_dashboard_menu_fold(view, mode)
     st.html(
-        PHONE_LAYOUT_HTML
+        build_phone_layout_html()
         + FOLD_SIDEBAR_SCRIPT
         + RELOAD_HOME_SCRIPT
         + IDLE_ANIMATION_SCRIPT
         + build_visit_history_script(),
         unsafe_allow_javascript=True,
     )
+
+
+def build_phone_layout_html():
+    """D-166, D-574: the phone's layout and its «Gira tu teléfono»; read in Spanish, it says it in English too, small,
+    because the reader cannot change the language from that screen."""
+    return PHONE_LAYOUT_HTML.replace("__GO_ALSO_HIDDEN__", " hidden" if i18n.is_english() else "")
 
 
 def show_page(view, mode):

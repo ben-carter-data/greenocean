@@ -131,12 +131,18 @@ def test_d165_the_stage_follows_each_theme():
         assert palette["strong_text"] in markup and palette["card"] in markup
 
 
-def test_d166_phones_upright_are_asked_to_turn_and_sideways_get_the_computer_layout():
+def test_d166_phones_upright_are_asked_to_turn_and_sideways_get_the_computer_layout(monkeypatch):
     markup = dashboard.PHONE_LAYOUT_HTML
     assert "@media (max-width:600px) and (orientation:portrait)" in markup
     assert "Gira tu teléfono" in markup and 'class="go-rotate"' in markup
     # st.html strips SVG gradients: the phone is drawn with plain boxes.
     assert "<svg" not in markup
+    # D-574: read in Spanish, the screen says it in English too, small; the English view does not repeat it
+    also = '<p class="go-also" lang="en"'
+    monkeypatch.setattr(dashboard.i18n, "is_english", lambda: False)
+    assert f"{also}>Turn your phone: the panel reads in landscape.</p>" in dashboard.build_phone_layout_html()
+    monkeypatch.setattr(dashboard.i18n, "is_english", lambda: True)
+    assert f"{also} hidden>" in dashboard.build_phone_layout_html()
     # D-573: turned, the phone lays the page out as a computer, tall enough for every page to fit whole, so the width
     # rules see the computer layout; the old shrinking of the drawn page (its width rules still saw the phone) is gone
     assert f"Math.max({dashboard.PHONE_LAYOUT_WIDTH}, Math.ceil({dashboard.PHONE_LAYOUT_HEIGHT} / shape))" in markup
