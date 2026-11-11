@@ -1,6 +1,6 @@
 {
-  "generado": "2026-11-10 21:16 UTC",
-  "commit": "925bc02",
+  "generado": "2026-11-11 01:50 UTC",
+  "commit": "4005341",
   "python": "3.11.18",
   "ruff": {
     "orden": "/tmp/tools/bin/ruff check bi etl agent tests --select E,F,W",
@@ -169,7 +169,7 @@
   "secretos": {
     "orden": "detect-secrets scan $(git ls-files)",
     "version": "1.5.0",
-    "archivos_revisados": 411,
+    "archivos_revisados": 412,
     "candidatos": 32,
     "por_archivo": {
       ".github/workflows/calidad.yml": [
@@ -270,11 +270,11 @@
     "series_activas": 1204,
     "series_con_dato": 886,
     "pct_series_con_dato": 73.6,
-    "dias_desde_ultima_semana": 2,
-    "dias_desde_ultima_carga": 0,
+    "dias_desde_ultima_semana": 3,
+    "dias_desde_ultima_carga": 1,
     "filas_leidas": 2553724,
     "filas_rechazadas": 201,
     "pct_rechazadas": 0.008,
-    "medido": "2026-11-10"
+    "medido": "2026-11-11"
   }
 }
