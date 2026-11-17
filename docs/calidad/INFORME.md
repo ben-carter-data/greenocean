@@ -1,11 +1,11 @@
-# Informe semanal de calidad N° 8
+# Informe semanal de calidad N° 9
 
 | | |
 |---|---|
-| **Fecha** | 2026-11-11 06:01 UTC |
-| **Semana de datos** | 2026-11-02 |
-| **Código evaluado** | 4e84ab3 |
-| **Informe anterior** | N° 7 |
+| **Fecha** | 2026-11-17 13:04 UTC |
+| **Semana de datos** | 2026-11-09 |
+| **Código evaluado** | 114d6cd |
+| **Informe anterior** | N° 8 |
 | **Medido según** | SQAP v1.14 |
 
 Autoevaluación automática de la carga semanal: 5 de 5 indicadores de datos dentro de lo aceptable; 0 no conformidades. Los aceptables son los de `metas.json` al crearse el informe; el método está en el SQAP (`docs/calidad/PLAN_DE_CALIDAD.md`).
@@ -13,9 +13,9 @@ Autoevaluación automática de la carga semanal: 5 de 5 indicadores de datos den
 | Indicador | Tipo | Falla | Aceptable | Estado | Lectura |
 |---|---|---|---|---|---|
 | Pruebas de datos dbt superadas | datos | 0 % | 0 % | Cumple | Dentro de lo aceptable: no afecta. |
-| Precios con comparación válida | datos | 2,20 % | 3 % | Cumple | Dentro de lo aceptable: no afecta. |
+| Precios con comparación válida | datos | 1,90 % | 3 % | Cumple | Dentro de lo aceptable: no afecta. |
 | Filas rechazadas | datos | 0,01 % | 1 % | Cumple | Dentro de lo aceptable: no afecta. |
 | Regiones o canales ausentes | datos | 0 | 0 | Cumple | Dentro de lo aceptable: no afecta. |
-| Precios atípicos de la semana | datos | 0 % | 0,25 % | Cumple | Dentro de lo aceptable: no afecta. |
+| Precios atípicos de la semana | datos | 0,12 % | 0,25 % | Cumple | Dentro de lo aceptable: no afecta. |
 
 Cada informe se guarda en `docs/calidad/informes/semanales/` y no se edita: un error se corrige en el informe siguiente. Los informes C-1 a C-7 de `docs/calidad/informes/` son la serie de construcción, cerrada.
