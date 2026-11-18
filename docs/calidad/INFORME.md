@@ -1,11 +1,11 @@
-# Informe semanal de calidad N° 11
+# Informe semanal de calidad N° 12
 
 | | |
 |---|---|
-| **Fecha** | 2026-11-17 22:56 UTC |
+| **Fecha** | 2026-11-18 04:09 UTC |
 | **Semana de datos** | 2026-11-09 |
-| **Código evaluado** | 0a4261a |
-| **Informe anterior** | N° 10 |
+| **Código evaluado** | 3ab0295 |
+| **Informe anterior** | N° 11 |
 | **Medido según** | SQAP v1.14 |
 
 Autoevaluación automática de la carga semanal: 5 de 5 indicadores de datos dentro de lo aceptable; 0 no conformidades. Los aceptables son los de `metas.json` al crearse el informe; el método está en el SQAP (`docs/calidad/PLAN_DE_CALIDAD.md`).
