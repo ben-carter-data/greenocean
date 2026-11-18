@@ -58,14 +58,19 @@ COLUMN_X = {
 COLUMN_HEADERS = [
     ("sources", "FUENTES", "HTTPS · CSV · sin API", "sources"),
     ("ingestion", "INGESTA", "Python · requests", "ingestion"),
-    ("landing", "ATERRIZAJE", "SQLite · tal cual llega", "ingestion"),
-    ("bronze", "BRONZE", "Parquet · copia exacta", "bronze"),
+    ("landing", "ATERRIZAJE", "SQLite (solo ODEPA) y Parquet · tal como llega", "ingestion"),
+    # D-579: no header of its own above the column; the landing header spans it (HEADER_SPANS).
+    ("bronze", "BRONZE", None, "bronze"),
     ("staging", "STAGING", "dbt · tipos y textos", "processing"),
     ("intermediate", "INTERMEDIO", "dbt · reglas de negocio", "processing"),
     ("marts", "MARTS", "dbt · modelos y pruebas", "quality"),
     ("gold", "SERVING", "DuckDB · modelo estrella", "gold"),
     ("consumption", "CONSUMO", "Streamlit · GitHub · SQL", "consumption"),
 ]
+# D-579: a header that covers more than one column, from its own to the one named here. The landing zone
+# holds the data as it arrives: SQLite for ODEPA only, and the Parquet bronze copy for ODEPA and the INE.
+HEADER_SPANS = {"landing": "bronze"}
+HEADER_SPAN_MARGIN = 72  # the bracket reaches this far past the centres of its first and last columns
 # The medallion architecture over those columns: bronze (the Parquet copy), silver (the
 # dbt staging and intermediate models) and gold (the marts and datos.duckdb). Each band
 # is (key, first column, last column, label detail); the silver ink depends on the mode.
@@ -460,10 +465,21 @@ def build_style(is_running):
 
 
 def build_column_headers():
-    """Name and short description of each layer, above its column."""
+    """Name and short description of each layer, above its column; a header in HEADER_SPANS
+    is centred over its columns and underlined by a bracket that covers them."""
     parts = []
     for column, title, subtitle, layer in COLUMN_HEADERS:
+        if subtitle is None:
+            continue
         x = COLUMN_X[column]
+        if column in HEADER_SPANS:
+            last_x = COLUMN_X[HEADER_SPANS[column]]
+            left, right = x - HEADER_SPAN_MARGIN, last_x + HEADER_SPAN_MARGIN
+            x = (x + last_x) / 2
+            parts.append(
+                f'<path d="M{left} 66 V70 H{right} V66" fill="none" stroke="{LAYER_COLORS[layer]}" '
+                f'stroke-width="1.2" opacity="0.6"/>'
+            )
         parts.append(
             f'<text x="{x}" y="40" text-anchor="middle" font-size="15" '
             f'font-weight="700" letter-spacing="1" fill="{LAYER_COLORS[layer]}">'

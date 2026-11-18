@@ -2579,8 +2579,7 @@ PAGES = {
     "INTERMEDIO": "INTERMEDIATE",
     "CONSUMO": "CONSUMPTION",
     "EJECUTA": "RUNS",
-    "SQLite · tal cual llega": "SQLite · as it arrives",
-    "Parquet · copia exacta": "Parquet · exact copy",
+    "SQLite (solo ODEPA) y Parquet · tal como llega": "SQLite (ODEPA only) and Parquet · as it arrives",  # D-579
     "Agente ODEPA": "ODEPA agent",
     # D-473: the full card of a piece of the map, from its description
     "Ver la ficha completa": "See the full card",

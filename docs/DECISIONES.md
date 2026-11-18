@@ -4621,3 +4621,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Qué pasó:** la carga del 10 de noviembre publicó los datos nuevos, y la revisión antes del push falló en dos pruebas que esperaban las cifras de la semana anterior.
 - **Causa:** ODEPA agregó seis precios atrasados a la semana del 26 de octubre (de 869 a 875, todos con su comparación, así que las semanas sin precio siguen en 150), y las frutas de Feria libre pasaron de subir a bajar. El código y las cifras de la app estaban bien.
 - **Decisión:** la prueba de la causa del incidente de D-418 acepta también 875 precios, sin cambiar los huecos que mide; la de un canal en «Semanal» comprueba que la familia elegida quede marcada, suba o baje, en vez de exigir que suba. Las dos siguen pasando con la base reconstruida en local. Se anota en el registro de fallas (F-33).
+
+## D-579 · «Aterrizaje» cubre SQLite y el bronce en Parquet
+- **Pedido del autor:** en «Pipeline y linaje», el encabezado «ATERRIZAJE · SQLite · tal cual llega» hacía creer que todo pasa por SQLite, pero la línea del INE va directo al bronce. Un data engineer lo notaría a simple vista.
+- **Decisión:** en el recorrido por capas, «ATERRIZAJE» se centra sobre las columnas de SQLite y del bronce, con un corchete que cubre las dos, y dice «SQLite (solo ODEPA) y Parquet · tal como llega»: las dos guardan los datos tal como los publica la fuente. El bronce conserva su nombre en su banda del medallón («BRONZE · Parquet»). La versión vertical ya decía «zona de aterrizaje · solo ODEPA» y no cambia.
+- **Descartado:** que el INE también pase por SQLite (una copia que nadie lee) y retirar SQLite (quita el respaldo y su prueba de paridad; es la mejora siguiente, fuera de un proyecto cerrado).
+- **Capturas:** M-4 se toma de nuevo en español y en inglés.

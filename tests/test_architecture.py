@@ -84,7 +84,7 @@ def test_d154_d155_the_delivered_stack_replaces_sqlite_except_in_the_landing_zon
         svg = build(states, FIGURES, charts.MODE_DARK)
         # Visible text only: hover explanations may still name the SQLite backup.
         visible = re.sub(r"<title>[^<]*</title>", "", svg)
-        assert visible.count("SQLite") == (visible.count("SQLite · raw.db") + visible.count("SQLite · tal cual"))
+        assert visible.count("SQLite") == (visible.count("SQLite · raw.db") + visible.count("SQLite (solo ODEPA)"))
         assert "datos.db<" not in visible and "datos.db " not in visible
         for text in ["Staging", "Intermedio", "Marts y pruebas", "datos.duckdb", "INE · IPC"]:
             assert text in svg
@@ -103,7 +103,7 @@ def test_pipeline_names_the_real_technology_used_at_each_stage():
         "HTTPS · CSV · sin API",
         "Python · requests",
         "SQLite · raw.db",
-        "Parquet · copia exacta",
+        "SQLite (solo ODEPA) y Parquet · tal como llega",
         "dbt · tipos y textos",
         "dbt · modelos y pruebas",
         "DuckDB · modelo estrella",
@@ -326,10 +326,19 @@ def test_d473_the_capital_layer_names_and_their_lines_have_their_english():
         "CONSUMO",
         "EJECUTA",
         "Agente ODEPA",
-        "SQLite · tal cual llega",
-        "Parquet · copia exacta",
+        "SQLite (solo ODEPA) y Parquet · tal como llega",
     ):
         assert i18n.lookup(text), text
+
+
+def test_d579_the_landing_header_covers_sqlite_and_the_parquet_bronze():
+    """ODEPA lands in SQLite and the INE goes straight to Parquet: «ATERRIZAJE» spans both columns."""
+    headers = architecture.build_column_headers()
+    landing, bronze = architecture.COLUMN_X["landing"], architecture.COLUMN_X["bronze"]
+    margin = architecture.HEADER_SPAN_MARGIN
+    assert f'<text x="{(landing + bronze) / 2}" y="40"' in headers
+    assert f"M{landing - margin} 66 V70 H{bronze + margin} V66" in headers
+    assert ">BRONZE</text>" not in headers  # the bronze column keeps its name in its medallion band
 
 
 # endregion
