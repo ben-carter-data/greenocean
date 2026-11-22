@@ -4627,3 +4627,8 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** en el recorrido por capas, «ATERRIZAJE» se centra sobre las columnas de SQLite y del bronce, con un corchete que cubre las dos, y dice «SQLite (solo ODEPA) y Parquet · tal como llega»: las dos guardan los datos tal como los publica la fuente. El bronce conserva su nombre en su banda del medallón («BRONZE · Parquet»). La versión vertical ya decía «zona de aterrizaje · solo ODEPA» y no cambia.
 - **Descartado:** que el INE también pase por SQLite (una copia que nadie lee) y retirar SQLite (quita el respaldo y su prueba de paridad; es la mejora siguiente, fuera de un proyecto cerrado).
 - **Capturas:** M-4 se toma de nuevo en español y en inglés.
+
+## D-580 · Margen bajo la nota «Cobertura» de «Semanal»
+- **Pedido del autor:** que la nota «Cobertura» al pie de «Semanal» no quede pegada al borde inferior de la ventana.
+- **Decisión:** la nota lleva 12 px de margen inferior (`bi/home_mockup.css`). Medido en el navegador con los cuatro pasos abiertos: en 1280 × 720 el espacio bajo la nota pasa de 12 a 24 px; en 1280 × 800, 1440 × 790 y 1920 × 1000 ya sobraba espacio (24 a 38 px) y la página sigue en una pantalla, sin scroll.
+- **Descartado:** subir el margen inferior de todas las páginas, que haría aparecer scroll en las que hoy calzan justo en una pantalla.
