@@ -1,6 +1,6 @@
 {
-  "generado": "2026-11-24 13:07 UTC",
-  "commit": "72c2544",
+  "generado": "2026-11-24 22:19 UTC",
+  "commit": "3baab94",
   "python": "3.11.18",
   "ruff": {
     "orden": "/tmp/tools/bin/ruff check bi etl agent tests --select E,F,W",
@@ -169,7 +169,7 @@
   "secretos": {
     "orden": "detect-secrets scan $(git ls-files)",
     "version": "1.5.0",
-    "archivos_revisados": 419,
+    "archivos_revisados": 420,
     "candidatos": 32,
     "por_archivo": {
       ".github/workflows/calidad.yml": [
