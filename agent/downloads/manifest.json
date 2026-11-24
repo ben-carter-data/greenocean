@@ -2,16 +2,16 @@
   "wholesale_2026.csv": {
     "source": "wholesale",
     "year": 2026,
-    "hash": "a0ebd76ed791a097736197aba7ba5aa847e0ffd238046d374543ddd207138ee5",
-    "bytes": 36407113,
-    "downloaded_at": "2026-11-17T13:01:05"
+    "hash": "f9433fc3b8ca4e1a145bf55e8c56768a7f5520c42fc2dc9d23dc1ccc116346c3",
+    "bytes": 37374513,
+    "downloaded_at": "2026-11-24T13:02:45"
   },
   "consumer_2026.csv": {
     "source": "consumer",
     "year": 2026,
-    "hash": "e05bfd4bba3b845df7b3f17706886ac7da0d49adbfab04c51c63a791d18136af",
-    "bytes": 51986252,
-    "downloaded_at": "2026-11-17T13:01:10"
+    "hash": "764c008b435cdce47476a2e2d6edac76e148cf3f5b350d11f3020aed47ae9427",
+    "bytes": 53194936,
+    "downloaded_at": "2026-11-24T13:03:58"
   },
   "wholesale_2022.csv": {
     "source": "wholesale",
