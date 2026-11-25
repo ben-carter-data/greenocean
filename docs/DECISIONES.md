@@ -4632,3 +4632,8 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** que la nota «Cobertura» al pie de «Semanal» no quede pegada al borde inferior de la ventana.
 - **Decisión:** la nota lleva 12 px de margen inferior (`bi/home_mockup.css`). Medido en el navegador con los cuatro pasos abiertos: en 1280 × 720 el espacio bajo la nota pasa de 12 a 24 px; en 1280 × 800, 1440 × 790 y 1920 × 1000 ya sobraba espacio (24 a 38 px) y la página sigue en una pantalla, sin scroll.
 - **Descartado:** subir el margen inferior de todas las páginas, que haría aparecer scroll en las que hoy calzan justo en una pantalla.
+
+## D-581 · Unidad «$/caja 40 atados» revisada
+- **Qué pasó:** la carga del 24-11-2026 trajo una unidad mayorista nueva, «$/caja 40 atados», y la prueba que exige revisar cada unidad de la última carga quedó en rojo con la Base DuckDB publicada.
+- **Decisión:** se agrega a `etl/reviewed_units.csv` sin unidad de destino, igual que «$/caja 36 atados»: un atado no tiene peso fijo, así que el precio no se convierte a $/kilo y queda como llega.
+- **Descartado:** subir con `--no-verify`, que dejaría el CI en rojo por la misma prueba.
