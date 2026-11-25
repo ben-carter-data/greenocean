@@ -983,9 +983,12 @@ def build_links(palette, is_running):
 
 def build_quarantine(figures, palette):
     """Rejected rows go to the rejection mart with their reason (RN-11)."""
-    x = (COLUMN_X["staging"] + COLUMN_X["intermediate"]) / 2
+    # D-582: 10 px left of the middle, so the line runs in the gap between the
+    # captions of Staging and Intermedio instead of touching the second one.
+    x = (COLUMN_X["staging"] + COLUMN_X["intermediate"]) / 2 - 10
     y = QUARANTINE_Y
-    start = (COLUMN_X["staging"] + TILE_SIZE / 2, MAIN_ROW_Y + 14)
+    # D-582: the line leaves Intermedio, where int_prices__validated sets the rows aside.
+    start = (COLUMN_X["intermediate"] - TILE_SIZE / 2, MAIN_ROW_Y + 14)
     path = f"M{start[0]} {start[1]} C{x} {start[1]} {x} {start[1] + 60} {x} {y - TILE_SIZE / 2}"
     return (
         f'<path class="journey-dashed" d="{path}" fill="none" '

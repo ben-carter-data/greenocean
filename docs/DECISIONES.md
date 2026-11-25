@@ -4637,3 +4637,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Qué pasó:** la carga del 24-11-2026 trajo una unidad mayorista nueva, «$/caja 40 atados», y la prueba que exige revisar cada unidad de la última carga quedó en rojo con la Base DuckDB publicada.
 - **Decisión:** se agrega a `etl/reviewed_units.csv` sin unidad de destino, igual que «$/caja 36 atados»: un atado no tiene peso fijo, así que el precio no se convierte a $/kilo y queda como llega.
 - **Descartado:** subir con `--no-verify`, que dejaría el CI en rojo por la misma prueba.
+
+## D-582 · La línea «inválidas» sale de «Intermedio»
+- **Pedido del autor:** en «Pipeline y linaje», la línea punteada hacia «Rechazos» salía de «Staging», que solo convierte tipos y textos. Las filas se apartan en la capa intermedia (`int_prices__validated`), como ya decía la explicación de «Intermedio».
+- **Decisión:** la línea sale del borde izquierdo de «Intermedio». «Rechazos» y su etiqueta «inválidas» se corren 10 px a la izquierda para que la línea baje por el espacio entre los textos de «Staging» e «Intermedio», sin tocar ninguno; medido en el navegador en español y en inglés. La versión vertical ya mostraba «Rechazos» bajo «Intermedio» y no cambia.
+- **Descartado:** llevar «Rechazos» bajo la columna de «Intermedio», porque la línea cruzaría sus textos.
+- **Capturas:** M-4 se toma de nuevo en español y en inglés.
